@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { nanoid } from 'nanoid';
 import { createLtiRegistrationLink, listLtiConnections } from 'sdk';
 import { appConfig } from 'shared';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
@@ -13,8 +13,9 @@ import { registrationRefusalPage } from '#/modules/auth/flows/lti/helpers/regist
 import { ltiKeySetUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable } from '#/modules/connections/connections-db';
-import { adminRole, defaultHeaders, memberRole } from './fixtures';
+import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization, expectRefusal } from './helpers';
+import { canvasPlatform } from './lti-platform-fixtures';
 import { decodeHtml } from './oauth-helpers';
 import { createFactorOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -149,6 +150,56 @@ describe('LTI registration', async () => {
       body: { token_endpoint_auth_method: 'private_key_jwt', jwks_uri: ltiKeySetUrl(connection.id) },
       keySetStatus: 200,
     });
+  });
+
+  // Contract: hosted Canvas reads a course tab and a privacy level from members of its own (canvas-lms
+  // `Lti::IMS::Registration`), and makes a message without placements a link to pick for a module. Only a platform
+  // whose configuration names the product family `canvas` gets those members.
+  it('asks Canvas for a course tab off by default and shown to members, at the privacy level its claims ask for', async () => {
+    const toolConfiguration = 'https://purl.imsglobal.org/spec/lti-tool-configuration';
+    const registerAtCanvas = async (clientId: string) => {
+      const canvas = canvasPlatform('school.instructure.com', clientId);
+      const requests: Record<string, unknown>[] = [];
+      const transport: GuardedTransport = async ({ url, method, body }) => {
+        if (method === 'GET' && url.href === canvas.configurationUrl) return Response.json(canvas.configuration);
+        if (method !== 'POST' || url.href !== canvas.configuration.registration_endpoint) return new Response(null, { status: 404 });
+        requests.push(JSON.parse(body ?? '{}'));
+        return Response.json(canvas.registration, { status: 201 });
+      };
+      const { link } = await mintLink();
+      await registerLtiPlatformOp(
+        { link, openid_configuration: canvas.configurationUrl },
+        { transport, resolve: async () => [{ address: '1.1.1.1', family: 4 }] },
+      );
+      return requests[0]?.[toolConfiguration];
+    };
+    const names = ['iss', 'sub', 'name', 'given_name', 'family_name'];
+    const courseTab = {
+      type: 'LtiResourceLinkRequest',
+      label: appConfig.name,
+      placements: ['course_navigation'],
+      'https://canvas.instructure.com/lti/course_navigation/default_enabled': false,
+      'https://canvas.instructure.com/lti/visibility': 'members',
+    };
+
+    expect(await registerAtCanvas('10000000000001')).toMatchObject({
+      claims: names,
+      messages: [courseTab],
+      'https://canvas.instructure.com/lti/privacy_level': 'name_only',
+    });
+    onTestFinished(overrideConfig(appConfig, { ltiAsksEmail: true }));
+    expect(await registerAtCanvas('10000000000002')).toMatchObject({
+      claims: [...names, 'email'],
+      messages: [courseTab],
+      'https://canvas.instructure.com/lti/privacy_level': 'public',
+    });
+
+    const { link } = await mintLink();
+    const other = fakePlatform();
+    await registerLtiPlatformOp({ link, openid_configuration: configurationUrl }, other.options);
+    const elsewhere = other.registrations[0].body[toolConfiguration];
+    expect(elsewhere).toMatchObject({ messages: [{ type: 'LtiResourceLinkRequest', label: appConfig.name }] });
+    expect(JSON.stringify(elsewhere)).not.toMatch(/placements|canvas\.instructure\.com/);
   });
 
   // A refused registration leaves nothing behind: the connection stored before the call goes, and its key set with it.

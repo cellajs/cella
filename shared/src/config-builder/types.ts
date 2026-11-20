@@ -440,6 +440,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   enabledAuthStrategies: readonly BaseAuthStrategies[];
   enabledOAuthProviders: readonly BaseOAuthProviders[];
   ltiFrameAncestors: string[];
+  /** Set, the app as an LTI tool asks a platform for each person's email beside their name; unset, for the name alone. */
+  ltiAsksEmail?: true;
   federations: Record<string, FederationConfig>;
   totp: TotpConfig;
   maxSessionsPerUser: number;

@@ -99,7 +99,7 @@ const registerAtPlatform = async ({ configuration, connectionId, registrationTok
       'Content-Type': 'application/json',
       ...(registrationToken ? { Authorization: `Bearer ${registrationToken}` } : {}),
     },
-    body: JSON.stringify(ltiRegistrationRequest(connectionId)),
+    body: JSON.stringify(ltiRegistrationRequest(connectionId, configuration[ltiPlatformConfigurationMember].product_family_code)),
   });
   const refused = (reason: string) =>
     new AppError(400, 'lti_registration_refused', 'warn', { meta: { reason, platformStatus: response.status, issuer: configuration.issuer } });

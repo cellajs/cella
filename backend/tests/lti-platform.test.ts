@@ -70,7 +70,7 @@ describe('LTI platform', async () => {
   }
 
   /** An LTI tool posting its registration to the worker, as the app itself registers. */
-  const register = (token: string, body: object = ltiRegistrationRequest(generateId())) =>
+  const register = (token: string, body: object = ltiRegistrationRequest(generateId(), appConfig.slug)) =>
     fetch(`${oauth.issuer}/lti/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -188,12 +188,12 @@ describe('LTI platform', async () => {
     const { installationId } = await pendingInstallation(admin);
     const path = installationPath(admin, installationId);
 
-    // The app asks for name and email claims, never a picture.
+    // The app asks for name claims, an email only when its config opts in, never a picture.
     const widened = await call(approveLtiInstallation, { path, body: { releasedFields: ['name', 'picture'] }, headers: admin.headers });
     await expectRefusal(widened, 400, 'lti_field_not_requested');
 
     const approved = await call(approveLtiInstallation, { path, body: { releasedFields: ['name'] }, headers: admin.headers });
-    expect(approved.data).toMatchObject({ status: 'active', requestedFields: ['name', 'email'], releasedFields: ['name'] });
+    expect(approved.data).toMatchObject({ status: 'active', requestedFields: ['name'], releasedFields: ['name'] });
   });
 
   // An installation acts only once approved, and only through its registration: never switched on as an account, never by a key.

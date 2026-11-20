@@ -20,6 +20,10 @@ One pasted address connects two apps, by LTI Dynamic Registration, whichever sid
 
 As an LTI tool, an admin creates a registration link under LTI connections in organization settings. It works once and for a short while. The platform's admin pastes it where the platform adds an LTI tool by URL. The app reads the platform's configuration, registers itself there and lists the platform as a connection.
 
+The registration asks for each person's name, and for their email address only when the app sets `ltiAsksEmail`. It asks for one launch, named after the app. A platform whose configuration names Canvas as its product family makes it a course tab, hidden until a teacher enables it and shown only to people enrolled in the course. Any other platform places the launch where it chooses.
+
+Canvas sends what the registration asks for by its privacy level. The name alone is `name_only`, which also sends the person's and the course's SIS ids. Email makes it `public`, which adds the person's picture and, for an observer, the students they observe. The app keeps the name and email and drops the rest.
+
 Each connection gets a key pair of its own, and the registration names that connection's key set on the API. The app stores the connection, waiting, before it calls the platform: a platform that reads the key set while it registers the app, as Brightspace does, finds it. No key rotation is built. Deleting the connection deletes its key, and its key set answers no more.
 
 A connection still waiting is listed nowhere, and one a failed registration left behind goes after a day. A tenant holds a limited number of LTI connections, a tenant quota: past it, a registration link and a registration are refused with a page that says so.
