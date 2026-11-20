@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { and, count, eq, exists, inArray, lte, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, exists, inArray, lte, ne, notExists, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { Access, ChannelEntityType, EntityRole } from 'shared';
 import type { ActorBinding, DbContext, OrgContext } from '#/core/context';
@@ -125,6 +125,28 @@ export const deleteMembershipsByIds = async (ctx: { var: Pick<OrgContext['var'],
     .from(membershipsTable)
     .where(and(inArray(membershipsTable.id, ids), ofOrganization, eq(membershipsTable.channelType, 'organization')));
   return db.delete(membershipsTable).where(and(ofOrganization, or(inArray(membershipsTable.id, ids), inArray(membershipsTable.userId, leaving))));
+};
+
+/**
+ * Deletes an organization membership at `role` when its user holds no other membership in the organization, checked in
+ * the delete itself: a membership or a role committed since the caller read the row keeps it.
+ * @returns Whether it went.
+ */
+export const deleteLoneOrganizationMembership = async (ctx: DbContext, { id, role }: { id: string; role: EntityRole }) => {
+  const others = alias(membershipsTable, 'others');
+  const otherMembership = ctx.var.db
+    .select({ id: others.id })
+    .from(others)
+    .where(
+      and(eq(others.userId, membershipsTable.userId), eq(others.organizationId, membershipsTable.organizationId), ne(others.id, membershipsTable.id)),
+    );
+  const gone = await ctx.var.db
+    .delete(membershipsTable)
+    .where(
+      and(eq(membershipsTable.id, id), eq(membershipsTable.channelType, 'organization'), eq(membershipsTable.role, role), notExists(otherMembership)),
+    )
+    .returning({ id: membershipsTable.id });
+  return gone.length > 0;
 };
 
 /** Updates a membership of the request's organization and returns the row; null when none has the id. */

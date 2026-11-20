@@ -490,6 +490,32 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(await kept()).toMatchObject({ membershipsUrl });
   });
 
+  // Attack: a list takes away only what a list once held. A platform on the template lets whoever may change a channel
+  // open its tab for editors as Instructor and lists members alone, as Moodle lists a category manager nowhere. Their
+  // launch starts the import that reads a whole list without them, and they keep what the launch gave them.
+  it('keeps what a launch gave someone the whole list of the context never held, through the import their launch starts', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const membershipsUrl = 'https://school.example.net/api/lti/courses/c1/names_and_roles';
+    const editor = { sub: 'lms-editor', [ltiClaims.roles]: [lisContextRoles.instructor] };
+    const nrps = { [ltiClaims.namesRoleService]: { context_memberships_url: membershipsUrl, service_versions: ['2.0'] } };
+    expect((await launch(connected, { ...editor, ...nrps })).response.status).toBe(303);
+
+    const platform: GuardedTransport = async ({ method }) =>
+      method === 'POST'
+        ? Response.json({ access_token: 'token', token_type: 'Bearer', expires_in: 3600 })
+        : Response.json({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] });
+    const [context] = await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.connectionId, connected.connection.id));
+    await importLtiMembersOp(context.id, { transport: platform, resolve: async () => [{ address: '127.0.0.1', family: 4 }] });
+    const [row] = await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.id, context.id));
+    expect(row).toMatchObject({ importReadCount: 1, importIssue: null });
+
+    const [identity] = await db
+      .select()
+      .from(identitiesTable)
+      .where(and(eq(identitiesTable.provider, connected.issuer), eq(identitiesTable.subject, 'lms-editor')));
+    expect(await orgMembershipOf(identity.userId, connected.org.id)).toMatchObject({ role: memberRole });
+  });
+
   /** Sets the tenant's member limit to the seats its organization holds, and `free` more. */
   async function limitMembers({ org }: Connected, free = 0) {
     const [tenant] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, org.tenantId));

@@ -8,7 +8,7 @@ import { createLtiAccount, type LtiPerson, nameLtiAccount } from '#/modules/auth
 import type { LtiConnection } from '#/modules/connections/connections-db';
 import { resolveOrganizationMembershipRole } from '#/modules/memberships/helpers/membership-helpers';
 import type { MembershipModel } from '#/modules/memberships/memberships-db';
-import { findMembershipsByUserIdsAndChannel, updateMembershipRole } from '#/modules/memberships/memberships-queries';
+import { findMembershipsByUserIds, findMembershipsByUserIdsAndChannel, updateMembershipRole } from '#/modules/memberships/memberships-queries';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { hasFreeSeats } from '#/modules/memberships/operations/organization-seats';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
@@ -106,25 +106,31 @@ export const ltiRoleIn = (channelType: ChannelEntityType, facts: Omit<LtiRoleFac
   return hierarchy.getLeastPrivilegedRole(channelType);
 };
 
+/** Whether an organization membership at `role` may update the organization, as the permission engine judges the role alone. */
+export const mayUpdateOrganization = (organization: OrganizationModel, userId: string, role: OrganizationRole) =>
+  checkAccess(
+    { actorId: userId, scopes: null, memberships: [{ channelType: 'organization', channelId: organization.id, role }] },
+    'update',
+    buildSubjectFromEntity('organization', organization),
+  ).allowed;
+
 /** The organization role a person gets for `role`: the highest at or below it that may not update the organization. */
 const belowOrganizationUpdate = (organization: OrganizationModel, userId: UserId, role: string): OrganizationRole => {
   const roles = hierarchy.getRoles('organization');
   const names: readonly string[] = roles;
-  const subject = buildSubjectFromEntity('organization', organization);
-  const mayUpdate = (candidate: OrganizationRole) =>
-    checkAccess(
-      { actorId: userId, scopes: null, memberships: [{ channelType: 'organization', channelId: organization.id, role: candidate }] },
-      'update',
-      subject,
-    ).allowed;
   const from = names.indexOf(role);
-  return (from < 0 ? undefined : roles.slice(from).find((candidate) => !mayUpdate(candidate))) ?? hierarchy.getLeastPrivilegedRole('organization');
+  return (
+    (from < 0 ? undefined : roles.slice(from).find((candidate) => !mayUpdateOrganization(organization, userId, candidate))) ??
+    hierarchy.getLeastPrivilegedRole('organization')
+  );
 };
 
 interface ApplyLtiRoleOpts {
   organization: OrganizationModel;
   /** The context's row: it records the memberships it gives (`recordLtiContextMemberships`). */
   contextId: string;
+  /** True for an import, whose list holds the person; false for a launch. */
+  listed: boolean;
   /** The context's channel: the organization, or a channel below it. */
   channel: MembershipEntity;
   userId: UserId;
@@ -135,14 +141,14 @@ interface ApplyLtiRoleOpts {
 }
 
 /**
- * Gives a person the role a launch or an import maps them to in the context's channel, and records the seat and the
- * channel's membership as the context's where it made them or another context gave them. A role in a channel below
- * the organization follows the platform up and down. An organization role only goes up, and never to one that may
- * update the organization (`belowOrganizationUpdate`): a platform's administrator administers the platform, not this
- * organization. A person without a seat is seated first at such a role: the channel's membership then brings along
- * no organization membership above it.
+ * Gives a person the role a launch or an import maps them to in the context's channel, and records the seat, the
+ * channel's membership and those it brings along as the context's where it made them or a context recorded them. A
+ * role in a channel below the organization follows the platform up and down. An organization role only goes up, and
+ * never to one that may update the organization (`belowOrganizationUpdate`): a platform's administrator administers
+ * the platform, not this organization. A person without a seat is seated first at such a role: the channel's
+ * membership then brings along no organization membership above it.
  */
-export const applyLtiRole = async (ctx: DbContext, { organization, contextId, channel, userId, seat, role, by }: ApplyLtiRoleOpts) => {
+export const applyLtiRole = async (ctx: DbContext, { organization, contextId, listed, channel, userId, seat, role, by }: ApplyLtiRoleOpts) => {
   const organizationRole = belowOrganizationUpdate(
     organization,
     userId,
@@ -161,12 +167,14 @@ export const applyLtiRole = async (ctx: DbContext, { organization, contextId, ch
   if (channel.entityType !== 'organization') {
     const [membership] = await findMembershipsByUserIdsAndChannel(ctx, { userIds: [userId], channelId: channel.id });
     if (!membership) {
-      const [made] = await insertMemberships(ctx, { items: [{ userId, role, entity: channel, createdBy: by }] });
-      admissions.push({ id: made.id, created: true });
+      const heldIds = async () => (await findMembershipsByUserIds(ctx, { userIds: [userId], organizationId: organization.id })).map(({ id }) => id);
+      const before = await heldIds();
+      await insertMemberships(ctx, { items: [{ userId, role, entity: channel, createdBy: by }] });
+      for (const id of await heldIds()) if (!before.includes(id)) admissions.push({ id, created: true });
     } else {
       if (membership.role !== role) await updateMembershipRole(ctx, { id: membership.id, role, by });
       admissions.push({ id: membership.id, created: false });
     }
   }
-  await recordLtiContextMemberships(ctx, { contextId, admissions, by });
+  await recordLtiContextMemberships(ctx, { contextId, userId, admissions, listed, by });
 };

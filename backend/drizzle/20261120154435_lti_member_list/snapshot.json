@@ -2,7 +2,7 @@
   "type": "diff",
   "version": "9",
   "dialect": "postgres",
-  "id": "d83c7fdd-e8c6-4c44-98ea-3899f248c241",
+  "id": "0300c7db-e3c9-41b5-848d-2b258caccbc4",
   "prevIds": [
     "334ffa7c-0125-4da6-8801-9fbfc9880088"
   ],
@@ -23,24 +23,6 @@
         "n|rel|public.lti_context_memberships_pkey"
       ],
       "reads": [
-        "n|sch|public"
-      ]
-    },
-    {
-      "statementType": "add_column",
-      "statementTarget": [
-        "column",
-        "public",
-        "connections",
-        "refused_by_platform"
-      ],
-      "writes": [
-        "s|col|public.connections.refused_by_platform",
-        "n|col|public.connections.refused_by_platform",
-        "e|col|public.connections.refused_by_platform"
-      ],
-      "reads": [
-        "n|tbl|public.connections",
         "n|sch|public"
       ]
     },
@@ -204,6 +186,22 @@
       "row": {
         "schema": "public",
         "table": "lti_context_memberships",
+        "name": "listed",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_context_memberships",
         "name": "created_at",
         "type": "timestamp with time zone",
         "typeSchema": null,
@@ -258,22 +256,6 @@
         "notNull": false,
         "dimensions": 0,
         "default": null,
-        "generated": null,
-        "identity": null,
-        "entityType": "columns"
-      }
-    },
-    {
-      "op": "create",
-      "row": {
-        "schema": "public",
-        "table": "connections",
-        "name": "refused_by_platform",
-        "type": "boolean",
-        "typeSchema": null,
-        "notNull": true,
-        "dimensions": 0,
-        "default": "false",
         "generated": null,
         "identity": null,
         "entityType": "columns"

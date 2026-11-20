@@ -488,9 +488,10 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     return held.length > 0;
   };
 
-  // Contract: a whole list holds a context's current members (NRPS 2.0, sections 2.3 and 2.4.1). Who it leaves out or
-  // names Inactive loses what the context gave them; a membership given another way, or by another context, stays.
-  it('ends what a context gave the people its whole list leaves out or names inactive, and keeps what holds them another way', async () => {
+  // Contract: a whole list holds a context's current members (NRPS 2.0, sections 2.3 and 2.4.1). Who a list held and
+  // this one leaves out or names Inactive loses what the context gave them; a membership given another way, or by
+  // another context, stays.
+  it('ends what a context gave the people a list held and its whole list leaves out or names inactive, and keeps what holds them another way', async () => {
     const side = await connectToFakePlatform();
     const invited = await createFactorOrgUser(call, side.org.tenantId, side.org.id, `lti-${nanoid(8)}`, memberRole);
     await db
@@ -517,36 +518,57 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(await seated(side, 'lms-left')).toBe(true);
   });
 
-  // Attack: only a whole list that names someone says who left. A read cut short, a failed or refused read, or an empty
-  // list ends no one. A token request the platform answers with `invalid_client` marks the connection refused, and the
-  // next token it grants clears it.
-  it('ends nothing after a read cut short, a failed or refused read, or an empty list', async () => {
+  // Attack: only a whole list of the context that names someone and holds no row the app cannot read says who left. A
+  // read cut short, a failed or refused read, a list asked for by role, or an empty list ends no one: a row that fails
+  // validation would otherwise end its person at every import.
+  it('ends nothing after a read cut short or with an unreadable row, a failed or refused read, part of a list, or an empty list', async () => {
     const side = await connectToFakePlatform();
     await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: [learner('lms-student')] })).options);
 
     const endless = fakePlatformApi((url) => ({ members: [learner('lms-other')], next: url.href }));
     await importLtiMembersOp(side.context.id, endless.options);
     expect(await contextRow(side.context.id)).toMatchObject({ importIssue: 'too_many_members' });
+    const unreadable = fakePlatformApi(() => Response.json({ members: [learner('lms-other'), { user_id: 'lms-student', roles: 'Learner' }] }));
+    await importLtiMembersOp(side.context.id, unreadable.options);
+    expect(await contextRow(side.context.id)).toMatchObject({ importIssue: 'unreadable_members' });
     const failing = fakePlatformApi(() => new Response('', { status: 500 }));
     await expect(importLtiMembersOp(side.context.id, failing.options)).rejects.toThrow();
     await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: [] })).options);
+    expect(await contextRow(side.context.id)).toMatchObject({ importIssue: null, importReadCount: 0 });
+    // A refusal of the list forgets its address, which the step after names again.
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => new Response(null, { status: 403 })).options);
+    expect(await contextRow(side.context.id)).toMatchObject({ importIssue: 'members_refused' });
     expect(await seated(side, 'lms-student')).toBe(true);
 
-    const refusing = fakePlatformApi(() => new Response(null, { status: 401 }), 'invalid_client');
-    await importLtiMembersOp(side.context.id, refusing.options);
-    const refusedByPlatform = async () => {
-      const [row] = await db
-        .select({ refused: connectionsTable.refusedByPlatform })
-        .from(connectionsTable)
-        .where(eq(connectionsTable.id, side.connection.id));
-      return row.refused;
-    };
-    expect(await contextRow(side.context.id)).toMatchObject({ importIssue: 'token_refused' });
-    expect(await refusedByPlatform()).toBe(true);
+    const filtered = `${side.context.membershipsUrl}?role=${encodeURIComponent(lisContextRoles.instructor)}`;
+    await db.update(ltiContextsTable).set({ membershipsUrl: filtered }).where(eq(ltiContextsTable.id, side.context.id));
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: [learner('lms-other')] })).options);
     expect(await seated(side, 'lms-student')).toBe(true);
+  });
 
-    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: [learner('lms-student')] })).options);
-    expect(await refusedByPlatform()).toBe(false);
+  // Attack: a role that may update the organization comes from the app alone, never from LTI. A seat an admin raised
+  // to one stays when the list drops the person, and keeps its record: once the admin lowers it, the next import ends it.
+  it('keeps a seat an admin raised to a role that may update the organization, and ends it at the next import once lowered', async () => {
+    const side = await connectToFakePlatform();
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: [learner('lms-raised'), learner('lms-stays')] })).options);
+    const [identity] = await db
+      .select({ userId: identitiesTable.userId })
+      .from(identitiesTable)
+      .where(and(eq(identitiesTable.provider, side.issuer), eq(identitiesTable.subject, 'lms-raised')));
+    const setRole = (role: typeof adminRole | typeof memberRole) =>
+      db
+        .update(membershipsTable)
+        .set({ role })
+        .where(and(eq(membershipsTable.userId, identity.userId), eq(membershipsTable.channelId, side.org.id)));
+    const dropped = () => fakePlatformApi(() => ({ members: [learner('lms-stays')] })).options;
+
+    await setRole(adminRole);
+    await importLtiMembersOp(side.context.id, dropped());
+    expect(await orgMembershipOf(identity.userId, side.org.id)).toMatchObject({ role: adminRole });
+
+    await setRole(memberRole);
+    await importLtiMembersOp(side.context.id, dropped());
+    expect(await seated(side, 'lms-raised')).toBe(false);
   });
 
   // Attack: a platform that never ends its list holds no import, and no worker, for long. A person it lists without a

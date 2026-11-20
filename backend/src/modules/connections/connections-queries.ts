@@ -1,6 +1,6 @@
 import { and, arrayOverlaps, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import type { ActorId, UserId } from '#/db/utils/ids';
+import type { UserId } from '#/db/utils/ids';
 import { servedColumns } from '#/db/utils/served-columns';
 import { updateStamps } from '#/db/utils/stamps';
 import {
@@ -171,14 +171,6 @@ export const updateConnection = async (ctx: DbContext, { id, tenantId, values }:
     .where(and(eq(connectionsTable.id, id), eq(connectionsTable.tenantId, tenantId)))
     .returning(connectionColumns);
   return row;
-};
-
-/** Records whether the LTI platform refuses the connection (`refusedByPlatform`), written by `by` when it changes. */
-export const setLtiPlatformRefusal = async (ctx: DbContext, { id, refused, by }: { id: string; refused: boolean; by: ActorId }) => {
-  await ctx.var.db
-    .update(connectionsTable)
-    .set({ refusedByPlatform: refused, ...updateStamps(by) })
-    .where(and(eq(connectionsTable.id, id), ne(connectionsTable.refusedByPlatform, refused)));
 };
 
 /** Deletes one tenant's connection; the deleted row, or undefined when the tenant holds no such connection. */

@@ -1,4 +1,4 @@
-import { index, integer, primaryKey, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, integer, primaryKey, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
@@ -14,9 +14,9 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
  * Why the last member import of a context stopped short, in fixed words: the connection holds no key and must register
  * again, the app refused an address the platform names, the platform refused the scope, the token or the member list,
  * the import failed and is tried again or was tried for the last time, the platform listed more people than an import
- * reads, the tenant's member limit left people out, the app's role mapping gave some people no role and left them out
- * (`no_role`), or the connection, the tenant or the channel is not active. Or that no import ran: it waits until its
- * connection's hourly budget of contexts frees up.
+ * reads, it listed rows the app cannot read (`unreadable_members`), the tenant's member limit left people out, the
+ * app's role mapping gave some people no role and left them out (`no_role`), or the connection, the tenant or the
+ * channel is not active. Or that no import ran: it waits until its connection's hourly budget of contexts frees up.
  */
 export const ltiImportIssues = [
   'waiting',
@@ -28,6 +28,7 @@ export const ltiImportIssues = [
   'retrying',
   'failed',
   'too_many_members',
+  'unreadable_members',
   'member_limit',
   'no_role',
   'inactive',
@@ -83,11 +84,11 @@ export type LtiContextModel = typeof ltiContextsTable.$inferSelect;
 export type InsertLtiContextModel = typeof ltiContextsTable.$inferInsert;
 
 /**
- * The memberships an LTI context gave: one a launch or an import of the context made, and one another context gave
- * that this one admits too. A membership given another way, such as by an invitation, holds no row and no import ends
- * it. A row goes with its context or its membership. `updatedAt`, or `createdAt` before a second write, is when a
- * launch or an import of the context last admitted the person: a complete read ends only the rows not written since
- * it began.
+ * The memberships an LTI context gave: one a launch or an import of the context made, with those added along with it,
+ * and one another context gave that this one admits too. A membership given another way, such as by an invitation,
+ * holds no row and no import ends it. A row goes with its context or its membership. `updatedAt`, or `createdAt`
+ * before a second write, is when a launch or an import of the context last admitted the person: a complete read ends
+ * only the rows not written since it began.
  */
 export const ltiContextMembershipsTable = snakeCase.table(
   'lti_context_memberships',
@@ -98,6 +99,11 @@ export const ltiContextMembershipsTable = snakeCase.table(
     membershipId: uuid()
       .notNull()
       .references(() => membershipsTable.id, { onDelete: 'cascade' }),
+    /**
+     * An import of the context's member list admitted the person: only then may a later list end the membership. A
+     * launch alone leaves it false, as for someone who may change the channel without being a member the list names.
+     */
+    listed: boolean().notNull().default(false),
     ...auditColumns(),
   },
   (table) => [

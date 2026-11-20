@@ -922,7 +922,6 @@ export const zConnection = z.object({
       logoUrl: z.url().max(255).optional(),
     }),
   ]),
-  refusedByPlatform: z.boolean(),
   createdAt: z.string(),
   createdBy: z
     .union([
@@ -1829,6 +1828,7 @@ export const zListLtiContextsResponse = z.object({
           'retrying',
           'failed',
           'too_many_members',
+          'unreadable_members',
           'member_limit',
           'no_role',
           'inactive',

@@ -7,8 +7,8 @@ import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import type { BackendQueue, MembershipEntity } from '#/lib/module';
 import { getPgBoss } from '#/lib/pg-boss';
 import {
+  isFilteredMembershipsUrl,
   type LtiMember,
-  type MembersOutcome,
   type ReadLtiMembersOptions,
   readLtiMembers,
 } from '#/modules/auth/flows/lti/helpers/platform-memberships';
@@ -18,7 +18,7 @@ import { admitLtiPerson, applyLtiRole, ltiRoleIn } from '#/modules/auth/flows/lt
 import { connectionServiceAccountId } from '#/modules/auth/flows/lti/operations/connection-service-account';
 import { endUnlistedLtiMemberships } from '#/modules/auth/flows/lti/operations/end-lti-memberships';
 import { isLtiConnection, type LtiConnection } from '#/modules/connections/connections-db';
-import { findConnectionById, holdConnection, setLtiPlatformRefusal } from '#/modules/connections/connections-queries';
+import { findConnectionById, holdConnection } from '#/modules/connections/connections-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
@@ -78,7 +78,7 @@ const importPerson = async (ctx: DbContext, { connection, context, channel, orga
   const { user_id: sub, name, given_name: givenName, family_name: familyName, email } = person;
   const admitted = await admitLtiPerson(ctx, { connection, organization, memberQuota, person: { sub, name, givenName, familyName, email }, by });
   if (!admitted) return 'member_limit';
-  await applyLtiRole(ctx, { organization, contextId: context.id, channel, userId: admitted.userId, seat: admitted.seat, role, by });
+  await applyLtiRole(ctx, { organization, contextId: context.id, listed: true, channel, userId: admitted.userId, seat: admitted.seat, role, by });
   return 'imported';
 };
 
@@ -93,23 +93,12 @@ interface ImportLtiMembersOpts extends ReadLtiMembersOptions {
 const forgetsAddress = new Set<LtiImportIssue>(['scope_not_granted', 'members_refused']);
 
 /**
- * Records on the connection what the read learned of the platform's standing: `invalid_client` says it refuses the
- * connection, a list it answered says it accepts it. Any other refusal leaves the record as it is.
- */
-const recordPlatformRefusal = async (
-  ctx: DbContext,
-  { connection, read, by }: { connection: LtiConnection; read: MembersOutcome; by: ServiceAccountId },
-) => {
-  const refused = 'refusal' in read ? read.clientUnknown : false;
-  if (refused !== undefined && refused !== connection.refusedByPlatform) await setLtiPlatformRefusal(ctx, { id: connection.id, refused, by });
-};
-
-/**
  * Imports the people a platform lists for an LTI context into the context's channel, as the connection's service
- * account, and records how it ran on the context. It admits only people the platform lists as active. After a whole
- * list that names one, it ends what the context gave the people the list leaves out or names inactive
- * (`endUnlistedLtiMemberships`). Run twice, or beside a launch of a listed person, it makes one account per
- * person. A person who needs a seat while the member limit leaves none is left out. An inactive connection or tenant,
+ * account, and records how it ran on the context. It admits only people the platform lists as active. After a whole,
+ * unfiltered list that names one and holds no row it cannot read, it ends what the context gave the people a list
+ * held before and this one leaves out or names inactive (`endUnlistedLtiMemberships`). Run twice, or beside a launch
+ * of a listed person, it makes one account per person. A person who needs a seat while the member limit leaves none
+ * is left out. An inactive connection or tenant,
  * or a channel that is archived or gone, ends it at once. A deleted connection ends it before the next person, without
  * an error and unrecorded. An aborted `signal` ends it before the next page or person. A first attempt while the
  * connection's hourly budget is spent reads nothing and records that it waits. A refusal of the scope or the member
@@ -138,7 +127,6 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
 
     const readFrom = getIsoDate();
     const read = await readLtiMembers(connection, context.membershipsUrl, options);
-    await recordPlatformRefusal(dbCtx, { connection, read, by });
     if ('refusal' in read) {
       return recordLtiImport(dbCtx, { id: context.id, readCount: 0, issue: read.refusal, forgetAddress: forgetsAddress.has(read.refusal), by });
     }
@@ -154,8 +142,9 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
       if (outcome === 'member_limit') issue = outcome;
       else if (outcome === 'no_role' && !issue) issue = outcome;
     }
-    // A read cut short, or a list without an active member, says nothing of who left.
-    if (!read.issue && read.people.length) {
+    // A read cut short or with a row it cannot read, a list without an active member, or part of a list says nothing of
+    // who left.
+    if (!read.issue && read.people.length && !isFilteredMembershipsUrl(context.membershipsUrl)) {
       const ended = await endUnlistedLtiMemberships(target, { listed: read.people, before: readFrom, signal: options.signal });
       if (ended === 'connection_gone') return;
     }

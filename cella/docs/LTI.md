@@ -173,9 +173,17 @@ So members are read from any platform that registers the app by Dynamic Registra
 
 Each person listed gets the account their own launch finds later, and the role a launch would give them, by the same rules.
 
-A read of the whole list is the platform's word on who is in the context. After one that names an active member, a person the context admitted loses that membership once the list leaves them out or names them Inactive. Their seat in the organization goes too, when LTI gave it and nothing else holds them there. Their account stays, and a later launch or import admits them again.
+A read of the whole list is the platform's word on who is in the context, and a list takes away only what a list once held. After one that names an active member, a person an earlier list of the context held loses what the context gave them once this list leaves them out or names them Inactive.
 
-The import removes nobody after a read cut short, a failed or refused read, or a list without an active member. It never ends a membership given another way, such as by an invitation, or one another context gave too. A launch while the import runs keeps what it gives.
+Their seat in the organization goes too, when LTI gave it, nothing else holds them there and its role may not update the organization. Their account stays, and a later launch or import admits them again.
+
+A person only a launch ever admitted keeps the membership until an admin removes it, such as someone who may change the channel without being a member the platform lists, or who comes back by a launch after a list ended their membership.
+
+The import removes nobody after a read cut short, a failed or refused read, a read with a row the app cannot read, a list asked for by role or by resource link, or a list without an active member. It never ends a membership given another way, such as by an invitation, or one another context gave too. A launch while the import runs keeps what it gives.
+
+One limit: a page without a link to the next is the end of the list. A platform that leaves that link off a page ends what the context gave everyone listed past it.
+
+A membership an import gave before the app recorded what a context gives holds no record, unless the upgrade recorded it: no import ends it.
 
 An account an import made for someone who never launched is deleted after a retention period, once it holds no membership and its connection is gone. An account that ever signed in stays.
 
@@ -183,13 +191,14 @@ The platform decides who is in a context. A person an admin removes in your app 
 
 The import writes as a service account of the connection, which no admin manages. Deleting the connection disables it, and it stays out of the admins' reach: no admin turns it on again or gives it an API key. A person who needs a seat when the member limit leaves none is left out, and the import goes on with the rest.
 
-Under LTI connections, a connection says when the platform refuses it. Each lists its LTI contexts, the channel each maps to and how its last import went: how many people it read and when, or why it stopped short. The reasons are:
+Under LTI connections, each connection lists its LTI contexts, the channel each maps to and how its last import went: how many people it read and when, or why it stopped short. The reasons are:
 
 - A connection registered before it held a key of its own, which registers again.
 - An address the platform names that the app refuses.
 - A scope the platform did not grant, or a refused token or member list: any client error but a timeout or a throttle.
 - A failed import, while it tries again and once it gave up.
 - A list longer than one import reads.
+- A row of the list the app cannot read: nobody is removed.
 - The member limit.
 - People the platform sent no role the app takes, who are left out.
 - A connection or organization that is not active, or a context whose channel is archived.
@@ -219,12 +228,12 @@ The template ships the organization's embedded page. An app that maps a context 
 - **An archived channel:** its LTI tabs do not open and the LTI tool reads no members there, until it is unarchived.
 - **A scope taken away:** a token that carries it is refused at its next request. A new token carries what the admin still grants.
 - **An import that stops short:** the context under LTI connections says why, the members imported before stay, and nobody is removed.
-- **An LTI tool deleted on the platform:** LTI has no message for it, and Dynamic Registration has no delete. The app learns of it only when the platform refuses a token request as from a client it does not know: the connection under LTI connections then says that the platform refuses it, until a later token request succeeds.
+- **An LTI tool deleted on the platform:** the app is not told, and an organization admin deletes the connection.
 - **A deployment the connection does not hold:** the launch is refused, and an organization admin registers the app for that deployment.
 - **A deleted connection:** the LTI tool refuses the platform's launches as from a platform it is not connected to, and the sessions its launches started end.
 - **A connection without a key of its own:** it launches as before, and its contexts under LTI connections ask to register the app at the platform again before members are read.
 - **A tenant at its quota of LTI connections:** a new registration link is refused, and so is a registration through a link made before, with a page that says so. That link works once a connection is deleted, unless another registration took the last place while it ran.
-- **A deleted LTI tool:** its tabs leave every channel, a launch of one is refused as of a tab that does not exist, and its tokens stop at their next request. Nothing tells the LTI tool beyond a refused token request.
+- **A deleted LTI tool:** its tabs leave every channel, a launch of one is refused as of a tab that does not exist, and its tokens stop at their next request.
 
 ## Not built
 

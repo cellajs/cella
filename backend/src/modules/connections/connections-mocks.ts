@@ -13,7 +13,6 @@ export const mockConnectionResponse = (key = 'connection:default') =>
     name: 'Utrecht University',
     status: 'active' as const,
     jitProvisioning: true,
-    refusedByPlatform: false,
     config: { idpEntityIds: ['https://login.uu.nl/nidp/saml2/metadata'] },
     createdBy: mockActorRef(`${key}:created-by`),
     updatedBy: null,
@@ -32,7 +31,6 @@ export const mockLtiConnectionResponse = (key = 'connection:lti') =>
     name: 'lms.example.com',
     status: 'active' as const,
     jitProvisioning: false,
-    refusedByPlatform: false,
     config: {
       authorizationEndpoint: 'https://lms.example.com/lti/authorize',
       tokenEndpoint: 'https://lms.example.com/oauth/token',

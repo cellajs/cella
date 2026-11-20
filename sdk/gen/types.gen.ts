@@ -1116,7 +1116,6 @@ export type Connection = {
          */
         logoUrl?: string;
       };
-  refusedByPlatform: boolean;
   createdAt: string;
   createdBy:
     | {
@@ -4193,6 +4192,7 @@ export type ListLtiContextsResponses = {
         | 'retrying'
         | 'failed'
         | 'too_many_members'
+        | 'unreadable_members'
         | 'member_limit'
         | 'no_role'
         | 'inactive'

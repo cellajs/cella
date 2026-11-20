@@ -39,6 +39,7 @@ const importIssues = {
   retrying: 'c:lti_import.retrying',
   failed: 'c:lti_import.failed',
   too_many_members: 'c:lti_import.too_many_members',
+  unreadable_members: 'c:lti_import.unreadable_members',
   member_limit: 'c:lti_import.member_limit',
   no_role: 'c:lti_import.no_role',
   inactive: 'c:lti_import.inactive',
@@ -129,12 +130,7 @@ function LtiConnectionTile({ connection, path }: { connection: Connection; path:
       value={connection.id}
       icon={<GraduationCapIcon />}
       title={connection.name}
-      lead={
-        <>
-          {connection.refusedByPlatform && <p className="text-warning text-sm">{t('c:lti_connection.refused')}</p>}
-          <LtiContexts path={path} connectionId={connection.id} />
-        </>
-      }
+      lead={<LtiContexts path={path} connectionId={connection.id} />}
       meta={
         <DateTooltip date={connection.createdAt}>
           <span>{dateShort(connection.createdAt)}</span>

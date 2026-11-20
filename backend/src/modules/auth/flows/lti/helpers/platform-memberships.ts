@@ -107,16 +107,12 @@ const cacheToken = (key: string, token: { accessToken: string; renewAt: number }
   tokens.set(key, token);
 };
 
-/** A refusal by the platform; `clientUnknown` when it answered a token request with `invalid_client`. */
-type Refusal = { refusal: LtiImportIssue; clientUnknown?: true };
-
-type TokenOutcome = { accessToken: string } | Refusal;
+type TokenOutcome = { accessToken: string } | { refusal: LtiImportIssue };
 
 /**
  * The connection's token for the NRPS scope: the cached one, else a new one from the token endpoint by
  * `client_credentials`, which names no resource, as LTI tools ask. An OAuth error is the platform's answer and a
- * refusal: `invalid_scope`, the scope not granted, is a normal state. `invalid_client` says the platform no longer
- * knows the registration, as after its LTI tool was deleted there.
+ * refusal: `invalid_scope`, the scope not granted, is a normal state.
  * @throws AppError 400 `outbound_request_failed` for any other answer, and what `guardedFetch` throws.
  */
 const platformToken = async (connection: LtiConnection, signingKey: SigningKey, options: PlatformFetchOptions): Promise<TokenOutcome> => {
@@ -138,7 +134,6 @@ const platformToken = async (connection: LtiConnection, signingKey: SigningKey, 
   const answer = parseJson(response.text);
 
   const refusal = response.status >= 400 && response.status < 500 && oauthErrorSchema.safeParse(answer).data;
-  if (refusal && refusal.error === 'invalid_client') return { refusal: 'token_refused', clientUnknown: true };
   if (refusal) return { refusal: refusal.error === 'invalid_scope' ? 'scope_not_granted' : 'token_refused' };
   const token = response.status === 200 && tokenAnswerSchema.safeParse(answer).data;
   if (!token) throw readFailed('token_answer', connection);
@@ -179,7 +174,10 @@ const nextLink = (header: string | null, page: URL) => {
   return undefined;
 };
 
-export type MembersOutcome = { people: LtiMember[]; issue: 'too_many_members' | null } | Refusal;
+type MembersOutcome = { people: LtiMember[]; issue: 'too_many_members' | 'unreadable_members' | null } | { refusal: LtiImportIssue };
+
+/** Whether a membership address asks for part of the list, by role or by resource link (NRPS 2.0, section 2.4.1). */
+export const isFilteredMembershipsUrl = (address: string) => ['role', 'rlid'].some((name) => new URL(address).searchParams.has(name));
 
 /** The pages of a context's membership container from `first`, read with the connection's token. */
 const readMemberPages = async (
@@ -192,6 +190,7 @@ const readMemberPages = async (
   if ('refusal' in token) return token;
 
   const people = new Map<string, LtiMember>();
+  let unreadable = false;
   let renewed = false;
   let page = new URL(first);
   page.searchParams.set('limit', String(membersPageSize));
@@ -216,13 +215,14 @@ const readMemberPages = async (
 
     for (const row of container.members) {
       const member = memberSchema.safeParse(row).data;
+      if (!member) unreadable = true;
       if (!member || member.roles.includes(ltiTestUserRole) || (member.status ?? 'Active') !== 'Active') continue;
       if (people.size >= maxMembers && !people.has(member.user_id)) return { people: [...people.values()], issue: 'too_many_members' };
       people.set(member.user_id, member);
     }
     pages += 1;
     const next = nextLink(response.headers.get('Link'), page);
-    if (!next) return { people: [...people.values()], issue: null };
+    if (!next) return { people: [...people.values()], issue: unreadable ? 'unreadable_members' : null };
     const trusted = trustedMembershipsUrl(next, first);
     if (!trusted) return { refusal: 'address_refused' };
     page = trusted;
@@ -237,9 +237,9 @@ const readMemberPages = async (
  * a key signs and sends nothing. A member that fails validation, names a test user or is not active is left out, and a
  * person listed twice counts once. A 401 gets one new token; any other client error but 408 and 429 is the platform's
  * refusal. The read stops at `maxMembersPages` pages, `maxMembers` people or an aborted `signal`.
- * @returns The people, with `too_many_members` when the platform lists more; or the refusal of the token, marked
- *   `clientUnknown` for `invalid_client`, or of the list, `address_refused` for an address the app does not reach, or
- *   `register_again` for a connection without a key.
+ * @returns The people, with `too_many_members` when the platform lists more, else `unreadable_members` when a row
+ *   failed validation; or the refusal of the token or the list, `address_refused` for an address the app does not
+ *   reach, or `register_again` for a connection without a key.
  * @throws AppError 400 `outbound_request_failed` for an answer that is neither a page nor a refusal, or a platform
  *   that does not answer.
  */

@@ -169,7 +169,7 @@ const enterLtiContext = async (
     // A context another registration of the platform holds is the same place there: its row records what this gives.
     const heldRow = contextRow ?? (await findLtiContext(txCtx, { tenantId: connection.tenantId, issuer: connection.issuer, contextId }));
     if (!heldRow) throw new AppError(409, 'write_conflict', 'warn', { meta: { contextId } });
-    await applyLtiRole(txCtx, { organization, contextId: heldRow.id, channel, userId, seat, role, by: userId });
+    await applyLtiRole(txCtx, { organization, contextId: heldRow.id, listed: false, channel, userId, seat, role, by: userId });
   }
   return { userId, channel, contextRow };
 };
