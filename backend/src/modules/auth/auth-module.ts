@@ -3,6 +3,7 @@ import { authAccountHandlers } from '#/modules/auth/account/account-handlers';
 import { authGeneralHandlers } from '#/modules/auth/core/general/general-handlers';
 import { authLtiHandlers, ltiContextHandlers } from '#/modules/auth/flows/lti/lti-handlers';
 import { ltiMemberImportQueue } from '#/modules/auth/flows/lti/operations/import-lti-members';
+import { rotateLtiConnectionKeys } from '#/modules/auth/flows/lti/operations/rotate-lti-connection-keys';
 import { authMagicLinkHandlers } from '#/modules/auth/flows/magic/magic-handlers';
 import { authOAuthHandlers } from '#/modules/auth/flows/oauth/oauth-handlers';
 import { authPasskeysHandlers } from '#/modules/auth/flows/passkeys/passkeys-handlers';
@@ -17,8 +18,10 @@ defineBackendModule({
   description: `Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google,
     Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover
     sign-up, sign-in, MFA, step-up, email verification and account linking. As an LTI tool the app registers at an LTI
-    platform by Dynamic Registration, imports a course's people from a platform built on the template, and lists each
-    course with how its last import ran for an organization admin.`,
+    platform by Dynamic Registration, imports a course's people from a platform built on the template, lists each
+    course with how its last import ran for an organization admin, and rotates each connection's key.`,
+  // Daily, clear of the nightly retention run: each step of a rotation waits days.
+  jobs: [{ name: 'lti.rotate-connection-keys', cron: '40 4 * * *', run: () => rotateLtiConnectionKeys() }],
   routes: [
     { path: '/auth/', app: authGeneralHandlers },
     { path: '/auth/', app: authAccountHandlers },

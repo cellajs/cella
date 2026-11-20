@@ -101,7 +101,7 @@ export const ltiFinishFormSchema = z.object({
 /** The path of one LTI connection's key set. */
 export const ltiKeySetParamSchema = z.object({ connectionId: validUuidSchema });
 
-/** A JSON Web Key Set (RFC 7517, section 5) of one public RS256 key. */
+/** A JSON Web Key Set (RFC 7517, section 5) of a connection's public RS256 keys: one, and two during a rotation. */
 export const ltiKeySetSchema = z.object({
   keys: z.array(
     z.object({

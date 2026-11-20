@@ -26,7 +26,11 @@ A platform whose configuration names Canvas as its product family makes the laun
 
 Canvas sends what the registration asks for by its privacy level. The name alone is `name_only`, which also sends the person's and the course's SIS ids. Email makes it `public`, which adds the person's picture and, for an observer, the students they observe. The app keeps what the registration asked for and drops the rest.
 
-Each connection gets a key pair of its own, and the registration names that connection's key set on the API. The app stores the connection, waiting, before it calls the platform: a platform that reads the key set while it registers the app, as Brightspace does, finds it. No key rotation is built. Deleting the connection deletes its key, and its key set answers no more.
+Each connection gets a key pair of its own, and the registration names that connection's key set on the API. The app stores the connection, waiting, before it calls the platform: a platform that reads the key set while it registers the app, as Brightspace does, finds it. Deleting the connection deletes its keys, and its key set answers no more.
+
+A connection's key rotates on a schedule, with no new registration and no call to the platform. The jobs worker publishes the next key in the key set beside the current one, under a new key id. The app signs with it only once a platform that keeps the key set had time to read it again. The key it replaces stays published a while longer, then goes.
+
+A platform that reads the key set at every token request, as Canvas does, or keeps it as long as the app allows, accepts every token request throughout a rotation.
 
 A connection takes every deployment of its platform. A platform makes a deployment of the registration in each place an admin installs it, such as an account or a course. The registration's answer may name the first, and the first launch from each records it. The connection lists them, and a context stays one channel whichever deployment launches it.
 
@@ -256,6 +260,7 @@ The template ships the organization's embedded page. An app that maps a context 
 - **A context id two deployments share:** a context is one channel per platform and context id, as LTI Core recommends. A platform whose context ids are unique only within a deployment would turn two contexts into one channel. Canvas and Moodle keep them unique per platform.
 - **A deleted connection:** the LTI tool refuses the platform's launches as from a platform it is not connected to, and the sessions its launches started end.
 - **A connection without a key of its own:** it launches as before, and its contexts under LTI connections ask to register the app at the platform again before members are read.
+- **A platform that keeps the key set longer than the app allows:** once the next key signs, it refuses the token requests until it reads the key set again, and the context under LTI connections says the platform refused a token.
 - **A tenant at its quota of LTI connections:** a new registration link is refused, and so is a registration through a link made before, with a page that says so. That link works once a connection is deleted, unless another registration took the last place while it ran.
 - **A deleted LTI tool:** its tabs leave every channel, a launch of one is refused as of a tab that does not exist, and its tokens stop at their next request.
 
@@ -263,7 +268,6 @@ The template ships the organization's embedded page. An app that maps a context 
 
 - The grade and deep linking services of LTI.
 - Of NRPS, a resource link's members (`rlid`, which the platform refuses) and the differences link.
-- Rotating a connection's key: registering the app again gives a new one.
 - Acting for a person on the platform: an installed LTI tool's token acts only as itself.
 - Launch state in a cookie: the platform's storage is the only place for it.
 - Registrations that every tenant may install: each registration belongs to one tenant.

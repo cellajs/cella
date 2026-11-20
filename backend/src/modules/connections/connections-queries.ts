@@ -1,6 +1,6 @@
-import { and, arrayOverlaps, eq, inArray, ne, not, or, sql } from 'drizzle-orm';
+import { and, arrayOverlaps, eq, inArray, isNotNull, ne, not, or, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import type { UserId } from '#/db/utils/ids';
+import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import { servedColumns } from '#/db/utils/served-columns';
 import { updateStamps } from '#/db/utils/stamps';
 import {
@@ -173,6 +173,22 @@ export const updateConnection = async (ctx: DbContext, { id, tenantId, values }:
     .returning(connectionColumns);
   return row;
 };
+
+/** The ids of the LTI connections that hold keys, whichever tenant holds them: what the key rotation walks. */
+export const findKeyedLtiConnectionIds = async (ctx: DbContext) => {
+  const rows = await ctx.var.db
+    .select({ id: connectionsTable.id })
+    .from(connectionsTable)
+    .where(and(eq(connectionsTable.kind, 'lti'), isNotNull(connectionsTable.privateJwk)));
+  return rows.map(({ id }) => id);
+};
+
+/** Writes an LTI connection's keys, encrypted for its row as `connection-key.ts` encrypts them. */
+export const updateConnectionKeys = (ctx: DbContext, { id, privateJwk, by }: { id: string; privateJwk: string; by: ServiceAccountId }) =>
+  ctx.var.db
+    .update(connectionsTable)
+    .set({ privateJwk, ...updateStamps(by) })
+    .where(eq(connectionsTable.id, id));
 
 /** Deletes one tenant's connection; the deleted row, or undefined when the tenant holds no such connection. */
 export const deleteConnection = async (ctx: DbContext, { id, tenantId }: { id: string; tenantId: string }) => {

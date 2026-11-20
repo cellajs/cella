@@ -1803,7 +1803,7 @@ export const receiveLtiLaunch = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI key set
  *
- * The key set of one LTI connection, the `jwks_uri` the app registered at its platform: the public half of the key pair the connection was given at registration, which signs the client assertions the app sends that platform alone. It answers from before the platform answers the registration until the connection is deleted, and a platform may keep it five minutes. A connection without a key that decrypts answers 404.
+ * The key set of one LTI connection, the `jwks_uri` the app registered at its platform: the public halves of the connection's own keys, which sign the client assertions the app sends that platform alone. It holds one key, and two while the key rotates: the next key is published days before it signs, and the key it replaces stays days after. It answers from before the platform answers the registration until the connection is deleted, and a platform may keep it five minutes. A connection without a key that decrypts answers 404.
  *
  * **GET /auth/lti/connections/{connectionId}/jwks** ·· [getLtiKeySet](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/lti/connections/{connectionId}/jwks) ·· _auth · cella_
  *

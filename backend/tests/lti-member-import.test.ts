@@ -2,7 +2,7 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { getRequestListener } from '@hono/node-server';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { decodeJwt, importJWK, type JWK, jwtVerify } from 'jose';
+import { compactVerify, createLocalJWKSet, decodeJwt, decodeProtectedHeader, importJWK, type JWK, jwtVerify } from 'jose';
 import { nanoid } from 'nanoid';
 import {
   approveLtiInstallation,
@@ -27,7 +27,7 @@ import type { GuardedTransport } from '#/lib/guarded-fetch';
 import { lisContextRoles, lisInstitutionRoles, lisSystemRoles, ltiNrps } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
 import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
-import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
+import { keyOverlap, keyRotationPeriod, mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
 import { maxMembersPages } from '#/modules/auth/flows/lti/helpers/platform-memberships';
 import { ltiKeySetUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
@@ -41,6 +41,7 @@ import {
   requestLtiMemberImport,
 } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
+import { rotateLtiConnectionKeys } from '#/modules/auth/flows/lti/operations/rotate-lti-connection-keys';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
 import { holdConnection } from '#/modules/connections/connections-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -52,6 +53,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
 import { usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
+import type { TimeSpan } from '#/utils/time-span';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization, expectRefusal } from './helpers';
 import {
@@ -967,6 +969,46 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(deleted.response.status).toBe(204);
     expect((await keySetOf(connection.id)).status).toBe(404);
     expect((await keySetOf(generateId())).status).toBe(404);
+  });
+
+  // A platform checks the app's assertions against the key set it read last, from before the rotation or during it: what
+  // the app signs verifies against either set in its time, and a dropped key verifies nothing.
+  it('rotates a connection key without breaking a platform that holds the key set from before or during the rotation', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    const side = await connectToFakePlatform();
+    const api = fakePlatformApi(() => ({ members: [] }));
+    const keySet = async () => createLocalJWKSet({ keys: await publicKeyOf(side.connection.id) });
+    const verifies = (assertion: string, keys: Awaited<ReturnType<typeof keySet>>) =>
+      compactVerify(assertion, keys).then(
+        () => true,
+        () => false,
+      );
+    const signed = async () => {
+      await importLtiMembersOp(side.context.id, api.options);
+      return api.requests.findLast(({ params }) => params)?.params?.get('client_assertion') ?? '';
+    };
+    const later = (span: TimeSpan) => vi.setSystemTime(Date.now() + span.milliseconds());
+
+    const before = await keySet();
+    const first = await signed();
+    later(keyRotationPeriod);
+    await rotateLtiConnectionKeys();
+    expect(await publicKeyOf(side.connection.id)).toHaveLength(2);
+    const during = await keySet();
+    expect(await verifies(await signed(), before)).toBe(true);
+
+    later(keyOverlap);
+    const next = await signed();
+    expect(decodeProtectedHeader(next).kid).not.toBe(decodeProtectedHeader(first).kid);
+    expect([await verifies(first, during), await verifies(next, during)]).toEqual([true, true]);
+
+    later(keyOverlap);
+    await rotateLtiConnectionKeys();
+    const after = await keySet();
+    expect([await verifies(first, after), await verifies(next, after)]).toEqual([false, true]);
   });
 
   // A key copied onto another connection's row fails to decrypt there: that connection holds no key, and says so.
