@@ -73,7 +73,7 @@ export const ltiContextsTable = snakeCase.table(
     ...auditColumns(),
   },
   (table) => [
-    // LTI Core 1.3 (5.4.1) recommends a context id unique per issuer, which keeps a course under two deployments one channel.
+    // LTI Core 1.3 (5.4.1) recommends a context id unique per issuer, which keeps a context under two deployments one channel.
     uniqueIndex('lti_contexts_tenant_id_issuer_context_id_idx').on(table.tenantId, table.issuer, table.contextId),
     index('lti_contexts_connection_id_idx').on(table.connectionId),
     index('lti_contexts_channel_id_idx').on(table.channelId),

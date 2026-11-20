@@ -28,7 +28,7 @@ Canvas sends what the registration asks for by its privacy level. The name alone
 
 Each connection gets a key pair of its own, and the registration names that connection's key set on the API. The app stores the connection, waiting, before it calls the platform: a platform that reads the key set while it registers the app, as Brightspace does, finds it. No key rotation is built. Deleting the connection deletes its key, and its key set answers no more.
 
-A connection takes every deployment of its platform. A platform makes a deployment of the registration in each place an admin installs it, such as an account or a course. The registration's answer may name the first, and the first launch from each records it. The connection lists them, and a course stays one channel whichever deployment launches it.
+A connection takes every deployment of its platform. A platform makes a deployment of the registration in each place an admin installs it, such as an account or a course. The registration's answer may name the first, and the first launch from each records it. The connection lists them, and a context stays one channel whichever deployment launches it.
 
 A connection still waiting is listed nowhere, and one a failed registration left behind goes after a day. A tenant holds a limited number of LTI connections, a tenant quota: past it, a registration link and a registration are refused with a page that says so.
 
@@ -161,7 +161,7 @@ LTI comes from education: its places are courses and groups, and its roles Instr
 
 Outside a school, an Instructor is whoever runs a place, a Learner whoever takes part in it, and a Group any place with members. The template sends every channel as a Group, which fits a project or a team as well as a class.
 
-A list of roles that goes out holds at least one LIS role, and the template's answers send LIS roles only. An app picks its own from the whole LIS vocabulary, which holds Manager, Member and Officer beside the teaching roles. An LTI tool not on the template may read the teaching roles alone, as Moodle's takes a Manager as a learner: an app sends its own choice beside Instructor or Learner.
+The template's answers send LIS roles only. An app picks its own from the whole LIS vocabulary, which holds Manager, Member and Officer beside the teaching roles. An LTI tool not on the template may read the teaching roles alone, as Moodle's takes a Manager as a learner: an app sends its own choice beside Instructor or Learner.
 
 The template's texts call the place a page, and keep the word LTI for admins. An education app puts its own words, such as course and teacher, back through `app.json`.
 
@@ -189,7 +189,7 @@ Before it signs or fetches anything, the app holds to these rules:
 - A token is kept per connection and sent to that connection's membership addresses alone.
 - Every request goes through the guarded fetch, which reaches public HTTPS addresses only.
 
-So members are read from any platform that registers the app by Dynamic Registration and serves NRPS. That is tested end to end against a platform on the template. The registration and the reader are tested against answers shaped like the code of hosted Canvas and Moodle, which no live Canvas, Moodle, Sakai or Brightspace confirmed. No launch from Canvas has been tried, and members are read only after a launch: nothing from Canvas is confirmed end to end.
+So members are read from any platform that registers the app by Dynamic Registration and serves NRPS. That is tested end to end against a platform on the template. The registration and the reader are tested against answers shaped like the code of hosted Canvas and Moodle, which no live Canvas, Moodle, Sakai or Brightspace confirmed.
 
 Each person listed gets the account their own launch finds later, and the role a launch would give them, by the same rules.
 
@@ -266,7 +266,7 @@ The template ships the organization's embedded page. An app that maps a context 
 - Launch state in a cookie: the platform's storage is the only place for it.
 - Registrations that every tenant may install: each registration belongs to one tenant.
 - Binding an embedded page to the frame that launched it: a page on the platform's own origin can frame an embedded page under the person's session.
-- A launch from a live Canvas: none has been run, and what the app sends Canvas follows Canvas's code alone.
+- A launch from a live Canvas: none has been run, and what the app sends Canvas follows Canvas's code alone. Members are read only after a launch: nothing from Canvas is confirmed end to end.
 - Roles named by the app itself, in the `custom` claim as Canvas sends its own.
 
 ## Try it locally
