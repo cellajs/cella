@@ -271,12 +271,28 @@ describe('LTI launch at the app as an LTI tool', async () => {
         type: 'lti_platform_unknown',
       },
       {
-        name: 'several audiences without azp',
-        run: async () => (await launch(connected, { aud: [connected.clientId, 'stranger'] })).response,
+        name: 'another audience beside the client id, with azp naming the client',
+        run: async () => (await launch(connected, { aud: [connected.clientId, 'stranger'], azp: connected.clientId })).response,
         status: 401,
         type: 'lti_launch_invalid',
       },
-      { name: 'expired', run: async () => (await launch(connected, { exp: nowSeconds - 60 })).response, status: 401, type: 'lti_launch_invalid' },
+      {
+        name: 'a header that names no key, signed by the one key of the set',
+        run: async () => {
+          const started = await login(connected);
+          const claims = launchClaims(connected, started.nonce);
+          const idToken = await new SignJWT(claims).setProtectedHeader({ alg: 'RS256' }).sign(connected.platform.privateKey);
+          return finish({ id_token: idToken, state: started.state, storage_value: started.value });
+        },
+        status: 401,
+        type: 'lti_launch_invalid',
+      },
+      {
+        name: 'expired past the leeway',
+        run: async () => (await launch(connected, { exp: nowSeconds - 120 })).response,
+        status: 401,
+        type: 'lti_launch_invalid',
+      },
       {
         name: 'a wrong message type',
         run: async () => (await launch(connected, { [ltiClaims.messageType]: 'LtiDeepLinkingRequest' })).response,

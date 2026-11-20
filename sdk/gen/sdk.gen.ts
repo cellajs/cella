@@ -1717,7 +1717,7 @@ export const registerLtiPlatform = <ThrowOnError extends boolean = true>(
 /**
  * Start an LTI launch
  *
- * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the connection's platform alone; a refusal, text only, by any page.
+ * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the origin of the platform's authorization endpoint and the LTI platform origins the app lists; a refusal, text only, by any page.
  *
  * **GET /auth/lti/login** ·· [initiateLtiLogin](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/lti/login) ·· _auth · cella_
  *
@@ -1743,11 +1743,12 @@ export const initiateLtiLogin = <ThrowOnError extends boolean = true>(
 /**
  * Start an LTI launch by form post
  *
- * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the connection's platform alone; a refusal, text only, by any page. A cross-site form post by design: the CSRF check leaves it out.
+ * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the origin of the platform's authorization endpoint and the LTI platform origins the app lists; a refusal, text only, by any page. A cross-site form post by design: the CSRF check leaves it out.
  *
  * **POST /auth/lti/login** ·· [initiateLtiLoginByPost](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/lti/login) ·· _auth · cella_
  *
  * @param {initiateLtiLoginByPostData} options
+ * @param {string=} options.query.lti_storage_target - `string` (optional)
  * @param {string=} options.body.iss - `string` (optional)
  * @param {string=} options.body.login_hint - `string` (optional)
  * @param {string=} options.body.target_link_uri - `string` (optional)

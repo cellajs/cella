@@ -15,8 +15,11 @@ import { maxLtiDeployments } from '#/modules/connections/connections-schema';
 
 const dbCtx = { var: { db: baseDb } };
 
-/** How far a launch's `iat` may lie from now either way: a platform's clock drifts, and a launch takes seconds. */
+/** How far a launch's `iat` may lie from now either way: the Security Framework leaves the range to the LTI tool. */
 const issuedAtWindowSeconds = 5 * 60;
+
+/** The leeway on a launch's `exp` and `iat` for a platform clock that drifts (Security Framework 1.1, section 5.1.2). */
+const clockSkewSeconds = 60;
 
 /** The claims a valid launch carries, as the launch reads them after every rule passed. */
 const ltiLaunchSchema = z.object({
@@ -75,22 +78,29 @@ const rolesOf = (claims: JWTPayload) => {
 };
 
 /**
- * The checks of a launch, one row per rule, in the order of the 1EdTech Security Framework 1.0 (section 5.1.3) and
- * then LTI Core 1.3 (section 5.3). The first that fails refuses the launch.
+ * The checks of a launch, one row per rule: the key's id, then the order of the 1EdTech Security Framework 1.0 (section
+ * 5.1.3) and LTI Core 1.3 (section 5.3). The first that fails refuses the launch.
  */
 const launchRules: LaunchRule[] = [
+  // The header names the key that signed it (Security Framework 1.1, section 6.3): without it, jose takes a one-key set's key.
+  { rule: 'kid', holds: ({ header }) => typeof header.kid === 'string' && header.kid.length > 0 },
   { rule: 'signature', holds: ({ token, connection }) => isSignedByPlatform(token, connection) },
   { rule: 'alg', holds: ({ header }) => header.alg === 'RS256' },
   { rule: 'issuer', holds: ({ claims, connection }) => claims.iss === connection.issuer },
-  { rule: 'audience', holds: ({ claims, connection }) => audiences(claims).includes(connection.clientId) },
+  // The client id and no other audience, which the LTI tool would have to trust (Security Framework 1.1, section 5.1.3).
   {
-    rule: 'authorized_party',
-    holds: ({ claims, connection }) => (claims.azp === undefined ? audiences(claims).length === 1 : claims.azp === connection.clientId),
+    rule: 'audience',
+    holds: ({ claims, connection }) => {
+      const [audience, ...more] = audiences(claims);
+      return audience === connection.clientId && !more.length;
+    },
   },
-  { rule: 'expiry', holds: ({ claims, nowSeconds }) => typeof claims.exp === 'number' && nowSeconds < claims.exp },
+  { rule: 'authorized_party', holds: ({ claims, connection }) => claims.azp === undefined || claims.azp === connection.clientId },
+  { rule: 'expiry', holds: ({ claims, nowSeconds }) => typeof claims.exp === 'number' && nowSeconds < claims.exp + clockSkewSeconds },
   {
     rule: 'issued_at',
-    holds: ({ claims, nowSeconds }) => typeof claims.iat === 'number' && Math.abs(nowSeconds - claims.iat) <= issuedAtWindowSeconds,
+    holds: ({ claims, nowSeconds }) =>
+      typeof claims.iat === 'number' && Math.abs(nowSeconds - claims.iat) <= issuedAtWindowSeconds + clockSkewSeconds,
   },
   // The nonce is the login's one-use token: spent here with the value platform storage held, so a replay finds nothing.
   {

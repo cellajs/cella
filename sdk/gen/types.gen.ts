@@ -3682,7 +3682,12 @@ export type InitiateLtiLoginByPostData = {
     lti_storage_target?: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * The frame that answers platform storage messages
+     */
+    lti_storage_target?: string;
+  };
   url: '/auth/lti/login';
 };
 

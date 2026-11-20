@@ -18,7 +18,7 @@ import { locationSchema, paginationSchema, tenantOrgParamSchema } from '#/schema
 const formBody = <T>(schema: T) => ({ content: { 'application/x-www-form-urlencoded': { schema } }, required: true });
 
 const loginDescription =
-  "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the connection's platform alone; a refusal, text only, by any page.";
+  "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the origin of the platform's authorization endpoint and the LTI platform origins the app lists; a refusal, text only, by any page.";
 
 const loginResponses = {
   200: { description: 'Login page\n\nA page that stores the launch value in platform storage and moves on to the platform.' },
@@ -72,7 +72,8 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [ltiLoginLimiter],
     summary: 'Start an LTI launch by form post',
     description: `${loginDescription} A cross-site form post by design: the CSRF check leaves it out.`,
-    request: { body: formBody(ltiLoginParamsSchema) },
+    // The spec names the storage frame in the login address (LTI OIDC Login with Client Side postMessages 0.1, section 2.1).
+    request: { query: ltiLoginParamsSchema.pick({ lti_storage_target: true }), body: formBody(ltiLoginParamsSchema) },
     responses: loginResponses,
   }),
   receiveLtiLaunch: xRoute({

@@ -735,7 +735,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     await importLtiMembersOp(context.id, api.options);
     const [token] = api.requests.filter(({ params }) => params);
     expect(token.url.href).toBe('https://sso.canvaslms.com/login/oauth2/token');
-    expect(decodeJwt(token.params?.get('client_assertion') ?? '')).toMatchObject({ iss: '10000000000001', aud: 'sso.canvaslms.com' });
+    expect(decodeJwt(token.params?.get('client_assertion') ?? '')).toMatchObject({ iss: '10000000000001', aud: ['sso.canvaslms.com'] });
     expect(api.memberReads().map(({ url }) => url.href)).toEqual([`${canvas.membershipsUrl('1')}?limit=50`, second]);
     expect(await contextRow(context.id)).toMatchObject({ importReadCount: 2, importIssue: null });
   });
@@ -758,7 +758,10 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
 
     await importLtiMembersOp(context.id, api.options);
     const [token] = api.requests.filter(({ params }) => params);
-    expect(decodeJwt(token.params?.get('client_assertion') ?? '')).toMatchObject({ iss: 'moodle-client', aud: moodle.configuration.token_endpoint });
+    expect(decodeJwt(token.params?.get('client_assertion') ?? '')).toMatchObject({
+      iss: 'moodle-client',
+      aud: [moodle.configuration.token_endpoint],
+    });
     expect(api.memberReads().map(({ url }) => url.href)).toEqual([
       `${moodle.membershipsUrl('2')}?limit=50`,
       `${moodle.membershipsUrl('2')}?limit=50&from=50`,
@@ -947,7 +950,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     const [tokenRequest] = api.requests.filter(({ params }) => params);
     expect(tokenRequest.url.href).toBe(victim.config.tokenEndpoint);
     const assertion = tokenRequest.params?.get('client_assertion') ?? '';
-    expect(decodeJwt(assertion)).toMatchObject({ iss: victim.clientId, sub: victim.clientId, aud: victim.issuer });
+    expect(decodeJwt(assertion)).toMatchObject({ iss: victim.clientId, sub: victim.clientId, aud: [victim.issuer] });
     const [attackerKey] = await publicKeyOf(attacker.id);
     const [victimKey] = await publicKeyOf(victim.id);
     await expect(jwtVerify(assertion, await importJWK(attackerKey, 'RS256'))).resolves.toBeDefined();

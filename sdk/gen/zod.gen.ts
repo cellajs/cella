@@ -1689,6 +1689,10 @@ export const zInitiateLtiLoginByPostBody = z.object({
   lti_storage_target: z.string().max(255).optional(),
 });
 
+export const zInitiateLtiLoginByPostQuery = z.object({
+  lti_storage_target: z.string().max(255).optional(),
+});
+
 export const zReceiveLtiLaunchBody = z.object({
   id_token: z.string().max(32768).optional(),
   state: z.string().max(2048).optional(),

@@ -67,14 +67,15 @@ type SigningKey = NonNullable<Awaited<ReturnType<typeof connectionSigningKey>>>;
 /**
  * A client assertion for the connection's registration (`private_key_jwt`), signed with the connection's own key: a
  * platform verifies it against that registration's key set alone. Its audience is what the platform's configuration
- * names, its authorization server, else its token endpoint, as one string: an opaque value, never read as an address.
+ * names, its authorization server, else its token endpoint: an opaque value, never read as an address. It goes as an
+ * array of one (Security Framework 1.1, section 4.1.1), which Canvas and Moodle take.
  */
 const signClientAssertion = ({ clientId, config }: LtiConnection, { kid, key }: SigningKey) =>
   new SignJWT({})
     .setProtectedHeader({ alg: 'RS256', kid, typ: 'JWT' })
     .setIssuer(clientId)
     .setSubject(clientId)
-    .setAudience(config.authorizationServer ?? config.tokenEndpoint)
+    .setAudience([config.authorizationServer ?? config.tokenEndpoint])
     .setJti(randomUUID())
     .setIssuedAt()
     .setExpirationTime(`${assertionLifetimeSeconds}s`)
