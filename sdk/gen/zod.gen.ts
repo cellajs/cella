@@ -922,6 +922,7 @@ export const zConnection = z.object({
       logoUrl: z.url().max(255).optional(),
     }),
   ]),
+  refusedByPlatform: z.boolean(),
   createdAt: z.string(),
   createdBy: z
     .union([

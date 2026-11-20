@@ -5,14 +5,18 @@ import { nanoid } from 'shared/utils/nanoid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { rateLimitsTable } from '#/middlewares/rate-limiter/rate-limits-db';
 import { buildInsertableProduct } from '#/mocks';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { devicesTable } from '#/modules/auth/core/devices/devices-db';
 import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
 import { tokensTable } from '#/modules/auth/core/tokens/tokens-db';
+import { connectionsTable } from '#/modules/connections/connections-db';
 import { invitationsTable } from '#/modules/memberships/invitations-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { pushSubscriptionsTable } from '#/modules/push/push-subscription-db';
 import { requestsTable } from '#/modules/requests/requests-db';
+import { identitiesTable } from '#/modules/user/identities-db';
 import { hashDeviceIdForUser } from '#/utils/hash-pii';
 import { unreferencedBatchSql } from '../scripts/migrations/10-retention.migration';
 import { memberRole } from './fixtures';
@@ -266,6 +270,67 @@ describe('apply_retention() row rules', () => {
         ),
       kept: crowdedSubscriptions.slice(0, appConfig.maxPushSubscriptionsPerUser),
       removed: crowdedSubscriptions.slice(appConfig.maxPushSubscriptionsPerUser),
+    });
+
+    // An account an LTI member import made goes once nothing holds it; one that signed in, holds a membership, is
+    // younger than the period or belongs to a live connection stays.
+    const [liveConnection] = await db
+      .insert(connectionsTable)
+      .values({
+        tenantId: organization.tenantId,
+        kind: 'lti',
+        issuer: 'https://lms.retention.test',
+        clientId: nanoid(8),
+        name: 'lms',
+        status: 'active',
+      })
+      .returning();
+    const ltiAccount = async ({ at, launched, connectionId, member }: { at: Date; launched?: boolean; connectionId?: string; member?: boolean }) => {
+      const account = await createTestUser(`${nanoid(10)}@retention.test`);
+      const lastSignInAt = launched ? at.toISOString() : null;
+      await db.insert(identitiesTable).values({
+        userId: account.id,
+        kind: 'lti',
+        tenantId: organization.tenantId,
+        provider: 'https://lms.retention.test',
+        subject: nanoid(10),
+        email: null,
+        connectionId: connectionId ?? null,
+        lastSignInAt,
+        createdAt: at.toISOString(),
+      });
+      if (launched) await db.update(actorsTable).set({ lastSignInAt }).where(eq(actorsTable.id, account.id));
+      if (member) {
+        await db.insert(membershipsTable).values({
+          tenantId: organization.tenantId,
+          organizationId: organization.id,
+          channelType: 'organization',
+          channelId: organization.id,
+          userId: account.id,
+          role: memberRole,
+          displayOrder: 1,
+        });
+      }
+      return account.id;
+    };
+    const ltiAccounts = {
+      unheld: await ltiAccount({ at: outside(retention.unlaunchedLtiAccountDays) }),
+      recent: await ltiAccount({ at: inside(retention.unlaunchedLtiAccountDays) }),
+      launched: await ltiAccount({ at: outside(retention.unlaunchedLtiAccountDays), launched: true }),
+      member: await ltiAccount({ at: outside(retention.unlaunchedLtiAccountDays), member: true }),
+      connected: await ltiAccount({ at: outside(retention.unlaunchedLtiAccountDays), connectionId: liveConnection.id }),
+    };
+    cases.push({
+      rule: 'unlaunched LTI accounts',
+      remaining: async () =>
+        (
+          await db
+            .select({ id: actorsTable.id })
+            .from(actorsTable)
+            .where(inArray(actorsTable.id, Object.values(ltiAccounts)))
+        ).map((row) => row.id),
+      kept: [ltiAccounts.recent, ltiAccounts.launched, ltiAccounts.member, ltiAccounts.connected],
+      removed: [ltiAccounts.unheld],
     });
 
     await db.execute(sql`CALL apply_retention()`);

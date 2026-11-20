@@ -117,7 +117,7 @@ export const updateMembershipRole = async (ctx: DbContext, { id, role, by }: { i
 };
 
 /** Deletes memberships by id, only those of the request's organization; an organization membership takes its user's memberships below it along. */
-export const deleteMembershipsByIds = async (ctx: OrgContext, { ids }: { ids: string[] }) => {
+export const deleteMembershipsByIds = async (ctx: { var: Pick<OrgContext['var'], 'db' | 'organizationId'> }, { ids }: { ids: string[] }) => {
   const { db, organizationId } = ctx.var;
   const ofOrganization = eq(membershipsTable.organizationId, organizationId);
   const leaving = db

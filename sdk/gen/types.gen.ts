@@ -1116,6 +1116,7 @@ export type Connection = {
          */
         logoUrl?: string;
       };
+  refusedByPlatform: boolean;
   createdAt: string;
   createdBy:
     | {

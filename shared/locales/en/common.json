@@ -531,6 +531,7 @@
   "lti": "LTI launch",
   "lti_audience.editors": "For those who can change it, members or not",
   "lti_audience.members": "For its members",
+  "lti_connection.refused": "The platform refuses this connection: the LTI tool may have been deleted there.",
   "lti_connections": "LTI connections",
   "lti_connections.text": "The LTI platforms that open this organization inside their own pages, each connected by a registration link from here.",
   "lti_contexts": "LTI contexts",

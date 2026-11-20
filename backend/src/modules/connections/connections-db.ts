@@ -48,6 +48,11 @@ export const connectionsTable = snakeCase.table(
      * (`mintConnectionKey`). Null on a connection registered before keys were made per connection.
      */
     privateJwk: text(),
+    /**
+     * The LTI platform answered the connection's last token request with `invalid_client`: it no longer knows the
+     * registration, as after its LTI tool was deleted there. A token it grants later clears it.
+     */
+    refusedByPlatform: boolean().notNull().default(false),
     ...auditColumns(),
   },
   (table) => [

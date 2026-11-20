@@ -449,8 +449,9 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     }
   });
 
-  // Attack: the platform decides whom it lists, never whom the organization loses or how far anyone already in it falls.
-  it('lowers no organization role and removes no one, listed or not', async () => {
+  // Attack: the platform decides whom it lists, never how far anyone already in the organization falls, or whom it
+  // loses beyond those the connection admitted.
+  it('lowers no organization role and removes no one it did not admit, listed or not', async () => {
     const side = await connectToFakePlatform();
     const unlisted = await createFactorOrgUser(call, side.org.tenantId, side.org.id, `lti-${nanoid(8)}`, memberRole);
     await db
@@ -470,6 +471,82 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(after).toHaveLength(before.length + 1);
     expect(await orgMembershipOf(side.admin.id, side.org.id)).toMatchObject({ role: adminRole });
     expect(await orgMembershipOf(unlisted.id, side.org.id)).toMatchObject({ role: memberRole });
+  });
+
+  const learner = (userId: string, status?: string): Member => ({ user_id: userId, roles: [lisContextRoles.learner], ...(status && { status }) });
+
+  /** Whether the person the platform knows as `subject` holds a membership in the side's organization. */
+  const seated = async (side: { org: { id: string }; issuer: string }, subject: string) => {
+    const [identity] = await db
+      .select({ userId: identitiesTable.userId })
+      .from(identitiesTable)
+      .where(and(eq(identitiesTable.kind, 'lti'), eq(identitiesTable.provider, side.issuer), eq(identitiesTable.subject, subject)));
+    const held = await db
+      .select({ id: membershipsTable.id })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, identity.userId), eq(membershipsTable.channelId, side.org.id)));
+    return held.length > 0;
+  };
+
+  // Contract: a whole list holds a context's current members (NRPS 2.0, sections 2.3 and 2.4.1). Who it leaves out or
+  // names Inactive loses what the context gave them; a membership given another way, or by another context, stays.
+  it('ends what a context gave the people its whole list leaves out or names inactive, and keeps what holds them another way', async () => {
+    const side = await connectToFakePlatform();
+    const invited = await createFactorOrgUser(call, side.org.tenantId, side.org.id, `lti-${nanoid(8)}`, memberRole);
+    await db
+      .insert(identitiesTable)
+      .values({ userId: invited.id, kind: 'lti', tenantId: side.org.tenantId, provider: side.issuer, subject: 'lms-invited', email: null });
+    const other = await addCourse(side, side.connection, `${side.issuer}/api/lti/courses/course-2/memberships`, 'course-2');
+    const first = ['lms-left', 'lms-inactive', 'lms-both', 'lms-invited', 'lms-stays'].map((subject) => learner(subject));
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: first })).options);
+    await importLtiMembersOp(other.id, fakePlatformApi(() => ({ members: [learner('lms-both')] })).options);
+
+    await importLtiMembersOp(
+      side.context.id,
+      fakePlatformApi(() => ({ members: [learner('lms-inactive', 'Inactive'), learner('lms-stays')] })).options,
+    );
+    expect(await seated(side, 'lms-left')).toBe(false);
+    expect(await seated(side, 'lms-inactive')).toBe(false);
+    expect(await seated(side, 'lms-both')).toBe(true);
+    expect(await seated(side, 'lms-invited')).toBe(true);
+    expect(await seated(side, 'lms-stays')).toBe(true);
+    expect(await orgMembershipOf(side.admin.id, side.org.id)).toMatchObject({ role: adminRole });
+
+    // The account stays, and the next import that lists the person admits them again.
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: [learner('lms-left'), learner('lms-stays')] })).options);
+    expect(await seated(side, 'lms-left')).toBe(true);
+  });
+
+  // Attack: only a whole list that names someone says who left. A read cut short, a failed or refused read, or an empty
+  // list ends no one. A token request the platform answers with `invalid_client` marks the connection refused, and the
+  // next token it grants clears it.
+  it('ends nothing after a read cut short, a failed or refused read, or an empty list', async () => {
+    const side = await connectToFakePlatform();
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: [learner('lms-student')] })).options);
+
+    const endless = fakePlatformApi((url) => ({ members: [learner('lms-other')], next: url.href }));
+    await importLtiMembersOp(side.context.id, endless.options);
+    expect(await contextRow(side.context.id)).toMatchObject({ importIssue: 'too_many_members' });
+    const failing = fakePlatformApi(() => new Response('', { status: 500 }));
+    await expect(importLtiMembersOp(side.context.id, failing.options)).rejects.toThrow();
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: [] })).options);
+    expect(await seated(side, 'lms-student')).toBe(true);
+
+    const refusing = fakePlatformApi(() => new Response(null, { status: 401 }), 'invalid_client');
+    await importLtiMembersOp(side.context.id, refusing.options);
+    const refusedByPlatform = async () => {
+      const [row] = await db
+        .select({ refused: connectionsTable.refusedByPlatform })
+        .from(connectionsTable)
+        .where(eq(connectionsTable.id, side.connection.id));
+      return row.refused;
+    };
+    expect(await contextRow(side.context.id)).toMatchObject({ importIssue: 'token_refused' });
+    expect(await refusedByPlatform()).toBe(true);
+    expect(await seated(side, 'lms-student')).toBe(true);
+
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: [learner('lms-student')] })).options);
+    expect(await refusedByPlatform()).toBe(false);
   });
 
   // Attack: a platform that never ends its list holds no import, and no worker, for long. A person it lists without a

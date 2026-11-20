@@ -4,7 +4,15 @@ import type { DbContext } from '#/core/context';
 import type { ActorId, UserId } from '#/db/utils/ids';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { updateStamps } from '#/db/utils/stamps';
-import { type InsertLtiContextModel, type LtiImportIssue, ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
+import {
+  type InsertLtiContextModel,
+  type LtiContextModel,
+  type LtiImportIssue,
+  ltiContextMembershipsTable,
+  ltiContextsTable,
+} from '#/modules/auth/flows/lti/lti-contexts-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { identitiesTable } from '#/modules/user/identities-db';
 import type { OrderDirection } from '#/schemas/common-schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { getEntityTable } from '#/tables';
@@ -63,6 +71,82 @@ export const upsertLtiContext = async (ctx: DbContext, { values, by }: { values:
     })
     .returning();
   return row;
+};
+
+/** A membership a launch or an import of an LTI context gave or found, and whether it made it. */
+export interface LtiAdmission {
+  id: string;
+  created: boolean;
+}
+
+/**
+ * Records that the context gave these memberships of a person it admits, now, as written by `by`: those it made, and
+ * those another context gave. A membership given another way stays unrecorded. Runs under the person's identity lock.
+ */
+export const recordLtiContextMemberships = async (
+  ctx: DbContext,
+  { contextId, admissions, by }: { contextId: string; admissions: LtiAdmission[]; by: ActorId },
+) => {
+  const { membershipId } = ltiContextMembershipsTable;
+  const found = admissions.filter(({ created }) => !created).map(({ id }) => id);
+  const given = found.length
+    ? await ctx.var.db.selectDistinct({ id: membershipId }).from(ltiContextMembershipsTable).where(inArray(membershipId, found))
+    : [];
+  const ids = [...admissions.filter(({ created }) => created).map(({ id }) => id), ...given.map(({ id }) => id)];
+  if (!ids.length) return;
+  // The application's clock, which the read that ends a row compares with.
+  const at = getIsoDate();
+  await ctx.var.db
+    .insert(ltiContextMembershipsTable)
+    .values(ids.map((id) => ({ contextId, membershipId: id, createdAt: at, createdBy: by })))
+    .onConflictDoUpdate({ target: [ltiContextMembershipsTable.contextId, membershipId], set: updateStamps(by, at) });
+};
+
+/** When a launch or an import of the context last admitted the person a row names. */
+const admittedAt = sql`coalesce(${ltiContextMembershipsTable.updatedAt}, ${ltiContextMembershipsTable.createdAt})`;
+
+/**
+ * The people whose memberships the context gave and no launch or import of it admitted since `before`, each once by
+ * the subject the context's platform knows them by.
+ */
+export const findLtiContextPeopleBefore = (
+  ctx: DbContext,
+  { context, before }: { context: Pick<LtiContextModel, 'id' | 'tenantId' | 'issuer'>; before: string },
+) =>
+  ctx.var.db
+    .selectDistinct({ userId: membershipsTable.userId, subject: identitiesTable.subject })
+    .from(ltiContextMembershipsTable)
+    .innerJoin(membershipsTable, eq(membershipsTable.id, ltiContextMembershipsTable.membershipId))
+    .innerJoin(
+      identitiesTable,
+      and(
+        eq(identitiesTable.userId, membershipsTable.userId),
+        eq(identitiesTable.kind, 'lti'),
+        eq(identitiesTable.tenantId, context.tenantId),
+        eq(identitiesTable.provider, context.issuer),
+      ),
+    )
+    .where(and(eq(ltiContextMembershipsTable.contextId, context.id), sql`${admittedAt} < ${before}`));
+
+/**
+ * Ends the record of what the context gave a person, unless a launch or an import of it admitted them since `before`.
+ * Runs under the person's identity lock.
+ * @returns The ids of the memberships it released that no other context gave: those the person holds by LTI no more.
+ */
+export const releaseLtiContextMemberships = async (
+  ctx: DbContext,
+  { contextId, userId, before }: { contextId: string; userId: string; before: string },
+) => {
+  const { membershipId } = ltiContextMembershipsTable;
+  const ofPerson = ctx.var.db.select({ id: membershipsTable.id }).from(membershipsTable).where(eq(membershipsTable.userId, userId));
+  const released = await ctx.var.db
+    .delete(ltiContextMembershipsTable)
+    .where(and(eq(ltiContextMembershipsTable.contextId, contextId), inArray(membershipId, ofPerson), sql`${admittedAt} < ${before}`))
+    .returning({ id: membershipId });
+  if (!released.length) return [];
+  const ids = released.map(({ id }) => id);
+  const stillGiven = await ctx.var.db.selectDistinct({ id: membershipId }).from(ltiContextMembershipsTable).where(inArray(membershipId, ids));
+  return ids.filter((id) => !stillGiven.some((given) => given.id === id));
 };
 
 /** How many contexts of a connection a member import read since `since`. */

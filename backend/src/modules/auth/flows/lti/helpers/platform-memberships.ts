@@ -107,12 +107,16 @@ const cacheToken = (key: string, token: { accessToken: string; renewAt: number }
   tokens.set(key, token);
 };
 
-type TokenOutcome = { accessToken: string } | { refusal: LtiImportIssue };
+/** A refusal by the platform; `clientUnknown` when it answered a token request with `invalid_client`. */
+type Refusal = { refusal: LtiImportIssue; clientUnknown?: true };
+
+type TokenOutcome = { accessToken: string } | Refusal;
 
 /**
  * The connection's token for the NRPS scope: the cached one, else a new one from the token endpoint by
  * `client_credentials`, which names no resource, as LTI tools ask. An OAuth error is the platform's answer and a
- * refusal: `invalid_scope`, the scope not granted, is a normal state.
+ * refusal: `invalid_scope`, the scope not granted, is a normal state. `invalid_client` says the platform no longer
+ * knows the registration, as after its LTI tool was deleted there.
  * @throws AppError 400 `outbound_request_failed` for any other answer, and what `guardedFetch` throws.
  */
 const platformToken = async (connection: LtiConnection, signingKey: SigningKey, options: PlatformFetchOptions): Promise<TokenOutcome> => {
@@ -134,6 +138,7 @@ const platformToken = async (connection: LtiConnection, signingKey: SigningKey, 
   const answer = parseJson(response.text);
 
   const refusal = response.status >= 400 && response.status < 500 && oauthErrorSchema.safeParse(answer).data;
+  if (refusal && refusal.error === 'invalid_client') return { refusal: 'token_refused', clientUnknown: true };
   if (refusal) return { refusal: refusal.error === 'invalid_scope' ? 'scope_not_granted' : 'token_refused' };
   const token = response.status === 200 && tokenAnswerSchema.safeParse(answer).data;
   if (!token) throw readFailed('token_answer', connection);
@@ -174,7 +179,7 @@ const nextLink = (header: string | null, page: URL) => {
   return undefined;
 };
 
-type MembersOutcome = { people: LtiMember[]; issue: 'too_many_members' | null } | { refusal: LtiImportIssue };
+export type MembersOutcome = { people: LtiMember[]; issue: 'too_many_members' | null } | Refusal;
 
 /** The pages of a context's membership container from `first`, read with the connection's token. */
 const readMemberPages = async (
@@ -232,8 +237,9 @@ const readMemberPages = async (
  * a key signs and sends nothing. A member that fails validation, names a test user or is not active is left out, and a
  * person listed twice counts once. A 401 gets one new token; any other client error but 408 and 429 is the platform's
  * refusal. The read stops at `maxMembersPages` pages, `maxMembers` people or an aborted `signal`.
- * @returns The people, with `too_many_members` when the platform lists more; or the refusal of the token or the list,
- *   `address_refused` for an address the app does not reach, or `register_again` for a connection without a key.
+ * @returns The people, with `too_many_members` when the platform lists more; or the refusal of the token, marked
+ *   `clientUnknown` for `invalid_client`, or of the list, `address_refused` for an address the app does not reach, or
+ *   `register_again` for a connection without a key.
  * @throws AppError 400 `outbound_request_failed` for an answer that is neither a page nor a refusal, or a platform
  *   that does not answer.
  */

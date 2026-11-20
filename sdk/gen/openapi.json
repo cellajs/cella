@@ -4521,6 +4521,9 @@
               }
             ]
           },
+          "refusedByPlatform": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string"
           },
@@ -4642,6 +4645,7 @@
           "status",
           "jitProvisioning",
           "config",
+          "refusedByPlatform",
           "createdAt",
           "createdBy",
           "updatedAt",
@@ -4659,6 +4663,7 @@
           "name": "Utrecht University",
           "status": "active",
           "jitProvisioning": true,
+          "refusedByPlatform": false,
           "config": {
             "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
           },
@@ -20925,6 +20930,7 @@
                       "name": "Utrecht University",
                       "status": "active",
                       "jitProvisioning": true,
+                      "refusedByPlatform": false,
                       "config": {
                         "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
                       },
@@ -21425,6 +21431,7 @@
                       "name": "lms.example.com",
                       "status": "active",
                       "jitProvisioning": false,
+                      "refusedByPlatform": false,
                       "config": {
                         "authorizationEndpoint": "https://lms.example.com/lti/authorize",
                         "tokenEndpoint": "https://lms.example.com/oauth/token",

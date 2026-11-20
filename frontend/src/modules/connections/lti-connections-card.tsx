@@ -129,7 +129,12 @@ function LtiConnectionTile({ connection, path }: { connection: Connection; path:
       value={connection.id}
       icon={<GraduationCapIcon />}
       title={connection.name}
-      lead={<LtiContexts path={path} connectionId={connection.id} />}
+      lead={
+        <>
+          {connection.refusedByPlatform && <p className="text-warning text-sm">{t('c:lti_connection.refused')}</p>}
+          <LtiContexts path={path} connectionId={connection.id} />
+        </>
+      }
       meta={
         <DateTooltip date={connection.createdAt}>
           <span>{dateShort(connection.createdAt)}</span>

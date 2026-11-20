@@ -165,7 +165,12 @@ const enterLtiContext = async (
   if (channel.archived) {
     const [membership] = await findMembershipsByUserIdsAndChannel(txCtx, { userIds: [userId], channelId: channel.id });
     if (!membership) throw new AppError(403, 'channel_archived', 'warn', { entityType: channel.entityType });
-  } else await applyLtiRole(txCtx, { organization, channel, userId, seat, role, by: userId });
+  } else {
+    // A context another registration of the platform holds is the same place there: its row records what this gives.
+    const heldRow = contextRow ?? (await findLtiContext(txCtx, { tenantId: connection.tenantId, issuer: connection.issuer, contextId }));
+    if (!heldRow) throw new AppError(409, 'write_conflict', 'warn', { meta: { contextId } });
+    await applyLtiRole(txCtx, { organization, contextId: heldRow.id, channel, userId, seat, role, by: userId });
+  }
   return { userId, channel, contextRow };
 };
 

@@ -6,19 +6,25 @@ import { baseDb } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import type { BackendQueue, MembershipEntity } from '#/lib/module';
 import { getPgBoss } from '#/lib/pg-boss';
-import { type LtiMember, type ReadLtiMembersOptions, readLtiMembers } from '#/modules/auth/flows/lti/helpers/platform-memberships';
+import {
+  type LtiMember,
+  type MembersOutcome,
+  type ReadLtiMembersOptions,
+  readLtiMembers,
+} from '#/modules/auth/flows/lti/helpers/platform-memberships';
 import type { LtiContextModel, LtiImportIssue } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { countLtiImportsSince, findLtiContextById, recordLtiImport, recordLtiImportWaiting } from '#/modules/auth/flows/lti/lti-contexts-queries';
 import { admitLtiPerson, applyLtiRole, ltiRoleIn } from '#/modules/auth/flows/lti/operations/admit-lti-person';
 import { connectionServiceAccountId } from '#/modules/auth/flows/lti/operations/connection-service-account';
+import { endUnlistedLtiMemberships } from '#/modules/auth/flows/lti/operations/end-lti-memberships';
 import { isLtiConnection, type LtiConnection } from '#/modules/connections/connections-db';
-import { findConnectionById, holdConnection } from '#/modules/connections/connections-queries';
+import { findConnectionById, holdConnection, setLtiPlatformRefusal } from '#/modules/connections/connections-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { findTenant } from '#/modules/tenants/tenants-queries';
-import { isoDateAgo } from '#/utils/iso-date';
+import { getIsoDate, isoDateAgo } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -50,6 +56,7 @@ const importedLately = ({ importRanAt }: LtiContextModel) => !!importRanAt && im
 /** What the import writes into, and as whom. */
 interface ImportTarget {
   connection: LtiConnection;
+  context: LtiContextModel;
   channel: MembershipEntity;
   organization: OrganizationModel;
   /** The tenant's member limit; 0 for none. */
@@ -64,14 +71,14 @@ interface ImportTarget {
  *   app's `ltiContextRole` maps them to none, and `connection_gone` once the connection was deleted; nothing is written
  *   for any of them.
  */
-const importPerson = async (ctx: DbContext, { connection, channel, organization, memberQuota, by }: ImportTarget, person: LtiMember) => {
+const importPerson = async (ctx: DbContext, { connection, context, channel, organization, memberQuota, by }: ImportTarget, person: LtiMember) => {
   if (!(await holdConnection(ctx, { id: connection.id }))) return 'connection_gone';
   const role = ltiRoleIn(channel.entityType, { ltiRoles: person.roles, connection });
   if (!role) return 'no_role';
   const { user_id: sub, name, given_name: givenName, family_name: familyName, email } = person;
   const admitted = await admitLtiPerson(ctx, { connection, organization, memberQuota, person: { sub, name, givenName, familyName, email }, by });
   if (!admitted) return 'member_limit';
-  await applyLtiRole(ctx, { organization, channel, userId: admitted.userId, seat: admitted.seat, role, by });
+  await applyLtiRole(ctx, { organization, contextId: context.id, channel, userId: admitted.userId, seat: admitted.seat, role, by });
   return 'imported';
 };
 
@@ -86,9 +93,22 @@ interface ImportLtiMembersOpts extends ReadLtiMembersOptions {
 const forgetsAddress = new Set<LtiImportIssue>(['scope_not_granted', 'members_refused']);
 
 /**
+ * Records on the connection what the read learned of the platform's standing: `invalid_client` says it refuses the
+ * connection, a list it answered says it accepts it. Any other refusal leaves the record as it is.
+ */
+const recordPlatformRefusal = async (
+  ctx: DbContext,
+  { connection, read, by }: { connection: LtiConnection; read: MembersOutcome; by: ServiceAccountId },
+) => {
+  const refused = 'refusal' in read ? read.clientUnknown : false;
+  if (refused !== undefined && refused !== connection.refusedByPlatform) await setLtiPlatformRefusal(ctx, { id: connection.id, refused, by });
+};
+
+/**
  * Imports the people a platform lists for an LTI context into the context's channel, as the connection's service
- * account, and records how it ran on the context. It adds and updates, never removes, and touches no one the platform
- * did not list as active. Run twice, or beside a launch of a listed person, it makes one account per
+ * account, and records how it ran on the context. It admits only people the platform lists as active. After a whole
+ * list that names one, it ends what the context gave the people the list leaves out or names inactive
+ * (`endUnlistedLtiMemberships`). Run twice, or beside a launch of a listed person, it makes one account per
  * person. A person who needs a seat while the member limit leaves none is left out. An inactive connection or tenant,
  * or a channel that is archived or gone, ends it at once. A deleted connection ends it before the next person, without
  * an error and unrecorded. An aborted `signal` ends it before the next page or person. A first attempt while the
@@ -116,12 +136,14 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
     if (connection.status !== 'active' || tenant?.status !== 'active' || !organization || !channel || channel.archived) return record(0, 'inactive');
     if (!retry && (await connectionImportsSpent(connection.id))) return recordLtiImportWaiting(dbCtx, { id: context.id, by });
 
+    const readFrom = getIsoDate();
     const read = await readLtiMembers(connection, context.membershipsUrl, options);
+    await recordPlatformRefusal(dbCtx, { connection, read, by });
     if ('refusal' in read) {
       return recordLtiImport(dbCtx, { id: context.id, readCount: 0, issue: read.refusal, forgetAddress: forgetsAddress.has(read.refusal), by });
     }
 
-    const target: ImportTarget = { connection, channel, organization, memberQuota: tenant.restrictions.quotas.user, by };
+    const target: ImportTarget = { connection, context, channel, organization, memberQuota: tenant.restrictions.quotas.user, by };
     let issue: LtiImportIssue | null = read.issue;
     for (const person of read.people) {
       options.signal?.throwIfAborted();
@@ -131,6 +153,11 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
       // outranks people left without a role.
       if (outcome === 'member_limit') issue = outcome;
       else if (outcome === 'no_role' && !issue) issue = outcome;
+    }
+    // A read cut short, or a list without an active member, says nothing of who left.
+    if (!read.issue && read.people.length) {
+      const ended = await endUnlistedLtiMemberships(target, { listed: read.people, before: readFrom, signal: options.signal });
+      if (ended === 'connection_gone') return;
     }
     await record(read.people.length, issue);
     log.info('LTI members imported', { contextId: context.id, connectionId: connection.id, read: read.people.length, issue });

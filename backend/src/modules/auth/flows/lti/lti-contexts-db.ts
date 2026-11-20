@@ -1,4 +1,4 @@
-import { index, integer, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, integer, primaryKey, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
@@ -7,6 +7,7 @@ import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
 import { isoTimestamp } from '#/db/utils/timestamp-columns';
 import { connectionsTable } from '#/modules/connections/connections-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /**
@@ -80,3 +81,27 @@ export const ltiContextsTable = snakeCase.table(
 
 export type LtiContextModel = typeof ltiContextsTable.$inferSelect;
 export type InsertLtiContextModel = typeof ltiContextsTable.$inferInsert;
+
+/**
+ * The memberships an LTI context gave: one a launch or an import of the context made, and one another context gave
+ * that this one admits too. A membership given another way, such as by an invitation, holds no row and no import ends
+ * it. A row goes with its context or its membership. `updatedAt`, or `createdAt` before a second write, is when a
+ * launch or an import of the context last admitted the person: a complete read ends only the rows not written since
+ * it began.
+ */
+export const ltiContextMembershipsTable = snakeCase.table(
+  'lti_context_memberships',
+  {
+    contextId: uuid()
+      .notNull()
+      .references(() => ltiContextsTable.id, { onDelete: 'cascade' }),
+    membershipId: uuid()
+      .notNull()
+      .references(() => membershipsTable.id, { onDelete: 'cascade' }),
+    ...auditColumns(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.contextId, table.membershipId] }),
+    index('lti_context_memberships_membership_id_idx').on(table.membershipId),
+  ],
+);
