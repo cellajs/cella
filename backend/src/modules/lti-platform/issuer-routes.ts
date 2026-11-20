@@ -7,6 +7,7 @@ import { appErrorHandler } from '#/lib/error';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { configSwitchGate } from '#/middlewares/config-switch';
 import { ltiLaunchLimiter, ltiToolRegistrationLimiter } from '#/middlewares/rate-limiter/limiters';
+import { findSession } from '#/modules/auth/core';
 import { autoPostPage, launchRefusalPage } from '#/modules/lti-platform/helpers/launch-pages';
 import { ltiIssuerPaths, ltiPlatformConfiguration } from '#/modules/lti-platform/helpers/platform-offer';
 import { authorizeLtiLaunchOp } from '#/modules/lti-platform/operations/authorize-lti-launch';
@@ -27,9 +28,9 @@ const authenticationParams = async (ctx: Context<Env>): Promise<Record<string, u
 
 /**
  * The platform's LTI routes the OAuth worker serves under the issuer, beside the provider: the configuration an LTI
- * tool reads, the registration endpoint it posts to and the launch endpoint it sends the browser to. Each answers 404
- * while `has.ltiPlatform` is off. The provider's own dynamic client registration stays off: these routes admit an LTI
- * tool only with a registration token.
+ * tool reads, the registration endpoint it posts to and the launch endpoint it sends the browser to, which reads the
+ * app session. Each answers 404 while `has.ltiPlatform` is off. The provider's own dynamic client registration stays
+ * off: these routes admit an LTI tool only with a registration token.
  */
 export function createLtiIssuerApp(provider: Provider): Hono<Env> {
   const app = new Hono<Env>();
@@ -58,7 +59,9 @@ export function createLtiIssuerApp(provider: Provider): Hono<Env> {
 
   app.on(['GET', 'POST'], `${servicePaths.oauth}${ltiIssuerPaths.authorization}`, ltiLaunchLimiter, async (ctx) => {
     try {
-      return autoPostPage(ctx, await authorizeLtiLaunchOp(await authenticationParams(ctx)));
+      // The app's own session, never the embedded one: a launch starts on the app's pages.
+      const session = await findSession(ctx, 'session');
+      return autoPostPage(ctx, await authorizeLtiLaunchOp(await authenticationParams(ctx), session?.session.id ?? null));
     } catch (err) {
       if (!(err instanceof AppError) || err.type !== 'lti_launch_refused') throw err;
       return launchRefusalPage(ctx, err);

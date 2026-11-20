@@ -18,7 +18,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createSystemAdminUser, createTestOrganization, createTestSession, expectRefusal } from './helpers';
-import { parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
+import { parseForm, sendLtiAuthenticationRequest, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 
@@ -116,29 +116,37 @@ describe('LTI launch', async () => {
     });
     const token = new URL((started.data as { url: string }).url).searchParams.get('token') ?? '';
     const page = await baseApp.fetch(new Request(`http://localhost/lti-launches/~initiate-login?token=${token}`));
-    return { page, login: parseForm(await page.text()) };
+    return { page, login: parseForm(await page.text()), cookie };
   }
 
-  type LoginFields = Record<string, string>;
+  type StartedLaunch = Awaited<ReturnType<typeof startLaunch>>;
 
-  /** What the fake LTI tool sends the browser to: the authentication request of its login fields, with `changes` over it. */
-  async function authorize(login: LoginFields, redirectUri: string, changes: Record<string, string | undefined> = {}) {
+  /**
+   * What the fake LTI tool sends the browser to: the authentication request of a started launch's login fields, with
+   * `changes` over it, in the browser that holds `browserCookie`, by default the one that started the launch; null is a
+   * browser without a session.
+   */
+  async function authorize(
+    { login, cookie }: StartedLaunch,
+    redirectUri: string,
+    changes: Record<string, string | undefined> = {},
+    browserCookie: string | null = cookie,
+  ) {
     const params = {
       scope: 'openid',
       response_type: 'id_token',
       response_mode: 'form_post',
       prompt: 'none',
-      client_id: login.client_id,
+      client_id: login.fields.client_id,
       redirect_uri: redirectUri,
-      login_hint: login.login_hint,
-      lti_message_hint: login.lti_message_hint,
+      login_hint: login.fields.login_hint,
+      lti_message_hint: login.fields.lti_message_hint,
       nonce: nanoid(),
       state: nanoid(),
       ...changes,
     };
     const query = new URLSearchParams(Object.entries(params).flatMap(([key, value]) => (value === undefined ? [] : [[key, value]])));
-    const response = await fetch(`${oauth.issuer}/lti/authorize?${query}`);
-    return { response, params, ...parseForm(await response.text()) };
+    return { params, ...(await sendLtiAuthenticationRequest(oauth.issuer, query, browserCookie ?? undefined)) };
   }
 
   // Commit 4's LTI tool verifies these tokens: the claims LTI Core requires and the ones the app-owned file decides.
@@ -147,7 +155,8 @@ describe('LTI launch', async () => {
     const tool = await installTool(org, 'peer-review.example.com');
     const resourceLinkId = await placeTool(org, tool);
 
-    const { page, login } = await startLaunch(org, resourceLinkId);
+    const started = await startLaunch(org, resourceLinkId);
+    const { page, login } = started;
     expect(page.status).toBe(200);
     expect(login.action).toBe('https://peer-review.example.com/login?lti_storage_target=_parent');
     expect(login.fields).toMatchObject({
@@ -157,7 +166,7 @@ describe('LTI launch', async () => {
       lti_storage_target: '_parent',
     });
 
-    const launch = await authorize(login.fields, tool.redirectUri);
+    const launch = await authorize(started, tool.redirectUri);
     expect(launch.action).toBe(tool.redirectUri);
     expect(launch.fields.state).toBe(launch.params.state);
     const keySet = createRemoteJWKSet(new URL(`${oauth.issuer}/jwks`));
@@ -183,7 +192,7 @@ describe('LTI launch', async () => {
 
     // An approval that releases the name releases its claims the LTI tool asked for, and nothing else.
     const named = await installTool(org, 'named.example.com', ['name']);
-    const namedLaunch = await authorize((await startLaunch(org, await placeTool(org, named))).login.fields, named.redirectUri);
+    const namedLaunch = await authorize(await startLaunch(org, await placeTool(org, named)), named.redirectUri);
     const { payload: namedPayload } = await jwtVerify(namedLaunch.fields.id_token, keySet, { issuer: appConfig.oauthUrl, audience: named.clientId });
     expect(namedPayload.name).toEqual(expect.any(String));
     for (const claim of ['given_name', 'family_name', 'email', 'picture']) expect(namedPayload).not.toHaveProperty(claim);
@@ -192,19 +201,19 @@ describe('LTI launch', async () => {
   it('refuses in place a redirect_uri the client did not register, and posts every later refusal back with its state', async () => {
     const org = await orgWithAdmin();
     const tool = await installTool(org, 'peer-review.example.com');
-    const { login } = await startLaunch(org, await placeTool(org, tool));
+    const started = await startLaunch(org, await placeTool(org, tool));
 
-    const unregistered = await authorize(login.fields, 'https://stranger.example.com/launch');
+    const unregistered = await authorize(started, 'https://stranger.example.com/launch');
     expect(unregistered.response.status).toBe(400);
     expect(unregistered.action).toBe('');
 
-    const noNonce = await authorize(login.fields, tool.redirectUri, { nonce: undefined });
+    const noNonce = await authorize(started, tool.redirectUri, { nonce: undefined });
     expect(noNonce.action).toBe(tool.redirectUri);
     expect(noNonce.fields).toMatchObject({ error: 'invalid_request', state: noNonce.params.state });
     expect(noNonce.fields).not.toHaveProperty('id_token');
 
     // Neither refusal spent the record.
-    expect((await authorize(login.fields, tool.redirectUri)).fields).toHaveProperty('id_token');
+    expect((await authorize(started, tool.redirectUri)).fields).toHaveProperty('id_token');
   });
 
   it('spends a launch record once, and only for the registration it was started for', async () => {
@@ -213,17 +222,40 @@ describe('LTI launch', async () => {
     const other = await installTool(org, 'other-tool.example.com');
     const resourceLinkId = await placeTool(org, tool);
 
-    const { login } = await startLaunch(org, resourceLinkId);
-    expect((await authorize(login.fields, tool.redirectUri)).fields).toHaveProperty('id_token');
-    expect((await authorize(login.fields, tool.redirectUri)).fields).toMatchObject({ error: 'login_required' });
+    const started = await startLaunch(org, resourceLinkId);
+    expect((await authorize(started, tool.redirectUri)).fields).toHaveProperty('id_token');
+    expect((await authorize(started, tool.redirectUri)).fields).toMatchObject({ error: 'login_required' });
     // The login initiation page of a spent record is refused too.
-    const reloaded = await baseApp.fetch(new Request(`http://localhost/lti-launches/~initiate-login?token=${login.fields.lti_message_hint}`));
+    const reloaded = await baseApp.fetch(new Request(`http://localhost/lti-launches/~initiate-login?token=${started.login.fields.lti_message_hint}`));
     expect(reloaded.status).toBe(401);
 
     const second = await startLaunch(org, resourceLinkId);
-    const foreign = await authorize({ ...second.login.fields, client_id: other.clientId }, other.redirectUri);
+    const foreign = await authorize(second, other.redirectUri, { client_id: other.clientId });
     expect(foreign.fields).toMatchObject({ error: 'login_required' });
     expect(foreign.fields).not.toHaveProperty('id_token');
+  });
+
+  // Attack: both hints pass through the LTI tool. A member who starts a launch and has another person's browser run
+  // the login with it would sign that person in to a cookie based LTI tool as the member. The endpoint issues the
+  // token only to the session that started the launch (Security Framework 1.1, section 5.1.1.3).
+  it('issues the ID token only in the browser session that started the launch', async () => {
+    const org = await orgWithAdmin();
+    const tool = await installTool(org, 'peer-review.example.com');
+    const resourceLinkId = await placeTool(org, tool);
+    const otherPerson = await createFactorOrgUser(call, org.org.tenantId, org.org.id, `lti-${nanoid(8)}`, memberRole);
+    const started = await startLaunch(org, resourceLinkId);
+
+    // A browser without a session, another person's, and another browser of the same person.
+    for (const browser of [null, otherPerson.sessionCookie, await createTestSession(org.admin)]) {
+      const launch = await authorize(started, tool.redirectUri, {}, browser);
+      expect(launch.action).toBe(tool.redirectUri);
+      expect(launch.fields).toMatchObject({ error: 'login_required', state: launch.params.state });
+      expect(launch.fields).not.toHaveProperty('id_token');
+    }
+
+    // None of them spent the record: the browser that started the launch still gets its token.
+    const own = await authorize(started, tool.redirectUri);
+    expect(decodeJwt(own.fields.id_token).sub).toBe(org.admin.id);
   });
 
   it('refuses a launch once the installation is disabled or waits for approval, and placing a pending one', async () => {
@@ -232,9 +264,9 @@ describe('LTI launch', async () => {
     const resourceLinkId = await placeTool(org, tool);
 
     for (const values of [{ status: 'disabled' as const }, { status: 'pending' as const }]) {
-      const { login } = await startLaunch(org, resourceLinkId);
+      const started = await startLaunch(org, resourceLinkId);
       await db.update(serviceAccountsTable).set(values).where(eq(serviceAccountsTable.id, tool.installationId));
-      expect((await authorize(login.fields, tool.redirectUri)).fields, values.status).toMatchObject({ error: 'unauthorized_client' });
+      expect((await authorize(started, tool.redirectUri)).fields, values.status).toMatchObject({ error: 'unauthorized_client' });
       await db.update(serviceAccountsTable).set({ status: 'active' }).where(eq(serviceAccountsTable.id, tool.installationId));
     }
 
@@ -259,12 +291,12 @@ describe('LTI launch', async () => {
 
     // A member who may only read the context launches as a Learner, with no institution role.
     const member = await createFactorOrgUser(call, org.org.tenantId, org.org.id, `lti-${nanoid(8)}`, memberRole);
-    const learner = await authorize((await startLaunch(org, resourceLinkId, member.sessionCookie)).login.fields, tool.redirectUri);
+    const learner = await authorize(await startLaunch(org, resourceLinkId, member.sessionCookie), tool.redirectUri);
     expect(decodeJwt(learner.fields.id_token)[ltiClaims.roles]).toEqual([lisContextRoles.learner]);
 
-    const { login } = await startLaunch(org, resourceLinkId, member.sessionCookie);
+    const started = await startLaunch(org, resourceLinkId, member.sessionCookie);
     await db.delete(membershipsTable).where(and(eq(membershipsTable.userId, member.id), eq(membershipsTable.channelId, org.org.id)));
-    const launch = await authorize(login.fields, tool.redirectUri);
+    const launch = await authorize(started, tool.redirectUri);
     expect(launch.fields).toMatchObject({ error: 'access_denied' });
     expect(launch.fields).not.toHaveProperty('id_token');
   });
@@ -293,15 +325,15 @@ describe('LTI launch', async () => {
     const member = await createFactorOrgUser(call, org.org.tenantId, org.org.id, `lti-${nanoid(8)}`, memberRole);
     const asMember = { ...defaultHeaders, Cookie: member.sessionCookie };
     expect(await listed(asMember)).toEqual([resourceLinkId]);
-    const { login } = await startLaunch(org, resourceLinkId, member.sessionCookie);
+    const started = await startLaunch(org, resourceLinkId, member.sessionCookie);
     const changed = await call(updateLtiResourceLink, { path: linkPath, body: { audience: 'editors' }, headers: org.headers });
     expect(changed.data).toMatchObject({ id: resourceLinkId, audience: 'editors' });
 
-    expect((await authorize(login.fields, tool.redirectUri)).fields).toMatchObject({ error: 'access_denied' });
+    expect((await authorize(started, tool.redirectUri)).fields).toMatchObject({ error: 'access_denied' });
     expect(await listed(asMember)).toEqual([]);
     await expectRefusal(await call(startLtiLaunch, { path: linkPath, headers: asMember }), 404, 'not_found');
     expect(await listed(org.headers)).toEqual([resourceLinkId]);
-    expect((await authorize((await startLaunch(org, resourceLinkId)).login.fields, tool.redirectUri)).fields).toHaveProperty('id_token');
+    expect((await authorize(await startLaunch(org, resourceLinkId), tool.redirectUri)).fields).toHaveProperty('id_token');
 
     await db.execute(sql`UPDATE lti_resource_links SET audience = 'everyone' WHERE id = ${resourceLinkId}`);
     expect(await listed(org.headers)).toEqual([]);

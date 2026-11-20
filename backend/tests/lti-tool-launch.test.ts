@@ -42,7 +42,7 @@ import { identitiesTable } from '#/modules/user/identities-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization, createTestUser } from './helpers';
-import { decodeHtml, parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
+import { decodeHtml, parseForm, sendLtiAuthenticationRequest, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser, orgMembershipOf } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
@@ -935,7 +935,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(put).toMatchObject({ subject: 'lti.put_data', origin: new URL(appConfig.oauthUrl).origin });
     storage.set(put.key, put.value ?? '');
     const authorization = new URL(put.next ?? '');
-    const answer = parseForm(await (await fetch(`${oauth.issuer}/lti/authorize${authorization.search}`)).text());
+    const answer = await sendLtiAuthenticationRequest(oauth.issuer, authorization.searchParams, platformSide.admin.sessionCookie);
     expect(answer.action).toBe(ltiLaunchUrl());
 
     const launchPage = await fetchApp('/auth/lti/launch', {

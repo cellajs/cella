@@ -292,9 +292,16 @@ const handedOff = <T extends { id: string; tenantId: string | null }>(row: T) =>
   return { ...row, tenantId: row.tenantId };
 };
 
-/** The handoff token of `kind` a raw value names, and when `id` is given only the row of that id. */
-const handoffNamedBy = ({ kind, rawToken, id }: { kind: HandoffTokenKind; rawToken: string; id?: string }) =>
-  and(eq(tokensTable.secretHash, hashToken(rawToken)), eq(tokensTable.kind, kind), id === undefined ? undefined : eq(tokensTable.id, id));
+type HandoffRef = { kind: HandoffTokenKind; rawToken: string; id?: string; sessionId?: string };
+
+/** The handoff token of `kind` a raw value names, and when `id` or `sessionId` is given only the row of that id or session. */
+const handoffNamedBy = ({ kind, rawToken, id, sessionId }: HandoffRef) =>
+  and(
+    eq(tokensTable.secretHash, hashToken(rawToken)),
+    eq(tokensTable.kind, kind),
+    id === undefined ? undefined : eq(tokensTable.id, id),
+    sessionId === undefined ? undefined : eq(tokensTable.sessionId, sessionId),
+  );
 
 /** Reads the handoff token a raw value names, expired or not, and leaves it in place; undefined when none matches. */
 export const findHandoffToken = async (ctx: DbContext, opts: { kind: HandoffTokenKind; rawToken: string }) => {
@@ -306,7 +313,7 @@ export const findHandoffToken = async (ctx: DbContext, opts: { kind: HandoffToke
  * Deletes the handoff token a raw value names, expired or not: of two concurrent requests, exactly one gets the row.
  * Undefined when none matches.
  */
-export const deleteHandoffToken = async (ctx: DbContext, opts: { kind: HandoffTokenKind; rawToken: string; id?: string }) => {
+export const deleteHandoffToken = async (ctx: DbContext, opts: HandoffRef) => {
   const [spent] = await ctx.var.db.delete(tokensTable).where(handoffNamedBy(opts)).returning(handoffColumns);
   return spent && handedOff(spent);
 };

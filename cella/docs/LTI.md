@@ -85,13 +85,15 @@ Under LTI tools in organization settings, each LTI tool lists its tabs, each a l
 
 A person opens an LTI tool's tab on the platform. From that click to the page inside the frame:
 
-1. The platform checks that the person may read the channel now and is in the tab's audience, and records a launch that works once.
+1. The platform checks that the person may read the channel now and is in the tab's audience, and records a launch that works once, for the session in this browser.
 2. The frame posts a login to the LTI tool, which keeps its state in the platform's storage through the frame.
-3. The platform checks again and signs a statement of who the person is, the tab's channel as the context, their roles and the released fields.
+3. The platform checks again and signs a statement of who the person is, the tab's channel as the context, their roles and the released fields. It signs only for the session that started the launch.
 4. The LTI tool checks the signature and its state, finds or creates the person, and sets their role in the channel the context maps to.
 5. The LTI tool starts an embedded session and shows that channel's embedded page in the frame.
 
 The platform's storage replaces a cookie for the launch state. Every launch checks the person's standing anew: someone who left the channel is refused at their next click.
+
+The LTI tool sends the browser back to the platform from its own site, and the browser sends no session cookie along. A page of the platform then sends the request on from the app's own origin, and that request carries it.
 
 A connection's login and launch pages may be framed by its own platform alone: the origin of its authorization endpoint, and the origin of its own pages when its configuration names one at registration. Their messages go to the authorization origin alone, and only its answers count.
 
@@ -237,6 +239,7 @@ The template ships the organization's embedded page. An app that maps a context 
 - **No role the app takes:** a launch with no context role is refused with a page in the template, and nothing is written. A platform's admin who is not enrolled in the context enrols there first.
 - **A full organization:** a person who would be a new member while the tenant's member limit leaves no seat is refused with a page. Someone who is a member already is never refused for it.
 - **An archived context:** a member gets in with the role they hold. Anyone the launch would add is refused with a page, as joining it is.
+- **A launch run in another browser:** a launch that reaches a browser without the session that started it, another person's or none, signs nobody in. The LTI tool hears that someone has to sign in, and the launch stays for the browser that started it.
 - **A disabled LTI tool:** its tab on the platform says it cannot be opened until an admin enables it again, and its tokens stop at their next request.
 - **A tab switched off or removed:** it leaves the bar, a launch started before is refused, and someone on it lands on the channel's first tab. When the channel shows them no tab of its own, they see its page header alone.
 - **Someone outside a tab's audience:** the tab is not in their bar, and its address and a launch started before are refused as for a tab that does not exist.

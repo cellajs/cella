@@ -63,7 +63,7 @@ import {
   moodlePlatform,
   type PlatformFixture,
 } from './lti-platform-fixtures';
-import { decodeHtml, parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
+import { decodeHtml, parseForm, sendLtiAuthenticationRequest, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser, orgMembershipOf } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
@@ -325,7 +325,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
         body: new URLSearchParams(initiation.fields),
       });
       const stored = pageExchange(await loginPage.text());
-      const answer = parseForm(await (await fetch(`${oauth.issuer}/lti/authorize${new URL(stored.next ?? '').search}`)).text());
+      const answer = await sendLtiAuthenticationRequest(oauth.issuer, new URL(stored.next ?? '').searchParams, cookie);
       const launchPage = await fetchApp('/auth/lti/launch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: new URL(appConfig.oauthUrl).origin },

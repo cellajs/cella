@@ -225,7 +225,7 @@ export const ltiResourceLinkRoutes = createXRoutes(['lti-platform', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Start LTI launch',
     description:
-      "Starts a launch of the resource link's LTI tool for the signed-in user: a one-use launch record, answered as the login initiation page a frame loads. The launch endpoint checks again, when the LTI tool comes back, that the user may read the channel and that the tab opens for them. Requires permission to read its channel and a place in the tab's audience, which a 404 refuses as a tab that does not exist. A tab that does not open is refused with why: switched off, an LTI tool not active, a channel type that holds no tabs or is not allowed for it (409), or an archived channel (403).",
+      "Starts a launch of the resource link's LTI tool for the signed-in user: a one-use launch record, bound to this session and answered as the login initiation page a frame loads. The launch endpoint issues the ID token only to this session, in this browser, and checks again, when the LTI tool comes back, that the user may read the channel and that the tab opens for them. Requires permission to read its channel and a place in the tab's audience, which a 404 refuses as a tab that does not exist. A tab that does not open is refused with why: switched off, an LTI tool not active, a channel type that holds no tabs or is not allowed for it (409), or an archived channel (403).",
     request: { params: ltiResourceLinkParamSchema },
     responses: {
       200: json('Launch started', ltiLaunchStartSchema, {

@@ -41,8 +41,8 @@ export type TokenPolicy =
  * - `oauth-connect` pins a connect to the account that started it, in this browser, for the provider round trip.
  * - `lti-registration` lives as long as the platform's own registration token usually does; `lti-tool-registration`, the
  *   token the app hands an LTI tool as a platform, as long.
- * - `lti-launch` is a launch record: it names the person, the tenant and the resource link, and lives as long as a
- *   frame takes to load the LTI tool's login and come back to the launch endpoint.
+ * - `lti-launch` is a launch record: it names the person, the tenant, the resource link and the session that started
+ *   it, and lives as long as a frame takes to load the LTI tool's login and come back to the launch endpoint.
  * - `lti-nonce` is a launch at the app as an LTI tool: its id goes out as the `nonce`, and its raw value is what the
  *   platform's storage holds for the frame, which the launch posts back. It names the connection, and lives as long as
  *   a platform takes from the login to the launch.

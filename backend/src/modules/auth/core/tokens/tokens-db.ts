@@ -52,7 +52,7 @@ export const tokensTable = snakeCase.table(
     followedInvitationId: uuid().references(() => invitationsTable.id, { onDelete: 'set null' }),
     redirectPath: varchar({ length: maxLength.field }),
     pendingSignUp: jsonb().$type<PendingSignUp>(),
-    /** The session a token is bound to: a step-up link stamps only this session. */
+    /** The session a token is bound to: a step-up link stamps only this session, an LTI launch record signs only in it. */
     sessionId: uuid().references(() => sessionsTable.id, { onDelete: 'cascade' }),
     /** For a `confirm-mfa` challenge: the method the sign-in started with, which the mfa session it ends in records. */
     authStrategy: varchar({ enum: authStrategiesEnum }),

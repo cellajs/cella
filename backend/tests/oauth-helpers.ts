@@ -79,6 +79,23 @@ export const parseForm = (page: string) => {
   return { action: decodeHtml(/<form method="post" action="([^"]*)"/.exec(page)?.[1] ?? ''), fields };
 };
 
+/**
+ * A launch's authentication request at the platform's issuer, as a browser sends it: the navigation from the LTI tool,
+ * which carries no session cookie, then the post of the platform's page that sends it on, with `cookie`, the app
+ * session this browser holds, if any. Returns the page the launch endpoint answers last.
+ */
+export async function sendLtiAuthenticationRequest(issuer: string, query: URLSearchParams, cookie?: string) {
+  const first = await fetch(`${issuer}/lti/authorize?${query}`);
+  const page = parseForm(await first.text());
+  if (page.fields.resubmitted !== '1') return { response: first, ...page };
+  const response = await fetch(new URL(new URL(page.action).pathname, issuer), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...(cookie && { Cookie: cookie }) },
+    body: new URLSearchParams(page.fields),
+  });
+  return { response, ...parseForm(await response.text()) };
+}
+
 export interface TestOauthServer {
   provider: Provider;
   /** `http://127.0.0.1:<port>/oauth`: the mounted prefix, as the reverse proxy would present it. */
