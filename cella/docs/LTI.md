@@ -87,15 +87,13 @@ Under LTI tools in organization settings, each LTI tool lists its tabs, each a l
 
 A person opens an LTI tool's tab on the platform. From that click to the page inside the frame:
 
-1. The platform checks that the person may read the channel now and is in the tab's audience, and records a launch that works once, for the session in this browser.
+1. The platform checks that the person may read the channel now and is in the tab's audience, and records a launch that works once, and only in the browser session that started it.
 2. The frame posts a login to the LTI tool, which keeps its state in the platform's storage through the frame.
-3. The platform checks again and signs a statement of who the person is, the tab's channel as the context, their roles and the released fields. It signs only for the session that started the launch.
+3. The platform checks again and signs a statement of who the person is, the tab's channel as the context, their roles and the released fields.
 4. The LTI tool checks the signature and its state, finds or creates the person, and sets their role in the channel the context maps to.
 5. The LTI tool starts an embedded session and shows that channel's embedded page in the frame.
 
 The platform's storage replaces a cookie for the launch state. Every launch checks the person's standing anew: someone who left the channel is refused at their next click.
-
-The LTI tool sends the browser back to the platform from its own site, and the browser sends no session cookie along. A page of the platform then sends the request on from the app's own origin, and that request carries it.
 
 A connection's login and launch pages may be framed by its own platform alone: the origin of its authorization endpoint, and the origin of its own pages when its configuration names one at registration. Their messages go to the authorization origin alone, and only its answers count.
 

@@ -47,10 +47,18 @@ class LaunchError extends Error {
   constructor(
     readonly error: string,
     readonly description: string,
+    /** What the log records, where it says more than the LTI tool may hear. */
+    readonly reason = description,
   ) {
     super(description);
   }
 }
+
+/**
+ * The answer to a launch no record matches. A browser without a session hears the same: whether a visitor is signed in
+ * is nothing a client learns by sending them here.
+ */
+const noLaunchMatches = 'no launch matches the hints';
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -62,7 +70,7 @@ const assertAuthenticationRequest = (request: AuthenticationRequest) => {
   if (!request.nonce) throw new LaunchError('invalid_request', 'nonce is required');
   if (request.prompt !== 'none') throw new LaunchError('invalid_request', 'prompt must be none');
   const { login_hint: loginHint, lti_message_hint: messageHint } = request;
-  if (!loginHint || !messageHint || !uuidPattern.test(loginHint)) throw new LaunchError('login_required', 'no launch matches the hints');
+  if (!loginHint || !messageHint || !uuidPattern.test(loginHint)) throw new LaunchError('login_required', noLaunchMatches);
   return { nonce: request.nonce, loginHint, messageHint };
 };
 
@@ -85,7 +93,7 @@ const spendLaunchRecord = async ({ loginHint, messageHint, clientId, sessionId }
   });
   const target = record?.ltiResourceLinkId ? await findLtiLaunchTarget(dbCtx, { resourceLinkId: record.ltiResourceLinkId }) : undefined;
   if (!record?.createdBy || !target || target.client.id !== clientId || target.resourceLink.tenantId !== record.tenantId) {
-    throw new LaunchError('login_required', 'no launch matches the hints');
+    throw new LaunchError('login_required', noLaunchMatches);
   }
   return { personId: record.createdBy, target };
 };
@@ -191,7 +199,7 @@ export async function authorizeLtiLaunchOp(params: Record<string, unknown>, sess
   try {
     const { nonce, loginHint, messageHint } = assertAuthenticationRequest(request);
     if (!sessionId) {
-      if (request.resubmitted) throw new LaunchError('login_required', 'no session in this browser');
+      if (request.resubmitted) throw new LaunchError('login_required', noLaunchMatches, 'no session in this browser');
       return resubmission(request);
     }
     const { personId, target } = await spendLaunchRecord({ loginHint, messageHint, clientId: registration.id, sessionId });
@@ -200,7 +208,7 @@ export async function authorizeLtiLaunchOp(params: Record<string, unknown>, sess
     return answer({ id_token: idToken });
   } catch (err) {
     if (!(err instanceof LaunchError)) throw err;
-    log.warn('LTI launch refused', { clientId: registration.id, error: err.error, reason: err.description });
+    log.warn('LTI launch refused', { clientId: registration.id, error: err.error, reason: err.reason });
     return answer({ error: err.error, error_description: err.description });
   }
 }

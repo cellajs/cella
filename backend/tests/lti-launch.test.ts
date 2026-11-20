@@ -245,11 +245,12 @@ describe('LTI launch', async () => {
     const otherPerson = await createFactorOrgUser(call, org.org.tenantId, org.org.id, `lti-${nanoid(8)}`, memberRole);
     const started = await startLaunch(org, resourceLinkId);
 
-    // A browser without a session, another person's, and another browser of the same person.
+    // A browser without a session, another person's, and another browser of the same person, all with one answer: the
+    // LTI tool learns nothing of whether a visitor is signed in.
     for (const browser of [null, otherPerson.sessionCookie, await createTestSession(org.admin)]) {
       const launch = await authorize(started, tool.redirectUri, {}, browser);
       expect(launch.action).toBe(tool.redirectUri);
-      expect(launch.fields).toMatchObject({ error: 'login_required', state: launch.params.state });
+      expect(launch.fields).toEqual({ error: 'login_required', error_description: 'no launch matches the hints', state: launch.params.state });
       expect(launch.fields).not.toHaveProperty('id_token');
     }
 
