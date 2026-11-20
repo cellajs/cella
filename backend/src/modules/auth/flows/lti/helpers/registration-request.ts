@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { ltiNrps, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
+import { canvasMembers, ltiNrps, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 
 /** Where a platform starts a launch's login. */
 const ltiLoginUrl = () => `${appConfig.backendAuthUrl}/lti/login`;
@@ -10,13 +10,6 @@ export const ltiLaunchUrl = () => `${appConfig.backendAuthUrl}/lti/launch`;
 /** The key set of one LTI connection (`getLtiKeySet`): the public key its client assertions are signed with. */
 export const ltiKeySetUrl = (connectionId: string) => `${appConfig.backendAuthUrl}/lti/connections/${connectionId}/jwks`;
 
-/** The members Canvas reads beside the spec's (canvas-lms `Lti::IMS::Registration`), by their full names. */
-const canvasMembers = {
-  courseTabDefaultEnabled: 'https://canvas.instructure.com/lti/course_navigation/default_enabled',
-  visibility: 'https://canvas.instructure.com/lti/visibility',
-  privacyLevel: 'https://canvas.instructure.com/lti/privacy_level',
-} as const;
-
 /**
  * The app as an LTI tool in a Dynamic Registration request for the connection `connectionId`, at a platform of the
  * product family `productFamilyCode`. A platform verifies the app's signatures against that connection's key set alone.
@@ -24,7 +17,8 @@ const canvasMembers = {
  * the app. The claims ask for a person's name, and for their email with `ltiAsksEmail`.
  *
  * Canvas gets members of its own. Without a placement it makes the launch a link a teacher picks for a module: the
- * launch names a course tab, off until a teacher enables it and shown to the course's members alone. Canvas's code and
+ * launch names a course tab, off until a teacher enables it. Its `members` visibility shows the tab to whoever takes
+ * part as a student or reads the course as an admin, an account admin who is not enrolled included. Canvas's code and
  * its documentation disagree on what an absent privacy level means: the request names the one its claims ask for.
  */
 export const ltiRegistrationRequest = (connectionId: string, productFamilyCode: string) => {

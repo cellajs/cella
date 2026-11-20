@@ -15,10 +15,13 @@ import { maxLtiDeployments } from '#/modules/connections/connections-schema';
 
 const dbCtx = { var: { db: baseDb } };
 
-/** How far a launch's `iat` may lie from now either way: the Security Framework leaves the range to the LTI tool. */
+/**
+ * How far a launch's `iat` may lie from now either way, a platform's clock drift included: the Security Framework 1.1
+ * leaves the range to the LTI tool (section 5.1.3) and puts a drift margin at 300 seconds at most (section 7.5.1).
+ */
 const issuedAtWindowSeconds = 5 * 60;
 
-/** The leeway on a launch's `exp` and `iat` for a platform clock that drifts (Security Framework 1.1, section 5.1.2). */
+/** The leeway on a launch's `exp` for a platform clock that drifts (Security Framework 1.1, section 5.1.2). */
 const clockSkewSeconds = 60;
 
 /** The claims a valid launch carries, as the launch reads them after every rule passed. */
@@ -78,11 +81,12 @@ const rolesOf = (claims: JWTPayload) => {
 };
 
 /**
- * The checks of a launch, one row per rule: the key's id, then the order of the 1EdTech Security Framework 1.0 (section
+ * The checks of a launch, one row per rule: the key's id, then the order of the 1EdTech Security Framework 1.1 (section
  * 5.1.3) and LTI Core 1.3 (section 5.3). The first that fails refuses the launch.
  */
 const launchRules: LaunchRule[] = [
-  // The header names the key that signed it (Security Framework 1.1, section 6.3): without it, jose takes a one-key set's key.
+  // The LTI tool's own rule: the certification guide lists a header that names no key as a bad launch, and jose would
+  // take a one-key set's only key for it.
   { rule: 'kid', holds: ({ header }) => typeof header.kid === 'string' && header.kid.length > 0 },
   { rule: 'signature', holds: ({ token, connection }) => isSignedByPlatform(token, connection) },
   { rule: 'alg', holds: ({ header }) => header.alg === 'RS256' },
@@ -99,8 +103,7 @@ const launchRules: LaunchRule[] = [
   { rule: 'expiry', holds: ({ claims, nowSeconds }) => typeof claims.exp === 'number' && nowSeconds < claims.exp + clockSkewSeconds },
   {
     rule: 'issued_at',
-    holds: ({ claims, nowSeconds }) =>
-      typeof claims.iat === 'number' && Math.abs(nowSeconds - claims.iat) <= issuedAtWindowSeconds + clockSkewSeconds,
+    holds: ({ claims, nowSeconds }) => typeof claims.iat === 'number' && Math.abs(nowSeconds - claims.iat) <= issuedAtWindowSeconds,
   },
   // The nonce is the login's one-use token: spent here with the value platform storage held, so a replay finds nothing.
   {

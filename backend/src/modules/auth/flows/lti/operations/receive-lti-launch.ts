@@ -11,7 +11,7 @@ import { log } from '#/utils/logger';
 const dbCtx = { var: { db: baseDb } };
 
 /**
- * A platform's launch post (1EdTech Security Framework 1.0, section 5.1.1.3). It acts on nothing: it answers the
+ * A platform's launch post (1EdTech Security Framework 1.1, section 5.1.1.3). It acts on nothing: it answers the
  * exchange that reads the login's value back from platform storage and posts it, with the ID token and the state,
  * same-origin to the finish route, which checks them all. The state names the connection whose platform answers.
  * @throws AppError 401 `lti_platform_unknown` for a state of no active LTI connection, 401 `lti_launch_invalid` when
@@ -33,6 +33,7 @@ export async function receiveLtiLaunchOp(form: z.infer<typeof ltiLaunchFormSchem
     subject: 'lti.get_data',
     target: state.target,
     origin: new URL(connection.config.authorizationEndpoint).origin,
+    pageOrigin: connection.config.pageOrigin,
     key: ltiStorageKey(state.nonce),
     fields: { id_token: form.id_token, state: form.state },
   };

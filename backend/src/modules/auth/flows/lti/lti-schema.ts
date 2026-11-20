@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { maxLength } from '#/db/utils/constraints';
 import { isFetchableUrl } from '#/lib/guarded-fetch';
-import { ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
+import { canvasMembers, ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { ltiImportIssues } from '#/modules/auth/flows/lti/lti-contexts-db';
-import { orderByQuerySchema, pageQuerySchema, validUuidSchema } from '#/schemas';
+import { orderByQuerySchema, pageQuerySchema, validDomainSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
 /** What a platform opens the registration link with. */
@@ -41,6 +41,8 @@ export const ltiPlatformConfigurationSchema = z.object({
     product_family_code: z.string().max(maxLength.field),
     version: z.string().max(maxLength.field),
     messages_supported: z.array(z.object({ type: z.string().max(maxLength.field) })).max(100),
+    // It goes into a page's `frame-ancestors`: a value that is no bare host, such as a wildcard or a list, is refused.
+    [canvasMembers.accountDomain]: validDomainSchema.optional(),
   }),
 });
 
@@ -68,7 +70,7 @@ const idTokenSchema = z
   .optional();
 
 /**
- * A platform's login initiation (1EdTech Security Framework 1.0, section 5.1.1.1; LTI Core 1.3, section 4.1), as GET
+ * A platform's login initiation (1EdTech Security Framework 1.1, section 5.1.1.1; LTI Core 1.3, section 4.1), as GET
  * query or POST form. Every member is optional here: the login refuses a missing one with its own page.
  */
 export const ltiLoginParamsSchema = z.object({
@@ -81,7 +83,7 @@ export const ltiLoginParamsSchema = z.object({
   lti_storage_target: z.string().max(maxLength.field).optional().describe('The frame that answers platform storage messages'),
 });
 
-/** What a platform posts to the launch address (1EdTech Security Framework 1.0, section 5.1.1.3): an ID token, or an error. */
+/** What a platform posts to the launch address (1EdTech Security Framework 1.1, section 5.1.1.3): an ID token, or an error. */
 export const ltiLaunchFormSchema = z.object({
   id_token: idTokenSchema.describe('The signed launch'),
   state: z.string().max(maxLength.url).optional().describe('The state the login sent'),

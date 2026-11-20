@@ -18,8 +18,9 @@ const nrpsHeaders = { 'Content-Type': ltiNrps.mediaType };
 /**
  * Instructure's hosted Canvas (canvas-lms `SecurityController#openid_configuration`, `Lti::Oidc.auth_domain`): the
  * issuer `https://canvas.instructure.com` serves the configuration, every endpoint sits on the sign-in host
- * `sso.canvaslms.com`, `authorization_server` is that host bare, and members are on the school's own domain at
- * `/api/lti/courses/:id/names_and_roles`. The registration answer (`DynamicRegistrationController#render_registration`)
+ * `sso.canvaslms.com`, `authorization_server` is that host bare, the platform configuration names the school's domain
+ * as its account domain, and members are on that domain at `/api/lti/courses/:id/names_and_roles`. The registration
+ * answer (`DynamicRegistrationController#render_registration`)
  * names the deployment and the registration's address beside the client id.
  */
 export const canvasPlatform = (schoolHost: string, clientId: string): PlatformFixture => {
@@ -45,6 +46,7 @@ export const canvasPlatform = (schoolHost: string, clientId: string): PlatformFi
         product_family_code: 'canvas',
         version: 'OpenSource',
         messages_supported: [{ type: 'LtiResourceLinkRequest' }],
+        'https://canvas.instructure.com/lti/account_domain': schoolHost,
       },
     },
     registration: {

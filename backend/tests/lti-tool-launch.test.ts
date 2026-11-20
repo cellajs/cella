@@ -109,7 +109,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
   async function connect(
     platform: Platform,
     deploymentIds = ['deployment-1'],
-    { org: existing, clientId = `${platform.name}-client` }: { org?: TestOrganization; clientId?: string } = {},
+    { org: existing, clientId = `${platform.name}-client`, pageOrigin }: { org?: TestOrganization; clientId?: string; pageOrigin?: string } = {},
   ) {
     const org = existing ?? (await createTestOrganization());
     const issuer = `https://${platform.name}.example.com`;
@@ -129,6 +129,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
           authorizationEndpoint: `${issuer}/authorize`,
           tokenEndpoint: `https://auth.${platform.name}.example.net/token`,
           jwksUri: platform.jwksUri,
+          ...(pageOrigin && { pageOrigin }),
           productFamilyCode: 'test',
           version: '1',
           deploymentIds,
@@ -200,14 +201,16 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(embeddedCookieOf(response).cookie).toBeUndefined();
   };
 
-  // Contract: Canvas frames the LTI tool in the school's page and signs in on a host of its own. The login and launch
-  // pages let that host and the origins `ltiFrameAncestors` lists frame them, and message that host alone.
-  it('lets the authorization origin and the listed origins frame the login and launch pages, which message the authorization origin alone', async () => {
-    onTestFinished(overrideConfig(appConfig, { ltiFrameAncestors: ['https://school.instructure.com'] }));
-    const connected = await connect(await fakePlatform('canvas'));
+  // Attack: a page on an origin the deploy lists for embedded pages, or one another connection's platform frames from,
+  // frames this connection's login and launch pages to run its launch inside itself. Neither may frame them, and both
+  // storage messages go to the connection's authorization origin.
+  it("lets only the connection's authorization origin and recorded page origin frame its login and launch pages", async () => {
+    onTestFinished(overrideConfig(appConfig, { ltiFrameAncestors: ['https://listed.example.com'] }));
+    const connected = await connect(await fakePlatform('canvas-a'), undefined, { pageOrigin: 'https://school-a.example.com' });
+    await connect(await fakePlatform('canvas-b'), undefined, { pageOrigin: 'https://school-b.example.com' });
     // `connect` puts the authorization endpoint under the issuer.
     const authorization = connected.issuer;
-    const framing = `frame-ancestors ${authorization} https://school.instructure.com`;
+    const framing = `frame-ancestors ${authorization} https://school-a.example.com`;
     const frameAncestorsOf = (page: Response) =>
       page.headers
         .get('Content-Security-Policy')

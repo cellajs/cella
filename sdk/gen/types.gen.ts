@@ -1090,6 +1090,10 @@ export type Connection = {
          */
         jwksUri: string;
         /**
+         * The origin of the platform's own pages, which may frame the LTI tool's login and launch pages beside its authorization endpoint: Canvas's account domain, recorded at registration; absent when the platform named none
+         */
+        pageOrigin?: string;
+        /**
          * The platform's product, such as `canvas` or `moodle`
          */
         productFamilyCode: string;

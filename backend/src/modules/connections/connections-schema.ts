@@ -33,6 +33,11 @@ const ltiConnectionConfigSchema = z.object({
     .optional()
     .describe('The audience of a token request at the platform, when it names one apart from its token endpoint'),
   jwksUri: platformAddressSchema.describe("The platform's key set, which signs its launches"),
+  pageOrigin: platformAddressSchema
+    .optional()
+    .describe(
+      "The origin of the platform's own pages, which may frame the LTI tool's login and launch pages beside its authorization endpoint: Canvas's account domain, recorded at registration; absent when the platform named none",
+    ),
   productFamilyCode: z.string().max(maxLength.field).describe("The platform's product, such as `canvas` or `moodle`"),
   version: z.string().max(maxLength.field).describe("The platform's version"),
   deploymentIds: z

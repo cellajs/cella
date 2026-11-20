@@ -10,7 +10,7 @@ LTI lets one app, the platform, open another, the LTI tool, in a frame on its pa
 
 Your app is a **platform** when it hosts other apps: an admin installs an LTI tool and approves it, and a channel switches its tab on. Turn it on with `has.ltiPlatform`, which lets the app frame any HTTPS origin.
 
-Your app is an **LTI tool** when a platform, such as a learning platform or another app on the template, opens it inside one of its pages. Turn it on with the `lti` sign-in method, and list the origins of the platforms that may frame it in `ltiFrameAncestors`.
+Your app is an **LTI tool** when a platform, such as a learning platform or another app on the template, opens it inside one of its pages. Turn it on with the `lti` sign-in method, and list the origins of the platforms that may frame its embedded pages in `ltiFrameAncestors`.
 
 An app can be both. As a platform, it needs the [OAuth worker](./OAUTH.md) on: it signs launches and serves the platform's addresses. It stores the addresses the LTI tool registers and fetches only its key set, to check the LTI tool's token requests. As an LTI tool, the app needs the API and the [jobs worker](./JOBS.md) alone, and fetches the platform's configuration and keys server to server. Outside development, each needs a public HTTPS address.
 
@@ -20,7 +20,9 @@ One pasted address connects two apps, by LTI Dynamic Registration, whichever sid
 
 As an LTI tool, an admin creates a registration link under LTI connections in organization settings. It works once and for a short while. The platform's admin pastes it where the platform adds an LTI tool by URL. The app reads the platform's configuration, registers itself there and lists the platform as a connection.
 
-The registration asks for each person's name, and for their email address only when the app sets `ltiAsksEmail`. It asks for one launch, named after the app. A platform whose configuration names Canvas as its product family makes it a course tab, hidden until a teacher enables it and shown only to people enrolled in the course. Any other platform places the launch where it chooses.
+The registration asks for each person's name, and for their email address only when the app sets `ltiAsksEmail`. It asks for one launch, named after the app. Any platform but Canvas places that launch where it chooses.
+
+A platform whose configuration names Canvas as its product family makes the launch a course tab, hidden until a teacher enables it. Canvas shows it to whoever takes part in the course as a student or may read it as an admin, an account admin who is not enrolled included.
 
 Canvas sends what the registration asks for by its privacy level. The name alone is `name_only`, which also sends the person's and the course's SIS ids. Email makes it `public`, which adds the person's picture and, for an observer, the students they observe. The app keeps the name and email and drops the rest.
 
@@ -91,7 +93,9 @@ A person opens an LTI tool's tab on the platform. From that click to the page in
 
 The platform's storage replaces a cookie for the launch state. Every launch checks the person's standing anew: someone who left the channel is refused at their next click.
 
-The login and launch pages may be framed by the platform's authorization origin and by the origins in `ltiFrameAncestors`. Their messages go to the authorization origin alone, and only its answers count. Canvas frames the LTI tool in the school's page and signs in on a host of its own: list every host the school serves Canvas on.
+A connection's login and launch pages may be framed by its own platform alone: the origin of its authorization endpoint, and the origin of its own pages when its configuration names one at registration. Their messages go to the authorization origin alone, and only its answers count.
+
+Canvas names its pages' host as its account domain: the domain the admin registers from. Register from the host people use Canvas on. A school that reaches Canvas on a second host cannot launch from that host. A connection registered before the app kept this origin is framed by the authorization origin alone, and in a hosted Canvas the browser refuses that frame: register it again.
 
 ## Serving members
 
@@ -238,6 +242,7 @@ The template ships the organization's embedded page. An app that maps a context 
 - **An import that stops short:** the context under LTI connections says why, the members imported before stay, and nobody is removed.
 - **An LTI tool deleted on the platform:** the app is not told, and an organization admin deletes the connection.
 - **A connection with many deployments:** a connection records a bounded number of deployments, and a launch from one more is refused.
+- **A context id two deployments share:** a context is one channel per platform and context id, as LTI Core recommends. A platform whose context ids are unique only within a deployment would turn two contexts into one channel. Canvas and Moodle keep them unique per platform.
 - **A deleted connection:** the LTI tool refuses the platform's launches as from a platform it is not connected to, and the sessions its launches started end.
 - **A connection without a key of its own:** it launches as before, and its contexts under LTI connections ask to register the app at the platform again before members are read.
 - **A tenant at its quota of LTI connections:** a new registration link is refused, and so is a registration through a link made before, with a page that says so. That link works once a connection is deleted, unless another registration took the last place while it ran.

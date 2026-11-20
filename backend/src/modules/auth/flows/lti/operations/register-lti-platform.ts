@@ -7,7 +7,7 @@ import { baseDb } from '#/db/db';
 import { updateStamps } from '#/db/utils/stamps';
 import { constraintErrorType } from '#/lib/error';
 import { guardedFetch, vetAddress } from '#/lib/guarded-fetch';
-import { ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
+import { canvasMembers, ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { readHandoffToken, spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
 import { type PlatformFetchOptions, parseJson } from '#/modules/auth/flows/lti/helpers/platform-fetch';
@@ -162,12 +162,14 @@ export const registerLtiPlatformOp = async (query: z.infer<typeof ltiRegisterQue
     throw platformUnreachable(err);
   });
   const platform = configuration[ltiPlatformConfigurationMember];
+  const accountDomain = platform[canvasMembers.accountDomain];
   const id = generateId();
   const config: LtiConnectionConfig = {
     authorizationEndpoint: configuration.authorization_endpoint,
     tokenEndpoint: configuration.token_endpoint,
     ...(configuration.authorization_server ? { authorizationServer: configuration.authorization_server } : {}),
     jwksUri: configuration.jwks_uri,
+    ...(accountDomain && { pageOrigin: `https://${accountDomain}` }),
     productFamilyCode: platform.product_family_code,
     version: platform.version,
     deploymentIds: [],

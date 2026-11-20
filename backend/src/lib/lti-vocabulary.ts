@@ -4,6 +4,15 @@ export const ltiPlatformConfigurationMember = 'https://purl.imsglobal.org/spec/l
 /** The member of a registration request and its answer that describes the app as an LTI tool. */
 export const ltiToolConfigurationMember = 'https://purl.imsglobal.org/spec/lti-tool-configuration';
 
+/** Canvas's own members beside the spec's (canvas-lms `Lti::IMS::Registration`, `SecurityController`), by their full names. */
+export const canvasMembers = {
+  courseTabDefaultEnabled: 'https://canvas.instructure.com/lti/course_navigation/default_enabled',
+  visibility: 'https://canvas.instructure.com/lti/visibility',
+  privacyLevel: 'https://canvas.instructure.com/lti/privacy_level',
+  /** In its platform configuration: the root account's domain for the host the admin registers from. */
+  accountDomain: 'https://canvas.instructure.com/lti/account_domain',
+} as const;
+
 /** The claims of an LTI message (LTI Core 1.3, section 5), by their full names. */
 export const ltiClaims = {
   messageType: 'https://purl.imsglobal.org/spec/lti/claim/message_type',
