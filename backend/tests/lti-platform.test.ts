@@ -129,7 +129,7 @@ describe('LTI platform', async () => {
   // accepted, and the registration answer says what the platform recorded, each member where the request had it.
   it('takes a registration without a resource link message, with more types, and with addresses off its domain', async () => {
     const admin = await orgWithUser();
-    const request = ltiRegistrationRequest(generateId());
+    const request = ltiRegistrationRequest(generateId(), appConfig.slug);
     const config = request[ltiToolConfigurationMember];
     const registered = async (body: object) => {
       const response = await register((await startRegistration(admin)).token, body);
