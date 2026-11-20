@@ -20,16 +20,17 @@ import { afterAll, afterEach, describe, expect, it, onTestFinished, vi } from 'v
 import { AppError, type ErrorKey, resourceErrorTexts } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
-import { lisContextRoles, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
+import { lisContextRoles, lisInstitutionRoles, ltiClaims, ltiRolesAsRead, ltiTestUserRole } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
 import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
 import { ltiLaunchUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
-import { planLtiContextChannel } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
+import { planLtiContextChannel, storedLtiContextChannel } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
 import { importLtiMembersOp, ltiMemberImportQueue, maxCoursesPerHour } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
+import { ltiContextTypes } from '#/modules/lti-platform/launch-context';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { countTakenSeats } from '#/modules/memberships/operations/organization-seats';
 import { organizationsTable } from '#/modules/organization/organization-db';
@@ -38,7 +39,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
-import { createTestOrganization } from './helpers';
+import { createTestOrganization, createTestUser } from './helpers';
 import { decodeHtml, parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser, orgMembershipOf } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -48,9 +49,11 @@ import { setTestConfig } from './test-utils';
 vi.mock('#/modules/auth/flows/lti/lti-context-channel', async (importOriginal) =>
   (await import('./lti-template-answers')).templateLtiContextChannel(await importOriginal()),
 );
-vi.mock('#/modules/lti-platform/launch-context', async (importOriginal) =>
-  (await import('./lti-template-answers')).templateLaunchContext(await importOriginal()),
-);
+// `ltiContextTypes` answers as the template's until a test makes the organization no context.
+vi.mock('#/modules/lti-platform/launch-context', async (importOriginal) => {
+  const template = (await import('./lti-template-answers')).templateLaunchContext(await importOriginal());
+  return { ...template, ltiContextTypes: vi.fn(template.ltiContextTypes) };
+});
 
 // The app takes both LTI roles: the round trip launches it in itself.
 setTestConfig({ enabledAuthStrategies: ['passkey', 'lti'] });
@@ -263,8 +266,8 @@ describe('LTI launch at the app as an LTI tool', async () => {
       {
         name: 'no roles claim',
         run: async () => (await launch(connected, { [ltiClaims.roles]: undefined })).response,
-        status: 403,
-        type: 'lti_launch_no_roles',
+        status: 401,
+        type: 'lti_launch_invalid',
       },
       {
         name: 'a deployment the connection does not hold',
@@ -330,9 +333,33 @@ describe('LTI launch at the app as an LTI tool', async () => {
       `/auth/lti/login?${new URLSearchParams({ iss: connected.issuer, client_id: connected.clientId, login_hint: 'hint' })}`,
     );
     await expectRefusalPage(noStorage, 400, 'lti_storage_missing');
+  });
 
-    // An empty roles list is a launch without a role: the person arrives with the least privileged role.
-    expect((await launch(connected, { [ltiClaims.roles]: [] })).response.status).toBe(303);
+  // Contract: the template's role mapping as a platform's launch meets it. A context role admits, and so does the
+  // institution role Administrator alone, which platforms send their admins and this side reads as the context's
+  // Administrator; a context role decides whenever there is one. A launch with neither is refused and creates no account.
+  it('admits a context role or the institution role Administrator at the least privileged role, and refuses a launch with neither', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const roleOf = async (sub: string) => {
+      const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.subject, sub));
+      return identity && (await orgMembershipOf(identity.userId, connected.org.id))?.role;
+    };
+    const leastPrivileged = hierarchy.getLeastPrivilegedRole('organization');
+
+    for (const [sub, roles] of [
+      ['lms-learner', [lisContextRoles.learner]],
+      ['lms-admin', [lisInstitutionRoles.administrator]],
+    ] as const) {
+      expect((await launch(connected, { sub, [ltiClaims.roles]: roles })).response.status, sub).toBe(303);
+      expect(await roleOf(sub)).toBe(leastPrivileged);
+    }
+    for (const [sub, roles] of [
+      ['lms-staff', [lisInstitutionRoles.staff]],
+      ['lms-nobody', []],
+    ] as const) {
+      await expectRefusalPage((await launch(connected, { sub, [ltiClaims.roles]: roles })).response, 403, 'lti_launch_no_roles');
+      expect(await roleOf(sub)).toBeUndefined();
+    }
   });
 
   // Two first launches at once: one records its deployment, the other is refused whether it read the connection before that record or after.
@@ -507,6 +534,49 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(await orgMembershipOf(member.id, connected.org.id)).toMatchObject({ role: adminRole });
   });
 
+  // Attack: a launch without a course, such as a platform's navigation outside one, is no way into the organization. It
+  // signs in only a person a launch in a context or an import made a member here, and adds no membership, role or
+  // seat. A context whose types name no LIS course or group, such as Canvas's account and user navigation, counts as
+  // none.
+  it('signs in only a known member from a launch without a course, and adds no membership, role or seat', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const memberships = () => db.select().from(membershipsTable).where(eq(membershipsTable.organizationId, connected.org.id));
+    const outsideCourse = [{ [ltiClaims.context]: undefined }, { [ltiClaims.context]: { id: 'account-1', type: ['Account'] } }];
+    const admin = { [ltiClaims.roles]: [lisInstitutionRoles.administrator] };
+
+    for (const changes of outsideCourse)
+      await expectRefusalPage((await launch(connected, { sub: 'lms-stranger', ...admin, ...changes })).response, 403, 'lti_launch_no_context');
+    expect(await db.select().from(identitiesTable).where(eq(identitiesTable.kind, 'lti'))).toHaveLength(0);
+
+    // An identity the tenant knows from the platform is not enough: its account must hold a seat.
+    const seatless = await createTestUser(`lti-${nanoid(8)}@example.com`);
+    await db.insert(identitiesTable).values({
+      userId: seatless.id,
+      kind: 'lti',
+      tenantId: connected.org.tenantId,
+      provider: connected.issuer,
+      subject: 'lms-seatless',
+      email: null,
+    });
+    await expectRefusalPage(
+      (await launch(connected, { sub: 'lms-seatless', [ltiClaims.context]: undefined })).response,
+      403,
+      'lti_launch_no_context',
+    );
+
+    expect((await launch(connected, { sub: 'lms-known' })).response.status).toBe(303);
+    const before = await memberships();
+    const courses = await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.connectionId, connected.connection.id));
+    // A plain person's launch without a context carries no role at all (LTI Core 1.3, section 5.3.7).
+    for (const changes of outsideCourse) {
+      const launched = await launch(connected, { sub: 'lms-known', [ltiClaims.roles]: [], ...changes });
+      expect(launched.response.status).toBe(303);
+      expect(launched.response.headers.get('Location')).toContain(`channelId=${connected.org.id}`);
+    }
+    expect(await memberships()).toEqual(before);
+    expect(await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.connectionId, connected.connection.id))).toEqual(courses);
+  });
+
   // Attack: an invitation and a launch that both count the last seat free pass the limit together, unless one lock orders them.
   it('lets in one of an invitation and a launch racing for the last seat', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
@@ -668,20 +738,26 @@ describe('LTI launch at the app as an LTI tool', async () => {
     const { org, connection: ltiConnection } = await connect(await fakePlatform('platform-a'));
     const ctx = { var: { db } };
     const context = { id: 'course-1', title: 'Course one', types: [] };
-    const plan = (ltiRoles: string[]) =>
-      planLtiContextChannel(ctx, { connection: { ...ltiConnection, issuer: ltiConnection.issuer ?? '' }, context, ltiRoles });
+    const plan = (ltiRoles: string[]) => () => planLtiContextChannel({ connection: ltiConnection, context, channelType: 'organization', ltiRoles });
 
-    await expect(plan([lisContextRoles.learner])).rejects.toMatchObject({ status: 409, type: 'lti_context_not_set_up' });
-    expect(await plan([lisContextRoles.instructor])).toEqual({ create: context });
-    expect(await plan([lisContextRoles.administrator])).toEqual({ create: context });
+    expect(plan([lisContextRoles.learner])).toThrow(expect.objectContaining({ status: 409, type: 'lti_context_not_set_up' }));
+    expect(plan([lisContextRoles.instructor])()).toEqual({ create: context, channelType: 'organization' });
+    expect(plan([lisContextRoles.administrator])()).toEqual({ create: context, channelType: 'organization' });
+    // An institution Administrator with no context role sets a context up too; a context role decides when there is one.
+    expect(plan(ltiRolesAsRead([lisInstitutionRoles.administrator]))()).toEqual({ create: context, channelType: 'organization' });
+    expect(plan(ltiRolesAsRead([lisContextRoles.learner, lisInstitutionRoles.administrator]))).toThrow(
+      expect.objectContaining({ status: 409, type: 'lti_context_not_set_up' }),
+    );
 
-    // Once a launch recorded the channel it created, everyone of the context lands there.
+    // Once a launch recorded the channel it created, everyone of the context lands there, also through a new
+    // registration of the platform in the tenant.
+    const connection = { tenantId: org.tenantId, issuer: ltiConnection.issuer ?? '' };
+    expect(await storedLtiContextChannel(ctx, { connection, context })).toBeUndefined();
     const instructor = await createFactorOrgUser(call, org.tenantId, org.id, `lti-${nanoid(8)}`, adminRole);
     await upsertLtiContext(ctx, {
       values: {
-        tenantId: org.tenantId,
+        ...connection,
         organizationId: org.id,
-        issuer: ltiConnection.issuer ?? '',
         connectionId: ltiConnection.id,
         contextId: context.id,
         types: [],
@@ -690,97 +766,116 @@ describe('LTI launch at the app as an LTI tool', async () => {
       },
       by: instructor.id,
     });
-    expect(await plan([lisContextRoles.learner])).toMatchObject({ channel: { id: org.id } });
-
-    // A new registration of the platform in the tenant finds the course's channel: an Instructor's launch creates none.
-    const again = { id: generateId(), tenantId: org.tenantId, issuer: ltiConnection.issuer ?? '' };
-    const replanned = await planLtiContextChannel(ctx, { connection: again, context, ltiRoles: [lisContextRoles.instructor] });
-    expect(replanned).toMatchObject({ channel: { id: org.id } });
+    expect(await storedLtiContextChannel(ctx, { connection, context })).toMatchObject({ id: org.id });
   });
 
+  // Attack: a context the app mapped keeps its channel whatever types a later launch sends. A platform that sends a
+  // course again as a navigation context, which the template maps to none, cannot turn it into a launch without a
+  // context: its person still joins the course's channel, and the import goes on filling it.
+  it('keeps the channel of a mapped context when a later launch sends it with other types', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const course = { id: 'course-1', title: 'Course one', type: ['CourseSection'] };
+    expect((await launch(connected, { sub: 'lms-first', [ltiClaims.context]: course })).response.status).toBe(303);
+
+    const later = await launch(connected, { sub: 'lms-later', [ltiClaims.context]: { ...course, type: ['Account'] } });
+    expect(later.response.status).toBe(303);
+    const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.subject, 'lms-later'));
+    expect(await orgMembershipOf(identity.userId, connected.org.id)).toBeDefined();
+  });
+
+  /**
+   * One app as the platform in one tenant and the LTI tool in another, launching itself as the development seed does:
+   * the registration of lti-platform.test.ts, an approval, a tab on the platform's organization, and a launch through
+   * both sides, the test playing the browser and the platform's storage.
+   */
+  async function launchItself(oauth: TestOauthServer) {
+    const orgWithAdmin = async () => {
+      const org = await createTestOrganization();
+      const admin = await createFactorOrgUser(call, org.tenantId, org.id, `lti-${nanoid(8)}`, adminRole);
+      return { org, admin, path: { tenantId: org.tenantId, organizationId: org.id }, headers: { ...defaultHeaders, Cookie: admin.sessionCookie } };
+    };
+    const toolSide = await orgWithAdmin();
+    const platformSide = await orgWithAdmin();
+
+    // The worker answers in-process at the addresses the configuration names.
+    const link = await call(createLtiRegistrationLink, { path: toolSide.path, headers: toolSide.headers });
+    const started = await call(startLtiToolRegistration, {
+      path: platformSide.path,
+      body: { registrationUrl: (link.data as { url: string }).url },
+      headers: platformSide.headers,
+    });
+    const registrationUrl = new URL((started.data as { url: string }).url);
+    const transport: GuardedTransport = ({ url, method, headers, body }) =>
+      fetch(new URL(`${url.pathname}${url.search}`, oauth.issuer), { method, headers, body, redirect: 'manual' });
+    const connection = await registerLtiPlatformOp(
+      {
+        link: registrationUrl.searchParams.get('link') ?? '',
+        openid_configuration: registrationUrl.searchParams.get('openid_configuration') ?? '',
+        registration_token: registrationUrl.searchParams.get('registration_token') ?? undefined,
+      },
+      { transport, resolve: async () => [{ address: '127.0.0.1', family: 4 }] },
+    );
+    if (!isLtiConnection(connection)) throw new Error('the registration stored no LTI connection');
+    // The key set lives on the worker's own listener in a test.
+    await db
+      .update(connectionsTable)
+      .set({ config: { ...connection.config, jwksUri: `${oauth.issuer}/jwks` } })
+      .where(eq(connectionsTable.id, connection.id));
+    const [installationId] = connection.config.deploymentIds;
+    await call(approveLtiInstallation, {
+      path: { ...platformSide.path, ltiInstallationId: installationId },
+      body: { releasedFields: ['name'], grantedScopes: ['user:read'], channelTypes: ['organization'] },
+      headers: platformSide.headers,
+    });
+    const placed = await call(createLtiResourceLink, {
+      path: platformSide.path,
+      body: { channelType: 'organization', channelId: platformSide.org.id, installationId, title: 'Tool side' },
+      headers: platformSide.headers,
+    });
+
+    // The platform's frame loads its login initiation page, which posts cross-site to the LTI tool's login.
+    const launchStart = await call(startLtiLaunch, {
+      path: { ...platformSide.path, ltiResourceLinkId: (placed.data as { id: string }).id },
+      headers: platformSide.headers,
+    });
+    const startToken = new URL((launchStart.data as { url: string }).url).searchParams.get('token') ?? '';
+    const initiation = parseForm(await (await fetchApp(`/lti-launches/~initiate-login?token=${startToken}`)).text());
+    expect(initiation.action).toBe(`${appConfig.backendAuthUrl}/lti/login?lti_storage_target=_parent`);
+    const loginPage = await fetchApp('/auth/lti/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: 'https://lms.example.com' },
+      body: new URLSearchParams(initiation.fields),
+    });
+    expect(loginPage.status).toBe(200);
+    expect(loginPage.headers.get('Content-Security-Policy')).toContain(`frame-ancestors ${new URL(appConfig.oauthUrl).origin}`);
+
+    // The platform's storage, then the redirects and posts between the two sides.
+    const storage = new Map<string, string>();
+    const put = pageExchange(await loginPage.text());
+    expect(put).toMatchObject({ subject: 'lti.put_data', origin: new URL(appConfig.oauthUrl).origin });
+    storage.set(put.key, put.value ?? '');
+    const authorization = new URL(put.next ?? '');
+    const answer = parseForm(await (await fetch(`${oauth.issuer}/lti/authorize${authorization.search}`)).text());
+    expect(answer.action).toBe(ltiLaunchUrl());
+
+    const launchPage = await fetchApp('/auth/lti/launch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: new URL(appConfig.oauthUrl).origin },
+      body: new URLSearchParams(answer.fields),
+    });
+    const launchHtml = await launchPage.text();
+    const get = pageExchange(launchHtml);
+    expect(get).toMatchObject({ subject: 'lti.get_data', key: put.key });
+    const posted = parseForm(launchHtml);
+    const finished = await finish({ id_token: posted.fields.id_token, state: posted.fields.state, storage_value: storage.get(get.key) ?? '' });
+    return { toolSide, platformSide, connection, claims: decodeJwt(posted.fields.id_token), finished };
+  }
+
   // One app is the platform in one tenant and the LTI tool in another, and launches itself, as the development seed does.
-  it('launches itself: a placement in one tenant opens the other tenant as an embedded session of a new account', async () => {
+  it('launches itself: a tab in one tenant opens the other tenant as an embedded session of a new account', async () => {
     const oauth: TestOauthServer = await startTestOauthServer();
     try {
-      const orgWithAdmin = async () => {
-        const org = await createTestOrganization();
-        const admin = await createFactorOrgUser(call, org.tenantId, org.id, `lti-${nanoid(8)}`, adminRole);
-        return { org, admin, path: { tenantId: org.tenantId, organizationId: org.id }, headers: { ...defaultHeaders, Cookie: admin.sessionCookie } };
-      };
-      const toolSide = await orgWithAdmin();
-      const platformSide = await orgWithAdmin();
-
-      // The registration of lti-platform.test.ts: the worker answers in-process at the addresses the configuration names.
-      const link = await call(createLtiRegistrationLink, { path: toolSide.path, headers: toolSide.headers });
-      const started = await call(startLtiToolRegistration, {
-        path: platformSide.path,
-        body: { registrationUrl: (link.data as { url: string }).url },
-        headers: platformSide.headers,
-      });
-      const registrationUrl = new URL((started.data as { url: string }).url);
-      const transport: GuardedTransport = ({ url, method, headers, body }) =>
-        fetch(new URL(`${url.pathname}${url.search}`, oauth.issuer), { method, headers, body, redirect: 'manual' });
-      const connection = await registerLtiPlatformOp(
-        {
-          link: registrationUrl.searchParams.get('link') ?? '',
-          openid_configuration: registrationUrl.searchParams.get('openid_configuration') ?? '',
-          registration_token: registrationUrl.searchParams.get('registration_token') ?? undefined,
-        },
-        { transport, resolve: async () => [{ address: '127.0.0.1', family: 4 }] },
-      );
-      if (!isLtiConnection(connection)) throw new Error('the registration stored no LTI connection');
-      // The key set lives on the worker's own listener in a test.
-      await db
-        .update(connectionsTable)
-        .set({ config: { ...connection.config, jwksUri: `${oauth.issuer}/jwks` } })
-        .where(eq(connectionsTable.id, connection.id));
-      const [installationId] = connection.config.deploymentIds;
-      await call(approveLtiInstallation, {
-        path: { ...platformSide.path, ltiInstallationId: installationId },
-        body: { releasedFields: ['name'] },
-        headers: platformSide.headers,
-      });
-      const placed = await call(createLtiResourceLink, {
-        path: platformSide.path,
-        body: { channelType: 'organization', channelId: platformSide.org.id, installationId, title: 'Tool side' },
-        headers: platformSide.headers,
-      });
-
-      // The platform's frame loads its login initiation page, which posts cross-site to the LTI tool's login.
-      const launchStart = await call(startLtiLaunch, {
-        path: { ...platformSide.path, ltiResourceLinkId: (placed.data as { id: string }).id },
-        headers: platformSide.headers,
-      });
-      const startToken = new URL((launchStart.data as { url: string }).url).searchParams.get('token') ?? '';
-      const initiation = parseForm(await (await fetchApp(`/lti-launches/~initiate-login?token=${startToken}`)).text());
-      expect(initiation.action).toBe(`${appConfig.backendAuthUrl}/lti/login?lti_storage_target=_parent`);
-      const loginPage = await fetchApp('/auth/lti/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: 'https://lms.example.com' },
-        body: new URLSearchParams(initiation.fields),
-      });
-      expect(loginPage.status).toBe(200);
-      expect(loginPage.headers.get('Content-Security-Policy')).toContain(`frame-ancestors ${new URL(appConfig.oauthUrl).origin}`);
-
-      // The test plays the browser: the platform's storage, then the redirects and posts between the two sides.
-      const storage = new Map<string, string>();
-      const put = pageExchange(await loginPage.text());
-      expect(put).toMatchObject({ subject: 'lti.put_data', origin: new URL(appConfig.oauthUrl).origin });
-      storage.set(put.key, put.value ?? '');
-      const authorization = new URL(put.next ?? '');
-      const answer = parseForm(await (await fetch(`${oauth.issuer}/lti/authorize${authorization.search}`)).text());
-      expect(answer.action).toBe(ltiLaunchUrl());
-
-      const launchPage = await fetchApp('/auth/lti/launch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: new URL(appConfig.oauthUrl).origin },
-        body: new URLSearchParams(answer.fields),
-      });
-      const launchHtml = await launchPage.text();
-      const get = pageExchange(launchHtml);
-      expect(get).toMatchObject({ subject: 'lti.get_data', key: put.key });
-      const posted = parseForm(launchHtml);
-      const finished = await finish({ id_token: posted.fields.id_token, state: posted.fields.state, storage_value: storage.get(get.key) ?? '' });
+      const { toolSide, platformSide, connection, finished } = await launchItself(oauth);
 
       expect(finished.status).toBe(303);
       expect(finished.headers.get('Location')).toBe(
@@ -806,6 +901,25 @@ describe('LTI launch at the app as an LTI tool', async () => {
       expect(me.data).toMatchObject({ user: { id: identity.userId, isAnonymous: true } });
       expect(await db.select().from(membershipsTable).where(eq(membershipsTable.userId, identity.userId))).toHaveLength(1);
     } finally {
+      await oauth.close();
+    }
+  });
+
+  // Contract and attack: an app whose organization is no LTI context still holds organization tabs. Their launch carries
+  // no context claim and no member list, and institution roles alone; an LTI tool on the template signs in nobody it
+  // does not know from such a launch.
+  it('launches an organization that is no LTI context without a context, and the receiving app admits nobody new from it', async () => {
+    const oauth: TestOauthServer = await startTestOauthServer();
+    vi.mocked(ltiContextTypes).mockImplementation(() => null);
+    try {
+      const { toolSide, finished, claims } = await launchItself(oauth);
+      expect(claims).not.toHaveProperty(ltiClaims.context);
+      expect(claims).not.toHaveProperty(ltiClaims.namesRoleService);
+      expect(claims[ltiClaims.roles]).toEqual([lisInstitutionRoles.administrator]);
+      await expectRefusalPage(finished, 403, 'lti_launch_no_context');
+      expect(await db.select().from(identitiesTable).where(eq(identitiesTable.tenantId, toolSide.org.tenantId))).toEqual([]);
+    } finally {
+      vi.mocked(ltiContextTypes).mockReset();
       await oauth.close();
     }
   });

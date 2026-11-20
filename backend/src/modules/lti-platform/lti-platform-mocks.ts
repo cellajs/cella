@@ -20,6 +20,7 @@ export const mockLtiInstallationResponse = (key = 'ltiInstallation:default') => 
       releasedFields: ['name' as const],
       requestedScopes: ['user:read' as const],
       grantedScopes: ['user:read' as const],
+      channelTypes: ['organization' as const],
       status: 'active' as const,
       approvedAt: createdAt,
       createdAt,
@@ -40,6 +41,7 @@ export const mockLtiResourceLinkResponse = (key = 'ltiResourceLink:default') => 
       title: 'Peer review',
       custom: { round: '1' },
       enabled: true,
+      audience: 'members' as const,
       createdAt,
       updatedAt: createdAt,
     };
@@ -47,7 +49,7 @@ export const mockLtiResourceLinkResponse = (key = 'ltiResourceLink:default') => 
   return { ...resourceLink, createdBy: mockActorRef(`${key}:created-by`), updatedBy: mockActorRef(`${key}:updated-by`) };
 };
 
-/** A page of a course's members for an installation that releases the name alone. */
+/** A page of an LTI context's members for an installation that releases the name alone. */
 export const mockLtiMembershipContainerResponse = (key = 'ltiMembershipContainer:default') =>
   withFakerSeed(key, () => {
     const organizationId = mockUuid();

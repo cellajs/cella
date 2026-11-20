@@ -18,8 +18,6 @@ import {
   listLtiInstallationTabs,
   listLtiResourceLinks,
   listLtiTabs,
-  type RejectLtiInstallationData,
-  rejectLtiInstallation,
   type StartLtiLaunchData,
   type StartLtiLaunchResponse,
   type StartLtiToolRegistrationData,
@@ -57,7 +55,6 @@ const ltiPlatformKeys = {
     ['lti-platform', 'installation-tabs', tenantId, ...(installationId ? [installationId] : [])] as const,
   startRegistration: ['lti-platform', 'start-registration'] as const,
   approve: ['lti-platform', 'approve'] as const,
-  reject: ['lti-platform', 'reject'] as const,
   delete: ['lti-platform', 'delete'] as const,
   setStatus: ['lti-platform', 'set-status'] as const,
   update: ['lti-platform', 'update'] as const,
@@ -113,22 +110,16 @@ export const ltiInstallationTabsQueryOptions = (path: QueryOrgContext, installat
 type LtiTab = ListLtiTabsResponse['results'][number];
 
 /**
- * Applies a resource link placed, switched or removed (`null`) to the cached tabs of its channel, its bar's and its card's,
- * and reads the admins' lists of tabs again.
+ * Applies a resource link placed, switched or removed (`null`) to the cached tabs of its channel's card, and reads its
+ * bar and the admins' lists of tabs again: whether a tab is in the caller's bar is the server's to say (its audience).
  */
 const setCachedResourceLink = (tenantId: string, channelId: string, linkId: string, link: LtiResourceLink | null) => {
-  queryClient.setQueryData(ltiPlatformKeys.resourceLinks(tenantId, channelId), (oldData: QueryData<LtiResourceLink> | undefined) => {
-    if (!oldData) return oldData;
-    const results = oldData.results.some(({ id }) => id === linkId)
-      ? oldData.results.flatMap((cached) => (cached.id !== linkId ? [cached] : link ? [link] : []))
-      : [...oldData.results, ...(link ? [link] : [])];
-    return { ...oldData, results, totalSize: results.length };
-  });
+  queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.resourceLinks(tenantId, channelId) });
   queryClient.setQueryData(ltiPlatformKeys.tabs(tenantId, channelId), (oldData: QueryData<LtiTab> | undefined) => {
     if (!oldData) return oldData;
     const results = oldData.results.map((tab) => {
       if (link ? tab.id !== link.installationId : tab.resourceLink?.id !== linkId) return tab;
-      return { ...tab, resourceLink: link && { id: link.id, title: link.title, enabled: link.enabled } };
+      return { ...tab, resourceLink: link && { id: link.id, title: link.title, enabled: link.enabled, audience: link.audience } };
     });
     return { ...oldData, results };
   });
@@ -165,18 +156,10 @@ export const useApproveLtiInstallationMutation = () =>
     },
   });
 
-export const useRejectLtiInstallationMutation = () =>
-  useMutation<void, ApiError, MutationData<RejectLtiInstallationData>>({
-    mutationKey: ltiPlatformKeys.reject,
-    mutationFn: async ({ path }) => {
-      await withStepUp(() => rejectLtiInstallation({ path }));
-    },
-    onSuccess: (_, { path }) => {
-      setCachedInstallation(path, path.ltiInstallationId, () => null);
-    },
-  });
-
-/** Deletes an installation in any state, asking the step-up an approval asks; its tabs leave every channel's bar and card. */
+/**
+ * Deletes an installation in any state, asking the step-up an approval asks; its tabs leave every channel's bar and
+ * card. The caller says what happened: a delete or a rejection.
+ */
 export const useDeleteLtiInstallationMutation = () =>
   useMutation<void, ApiError, MutationData<DeleteLtiInstallationData>>({
     mutationKey: ltiPlatformKeys.delete,
@@ -188,7 +171,6 @@ export const useDeleteLtiInstallationMutation = () =>
       queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.tabs(path.tenantId) });
       queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.resourceLinks(path.tenantId) });
       queryClient.removeQueries({ queryKey: ltiPlatformKeys.installationTabs(path.tenantId, path.ltiInstallationId) });
-      toaster.success(t('c:success.delete_resource', { resource: t('c:lti_tool') }));
     },
   });
 
@@ -200,24 +182,33 @@ export const useSetLtiInstallationStatusMutation = () =>
     onSuccess: ({ id, status, updatedAt }, { path }) => {
       setCachedInstallation(path, id, (installation) => ({ ...installation, status, updatedAt }));
       queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.tabs(path.tenantId) });
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.resourceLinks(path.tenantId) });
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.installationTabs(path.tenantId, id) });
     },
   });
 
 /**
- * Replaces the access scopes an approved installation's own tokens may carry; asks the step-up an approval asks. The
- * list is read again after, so a change another admin made meanwhile shows too.
+ * Replaces the access scopes an approved installation's own tokens may carry, or the channel types it may get a tab in;
+ * asks the step-up an approval asks. The lists are read again after: they show a change another admin made meanwhile,
+ * and the tabs a type taken away closed.
  */
 export const useUpdateLtiInstallationMutation = () =>
   useMutation<UpdateLtiInstallationResponse, ApiError, MutationData<UpdateLtiInstallationData>>({
     mutationKey: ltiPlatformKeys.update,
     mutationFn: ({ path, body }) => withStepUp(() => updateLtiInstallation({ path, body })),
-    onSuccess: (updated, { path }) => {
+    onSuccess: (updated, { path, body }) => {
       setCachedInstallation(path, updated.id, () => updated);
-      toaster.success(t('c:success.update_resource', { resource: t('c:api_access') }));
+      toaster.success(
+        body.channelTypes
+          ? t('c:success.update_lti_tab_channel_types', { name: updated.name })
+          : t('c:success.update_resource', { resource: t('c:api_access') }),
+      );
     },
     onSettled: (_data, _error, { path }) => {
       queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.installations(path) });
       queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.tabs(path.tenantId) });
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.resourceLinks(path.tenantId) });
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.installationTabs(path.tenantId, path.ltiInstallationId) });
     },
   });
 
@@ -229,7 +220,7 @@ export const useCreateLtiResourceLinkMutation = () =>
     onSuccess: (link, { path }) => setCachedResourceLink(path.tenantId, link.channelId, link.id, link),
   });
 
-/** Switches a tab on or off, or renames it; the resource link and its id stay. */
+/** Switches a tab on or off, changes whom it opens for or renames it; the resource link and its id stay. */
 export const useUpdateLtiResourceLinkMutation = () =>
   useMutation<UpdateLtiResourceLinkResponse, ApiError, MutationData<UpdateLtiResourceLinkData>>({
     mutationKey: ltiPlatformKeys.updateResourceLink,
@@ -257,9 +248,8 @@ export const useStartLtiLaunchMutation = () =>
     mutationKey: ltiPlatformKeys.startLaunch,
     mutationFn: ({ path }) => startLtiLaunch({ path }),
     meta: { suppressGlobalErrorToast: true },
-    // A tab switched off or removed meanwhile: its channel's tabs are read again, which takes the page off it
+    // A tab removed or closed meanwhile (404, or 409 and 403 with why): the tab bars are read again, which takes it off
     onError: (error, { path }) => {
-      if (error.status === 404 || error.type === 'lti_tab_switched_off')
-        queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.resourceLinks(path.tenantId) });
+      if ([403, 404, 409].includes(error.status)) queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.resourceLinks(path.tenantId) });
     },
   });

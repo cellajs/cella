@@ -76,7 +76,7 @@ export const ltiSeed = async () => {
   await db.transaction((tx) =>
     approveLtiInstallation(
       { var: { db: tx } },
-      { id: installationId, tenantId, releasedFields: ['name'], grantedScopes: ltiToolScopes, by: createdBy },
+      { id: installationId, tenantId, releasedFields: ['name'], grantedScopes: ltiToolScopes, channelTypes: ['organization'], by: createdBy },
     ),
   );
 

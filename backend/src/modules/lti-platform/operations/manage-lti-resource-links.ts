@@ -4,14 +4,16 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { updateStamps } from '#/db/utils/stamps';
 import { ltiNrps } from '#/lib/lti-vocabulary';
-import type { MembershipEntity } from '#/lib/module';
 import { withActorRef, withActorRefs } from '#/modules/actors/actor-refs';
 import { resolveEntities } from '#/modules/entities/entities-queries';
-import { placementContext } from '#/modules/lti-platform/helpers/context-channel';
+import { holdsLtiTabs, linkContext, ltiTabClosure, ltiTabTypeRefusal } from '#/modules/lti-platform/helpers/context-channel';
 import { launchOrigins } from '#/modules/lti-platform/helpers/launch-message';
 import { ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
+import { opensFor } from '#/modules/lti-platform/helpers/tab-audience';
+import type { LtiInstallationModel } from '#/modules/lti-platform/lti-installations-db';
 import {
   deleteLtiResourceLink,
+  findLtiChannelTabs,
   findLtiInstallation,
   findLtiInstallations,
   findLtiResourceLink,
@@ -25,7 +27,7 @@ import type {
   listLtiTabsQuerySchema,
   ltiTabRefusals,
 } from '#/modules/lti-platform/lti-platform-schema';
-import type { LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
+import type { LtiAudience, LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
 import { channelIdColumnsOf } from '#/modules/memberships/helpers/membership-helpers';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { partitionByPermission } from '#/permissions/split-by-permission';
@@ -40,6 +42,7 @@ const toLtiResourceLink = (link: LtiResourceLinkModel) => ({
   title: link.title,
   custom: link.custom,
   enabled: link.enabled,
+  audience: link.audience,
   createdAt: link.createdAt,
   updatedAt: link.updatedAt,
   createdBy: link.createdBy,
@@ -47,86 +50,62 @@ const toLtiResourceLink = (link: LtiResourceLinkModel) => ({
 });
 
 /**
- * A resource link of the organization and its channel, for a caller who may update the channel.
+ * A resource link of the organization, for a caller who may update its channel.
  * @throws AppError 404 `not_found` for no such link, and what `getValidChannel` throws.
  */
 async function getUpdatableLtiResourceLink(ctx: UserContext, id: string) {
   const link = await findLtiResourceLink(ctx, { id, organizationId: ctx.var.organizationId });
   if (!link) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiResourceLink' } });
-  const { entity } = await getValidChannel(ctx, link.channelId, link.channelType, 'update');
-  return { link, channel: entity };
+  await getValidChannel(ctx, link.channelId, link.channelType, 'update');
+  return link;
 }
 
-/** A refusal of `getValidChannel` that answers a question about the caller's access; anything else is thrown. */
-const accessRefusal = (error: unknown) => {
-  if (error instanceof AppError && ['forbidden', 'not_found', 'channel_archived'].includes(error.type)) return error;
-  throw error;
+/**
+ * Refuses an installation a tab in a channel of `channelType` where it may not get one (`ltiTabTypeRefusal`).
+ * @throws AppError 409 `lti_channel_type_holds_no_tabs` or `lti_channel_type_not_allowed` with the channel's type.
+ */
+const assertAllowsLtiTab = (installation: Pick<LtiInstallationModel, 'channelTypes'>, channelType: ChannelEntityType) => {
+  const refusal = ltiTabTypeRefusal(installation, channelType);
+  if (refusal) throw new AppError(409, refusal, 'warn', { entityType: channelType });
 };
 
 /**
- * The course a tab in `channel` launches as (`placementContext`), for a caller who may update the channel: the channel
- * itself, or a channel above it with its name where the caller reads it. `refusal` is why the caller may not update a
- * course above, which placing the tab and switching it take; null when they may. Null when the tab launches as no course.
+ * The tabs of a channel that open (`ltiTabClosure`) and open for the caller (`opensFor`), as a launch decides both, for
+ * a caller who may read the channel. Those switched off go to whoever may switch them (`getLtiTabsOp`).
  */
-async function launchCourse(ctx: UserContext, channelType: ChannelEntityType, channel: MembershipEntity) {
-  const course = placementContext({ channelType, channelId: channel.id, ...channelIdColumnsOf(channel) });
-  if (!course) return null;
-  if (course.channelId === channel.id) return { channelType, channelId: channel.id, name: channel.name, refusal: null };
-  const updated = await getValidChannel(ctx, course.channelId, course.channelType, 'update').then(({ entity }) => entity, accessRefusal);
-  const readable =
-    updated instanceof AppError
-      ? await getValidChannel(ctx, course.channelId, course.channelType, 'read').then(
-          ({ entity }) => entity,
-          () => null,
-        )
-      : updated;
-  const refusal = updated instanceof AppError ? updated : null;
-  return { channelType: course.channelType, channelId: course.channelId, name: readable?.name ?? null, refusal };
-}
-
-type LaunchCourse = Awaited<ReturnType<typeof launchCourse>>;
-
-/** The error type placing a tab answers for its course: an archived course above, or one the caller may not update. */
-const courseRefusal = (course: LaunchCourse) => {
-  if (!course?.refusal) return null;
-  return course.refusal.type === 'channel_archived' ? ('channel_archived' as const) : ('lti_context_update_required' as const);
-};
-
-/**
- * Throws what placing a tab in the channel, or switching it on or off, answers for its course: 403 `channel_archived`
- * for an archived course above, 403 `lti_context_update_required` for one the caller may not update.
- */
-async function assertCoursePlaceable(ctx: UserContext, channelType: ChannelEntityType, channel: MembershipEntity) {
-  const course = await launchCourse(ctx, channelType, channel);
-  if (!course?.refusal) return;
-  if (course.refusal.type === 'channel_archived') throw course.refusal;
-  throw new AppError(403, 'lti_context_update_required', 'warn', { entityType: course.channelType });
-}
-
-/** The tabs switched on in a channel, for a caller who may read it. Those switched off go to whoever may switch them (`getLtiTabsOp`). */
 export async function getLtiResourceLinksOp(ctx: UserContext, { channelType, channelId, orderBy }: z.infer<typeof listLtiResourceLinksQuerySchema>) {
-  await getValidChannel(ctx, channelId, channelType, 'read');
-  const links = await findLtiResourceLinks(ctx, { tenantId: ctx.var.tenantId, channelId, order: orderBy.order });
-  return withActorRefs(ctx, links.filter((link) => link.enabled).map(toLtiResourceLink));
+  const { entity } = await getValidChannel(ctx, channelId, channelType, 'read');
+  const opener = { personId: ctx.var.user.id, memberships: ctx.var.memberships };
+  const archivedChannelIds = ctx.var.archivedChannelIds ?? new Set<string>();
+  const tabs = await findLtiChannelTabs(ctx, { tenantId: ctx.var.tenantId, channelId, order: orderBy.order });
+  const opened = tabs.flatMap(({ resourceLink, account, installation }) =>
+    !ltiTabClosure({ link: resourceLink, account, installation, archivedChannelIds }) && opensFor(resourceLink.audience, opener, channelType, entity)
+      ? [resourceLink]
+      : [],
+  );
+  return withActorRefs(ctx, opened.map(toLtiResourceLink));
 }
 
 /**
- * A channel's tabs of LTI tools, for a caller who may update it: each approved LTI installation of the tenant, a
- * disabled one only where it has a tab, whether it reads course members, the course a tab launches as, why the caller
- * may not place it or switch it on, and its resource link once placed.
+ * A channel's tabs of LTI tools, for a caller who may update it, which an archived channel refuses: each approved LTI
+ * installation of the tenant that an admin allowed in the channel's type, a disabled one or one not allowed there only
+ * where it has a tab, whether its tab here, on, lets it read who is in the channel, why the caller may not place it or
+ * switch it on, which is why its tab here does not open, and its resource link once placed. None in a channel type that
+ * holds no tabs.
  */
 export async function getLtiTabsOp(ctx: UserContext, { channelType, channelId, orderBy }: z.infer<typeof listLtiTabsQuerySchema>) {
   const { tenantId } = ctx.var;
-  const { entity } = await getValidChannel(ctx, channelId, channelType, 'update');
-  const course = await launchCourse(ctx, channelType, entity);
+  await getValidChannel(ctx, channelId, channelType, 'update');
+  if (!holdsLtiTabs(channelType)) return [];
+  const isContext = !!linkContext({ channelType, channelId });
   const records = await findLtiInstallations(ctx, { tenantId, order: orderBy.order });
   const links = await findLtiResourceLinks(ctx, { tenantId, channelId, order: 'asc' });
   return records.flatMap(({ account, installation, client }) => {
     const link = links.find(({ installationId }) => installationId === account.id);
-    if (!installation.approvedAt || (account.status !== 'active' && !link)) return [];
-    // A course refusal first: it keeps the caller from switching either way, a disabled LTI tool only from switching on
     const refusal: (typeof ltiTabRefusals)[number] | null =
-      courseRefusal(course) ?? (account.status !== 'active' ? 'lti_installation_disabled' : null);
+      account.status !== 'active' ? 'lti_installation_disabled' : ltiTabTypeRefusal(installation, channelType) && 'lti_channel_type_not_allowed';
+    if (!installation.approvedAt || (refusal && !link)) return [];
+    const readsMembers = isContext && !refusal && installation.grantedScopes.some((scope) => ltiServiceScope(scope) === ltiNrps.scope);
     return [
       {
         id: account.id,
@@ -134,19 +113,18 @@ export async function getLtiTabsOp(ctx: UserContext, { channelType, channelId, o
         launchOrigins: launchOrigins(client),
         createdAt: installation.createdAt,
         status: account.status,
-        readsMembers: installation.grantedScopes.some((scope) => ltiServiceScope(scope) === ltiNrps.scope),
+        readsMembers,
         refusal,
-        context: course && { channelType: course.channelType, channelId: course.channelId, name: course.name },
-        resourceLink: link ? { id: link.id, title: link.title, enabled: link.enabled } : null,
+        resourceLink: link ? { id: link.id, title: link.title, enabled: link.enabled, audience: link.audience } : null,
       },
     ];
   });
 }
 
 /**
- * Every tab of an installation of the tenant in the organization, on or off, with its channel's name, the course it
- * launches as and whether the caller may remove it, for a caller who may update the organization. The courses whose
- * people the LTI tool reads are those of its tabs that are on.
+ * Every tab of an installation of the tenant in the organization, on or off, with its channel's name, why it does not
+ * open (`ltiTabClosure`) and whether the caller may remove it, for a caller who may update the organization. The LTI
+ * tool reads the people of the channels of its tabs that open.
  * @throws AppError 404 `not_found` for no LTI installation of the tenant.
  */
 export async function getLtiInstallationTabsOp(
@@ -156,33 +134,28 @@ export async function getLtiInstallationTabsOp(
 ) {
   const { tenantId, organizationId } = ctx.var;
   await getValidChannel(ctx, organizationId, 'organization', 'update');
-  if (!(await findLtiInstallation(ctx, { id: installationId, tenantId })))
-    throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiInstallation' } });
+  const found = await findLtiInstallation(ctx, { id: installationId, tenantId });
+  if (!found) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiInstallation' } });
+  const archivedChannelIds = ctx.var.archivedChannelIds ?? new Set<string>();
 
   const links = await findLtiResourceLinks(ctx, { tenantId, installationId, organizationId, order: orderBy.order });
-  const courses = new Map(links.map((link) => [link.id, placementContext(link)]));
-  const named = [
-    ...links.map(({ channelType, channelId }) => ({ channelType, channelId })),
-    ...[...courses.values()].flatMap((course) => course ?? []),
-  ];
   const names = new Map<string, string>();
-  for (const channelType of new Set(named.map((channel) => channel.channelType))) {
-    const ids = [...new Set(named.filter((channel) => channel.channelType === channelType).map((channel) => channel.channelId))];
-    // Named without a read check: whoever may update the organization sees every place an LTI tool reads people.
-    for (const channel of await resolveEntities(ctx, { entityType: channelType, ids })) names.set(channel.id, channel.name);
-  }
   const deletable = new Set<string>();
   for (const channelType of new Set(links.map((link) => link.channelType))) {
     const ids = links.filter((link) => link.channelType === channelType).map((link) => link.channelId);
+    // Named without a read check: whoever may update the organization sees every place an LTI tool reads people.
+    for (const channel of await resolveEntities(ctx, { entityType: channelType, ids })) names.set(channel.id, channel.name);
     for (const id of (await partitionByPermission(ctx, 'update', channelType, ids)).allowedIds) deletable.add(id);
   }
   // A link whose channel went between the two reads is left out: a channel takes its links along.
-  return links.flatMap(({ id, channelType, channelId, enabled }) => {
+  return links.flatMap((link) => {
+    const { id, channelType, channelId, enabled, audience } = link;
     const channelName = names.get(channelId);
     if (channelName === undefined) return [];
-    const course = courses.get(id);
-    const context = course ? { channelType: course.channelType, channelId: course.channelId, name: names.get(course.channelId) ?? null } : null;
-    return [{ id, channelType, channelId, channelName, enabled, context, deletable: deletable.has(channelId) }];
+    const closure = ltiTabClosure({ link, account: found.account, installation: found.installation, archivedChannelIds });
+    const archived = archivedChannelIds.has(channelId);
+    const isLtiContext = !!linkContext(link);
+    return [{ id, channelType, channelId, channelName, enabled, audience, closure, archived, isLtiContext, deletable: deletable.has(channelId) }];
   });
 }
 
@@ -192,27 +165,29 @@ interface CreateLtiResourceLinkInput {
   installationId: string;
   title: string;
   custom?: Record<string, string>;
+  audience?: LtiAudience;
 }
 
 /**
  * Places an approved, active LTI installation of the tenant in a channel as a tab that is on, for a caller who may
- * update the channel and the course it launches as (`launchCourse`). Its own token then reads the people of that course
- * (`ltiToolGuard`). A channel holds one tab of an installation.
- * @throws AppError 403 `lti_context_update_required` for a caller who may not update a course above the channel and
- *   403 `channel_archived` for an archived one, 404 `not_found` for no LTI installation of the tenant, 409
- *   `lti_installation_not_approved` for one that waits for an approval, 409 `lti_installation_disabled` for a disabled
- *   one, 409 `resource_already_exists` for one placed in the channel before, and what `getValidChannel` throws.
+ * update the channel. Its own token then reads the people of the channel when it is an LTI context (`ltiToolGuard`). A
+ * channel holds one tab of an installation.
+ * @throws AppError 404 `not_found` for no LTI installation of the tenant, 409 `lti_installation_not_approved` for one
+ *   that waits for an approval, 409 `lti_channel_type_holds_no_tabs` or `lti_channel_type_not_allowed` in a channel
+ *   type it may not get a tab in (`ltiTabTypeRefusal`), 409
+ *   `lti_installation_disabled` for a disabled one, 409 `resource_already_exists` for one placed in the channel before,
+ *   and what `getValidChannel` throws.
  */
 export async function createLtiResourceLinkOp(
   ctx: UserContext,
-  { channelType, channelId, installationId, title, custom = {} }: CreateLtiResourceLinkInput,
+  { channelType, channelId, installationId, title, custom = {}, audience = 'members' }: CreateLtiResourceLinkInput,
 ) {
   const { tenantId } = ctx.var;
   const { entity } = await getValidChannel(ctx, channelId, channelType, 'update');
-  await assertCoursePlaceable(ctx, channelType, entity);
   const found = await findLtiInstallation(ctx, { id: installationId, tenantId });
   if (!found) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiInstallation' } });
   if (!found.installation.approvedAt) throw new AppError(409, 'lti_installation_not_approved', 'warn', { meta: { installationId } });
+  assertAllowsLtiTab(found.installation, channelType);
   if (found.account.status !== 'active') throw new AppError(409, 'lti_installation_disabled', 'warn', { meta: { installationId } });
 
   const link = await insertLtiResourceLink(ctx, {
@@ -224,6 +199,7 @@ export async function createLtiResourceLinkOp(
       installationId: found.account.id,
       title,
       custom,
+      audience,
       createdBy: ctx.var.actor.id,
     },
   });
@@ -232,22 +208,22 @@ export async function createLtiResourceLinkOp(
 }
 
 /**
- * Renames a resource link, replaces its custom values or switches its tab on or off, for a caller who may update its
- * channel. Switching takes the rights placing takes, and switching on an active installation.
- * @throws AppError 403 `channel_archived` or `lti_context_update_required` for the course a switch needs, 409
- *   `lti_installation_disabled` for switching on a disabled one, and what `getUpdatableLtiResourceLink` throws.
+ * Renames a resource link, replaces its custom values, changes whom its tab opens for or switches it on or off, for a
+ * caller who may update its channel. Switching on takes an active installation allowed in the channel's type.
+ * @throws AppError 409 `lti_installation_disabled`, `lti_channel_type_holds_no_tabs` or `lti_channel_type_not_allowed`
+ *   for switching on, and what `getUpdatableLtiResourceLink` throws.
  */
 export async function updateLtiResourceLinkOp(
   ctx: UserContext,
   id: string,
-  changes: { title?: string; custom?: Record<string, string>; enabled?: boolean },
+  changes: { title?: string; custom?: Record<string, string>; enabled?: boolean; audience?: LtiAudience },
 ) {
-  const { link, channel } = await getUpdatableLtiResourceLink(ctx, id);
-  if (changes.enabled !== undefined && changes.enabled !== link.enabled) {
-    await assertCoursePlaceable(ctx, link.channelType, channel);
-    const found = changes.enabled && (await findLtiInstallation(ctx, { id: link.installationId, tenantId: ctx.var.tenantId }));
+  const link = await getUpdatableLtiResourceLink(ctx, id);
+  if (changes.enabled && !link.enabled) {
+    const found = await findLtiInstallation(ctx, { id: link.installationId, tenantId: ctx.var.tenantId });
     if (found && found.account.status !== 'active')
       throw new AppError(409, 'lti_installation_disabled', 'warn', { meta: { installationId: link.installationId } });
+    if (found) assertAllowsLtiTab(found.installation, link.channelType);
   }
   const updated = await updateLtiResourceLink(ctx, { id: link.id, values: { ...changes, ...updateStamps(ctx.var.actor.id) } });
   if (changes.enabled !== undefined && changes.enabled !== link.enabled)
@@ -256,14 +232,11 @@ export async function updateLtiResourceLinkOp(
 }
 
 /**
- * Removes a tab for good, its resource link with its live launch records, for a caller who may switch it: update on its
- * channel and on the course it launches as.
- * @throws AppError 403 `channel_archived` or `lti_context_update_required` for that course, and what
- *   `getUpdatableLtiResourceLink` throws.
+ * Removes a tab for good, its resource link with its live launch records, for a caller who may update its channel.
+ * @throws AppError what `getUpdatableLtiResourceLink` throws.
  */
 export async function deleteLtiResourceLinkOp(ctx: UserContext, id: string) {
-  const { link, channel } = await getUpdatableLtiResourceLink(ctx, id);
-  await assertCoursePlaceable(ctx, link.channelType, channel);
+  const link = await getUpdatableLtiResourceLink(ctx, id);
   await deleteLtiResourceLink(ctx, { id: link.id });
   log.info('LTI resource link deleted', { resourceLinkId: link.id, installationId: link.installationId });
 }

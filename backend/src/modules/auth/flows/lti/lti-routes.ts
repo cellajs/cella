@@ -119,7 +119,7 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [ltiLaunchLimiter],
     summary: 'Finish an LTI launch',
     description:
-      "Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value platform storage held. Finds or creates the person by the platform's issuer and user id, maps the launch's context to a channel, applies the mapped role, starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.",
+      "Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value platform storage held. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.",
     request: { body: formBody(ltiFinishFormSchema) },
     responses: {
       303: { description: 'Launched\n\nTo the embedded page of the channel, with the embedded session set.', headers: locationSchema },
@@ -127,10 +127,10 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
       401: { description: 'Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected.' },
       403: {
         description:
-          'Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, a test user, an archived course, or a new member when the organization has no seat left.',
+          'Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a role the app takes, a test user, a launch without a course by someone not known here yet, an archived course, or a new member when the organization has no seat left.',
       },
       404: { description: "Organization gone\n\nA page: the connection's tenant holds no organization." },
-      409: { description: 'Course not set up\n\nA page: an instructor opens the app from this course first.' },
+      409: { description: 'Not set up yet\n\nA page: someone who can change the course on the platform opens the app from it first.' },
     },
   }),
 });

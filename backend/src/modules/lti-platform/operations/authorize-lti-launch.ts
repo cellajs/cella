@@ -5,12 +5,12 @@ import { baseDb } from '#/db/db';
 import { maxLength } from '#/db/utils/constraints';
 import { env } from '#/env';
 import { ltiClaims, ltiNrps } from '#/lib/lti-vocabulary';
+import { loadArchivedChannelIds } from '#/middlewares/guard/archived-channels-cache';
 import { spendHandoffToken } from '#/modules/auth/core';
-import { resolveEntity } from '#/modules/entities/entities-queries';
-import { placementContext } from '#/modules/lti-platform/helpers/context-channel';
+import { linkContext, ltiTabClosure } from '#/modules/lti-platform/helpers/context-channel';
 import { signLtiIdToken } from '#/modules/lti-platform/helpers/id-token';
 import { launchCustom, launchNamesRoleService, launchOrigins, launchTargetLinkUri } from '#/modules/lti-platform/helpers/launch-message';
-import { ltiRolesIn } from '#/modules/lti-platform/helpers/lti-roles';
+import { ltiLaunchRoles } from '#/modules/lti-platform/helpers/lti-roles';
 import { ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
 import { releasedClaims } from '#/modules/lti-platform/helpers/platform-offer';
 import { findLtiLaunchTarget, findLtiRegistration } from '#/modules/lti-platform/lti-platform-queries';
@@ -78,11 +78,14 @@ const spendLaunchRecord = async ({ loginHint, messageHint, clientId }: { loginHi
 
 type LaunchTarget = NonNullable<Awaited<ReturnType<typeof findLtiLaunchTarget>>>;
 
-/** Who launches, checked at this moment: the installation approved and active, the tab on, and the person able to launch. */
+/** Who launches, checked at this moment: the tab opens (`ltiTabClosure`), and the person may open it. */
 const assertLaunchAllowed = async ({ personId, target }: { personId: string; target: LaunchTarget }) => {
-  const { account, installation, resourceLink } = target;
-  if (!installation.approvedAt || account.status !== 'active') throw new LaunchError('unauthorized_client', 'the installation is not active');
-  if (!resourceLink.enabled) throw new LaunchError('access_denied', 'the tab is switched off');
+  const { resourceLink } = target;
+  const { tenantId, organizationId } = resourceLink;
+  const archivedChannelIds = await loadArchivedChannelIds(dbCtx, { tenantId, organizationId });
+  const closure = ltiTabClosure({ ...target, link: resourceLink, archivedChannelIds });
+  if (closure === 'lti_installation_not_active') throw new LaunchError('unauthorized_client', 'the installation is not active');
+  if (closure) throw new LaunchError('access_denied', `the tab does not open: ${closure}`);
 
   const person = await findServedUserById(dbCtx, { id: personId });
   const launcher =
@@ -91,25 +94,21 @@ const assertLaunchAllowed = async ({ personId, target }: { personId: string; tar
       if (err instanceof AppError && err.status === 404) return null;
       throw err;
     }));
-  if (!person || !launcher) throw new LaunchError('access_denied', 'the person may not read the placement');
+  if (!person || !launcher) throw new LaunchError('access_denied', 'the person may not open the tab');
   return { person, ...launcher };
 };
 
 /**
  * The claims of a resource link launch (LTI Core 1.3, sections 5.3 and 5.4), without the times the signer sets. The
- * NRPS claim goes only with a course, to an LTI tool an admin granted the access scope the NRPS scope stands for.
+ * context is the resource link's own channel when it is one (`linkContext`). The NRPS claim goes only with a context,
+ * to an LTI tool an admin granted the access scope the NRPS scope stands for.
  */
 const launchClaims = async ({ nonce, target, personId }: { nonce: string; target: LaunchTarget; personId: string }) => {
   const { account, installation, client, resourceLink } = target;
-  const { person, access, channel } = await assertLaunchAllowed({ personId, target });
+  const { person, memberships, channel } = await assertLaunchAllowed({ personId, target });
 
-  const placed = placementContext(resourceLink);
-  const contextChannel =
-    placed &&
-    (placed.channelId === channel.id ? channel : await resolveEntity(dbCtx, { entityType: placed.channelType, identifier: placed.channelId }));
-  const context = placed && contextChannel ? { ...placed, channel: contextChannel } : null;
-  // What the person may do in the context, by their access now, decides the LTI roles the app-owned mapping sends.
-  const roles = context ? ltiRolesIn(access, context.channelType, context.channel) : [];
+  const context = linkContext(resourceLink);
+  const roles = ltiLaunchRoles({ personId, memberships, link: resourceLink, channel });
   const custom = launchCustom(client, resourceLink.custom);
   const readsMembers = installation.grantedScopes.some((scope) => ltiServiceScope(scope) === ltiNrps.scope);
 
@@ -127,7 +126,7 @@ const launchClaims = async ({ nonce, target, personId }: { nonce: string; target
     [ltiClaims.resourceLink]: { id: resourceLink.id, title: resourceLink.title },
     [ltiClaims.roles]: roles,
     ...(context && {
-      [ltiClaims.context]: { id: context.channel.id, label: context.channel.slug, title: context.channel.name, type: context.types },
+      [ltiClaims.context]: { id: channel.id, label: channel.slug, title: channel.name, type: context.types },
     }),
     ...(Object.keys(custom).length && { [ltiClaims.custom]: custom }),
     [ltiClaims.launchPresentation]: { document_target: 'iframe', locale: person.languageCode },

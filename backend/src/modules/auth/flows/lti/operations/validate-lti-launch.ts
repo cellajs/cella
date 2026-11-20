@@ -4,7 +4,7 @@ import { appConfig } from 'shared';
 import { AppError, type ErrorKey } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { maxLength } from '#/db/utils/constraints';
-import { lisRoleUri, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
+import { lisContextTypeUri, lisRoleUri, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
 import { spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import type { LaunchState } from '#/modules/auth/flows/lti/helpers/launch-state';
 import { isSignedByPlatform } from '#/modules/auth/flows/lti/helpers/platform-key-set';
@@ -34,7 +34,11 @@ const ltiLaunchSchema = z.object({
       id: ltiIdSchema,
       label: profileClaim,
       title: profileClaim,
-      type: z.array(z.string().max(maxLength.field)).max(20).optional(),
+      type: z
+        .array(z.string().max(maxLength.field))
+        .max(20)
+        .transform((types) => types.map(lisContextTypeUri))
+        .optional(),
     })
     .optional(),
 });
@@ -120,8 +124,9 @@ const launchRules: LaunchRule[] = [
   },
   { rule: 'context', holds: ({ claims }) => ltiLaunchSchema.shape[ltiClaims.context].safeParse(claims[ltiClaims.context]).success },
   { rule: 'sub', holds: ({ claims }) => ltiIdSchema.safeParse(claims.sub).success, refusal: { status: 403, type: 'lti_launch_anonymous' } },
-  // An empty list is a launch without a role (LTI Core 1.3, section 5.3.7): the app-owned mapping answers it.
-  { rule: 'roles', holds: ({ claims }) => Array.isArray(claims[ltiClaims.roles]), refusal: { status: 403, type: 'lti_launch_no_roles' } },
+  // A missing claim is a malformed launch; an empty list is one without a role (LTI Core 1.3, section 5.3.7), which the
+  // app-owned mapping answers.
+  { rule: 'roles', holds: ({ claims }) => Array.isArray(claims[ltiClaims.roles]) },
   { rule: 'test_user', holds: ({ claims }) => !rolesOf(claims).includes(ltiTestUserRole), refusal: { status: 403, type: 'lti_launch_test_user' } },
 ];
 
@@ -154,7 +159,7 @@ export const findLaunchConnection = async (token: string) => {
  * Checks a launch against every rule (`launchRules`) and spends its nonce.
  * @returns The claims the launch acts on.
  * @throws AppError 401 `lti_launch_invalid` naming the failed rule in `meta.rule`, 403 `lti_deployment_unknown`,
- *   `lti_launch_anonymous`, `lti_launch_no_roles` or `lti_launch_test_user`, 401 `lti-nonce_not_found` or
+ *   `lti_launch_anonymous` or `lti_launch_test_user`, 401 `lti-nonce_not_found` or
  *   `lti-nonce_expired`, and what reading the platform's key set throws.
  */
 export const validateLtiLaunch = async (facts: Omit<LaunchFacts, 'nowSeconds'>): Promise<LtiLaunch> => {

@@ -1,5 +1,5 @@
 import { jsonb, snakeCase, uuid } from 'drizzle-orm/pg-core';
-import type { AccessScope } from 'shared';
+import type { AccessScope, ChannelEntityType } from 'shared';
 import { auditColumns, writerColumn } from '#/db/utils/audit-columns';
 import type { ServiceAccountId } from '#/db/utils/ids';
 import { isoTimestamp } from '#/db/utils/timestamp-columns';
@@ -12,8 +12,9 @@ export type LtiReleasableField = (typeof ltiReleasableFields)[number];
 
 /**
  * What an LTI tool's installation holds beside its service account: the personal fields its launches and member rows
- * may carry, the access scopes its own tokens may carry and the admin's approval. The account's status decides whether
- * the installation may act. An auth table outside RLS, like the service account it extends.
+ * may carry, the access scopes its own tokens may carry, the channel types it may get a tab in and the admin's
+ * approval. The account's status decides whether the installation may act. An auth table outside RLS, like the service
+ * account it extends.
  */
 export const ltiInstallationsTable = snakeCase.table('lti_installations', {
   serviceAccountId: uuid()
@@ -24,6 +25,8 @@ export const ltiInstallationsTable = snakeCase.table('lti_installations', {
   releasedFields: jsonb().$type<LtiReleasableField[]>().notNull().default([]),
   /** Empty until an admin grants some; never more than the registration asked for. A token's scopes are read here at every request. */
   grantedScopes: jsonb().$type<AccessScope[]>().notNull().default([]),
+  /** Empty until an admin allows some; only types that hold tabs count (`ltiTabTypeRefusal`). */
+  channelTypes: jsonb().$type<ChannelEntityType[]>().notNull().default([]),
   approvedAt: isoTimestamp(),
   approvedBy: writerColumn(),
   ...auditColumns(),

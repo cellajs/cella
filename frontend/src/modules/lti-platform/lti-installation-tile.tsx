@@ -19,13 +19,13 @@ import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { NamedText } from '~/modules/common/named-text';
 import { openConfirm } from '~/modules/common/open-confirm';
 import { scopeLabel } from '~/modules/common/scope-badges';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { LtiToolOrigin } from '~/modules/lti-platform/lti-tool-origin';
 import {
   ltiInstallationTabsQueryOptions,
   useApproveLtiInstallationMutation,
   useDeleteLtiInstallationMutation,
   useDeleteLtiResourceLinkMutation,
-  useRejectLtiInstallationMutation,
   useSetLtiInstallationStatusMutation,
   useUpdateLtiInstallationMutation,
 } from '~/modules/lti-platform/query';
@@ -43,6 +43,11 @@ type PersonalField = LtiInstallation['requestedFields'][number];
 
 type AccessScope = LtiInstallation['requestedScopes'][number];
 
+type TabChannelType = LtiInstallation['channelTypes'][number];
+
+/** The channel types an admin may allow an LTI tool a tab in: those that hold LTI tabs in this app. */
+const tabChannelTypes = zApproveLtiInstallationBody.shape.channelTypes.unwrap().element.options;
+
 const fieldLabels = { name: 'c:name', email: 'c:email', picture: 'c:profile_picture' } as const satisfies Record<PersonalField, string>;
 
 const statusTones = { pending: 'warning', active: 'info', disabled: 'muted' } as const satisfies Record<LtiInstallation['status'], TileTone>;
@@ -55,6 +60,54 @@ const deleteDialogId = (installation: LtiInstallation) => `delete-lti-tool-${ins
 
 type LtiInstallationTab = ListLtiInstallationTabsResponse['results'][number];
 
+/** Why a tab that is on does not open, as the Tabs card says it; null for a tab that opens or is off. */
+const closureText = (t: TFunction, { closure, channelType }: LtiInstallationTab) => {
+  if (!closure || closure === 'lti_tab_switched_off') return null;
+  if (closure === 'lti_installation_not_active') return t('c:lti_tab_tool_disabled.text');
+  return t(`error:${closure}.text`, { resource: t(`c:${channelType}`) });
+};
+
+/** The tabs that are on and that undoing `closure` opens again: closed by it alone, in a page that is not archived. */
+const reopening = (tabs: LtiInstallationTab[], closure: 'lti_installation_not_active' | 'lti_tab_type_not_allowed', allowed: TabChannelType[]) =>
+  tabs.filter((tab) => tab.closure === closure && !tab.archived && allowed.some((channelType) => channelType === tab.channelType));
+
+interface ReopenConfirmOptions {
+  id: string;
+  installation: LtiInstallation;
+  /** The tabs the change opens again (`reopening`); at least one. */
+  tabs: LtiInstallationTab[];
+  i18nKey: 'c:confirm.allow_lti_channel_type_tab' | 'c:confirm.enable_lti_tool_tab';
+  /** The channel type a question about one names. */
+  resource?: string;
+  label: 'c:allow' | 'c:enable';
+  onConfirm: () => void;
+}
+
+/** Asks before a change opens tabs of the LTI tool again, saying how many, and that it reads who is in them where it does. */
+const openReopenConfirm = (trigger: HTMLElement, { id, installation, tabs, i18nKey, resource, label, onConfirm }: ReopenConfirmOptions) => {
+  const reads = installation.grantedScopes.includes('user:read') && tabs.some((tab) => tab.isLtiContext);
+  openConfirm(trigger, {
+    id,
+    title: (
+      <>
+        <NamedText
+          i18nKey={tabs.length > 1 ? `${i18nKey}_counted` : i18nKey}
+          name={installation.name}
+          values={{ ...(resource && { resource }), count: tabs.length }}
+        />
+        {reads && (
+          <span className="text-muted-foreground mt-1 block">
+            <NamedText i18nKey={tabs.length > 1 ? 'c:lti_tabs_reopen_reads.tab_counted' : 'c:lti_tabs_reopen_reads.tab'} name={installation.name} />
+          </span>
+        )}
+      </>
+    ),
+    label,
+    icon: CheckIcon,
+    onConfirm,
+  });
+};
+
 /** Personal fields as a reader sees them. */
 function FieldList({ fields }: { fields: PersonalField[] }) {
   const { t } = useTranslation();
@@ -62,26 +115,27 @@ function FieldList({ fields }: { fields: PersonalField[] }) {
   return fields.map((field) => t(fieldLabels[field])).join(', ');
 }
 
-/** An access scope as an admin decides on it: people are read only in the courses where the LTI tool has a tab, with the shared fields. */
+/** An access scope as an admin decides on it: people are read only in the LTI contexts where it has a tab that opens. */
 const ltiScopeLabel = (t: TFunction, scope: AccessScope) => (scope === 'user:read' ? t('c:lti_scope_user_read') : scopeLabel(t, scope));
 
 const approveSchema = zApproveLtiInstallationBody;
 
 /**
- * Where the LTI tool's launches go and whose keys act as it, and the fields and access scopes it asked for as choices
- * with none chosen: what an approval trusts, releases and grants is the admin's act.
+ * Where the LTI tool's launches go and whose keys act as it, and as choices with none chosen the fields and access
+ * scopes it asked for and the channel types it may get a tab in: what an approval trusts, releases and grants is the
+ * admin's act.
  */
 function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
   const { t } = useTranslation();
   const { mutate: approve, isPending } = useApproveLtiInstallationMutation();
   const form = useForm<z.infer<typeof approveSchema>>({
     resolver: formResolver(approveSchema),
-    defaultValues: { releasedFields: [], grantedScopes: [] },
+    defaultValues: { releasedFields: [], grantedScopes: [], channelTypes: [] },
   });
 
-  const onSubmit = ({ releasedFields, grantedScopes }: z.infer<typeof approveSchema>) =>
+  const onSubmit = ({ releasedFields, grantedScopes, channelTypes }: z.infer<typeof approveSchema>) =>
     approve(
-      { path: { ...path, ltiInstallationId: installation.id }, body: { releasedFields, grantedScopes } },
+      { path: { ...path, ltiInstallationId: installation.id }, body: { releasedFields, grantedScopes, channelTypes } },
       { onSuccess: () => dialoger.getState().remove(approveDialogId(installation)) },
     );
 
@@ -154,6 +208,32 @@ function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallat
             <p className="text-muted-foreground text-sm">{t('c:api_access.text')}</p>
           </div>
         )}
+        <div className="flex flex-col gap-2">
+          <FormField
+            control={form.control}
+            name="channelTypes"
+            render={({ field }) => (
+              <FormItem name="channelTypes">
+                <FormLabel>{t('c:lti_tab_channel_types')}</FormLabel>
+                <CheckboxGroup value={field.value ?? []} onValueChange={field.onChange} className="grid gap-3 sm:grid-cols-3">
+                  {tabChannelTypes.map((channelType) => (
+                    <FieldLabel key={channelType} card>
+                      <Field.Item render={<FieldLayout orientation="horizontal" />}>
+                        <Checkbox value={channelType} />
+                        <FieldContent>
+                          <FieldTitle>{t(`c:${channelType}`)}</FieldTitle>
+                        </FieldContent>
+                      </Field.Item>
+                    </FieldLabel>
+                  ))}
+                </CheckboxGroup>
+                {!field.value?.length && <p className="text-sm">{t('c:lti_tab_channel_types.none')}</p>}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <p className="text-muted-foreground text-sm">{t('c:lti_tab_channel_types.text')}</p>
+        </div>
         <FormActions>
           <SubmitButton icon={<CheckIcon />} loading={isPending}>
             {t('c:approve')}
@@ -165,9 +245,9 @@ function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallat
 }
 
 /**
- * Every tab of the LTI tool, linked to its channel, the ones switched off marked off, with the course whose people a tab
- * that is on lets it read where that is another channel. Whoever may update a tab's channel removes it for good here,
- * after a confirmation; channels switch their tabs on and off in their own Tabs card.
+ * Every tab of the LTI tool, linked to its channel, with whom it opens for, the ones switched off marked off and why
+ * one that is on does not open. Whoever may update a tab's channel removes it for good here, after a confirmation;
+ * channels switch their tabs on and off in their own Tabs card.
  */
 function InstallationTabs({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
   const { t } = useTranslation();
@@ -189,7 +269,6 @@ function InstallationTabs({ installation, path }: { installation: LtiInstallatio
       <span className="group-label text-xs">{t('c:tabs')}</span>
       {tabs.map((tab) => {
         const route: EntityRoute = getChannelPageRoute({ ...path, channelType: tab.channelType, channelId: tab.channelId });
-        const course = tab.enabled && tab.context && tab.context.channelId !== tab.channelId ? tab.context : null;
         return (
           <div key={tab.id} className="flex min-h-10 items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm">
             <div className="flex min-w-0 grow flex-col">
@@ -200,11 +279,8 @@ function InstallationTabs({ installation, path }: { installation: LtiInstallatio
                 <span className="text-muted-foreground">{t(`c:${tab.channelType}`)}</span>
                 {!tab.enabled && <span className="text-faint-foreground">{t('c:lti_tab_off')}</span>}
               </div>
-              {course && (
-                <span className="text-muted-foreground text-xs">
-                  <NamedText i18nKey="c:lti_tab_reads.text" name={course.name ?? ''} />
-                </span>
-              )}
+              <span className="text-muted-foreground text-xs">{t(`c:lti_audience.${tab.audience}`)}</span>
+              {closureText(t, tab) && <span className="text-muted-foreground text-xs">{closureText(t, tab)}</span>}
             </div>
             {tab.deletable && (
               <Button
@@ -225,16 +301,19 @@ function InstallationTabs({ installation, path }: { installation: LtiInstallatio
   );
 }
 
-/** One access scope of an approved LTI tool, granted or not; its button's name says which scope it changes. */
-function ApiAccessScope({
-  scope,
+/** One grant of an approved LTI tool, given or not; its button's name says what it changes. */
+function GrantRow({
+  label,
   granted,
   disabled,
+  grantLabel,
   onChange,
 }: {
-  scope: AccessScope;
+  label: string;
   granted: boolean;
   disabled: boolean;
+  /** The button's label while it is not given, such as `c:grant`. */
+  grantLabel: 'c:grant' | 'c:allow';
   onChange: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
   const { t } = useTranslation();
@@ -244,11 +323,11 @@ function ApiAccessScope({
     <div className="flex items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm">
       {granted && <CheckIcon className="text-success size-4 shrink-0" />}
       <span id={labelId} className={granted ? 'min-w-0 grow' : 'text-muted-foreground min-w-0 grow pl-6'}>
-        {ltiScopeLabel(t, scope)}
+        {label}
       </span>
       <Button variant={granted ? 'ghost' : 'secondary'} size="sm" disabled={disabled} aria-labelledby={`${actionId} ${labelId}`} onClick={onChange}>
         {!granted && <KeyRoundIcon />}
-        <span id={actionId}>{t(granted ? 'c:withdraw' : 'c:grant')}</span>
+        <span id={actionId}>{t(granted ? 'c:withdraw' : grantLabel)}</span>
       </Button>
     </div>
   );
@@ -278,9 +357,74 @@ function InstallationApiAccess({ installation, path }: { installation: LtiInstal
       {installation.requestedScopes.map((scope) => {
         const granted = installation.grantedScopes.includes(scope);
         const onChange = (event: MouseEvent<HTMLButtonElement>) => (granted ? openWithdrawConfirm(event, scope) : grant(scope));
-        return <ApiAccessScope key={scope} scope={scope} granted={granted} disabled={isPending} onChange={onChange} />;
+        return (
+          <GrantRow key={scope} label={ltiScopeLabel(t, scope)} granted={granted} grantLabel="c:grant" disabled={isPending} onChange={onChange} />
+        );
       })}
       <p className="text-muted-foreground text-sm">{t('c:api_access.text')}</p>
+    </div>
+  );
+}
+
+/**
+ * The channel types an approved LTI tool may get a tab in, each allowed or not. Withdrawing one asks first, saying how
+ * many of its tabs that open stop opening there, and allowing one again asks when tabs there open again.
+ */
+function InstallationChannelTypes({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
+  const { t } = useTranslation();
+  const { mutate, isPending } = useUpdateLtiInstallationMutation();
+  const { data } = useQuery(ltiInstallationTabsQueryOptions(path, installation.id));
+
+  const update = (channelTypes: TabChannelType[]) => mutate({ path: { ...path, ltiInstallationId: installation.id }, body: { channelTypes } });
+
+  const tabs = data?.results ?? [];
+
+  const openWithdrawConfirm = (event: MouseEvent<HTMLButtonElement>, channelType: TabChannelType) => {
+    const count = tabs.filter((tab) => !tab.closure && tab.channelType === channelType).length;
+    const i18nKey =
+      count > 1
+        ? 'c:confirm.withdraw_lti_channel_type_tab_counted'
+        : count
+          ? 'c:confirm.withdraw_lti_channel_type_tab'
+          : 'c:confirm.withdraw_lti_channel_type';
+    return openConfirm(event.currentTarget, {
+      id: `withdraw-lti-channel-type-${installation.id}-${channelType}`,
+      title: <NamedText i18nKey={i18nKey} name={installation.name} values={{ resource: t(`c:${channelType}`), count }} />,
+      label: 'c:withdraw',
+      icon: XIcon,
+      onConfirm: () => update(installation.channelTypes.filter((allowed) => allowed !== channelType)),
+    });
+  };
+
+  const allow = (event: MouseEvent<HTMLButtonElement>, channelType: TabChannelType) => {
+    const allowed = [...installation.channelTypes, channelType];
+    const reopened = reopening(tabs, 'lti_tab_type_not_allowed', [channelType]);
+    if (!reopened.length) return update(allowed);
+    openReopenConfirm(event.currentTarget, {
+      id: `allow-lti-channel-type-${installation.id}-${channelType}`,
+      installation,
+      tabs: reopened,
+      i18nKey: 'c:confirm.allow_lti_channel_type_tab',
+      resource: t(`c:${channelType}`),
+      label: 'c:allow',
+      onConfirm: () => update(allowed),
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="group-label text-xs">{t('c:lti_tab_channel_types')}</span>
+      {tabChannelTypes.map((channelType) => {
+        const allowed = installation.channelTypes.includes(channelType);
+        const onChange = (event: MouseEvent<HTMLButtonElement>) => (allowed ? openWithdrawConfirm(event, channelType) : allow(event, channelType));
+        return (
+          <GrantRow key={channelType} label={t(`c:${channelType}`)} granted={allowed} grantLabel="c:allow" disabled={isPending} onChange={onChange} />
+        );
+      })}
+      {!installation.channelTypes.length && (
+        <p className="text-sm">{t(tabs.length ? 'c:lti_tab_channel_types.none_closed' : 'c:lti_tab_channel_types.none')}</p>
+      )}
+      <p className="text-muted-foreground text-sm">{t('c:lti_tab_channel_types.text')}</p>
     </div>
   );
 }
@@ -325,7 +469,17 @@ function DeleteLtiToolForm({ installation, path }: { installation: LtiInstallati
         resource="c:lti_tool"
         pending={isPending}
         onCancel={close}
-        onDelete={() => remove({ path: { ...path, ltiInstallationId: installation.id } }, { onSuccess: close })}
+        onDelete={() =>
+          remove(
+            { path: { ...path, ltiInstallationId: installation.id } },
+            {
+              onSuccess: () => {
+                close();
+                toaster.success(t('c:success.delete_resource', { resource: t('c:lti_tool') }));
+              },
+            },
+          )
+        }
       />
     </div>
   );
@@ -346,10 +500,12 @@ export function LtiInstallationTile({ installation, organization, sharesName = f
   const { t } = useTranslation();
   const approveRef = useRef<HTMLButtonElement>(null);
   const deleteRef = useRef<HTMLButtonElement>(null);
-  const { mutate: reject } = useRejectLtiInstallationMutation();
+  // Rejecting a waiting LTI tool deletes it, as deleting does in any state
+  const { mutate: reject } = useDeleteLtiInstallationMutation();
   const { mutate: setStatus, isPending: settingStatus } = useSetLtiInstallationStatusMutation();
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
   const isPending = installation.status === 'pending';
+  const { data: tabs } = useQuery({ ...ltiInstallationTabsQueryOptions(path, installation.id), enabled: installation.status === 'disabled' });
 
   const openApproveDialog = () =>
     dialoger.getState().create(<ApproveLtiToolForm installation={installation} path={path} />, {
@@ -365,14 +521,38 @@ export function LtiInstallationTile({ installation, organization, sharesName = f
       title: <NamedText i18nKey="c:confirm.reject_lti_tool" name={installation.name} />,
       label: 'c:reject',
       icon: XIcon,
-      onConfirm: () => reject({ path: { ...path, ltiInstallationId: installation.id } }),
+      onConfirm: () =>
+        reject(
+          { path: { ...path, ltiInstallationId: installation.id } },
+          { onSuccess: () => toaster.success(t('c:success.reject_lti_tool', { name: installation.name })) },
+        ),
     });
 
-  const toggleStatus = () =>
-    setStatus({
-      path: { ...path, serviceAccountId: installation.id },
-      body: { status: installation.status === 'active' ? 'disabled' : 'active' },
+  const toggleStatus = (event: MouseEvent<HTMLButtonElement>) => {
+    const status = installation.status === 'active' ? 'disabled' : 'active';
+    const setTo = () => setStatus({ path: { ...path, serviceAccountId: installation.id }, body: { status } });
+    if (status === 'disabled') return setTo();
+    // While its tabs are not read yet, or could not be, enabling asks without a count
+    if (!tabs) {
+      return openConfirm(event.currentTarget, {
+        id: `enable-lti-tool-${installation.id}`,
+        title: <NamedText i18nKey="c:confirm.enable_lti_tool" name={installation.name} />,
+        label: 'c:enable',
+        icon: CheckIcon,
+        onConfirm: setTo,
+      });
+    }
+    const reopened = reopening(tabs.results, 'lti_installation_not_active', installation.channelTypes);
+    if (!reopened.length) return setTo();
+    openReopenConfirm(event.currentTarget, {
+      id: `enable-lti-tool-${installation.id}`,
+      installation,
+      tabs: reopened,
+      i18nKey: 'c:confirm.enable_lti_tool_tab',
+      label: 'c:enable',
+      onConfirm: setTo,
     });
+  };
 
   const openDeleteDialog = () =>
     dialoger.getState().create(<DeleteLtiToolForm installation={installation} path={path} />, {
@@ -395,6 +575,7 @@ export function LtiInstallationTile({ installation, organization, sharesName = f
         !isPending && (
           <>
             <InstallationTabs installation={installation} path={path} />
+            <InstallationChannelTypes installation={installation} path={path} />
             {installation.requestedScopes.length > 0 && <InstallationApiAccess installation={installation} path={path} />}
           </>
         )

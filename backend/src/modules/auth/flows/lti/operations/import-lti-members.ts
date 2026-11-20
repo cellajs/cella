@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { baseDb } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
+import { ltiRolesAsRead } from '#/lib/lti-vocabulary';
 import type { BackendQueue, MembershipEntity } from '#/lib/module';
 import { getPgBoss } from '#/lib/pg-boss';
 import { type LtiMember, type ReadLtiMembersOptions, readLtiMembers } from '#/modules/auth/flows/lti/helpers/platform-memberships';
@@ -32,8 +33,12 @@ const importRetryLimit = 5;
 /** The longest one import runs: the job store then fails it and aborts its signal. */
 const importBudgetSeconds = 120;
 
-/** The most courses of one connection imported within an hour, however many courses its platform names. */
-export const maxCoursesPerHour = 30;
+/**
+ * The most courses of one connection whose import ran within the last hour, however many its platform names. A class
+ * whose 60 teams each switch on a tab of their own imports 61 contexts with its course: two such classes fit in an hour.
+ * What an import adds is bounded by the tenant's seats, and what one read costs by the page and member limits.
+ */
+export const maxCoursesPerHour = 150;
 
 /** Whether the connection's imports within the last hour reached `maxCoursesPerHour`. */
 const connectionImportsSpent = async (connectionId: string) =>
@@ -55,15 +60,17 @@ interface ImportTarget {
 /**
  * Writes one listed person under the lock a launch of them takes: their account (`admitLtiPerson`), and their role. It
  * holds the connection's row (`holdConnection`): a delete of the connection waits for it.
- * @returns `member_limit` when the person needs a seat and the tenant's member limit leaves none, and
- *   `connection_gone` once the connection was deleted; nothing is written for either.
+ * @returns `member_limit` when the person needs a seat and the tenant's member limit leaves none, `no_role` when the
+ *   app's `ltiContextRole` maps them to none, and `connection_gone` once the connection was deleted; nothing is written
+ *   for any of them.
  */
 const importPerson = async (ctx: DbContext, { connection, channel, organization, memberQuota, by }: ImportTarget, person: LtiMember) => {
   if (!(await holdConnection(ctx, { id: connection.id }))) return 'connection_gone';
+  const role = ltiRoleIn(channel.entityType, { ltiRoles: ltiRolesAsRead(person.roles), connection });
+  if (!role) return 'no_role';
   const { user_id: sub, name, given_name: givenName, family_name: familyName, email } = person;
   const admitted = await admitLtiPerson(ctx, { connection, organization, memberQuota, person: { sub, name, givenName, familyName, email }, by });
   if (!admitted) return 'member_limit';
-  const role = ltiRoleIn(channel.entityType, { ltiRoles: person.roles, connection });
   await applyLtiRole(ctx, { organization, channel, userId: admitted.userId, seat: admitted.seat, role, by });
   return 'imported';
 };
@@ -120,7 +127,10 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
       options.signal?.throwIfAborted();
       const outcome = await baseDb.transaction((tx) => importPerson({ var: { db: tx } }, target, person));
       if (outcome === 'connection_gone') return;
-      if (outcome === 'member_limit') issue = 'member_limit';
+      // The member limit, which an admin acts on, outranks a list too long, true of the course at every import, which
+      // outranks people left without a role.
+      if (outcome === 'member_limit') issue = outcome;
+      else if (outcome === 'no_role' && !issue) issue = outcome;
     }
     await record(read.people.length, issue);
     log.info('LTI members imported', { contextId: context.id, connectionId: connection.id, read: read.people.length, issue });

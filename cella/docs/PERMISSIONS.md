@@ -180,6 +180,7 @@ A channel below the organization can be archived, which closes it. The organizat
 - **No writes.** It refuses every write to itself, every create inside it and every change to a product homed in it, system admins included.
 - **Still readable.** It reads and streams as before. A list shows it when asked.
 - **Nobody stuck.** A member can still be removed or leave.
+- **LTI tabs closed.** Its tabs of LTI tools do not open, and their LTI tools read no members there, until it is unarchived.
 - **Delete or unarchive.** Both stay possible with the matching grant, `delete` or `update`.
 - **Nested channels keep their state.** The archive action offers to include them, with a default each app sets.
 
@@ -221,7 +222,7 @@ Organization content runs behind `[userGuard, tenantGuard, orgGuard]`. Where an 
 | `userGuard` | A session cookie: the signed-in user | 401 |
 | `serviceGuard` | An API key or an access token other than an installed LTI tool's, masked by its scopes, never a system admin | 401; 403 from a browser origin |
 | `tokenGuard` | An access token other than an installed LTI tool's, for the MCP face | 401 |
-| `ltiToolGuard` | An installed LTI tool's access token alone, with the binding its tabs imply on the course in the path ([LTI](./LTI.md#serving-course-members)) | 401 |
+| `ltiToolGuard` | An installed LTI tool's access token alone, with the binding its tab that opens implies in exactly the channel in the path ([LTI](./LTI.md#serving-members)) | 401 |
 | `actorGuard` | Any of the three proofs | 401, 403 |
 | `tenantGuard` | An actor with a foothold in the URL's tenant, a service account only in its own. Applies the tenant's sign-in policy | 403 `forbidden`, `sso_required` |
 | `orgGuard` | The URL's organization in the tenant `tenantGuard` admitted to, for an actor bound to it or to a channel below it, or a system admin | 404 |

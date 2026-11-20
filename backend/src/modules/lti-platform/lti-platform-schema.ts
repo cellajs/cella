@@ -5,8 +5,10 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { maxLength } from '#/db/utils/constraints';
 import { isFetchableUrl } from '#/lib/guarded-fetch';
 import { ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
+import { ltiTabChannelTypes, ltiTabClosures } from '#/modules/lti-platform/helpers/context-channel';
 import { ltiReleasableFields } from '#/modules/lti-platform/lti-installations-db';
 import { mockLtiInstallationResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
+import { ltiAudiences } from '#/modules/lti-platform/lti-resource-links-db';
 import { serviceAccountStatuses } from '#/modules/service-accounts/service-accounts-db';
 import {
   channelEntityTypeSchema,
@@ -100,15 +102,30 @@ const grantedScopesSchema = z
   .max(accessScopes.all.length)
   .describe("The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none");
 
+const channelTypesSchema = z
+  .array(z.enum(ltiTabChannelTypes))
+  .max(ltiTabChannelTypes.length)
+  .describe(
+    'The channel types it may get a tab in, of those that hold LTI tabs: a type the app makes an LTI context, and the organization; empty or left out allows none',
+  );
+
 export const approveLtiInstallationBodySchema = z.object({
   releasedFields: z
     .array(z.enum(ltiReleasableFields))
     .max(ltiReleasableFields.length)
     .describe('The personal fields a launch and a member row may carry, each one the LTI tool asked for; empty releases none'),
   grantedScopes: grantedScopesSchema.optional(),
+  channelTypes: channelTypesSchema.optional(),
 });
 
-export const updateLtiInstallationBodySchema = z.object({ grantedScopes: grantedScopesSchema.optional() });
+export const updateLtiInstallationBodySchema = z.object({
+  grantedScopes: grantedScopesSchema.optional(),
+  channelTypes: channelTypesSchema
+    .optional()
+    .describe(
+      'Replaces the channel types it may get a tab in; its tabs in a type taken away stay as they are and stop opening until it is allowed again',
+    ),
+});
 
 /** The path of one LTI installation in its organization. */
 export const ltiInstallationParamSchema = tenantOrgParamSchema.extend({ ltiInstallationId: validIdSchema });
@@ -136,7 +153,10 @@ export const ltiInstallationSchema = z
     grantedScopes: z
       .array(z.enum(accessScopes.all))
       .describe("The access scopes an admin granted: the most the installation's own tokens carry, for the channels it is placed in"),
-    status: z.enum(serviceAccountStatuses).describe('`pending` until an admin approves or rejects it'),
+    channelTypes: z
+      .array(z.enum(ltiTabChannelTypes))
+      .describe('The channel types an admin allowed it a tab in: only there a channel switches its tab on'),
+    status: z.enum(serviceAccountStatuses).describe('`pending` until an admin approves it, or rejects it by deleting it'),
     approvedAt: z.string().nullable(),
     createdAt: z.string(),
     updatedAt: z.string().nullable(),
@@ -144,7 +164,7 @@ export const ltiInstallationSchema = z
   })
   .openapi('LtiInstallation', {
     description:
-      'An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry and the access scopes its own tokens may carry, or rejects it. An approved one is disabled and re-enabled as a service account.',
+      'An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry, the access scopes its own tokens may carry and the channel types it may get a tab in, or rejects it, which deletes it. An approved one is disabled and re-enabled as a service account.',
     example: mockLtiInstallationResponse(),
     'x-tags': schemaTags('data', 'lti-platform', 'cella'),
   });
@@ -160,22 +180,24 @@ export const listLtiResourceLinksQuerySchema = pageQuerySchema.extend({
   orderBy: orderByQuerySchema(['createdAt'], 'createdAt asc'),
 });
 
-/** Why a caller may not place an LTI tool in a channel, or switch its tab on or off there: the error a write would answer. */
-export const ltiTabRefusals = ['lti_installation_disabled', 'channel_archived', 'lti_context_update_required'] as const;
+/** Why a caller may not place an LTI tool in a channel, or switch its tab on there: the error a write would answer. */
+export const ltiTabRefusals = ['lti_installation_disabled', 'lti_channel_type_not_allowed'] as const;
+
+const ltiAudienceSchema = z
+  .enum(ltiAudiences)
+  .describe(
+    'Whom the tab opens for: `members`, the people holding a membership in its channel, whom the LTI tool reads there; `editors`, whoever may update the channel. It bounds who opens the tab, not whom the LTI tool reads',
+  );
 
 export const listLtiTabsQuerySchema = pageQuerySchema.extend({
   ...channelRefSchema.shape,
   orderBy: orderByQuerySchema(['createdAt'], 'createdAt asc'),
 });
 
-/** The course a tab launches as, an LTI context: the tab's channel or a channel above it. */
-const ltiTabContextSchema = z.object({
-  channelType: channelEntityTypeSchema,
-  channelId: z.string(),
-  name: z.string().nullable().describe('Null for a course above the channel that the caller may not read'),
-});
-
-/** An approved LTI tool as a tab of one channel, placed or not; a disabled one only where it has a tab. */
+/**
+ * An approved LTI tool as a tab of one channel, placed or not, where an admin allowed it in the channel's type; a
+ * disabled one, or one not allowed there, only where it has a tab.
+ */
 export const ltiTabSchema = z.object({
   id: z.string().describe('The LTI installation, which `installationId` places: a channel holds one tab of it'),
   name: z.string(),
@@ -188,16 +210,17 @@ export const ltiTabSchema = z.object({
   status: z.enum(serviceAccountStatuses).describe('`active`, or `disabled` while an admin has stopped it: its tabs refuse every launch then'),
   readsMembers: z
     .boolean()
-    .describe('Whether an admin granted it reading course members: a tab that is on lets it read the people of the course the tab launches as'),
+    .describe(
+      'Whether its tab here, on, lets it read who is in the channel: an admin granted it reading members, the channel is an LTI context, and nothing in `refusal` closes the tab',
+    ),
   refusal: z
     .enum(ltiTabRefusals)
     .nullable()
     .describe(
-      'Why the caller may not place it in the channel or switch its tab on: an archived course above or one the caller may not update, which also keep the tab from being switched off and come first, else a disabled LTI tool; null when they may',
+      'Why the caller may not place it in the channel or switch its tab on, and why its tab here does not open: a disabled LTI tool, else one an admin did not allow in its type; null when they may',
     ),
-  context: ltiTabContextSchema.nullable().describe('The course a tab in the channel launches as; null when none is'),
   resourceLink: z
-    .object({ id: z.string(), title: z.string(), enabled: z.boolean() })
+    .object({ id: z.string(), title: z.string(), enabled: z.boolean(), audience: ltiAudienceSchema })
     .nullable()
     .describe('The tab once placed, on or off; null for an LTI tool never placed in the channel'),
 });
@@ -206,14 +229,24 @@ export const listLtiInstallationTabsQuerySchema = pageQuerySchema.extend({
   orderBy: orderByQuerySchema(['createdAt'], 'createdAt asc'),
 });
 
-/** A tab of one installation: its resource link, the channel it sits in and the course whose people it lets it read. */
+/** A tab of one installation: its resource link and the channel it sits in, whose people it lets the LTI tool read. */
 export const ltiInstallationTabSchema = z.object({
   id: z.string().describe('The resource link'),
   channelType: channelEntityTypeSchema,
   channelId: z.string(),
   channelName: z.string(),
-  enabled: z.boolean().describe('Whether the tab is on: only a tab that is on lets the LTI tool read its course'),
-  context: ltiTabContextSchema.nullable().describe('The course the tab launches as; null when none is'),
+  enabled: z.boolean().describe('Whether the tab is on'),
+  audience: ltiAudienceSchema,
+  closure: z
+    .enum(ltiTabClosures)
+    .nullable()
+    .describe(
+      'Why the tab does not open, null when it opens: only a tab that opens lets the LTI tool read who is in its channel, one that is an LTI context',
+    ),
+  archived: z.boolean().describe('Whether its channel is archived: then its tab does not open, whatever else allows it'),
+  isLtiContext: z
+    .boolean()
+    .describe('Whether its channel is an LTI context: there a tab that opens lets the LTI tool read who is in it, with reading members granted'),
   deletable: z.boolean().describe('Whether the caller may remove it: they may update its channel'),
 });
 
@@ -225,15 +258,17 @@ export const createLtiResourceLinkBodySchema = channelRefSchema.extend({
   installationId: validIdSchema.describe('An approved LTI installation of the tenant'),
   title: validNameSchema,
   custom: resourceLinkCustomSchema.optional(),
+  audience: ltiAudienceSchema.optional().describe('Whom the tab opens for; `members` when left out'),
 });
 
 export const updateLtiResourceLinkBodySchema = z.object({
   title: validNameSchema.optional(),
   custom: resourceLinkCustomSchema.optional(),
+  audience: ltiAudienceSchema.optional(),
   enabled: z
     .boolean()
     .optional()
-    .describe('Switches the tab on or off, keeping its id: it takes the rights placing it takes, and an active LTI tool to switch it on'),
+    .describe("Switches the tab on or off, keeping its id: switching it on takes an active LTI tool allowed in the channel's type"),
 });
 
 export const ltiResourceLinkSchema = z
@@ -244,7 +279,12 @@ export const ltiResourceLinkSchema = z
     installationId: z.string().describe('The LTI installation it launches'),
     title: z.string(),
     custom: z.record(z.string(), z.string()),
-    enabled: z.boolean().describe('Whether the tab is on: it shows, launches and lets the LTI tool read its course. Off, it keeps its id'),
+    enabled: z
+      .boolean()
+      .describe(
+        'Whether the tab is on: it shows and launches, and lets the LTI tool read who is in its channel if that is an LTI context. Off, it keeps its id',
+      ),
+    audience: ltiAudienceSchema,
     createdAt: z.string(),
     updatedAt: z.string().nullable(),
     ...auditShape,
@@ -261,7 +301,7 @@ export const ltiLaunchStartSchema = z.object({
   expiresAt: z.string().describe('When the launch record stops working, unless the launch used it before'),
 });
 
-/** The path of a course's members: the channel a launch names as its LTI context. */
+/** The path of an LTI context's members: the channel a launch names as its context. */
 export const ltiMembershipsParamSchema = tenantOrgParamSchema.extend(channelRefSchema.shape);
 
 /** The fewest members a page holds whatever `limit` asks: a reader of a few hundred stays well inside the burst limit. */
@@ -273,7 +313,7 @@ export const listLtiMembersQuerySchema = z.object({
     .string()
     .max(maxLength.url)
     .optional()
-    .describe('Lists only the members with this LTI role in the course: a full URI, or a core context role by its short name, such as `Learner`'),
+    .describe('Lists only the members with this LTI role there: a full URI, or a core context role by its short name, such as `Learner`'),
   limit: maxPageSizeSchema(pageSizeCap)
     .transform((size) => Math.max(size, minLtiMembersPage))
     .describe(
@@ -286,7 +326,7 @@ export const listLtiMembersQuerySchema = z.object({
 /** A member as NRPS lists one (section 2.2); the personal fields are the claims a launch carries, by their names. */
 const ltiMemberSchema = z.object({
   user_id: z.string().describe('The person: the id a launch sends as `sub`'),
-  roles: z.array(z.string()).describe('Their LTI roles in the course, as full URIs: the roles a launch there would send them'),
+  roles: z.array(z.string()).describe('Their LTI context roles there, as full URIs: the context roles a launch there would send them'),
   status: z.literal('Active').describe('Every member listed is active'),
   name: z.string().optional().describe('Their name, when released'),
   given_name: z.string().optional().describe('Their given name, when released and they have one'),
@@ -295,12 +335,12 @@ const ltiMemberSchema = z.object({
   picture: z.string().optional().describe('The address of their picture, when released and they have one'),
 });
 
-/** A page of a course's members, an NRPS membership container (section 2.1). */
+/** A page of an LTI context's members, an NRPS membership container (section 2.1). */
 export const ltiMembershipContainerSchema = z.object({
   id: z.string().describe('The address this page was read at'),
   context: z
     .object({ id: z.string(), label: z.string(), title: z.string() })
-    .describe("The course, as a launch's context claim names it: the channel's id, slug and name"),
+    .describe("The LTI context, as a launch's context claim names it: the channel's id, slug and name"),
   members: z.array(ltiMemberSchema),
 });
 

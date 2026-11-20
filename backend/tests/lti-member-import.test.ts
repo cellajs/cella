@@ -24,7 +24,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
-import { lisContextRoles, ltiNrps } from '#/lib/lti-vocabulary';
+import { lisContextRoles, lisInstitutionRoles, ltiNrps } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
 import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
 import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
@@ -293,7 +293,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
       const [installationId] = connection.config.deploymentIds;
       await call(approveLtiInstallation, {
         path: { ...platformSide.path, ltiInstallationId: installationId },
-        body: { releasedFields: ['name'], grantedScopes },
+        body: { releasedFields: ['name'], grantedScopes, channelTypes: ['organization'] },
         headers: platformSide.headers,
       });
       const placed = await call(createLtiResourceLink, {
@@ -306,7 +306,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
 
     type Connected = Awaited<ReturnType<typeof connectThroughRegistration>>;
 
-    /** A launch of the placement by the person `cookie` signs in, played through both sides as the browser plays it. */
+    /** A launch of the tab by the person `cookie` signs in, played through both sides as the browser plays it. */
     async function launch({ platformSide, resourceLinkId }: Connected, cookie: string) {
       const started = await call(startLtiLaunch, {
         path: { ...platformSide.path, ltiResourceLinkId: resourceLinkId },
@@ -473,38 +473,56 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(await orgMembershipOf(unlisted.id, side.org.id)).toMatchObject({ role: memberRole });
   });
 
-  // Attack: a platform that never ends its list holds no import, and no worker, for long.
+  // Attack: a platform that never ends its list holds no import, and no worker, for long. A person it lists without a
+  // role the app takes does not hide that the list went on, and the list's length does not hide a member limit.
   it('stops reading at the bound of a platform that lists without end', async () => {
     const side = await connectToFakePlatform();
     const api = fakePlatformApi((url) => ({
       members: Array.from({ length: Number(url.searchParams.get('limit')) }, (_, index) => ({
-        user_id: `lms-${index % 3}`,
-        roles: [lisContextRoles.learner],
+        user_id: `lms-${index % 4}`,
+        roles: index % 4 ? [lisContextRoles.learner] : [],
       })),
       next: url.href,
     }));
 
     await importLtiMembersOp(side.context.id, api.options);
     expect(api.memberReads()).toHaveLength(maxMembersPages);
-    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 3, importIssue: 'too_many_members' });
+    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 4, importIssue: 'too_many_members' });
+
+    // A member limit that leaves someone out outranks the list's length, which is true of this course at every import.
+    await limitSeats(side, 0);
+    const another = fakePlatformApi((url) => ({
+      members: Array.from({ length: Number(url.searchParams.get('limit')) }, (_, index) => ({
+        user_id: `lms-${index % 5}`,
+        roles: [lisContextRoles.learner],
+      })),
+      next: url.href,
+    }));
+    await importLtiMembersOp(side.context.id, another.options);
+    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 5, importIssue: 'member_limit' });
   });
 
-  // Attack: a platform that names any number of courses makes the app read at most `maxCoursesPerHour` of them an hour.
-  // The course says its import waits, unless the last import was refused in a way that lasts.
-  it('queues no import of a connection whose imports within the hour reached their bound, and records that it waits', async () => {
+  // Attack: a platform that names any number of courses makes the app read at most `maxCoursesPerHour` different ones
+  // within an hour: the course that would pass the bound waits, a retry of a course already counted reads. The course
+  // says its import waits, unless the last import was refused in a way that lasts.
+  it('starts no import of a connection whose courses within the hour reached their bound, and records that it waits', async () => {
     const side = await connectToFakePlatform();
-    const imported = await Promise.all(
-      Array.from({ length: maxCoursesPerHour }, (_, index) =>
-        addCourse(side, side.connection, `${side.issuer}/api/lti/courses/${index}/memberships`, `course-${index + 2}`),
-      ),
-    );
-    const ids = imported.map(({ id }) => id);
-    await db.update(ltiContextsTable).set({ importRanAt: getIsoDate() }).where(inArray(ltiContextsTable.id, ids));
+    const { id: _id, ...held } = (await contextRow(side.context.id)) ?? side.context;
+    const spent = Array.from({ length: maxCoursesPerHour - 1 }, (_, index) => ({ ...held, contextId: `spent-${index}`, importRanAt: getIsoDate() }));
+    await db.insert(ltiContextsTable).values(spent);
+    const api = fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] }));
+    const other = await addCourse(side, side.connection, `${side.issuer}/api/lti/courses/course-2/memberships`, 'course-2');
+    await importLtiMembersOp(side.context.id, api.options);
+    await importLtiMembersOp(other.id, api.options);
+    expect(api.memberReads()).toHaveLength(1);
+    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 1, importIssue: null });
+    expect(await contextRow(other.id)).toMatchObject({ importRanAt: null, importIssue: 'waiting' });
 
     send.mockClear();
-    await requestLtiMemberImport(side.context, side.admin.id);
+    const third = await addCourse(side, side.connection, `${side.issuer}/api/lti/courses/course-3/memberships`, 'course-3');
+    await requestLtiMemberImport(third, side.admin.id);
     expect(send).not.toHaveBeenCalled();
-    expect(await contextRow(side.context.id)).toMatchObject({ importRanAt: null, importIssue: 'waiting' });
+    expect(await contextRow(third.id)).toMatchObject({ importRanAt: null, importIssue: 'waiting' });
 
     // A refusal that lasts stays in place: the connection or the platform has to change before an import reads.
     for (const importIssue of ['register_again', 'scope_not_granted', 'members_refused'] as const) {
@@ -515,11 +533,9 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     }
     expect(send).not.toHaveBeenCalled();
 
-    const api = fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] }));
-    await importLtiMembersOp(side.context.id, api.options);
-    expect(api.requests).toEqual([]);
+    // A retry is of a course counted when it first ran: it reads.
     await importLtiMembersOp(side.context.id, { ...api.options, retry: true });
-    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 1, importIssue: null });
+    expect(api.memberReads()).toHaveLength(2);
   });
 
   // Contract: NRPS 2.0 as the spec's example answers it (section 2.1, its trailing comma dropped) and as Canvas does,
@@ -751,6 +767,22 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 3, importIssue: 'member_limit' });
     expect(await named(early.userId)).toBe('Grace Hopper');
     expect(await named(side.admin.id)).toBe(adminName);
+  });
+
+  // Attack: a person the app's role mapping gives no role is no member: the import leaves them out with no account,
+  // and the course says people were left out. An institution Administrator alone is read as the context's.
+  it('leaves out who has no role the app takes, makes no account for them, and records it', async () => {
+    const side = await connectToFakePlatform();
+    const api = fakePlatformApi(() => ({
+      members: [
+        { user_id: 'lms-learner', roles: [lisContextRoles.learner] },
+        { user_id: 'lms-staff', roles: [lisInstitutionRoles.staff] },
+        { user_id: 'lms-admin', roles: [lisInstitutionRoles.administrator] },
+      ],
+    }));
+    await importLtiMembersOp(side.context.id, api.options);
+    expect((await ltiIdentities(side.issuer)).map(({ subject }) => subject).sort()).toEqual(['lms-admin', 'lms-learner']);
+    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 3, importIssue: 'no_role' });
   });
 
   // Attack: two tenants registered at one platform read one membership address, never with each other's token.

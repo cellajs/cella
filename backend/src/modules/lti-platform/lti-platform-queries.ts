@@ -1,5 +1,5 @@
 import { and, asc, eq, getColumns, gt, inArray, isNotNull, sql } from 'drizzle-orm';
-import { type Access, type AccessScope, appConfig, hierarchy } from 'shared';
+import { type Access, type AccessScope, type ChannelEntityType, hierarchy } from 'shared';
 import type { ActorBinding, DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { updateStamps } from '#/db/utils/stamps';
@@ -15,7 +15,6 @@ import { usersTable } from '#/modules/user/user-db';
 import { readableMembershipsWhere } from '#/permissions/visible-people';
 import type { ChannelRef, OrderDirection } from '#/schemas/common-schemas';
 import { getOrderColumns } from '#/utils/order-column';
-import { pick } from '#/utils/pick';
 
 const { secretHash: _secretHash, ltiToolConfig, initiateLoginUri, jwksUri, ...clientColumns } = getColumns(oauthClientsTable);
 
@@ -77,8 +76,8 @@ export async function findLtiInstallation(ctx: DbContext, { id, tenantId }: { id
 }
 
 /**
- * One installation of the tenant, its service account row locked until the transaction ends: an approval and a
- * rejection of one installation run one after the other. Undefined when the tenant has no such installation.
+ * One installation of the tenant, its service account row locked until the transaction ends: an approval, an update
+ * and a delete of one installation run one after the other. Undefined when the tenant has no such installation.
  */
 export async function lockLtiInstallation(ctx: DbContext, { id, tenantId }: { id: string; tenantId: string }) {
   const [found] = await installationJoin(ctx)
@@ -122,19 +121,24 @@ interface ApproveLtiInstallationOpts {
   tenantId: string;
   releasedFields: LtiReleasableField[];
   grantedScopes: AccessScope[];
+  channelTypes: ChannelEntityType[];
   by: ActorId;
 }
 
 /**
  * Approves an installation inside the caller's transaction: its service account turns active and its side row records
- * the released fields, the granted scopes and the approval, both stamped by `by`.
+ * the released fields, the granted scopes, the allowed channel types and the approval, both stamped by `by`.
  * @returns What the two rows were set to.
  */
-export async function approveLtiInstallation(ctx: DbContext, { id, tenantId, releasedFields, grantedScopes, by }: ApproveLtiInstallationOpts) {
+export async function approveLtiInstallation(
+  ctx: DbContext,
+  { id, tenantId, releasedFields, grantedScopes, channelTypes, by }: ApproveLtiInstallationOpts,
+) {
   const stamps = updateStamps(by);
   const decision = {
     releasedFields: [...new Set(releasedFields)],
     grantedScopes: [...new Set(grantedScopes)],
+    channelTypes: [...new Set(channelTypes)],
     approvedAt: stamps.updatedAt,
     approvedBy: stamps.updatedBy,
     ...stamps,
@@ -145,14 +149,19 @@ export async function approveLtiInstallation(ctx: DbContext, { id, tenantId, rel
 }
 
 /**
- * Replaces the access scopes an installation's tokens may carry, stamped by `by`.
+ * Replaces the access scopes an installation's tokens may carry, or the channel types it may get a tab in, stamped by
+ * `by`. Its tabs in a type taken away stay as they are and stop opening (`ltiTabClosure`).
  * @returns What the side row was set to.
  */
-export async function updateLtiInstallationScopes(
+export async function updateLtiInstallationGrant(
   ctx: DbContext,
-  { id, grantedScopes, by }: { id: string; grantedScopes: AccessScope[]; by: ActorId },
+  { id, grantedScopes, channelTypes, by }: { id: string; grantedScopes?: AccessScope[]; channelTypes?: ChannelEntityType[]; by: ActorId },
 ) {
-  const values = { grantedScopes: [...new Set(grantedScopes)], ...updateStamps(by) };
+  const values = {
+    ...(grantedScopes && { grantedScopes: [...new Set(grantedScopes)] }),
+    ...(channelTypes && { channelTypes: [...new Set(channelTypes)] }),
+    ...updateStamps(by),
+  };
   await ctx.var.db.update(ltiInstallationsTable).set(values).where(eq(ltiInstallationsTable.serviceAccountId, id));
   return values;
 }
@@ -187,6 +196,33 @@ export async function findLtiResourceLinks(ctx: DbContext, { tenantId, order, ..
     .orderBy(...orderBy);
 }
 
+/**
+ * The resource links placed in one channel of the tenant, in `order` of creation, each with what decides whether it
+ * opens (`ltiTabClosure`): its installation's status, approval and allowed channel types.
+ */
+export async function findLtiChannelTabs(
+  ctx: DbContext,
+  { tenantId, channelId, order }: { tenantId: string; channelId: string; order: OrderDirection },
+) {
+  const orderBy = getOrderColumns({
+    sort: 'createdAt',
+    order,
+    columns: { createdAt: ltiResourceLinksTable.createdAt },
+    tieBreaker: ltiResourceLinksTable.id,
+  });
+  return ctx.var.db
+    .select({
+      resourceLink: ltiResourceLinksTable,
+      account: { status: serviceAccountsTable.status },
+      installation: { approvedAt: ltiInstallationsTable.approvedAt, channelTypes: ltiInstallationsTable.channelTypes },
+    })
+    .from(ltiResourceLinksTable)
+    .innerJoin(serviceAccountsTable, eq(serviceAccountsTable.id, ltiResourceLinksTable.installationId))
+    .innerJoin(ltiInstallationsTable, eq(ltiInstallationsTable.serviceAccountId, ltiResourceLinksTable.installationId))
+    .where(and(eq(ltiResourceLinksTable.tenantId, tenantId), eq(ltiResourceLinksTable.channelId, channelId)))
+    .orderBy(...orderBy);
+}
+
 /** One resource link of the organization; undefined when it has none of that id. */
 export async function findLtiResourceLink(ctx: DbContext, { id, organizationId }: { id: string; organizationId: string }) {
   const [found] = await ctx.var.db
@@ -194,34 +230,6 @@ export async function findLtiResourceLink(ctx: DbContext, { id, organizationId }
     .from(ltiResourceLinksTable)
     .where(and(eq(ltiResourceLinksTable.id, id), eq(ltiResourceLinksTable.organizationId, organizationId)));
   return found;
-}
-
-/** What `placementContext` reads of a resource link: its channel and the channel id columns above it. */
-const placementSelect = pick(getColumns(ltiResourceLinksTable), [
-  'channelType',
-  'channelId',
-  ...appConfig.channelEntityTypes.map((channelType) => appConfig.entityIdColumnKeys[channelType]),
-]);
-
-interface FindLtiPlacementsOpts {
-  installationId: string;
-  organizationId: string;
-  course: ChannelRef;
-}
-
-/** The channels of every tab that is on and places the installation in the organization, in the course or below it. */
-export async function findLtiPlacements(ctx: DbContext, { installationId, organizationId, course }: FindLtiPlacementsOpts) {
-  return ctx.var.db
-    .select(placementSelect)
-    .from(ltiResourceLinksTable)
-    .where(
-      and(
-        eq(ltiResourceLinksTable.installationId, installationId),
-        eq(ltiResourceLinksTable.organizationId, organizationId),
-        eq(ltiResourceLinksTable.enabled, true),
-        eq(getColumns(ltiResourceLinksTable)[appConfig.entityIdColumnKeys[course.channelType]], course.channelId),
-      ),
-    );
 }
 
 interface FindLtiMembersOpts extends ChannelRef {
@@ -235,7 +243,8 @@ interface FindLtiMembersOpts extends ChannelRef {
 
 /**
  * A channel's people in order of id, which an installed LTI tool reads: an order by name or address would tell what is
- * not released. Of each, what a launch's personal claims read, the address only once proven.
+ * not released. Of each, their role in the channel, which their LTI roles there come from, and what a launch's personal
+ * claims read, the address only once proven.
  */
 export async function findLtiMembers(ctx: DbContext, { organizationId, channelType, channelId, access, after, limit }: FindLtiMembersOpts) {
   const { id, name, givenName, familyName, email, thumbnailUrl } = servedUserSelect;
@@ -244,7 +253,7 @@ export async function findLtiMembers(ctx: DbContext, { organizationId, channelTy
     .from(membershipsTable)
     .where(readableMembershipsWhere(access, [organizationId]));
   return ctx.var.db
-    .select({ id, name, givenName, familyName, email, thumbnailUrl })
+    .select({ id, name, givenName, familyName, email, thumbnailUrl, role: membershipsTable.role })
     .from(usersTable)
     .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
     .where(
@@ -270,7 +279,10 @@ export async function updateLtiResourceLink(
   {
     id,
     values,
-  }: { id: string; values: Partial<Pick<typeof ltiResourceLinksTable.$inferInsert, 'title' | 'custom' | 'enabled' | 'updatedAt' | 'updatedBy'>> },
+  }: {
+    id: string;
+    values: Partial<Pick<typeof ltiResourceLinksTable.$inferInsert, 'title' | 'custom' | 'enabled' | 'audience' | 'updatedAt' | 'updatedBy'>>;
+  },
 ) {
   const [updated] = await ctx.var.db.update(ltiResourceLinksTable).set(values).where(eq(ltiResourceLinksTable.id, id)).returning();
   return updated;

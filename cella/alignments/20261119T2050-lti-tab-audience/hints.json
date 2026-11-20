@@ -1,0 +1,4 @@
+[
+  { "type": "create", "kind": "column", "entity": ["public", "lti_installations", "channel_types"] },
+  { "type": "create", "kind": "column", "entity": ["public", "lti_resource_links", "audience"] }
+]

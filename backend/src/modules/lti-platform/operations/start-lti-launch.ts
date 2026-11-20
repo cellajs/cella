@@ -4,21 +4,23 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { readMemberships } from '#/middlewares/guard/membership-cache';
 import { issueHandoffToken, readHandoffToken } from '#/modules/auth/core';
+import { ltiTabClosure } from '#/modules/lti-platform/helpers/context-channel';
 import { launchOrigins, launchTargetLinkUri, loginInitiationUrl } from '#/modules/lti-platform/helpers/launch-message';
+import { opensFor } from '#/modules/lti-platform/helpers/tab-audience';
 import { findLtiLaunchTarget, findLtiResourceLink } from '#/modules/lti-platform/lti-platform-queries';
 import type { LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
-import { accessFrom } from '#/permissions/access';
+import { membershipActorVars } from '#/permissions/access';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 
-type LaunchedLink = Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId' | 'channelType' | 'channelId'>;
+type LaunchedLink = Pick<LtiResourceLinkModel, 'tenantId' | 'organizationId' | 'channelType' | 'channelId' | 'audience'>;
 
 /**
- * Who may launch a resource link: a person who may read its channel through their own memberships, read now. A system
- * admin is nobody special here: the ID token carries the person's own access, as a token does. Starting a launch and
- * the launch endpoint decide alike.
- * @returns The channel and the person's access, which the launch's roles are decided with.
- * @throws AppError 404 when the person may not read the channel.
+ * Who may launch a resource link: a person who may read its channel through their own memberships, read now, and whom
+ * its audience takes in (`opensFor`). A system admin is nobody special here: the ID token carries the person's own
+ * access, as a token does. Starting a launch and the launch endpoint decide alike, as the tab list does.
+ * @returns The channel, and the person's memberships, which the launch's roles are decided with.
+ * @throws AppError 404 when the person may not read the channel, or is outside the tab's audience.
  */
 export const readAsLauncher = async (personId: string, link: LaunchedLink) => {
   const { memberships } = await readMemberships(personId);
@@ -27,30 +29,35 @@ export const readAsLauncher = async (personId: string, link: LaunchedLink) => {
       db: baseDb,
       tenantId: link.tenantId,
       organizationId: link.organizationId,
-      actor: { id: personId, bindings: memberships, scopes: null },
-      isSystemAdmin: false,
+      ...membershipActorVars(personId, memberships),
     },
   };
   const { entity } = await getValidChannel(launcherCtx, link.channelId, link.channelType, 'read');
-  return { channel: entity, access: accessFrom(launcherCtx) };
+  if (!opensFor(link.audience, { personId, memberships }, link.channelType, entity))
+    throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiResourceLink' } });
+  return { channel: entity, memberships };
 };
 
 /**
  * Starts a launch of a resource link, for a caller who may launch it (`readAsLauncher`): a one-use launch record names
  * the person, the tenant and the resource link. The answer is the login initiation page that hands the record to the
  * LTI tool.
- * @throws AppError 404 `not_found` for no such link or a caller who may not launch it, 409 `lti_tab_switched_off` for a
- *   tab switched off, 409 `lti_installation_not_active` while the installation waits for an approval or is disabled.
+ * @throws AppError 404 `not_found` for no such link or a caller who may not launch it; for a tab that does not open
+ *   (`ltiTabClosure`), 409 with why or 403 `lti_tab_channel_archived`.
  */
 export async function startLtiLaunchOp(ctx: UserContext, id: string) {
   const { tenantId, organizationId } = ctx.var;
   const link = await findLtiResourceLink(ctx, { id, organizationId });
   if (!link) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiResourceLink' } });
   await readAsLauncher(ctx.var.user.id, link);
-  if (!link.enabled) throw new AppError(409, 'lti_tab_switched_off', 'warn', { meta: { resourceLinkId: link.id } });
   const target = await findLtiLaunchTarget(ctx, { resourceLinkId: link.id });
-  if (!target?.installation.approvedAt || target.account.status !== 'active') {
-    throw new AppError(409, 'lti_installation_not_active', 'warn', { meta: { installationId: link.installationId } });
+  if (!target) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiResourceLink' } });
+  const closure = ltiTabClosure({ ...target, link, archivedChannelIds: ctx.var.archivedChannelIds ?? new Set<string>() });
+  if (closure) {
+    throw new AppError(closure === 'lti_tab_channel_archived' ? 403 : 409, closure, 'warn', {
+      entityType: link.channelType,
+      meta: { resourceLinkId: link.id },
+    });
   }
 
   const { rawToken, expiresAt } = await issueHandoffToken(ctx, {

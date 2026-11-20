@@ -38,6 +38,17 @@ export const lisContextTypes = {
   group: 'http://purl.imsglobal.org/vocab/lis/v2/course#Group',
 } as const;
 
+const lisContextTypeUris: readonly string[] = Object.values(lisContextTypes);
+
+/**
+ * A context type as a full URI: a LIS context type by its short name (`CourseOffering`), as a platform may still write
+ * it, is one of `lisContextTypes`. Any other type stays as it comes.
+ */
+export const lisContextTypeUri = (type: string) => lisContextTypeUris.find((uri) => uri.endsWith(`#${type}`)) ?? type;
+
+/** Whether a context type, as a full URI, is a LIS course or group type: Canvas's `Account` and `User` are not. */
+export const isLisContextType = (type: string) => lisContextTypeUris.includes(type);
+
 /** The core LIS context roles (LTI Core 1.3, appendix A.2.3), as full URIs: short names are deprecated. */
 export const lisContextRoles = {
   administrator: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Administrator',
@@ -46,6 +57,28 @@ export const lisContextRoles = {
   learner: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Learner',
   mentor: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Mentor',
 } as const;
+
+/** The core LIS institution roles a launch may carry beside its context roles (LTI Core 1.3, appendix A.2.2), as full URIs. */
+export const lisInstitutionRoles = {
+  administrator: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Administrator',
+  faculty: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Faculty',
+  guest: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Guest',
+  none: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#None',
+  other: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Other',
+  staff: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Staff',
+  student: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student',
+} as const;
+
+/** Whether a role, as a full URI, is a LIS context role or one of its sub-roles, not an institution or system role. */
+export const isLisContextRole = (role: string) => role.startsWith('http://purl.imsglobal.org/vocab/lis/v2/membership');
+
+/**
+ * A person's LTI roles as an LTI tool reads them, at a launch and in an import: the institution role Administrator with
+ * no context role, as platforms send their admins outside the courses they are enrolled in, adds the context role
+ * Administrator, for every app alike. A person the platform sends any context role keeps the roles it sent.
+ */
+export const ltiRolesAsRead = (roles: string[]) =>
+  !roles.some(isLisContextRole) && roles.includes(lisInstitutionRoles.administrator) ? [...roles, lisContextRoles.administrator] : roles;
 
 /**
  * A role as a full URI: a core context role by its short name (`Learner`, or `Instructor#TeachingAssistant` for a

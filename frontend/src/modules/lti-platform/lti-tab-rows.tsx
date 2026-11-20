@@ -1,19 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
-import { PlusIcon } from 'lucide-react';
+import { CheckIcon, ChevronDownIcon, PencilIcon, UsersIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ListLtiTabsResponse } from 'sdk';
+import type { ListLtiTabsResponse, LtiResourceLink } from 'sdk';
+import { zLtiResourceLink } from 'sdk/zod.gen';
 import { ltiTabId } from 'shared/tools-config';
-import type { TKey } from '~/lib/i18n-locales';
-import { ConfirmForm } from '~/modules/common/confirm-form';
+import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { NamedText } from '~/modules/common/named-text';
 import { openConfirm } from '~/modules/common/open-confirm';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { LtiToolOrigin, sharesNameAmong } from '~/modules/lti-platform/lti-tool-origin';
 import { ltiTabsQueryOptions, useCreateLtiResourceLinkMutation, useUpdateLtiResourceLinkMutation } from '~/modules/lti-platform/query';
+import { myMembershipsQueryOptions } from '~/modules/me/query';
+import { Button } from '~/modules/ui/button';
 import { Switch } from '~/modules/ui/switch';
+import { useUserStore } from '~/modules/user/user-store';
+import { cn } from '~/utils/cn';
 
 type LtiTab = ListLtiTabsResponse['results'][number];
 
@@ -25,16 +30,6 @@ export interface LtiTabRow {
   /** Another LTI tool's row carries the same name: the row shows what tells them apart. */
   sharesName: boolean;
 }
-
-/** A refusal that keeps the tab from being switched either way: the course it launches as. */
-const isCourseRefusal = (refusal: LtiTab['refusal']) => refusal === 'channel_archived' || refusal === 'lti_context_update_required';
-
-/** A course refusal names the course, or the channel under it where the caller may not read the course. */
-const refusalTexts = {
-  lti_installation_disabled: 'c:lti_tab_tool_disabled.text',
-  channel_archived: 'c:lti_tab_context_archived.text',
-  lti_context_update_required: 'c:lti_tab_context_required.text',
-} as const satisfies Record<NonNullable<LtiTab['refusal']>, TKey>;
 
 /**
  * The channel's LTI tabs as rows, read in the card with their own pending and failed state: the placed ones in the order
@@ -58,24 +53,92 @@ export function LtiTabOrigin({ row }: { row: LtiTabRow }) {
   return <LtiToolOrigin launchOrigins={row.tab.launchOrigins} createdAt={row.tab.createdAt} />;
 }
 
+/** Whose people the row's LTI tool reads while its tab is on and opens, whoever the tab opens for. */
+export function LtiTabReads({ row, channel }: { row: LtiTabRow; channel: EnrichedChannel }) {
+  if (!row.tab.readsMembers || !row.tab.resourceLink?.enabled || row.tab.refusal) return null;
+  return (
+    <span className="text-muted-foreground text-xs leading-tight">
+      <NamedText i18nKey="c:lti_tab_reads.text" name={channel.name} />
+    </span>
+  );
+}
+
 /**
- * Why the row's tab cannot be switched on, or either way: a disabled LTI tool, or the course above `channel` it launches
- * as, by its name and its type's label, by `channel`'s name where the caller may not read it.
+ * Why the row's tab cannot be switched on, and for a tab placed here why it does not open: a disabled LTI tool, or one
+ * an admin did not allow in the channel's type.
  */
 export function LtiTabRefusal({ row, channel }: { row: LtiTabRow; channel: EnrichedChannel }) {
   const { t } = useTranslation();
-  const { refusal, context } = row.tab;
-  if (!refusal || (isCourseRefusal(refusal) && !context)) return null;
+  const { refusal, resourceLink } = row.tab;
+  if (!refusal) return null;
+  const resource = t(`c:${channel.entityType}`);
+  const text =
+    refusal === 'lti_installation_disabled'
+      ? t('c:lti_tab_tool_disabled.text')
+      : resourceLink
+        ? t('error:lti_tab_type_not_allowed.text', { resource })
+        : t('error:lti_channel_type_not_allowed.text', { resource });
+  return <span className="text-muted-foreground text-xs leading-tight">{text}</span>;
+}
 
-  const unnamed = refusal === 'lti_context_update_required' && !context?.name;
+type LtiAudience = LtiResourceLink['audience'];
+
+const audienceIcons = { members: UsersIcon, editors: PencilIcon } as const satisfies Record<LtiAudience, IconComponent>;
+
+interface LtiAudienceChoiceProps {
+  /** The tab's audience now; none for a tab never placed. */
+  current?: LtiAudience;
+  onChoose: (audience: LtiAudience) => void;
+}
+
+/**
+ * Whom a tab opens for, as dropdowner items: its channel's members, or those who may change the channel. A label wraps
+ * where a confirmation's width cuts it.
+ */
+function LtiAudienceChoice({ current, onChoose }: LtiAudienceChoiceProps) {
+  const { t } = useTranslation();
+  return zLtiResourceLink.shape.audience.options.map((audience) => (
+    <DropdownActionItem key={audience} icon={audienceIcons[audience]} selected={audience === current} onSelect={() => onChoose(audience)}>
+      <span className="min-w-0 grow text-left">{t(`c:lti_audience.${audience}`)}</span>
+      <CheckIcon className={cn('text-success size-4 shrink-0', audience !== current && 'invisible')} />
+    </DropdownActionItem>
+  ));
+}
+
+/** Whom a placed tab opens for, changed in place by whoever may switch it. */
+export function LtiTabAudience({ channel, row, tabIndex }: { channel: EnrichedChannel; row: LtiTabRow; tabIndex: number }) {
+  const { t } = useTranslation();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const { mutate: update, isPending, variables } = useUpdateLtiResourceLinkMutation();
+  const link = row.tab.resourceLink;
+  if (!link) return null;
+
+  const audience = (isPending && variables?.body.audience) || link.audience;
+  const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel), ltiResourceLinkId: link.id };
+  const id = `lti-tab-audience-${link.id}`;
+  const choose = (next: LtiAudience) => next !== audience && update({ path, body: { audience: next } });
+  const open = () =>
+    dropdowner.getState().create(<LtiAudienceChoice current={audience} onChoose={choose} />, {
+      id,
+      triggerId: id,
+      triggerRef,
+      align: 'start',
+      kind: 'menu',
+    });
+
   return (
-    <span className="text-muted-foreground text-xs leading-tight">
-      <NamedText
-        i18nKey={unnamed ? 'c:lti_tab_context_required_unnamed.text' : refusalTexts[refusal]}
-        name={context?.name ?? channel.name}
-        values={{ resource: context ? t(`c:${context.channelType}`) : '' }}
-      />
-    </span>
+    <Button
+      ref={triggerRef}
+      variant="ghost"
+      size="micro"
+      tabIndex={tabIndex}
+      aria-label={`${row.name}: ${t(`c:lti_audience.${audience}`)}`}
+      className="text-muted-foreground -ml-1 w-fit font-normal"
+      onClick={open}
+    >
+      {t(`c:lti_audience.${audience}`)}
+      <ChevronDownIcon className="size-3" />
+    </Button>
   );
 }
 
@@ -87,7 +150,11 @@ interface LtiTabSwitchProps {
   onToggle: () => void;
 }
 
-/** Switches an LTI tool's tab on and off, keeping its resource link; switching on one that reads course members asks first. */
+/**
+ * Switches an LTI tool's tab on and off, keeping its resource link. Switching on asks whom it opens for and names whose
+ * people the LTI tool then reads where it may. A person without a membership in the channel learns that a tab for its
+ * members does not open for them, and a system admin that a tab opens for them only by their own memberships.
+ */
 export function LtiTabSwitch({ channel, row, tabIndex, onToggle }: LtiTabSwitchProps) {
   const { t } = useTranslation();
   const switchRef = useRef<HTMLElement>(null);
@@ -96,48 +163,48 @@ export function LtiTabSwitch({ channel, row, tabIndex, onToggle }: LtiTabSwitchP
   const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) };
   const { tab } = row;
   const link = tab.resourceLink;
+  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
+  const isSystemAdmin = useUserStore((state) => state.isSystemAdmin);
+  const isMember = !!myMemberships?.results.some((membership) => membership.channelId === channel.id);
 
-  const setEnabled = (enabled: boolean) => {
+  const switchOff = () => {
     onToggle();
-    if (link) return update({ path: { ...path, ltiResourceLinkId: link.id }, body: { enabled } });
-    create({ path, body: { channelType: channel.entityType, channelId: channel.id, installationId: tab.id, title: tab.name } });
+    if (link) update({ path: { ...path, ltiResourceLinkId: link.id }, body: { enabled: false } });
   };
 
-  const confirmOn = (trigger: HTMLElement, course: NonNullable<LtiTab['context']>) =>
+  const switchOn = (audience: LtiAudience) => {
+    onToggle();
+    if (link) return update({ path: { ...path, ltiResourceLinkId: link.id }, body: { enabled: true, audience } });
+    create({ path, body: { channelType: channel.entityType, channelId: channel.id, installationId: tab.id, title: tab.name, audience } });
+  };
+
+  const confirmOn = (trigger: HTMLElement) =>
     openConfirm(trigger, {
       id: `switch-on-lti-tab-${tab.id}`,
       title: (
-        <NamedText
-          i18nKey={course.channelId === channel.id ? 'c:confirm.add_lti_tab' : 'c:confirm.add_lti_tab_above'}
-          name={tab.name}
-          values={{ course: course.name ?? '', resource: t(`c:${course.channelType}`), channel: channel.name }}
-        />
+        <>
+          <NamedText
+            i18nKey={tab.readsMembers ? 'c:confirm.add_lti_tab_reads' : 'c:confirm.add_lti_tab'}
+            name={row.name}
+            values={{ channel: channel.name }}
+          />
+          {!isMember && (
+            <span className="text-muted-foreground mt-1 block">
+              <NamedText i18nKey={isSystemAdmin ? 'c:lti_tab_system_admin.text' : 'c:lti_tab_not_member.text'} name={channel.name} />
+            </span>
+          )}
+        </>
       ),
-      content: (
-        <ConfirmForm
-          label={t('c:add_resource', { resource: t('c:tab') })}
-          icon={PlusIcon}
-          pending={false}
-          onConfirm={() => {
-            dropdowner.getState().remove();
-            setEnabled(true);
-          }}
-        />
-      ),
+      content: <LtiAudienceChoice current={link?.audience} onChoose={switchOn} />,
     });
 
   const onCheckedChange = (checked: boolean) => {
-    if (!checked) return setEnabled(false);
-    // A course to read and the grant to read it: the person sees whose people the LTI tool reads before it does, or nothing happens
-    if (tab.readsMembers && tab.context) {
-      if (switchRef.current) confirmOn(switchRef.current, tab.context);
-      return;
-    }
-    setEnabled(true);
+    if (!checked) return switchOff();
+    if (switchRef.current) confirmOn(switchRef.current);
   };
 
   const on = switching ? !!variables?.body.enabled : placing || !!link?.enabled;
-  const refused = isCourseRefusal(tab.refusal) || (!on && tab.refusal === 'lti_installation_disabled');
+  const refused = !on && !!tab.refusal;
 
   return (
     <Switch

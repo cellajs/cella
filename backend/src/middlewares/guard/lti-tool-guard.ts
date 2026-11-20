@@ -4,12 +4,13 @@ import { isUuid } from 'shared/utils/entity-id';
 import type { Env } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
+import { loadArchivedChannelIds } from '#/middlewares/guard/archived-channels-cache';
 import { routeTarget } from '#/middlewares/guard/route-target';
 import { challengeRefusal, setServiceActor, unauthorized } from '#/middlewares/guard/service-guard';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
 import { updateLastSeenAt } from '#/middlewares/update-last-seen';
-import { placementContext } from '#/modules/lti-platform/helpers/context-channel';
-import { findLtiInstallation, findLtiPlacements } from '#/modules/lti-platform/lti-platform-queries';
+import { linkContext, ltiTabClosure } from '#/modules/lti-platform/helpers/context-channel';
+import { findLtiChannelTabs, findLtiInstallation } from '#/modules/lti-platform/lti-platform-queries';
 import { bearerChallenge, type ResourceRef } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom, type VerifiedAccessToken, verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import type { RoleBinding } from '#/modules/service-accounts/service-accounts-schema';
@@ -32,29 +33,34 @@ const resolveInstallationToken = async (token: VerifiedAccessToken) => {
 };
 
 /**
- * The access the installation's placements in or below the course in the route's path imply, read at every request:
- * the least privileged role of the course's type, when one of them in the route's organization launches as that course
- * (`placementContext`), its id compared whatever its case, of tabs that are on. Nothing is stored: a tab removed or
- * switched off, or a deleted channel, takes it away at once. A path that names no such course, or a channel type the
- * app does not have, binds nothing: the tenant then refuses the actor with a 403, before the route validates its path.
+ * The access the installation's tab in the channel in the route's path implies, read at every request: the least
+ * privileged role of the channel's type, when the installation has a tab in exactly that channel of the route's
+ * organization, its id compared whatever its case, that opens (`ltiTabClosure`), and the channel is an LTI context
+ * (`linkContext`). A tab in a channel above or below gives nothing. Nothing is stored: a tab switched off, a withdrawn
+ * channel type or a deleted channel takes it away at the next request, and an archive once this process reads the
+ * organization's archived channels again. Those are read only for a channel the installation has a tab in. A path that
+ * names no such channel, or a channel type the app does not have, binds nothing: the tenant then refuses the actor with
+ * a 403, before the route validates its path.
  */
-const courseBindings = async (installationId: string, ctx: Context<Env>): Promise<RoleBinding[]> => {
+const contextBindings = async (installationId: string, tenantId: string, ctx: Context<Env>): Promise<RoleBinding[]> => {
   const channelType = appConfig.channelEntityTypes.find((type) => type === ctx.req.param('channelType'));
   const [channelId, organizationId] = [ctx.req.param('channelId')?.toLowerCase(), ctx.req.param('organizationId')?.toLowerCase()];
   if (!channelType || !channelId || !organizationId || !isUuid(channelId) || !isUuid(organizationId)) return [];
-  const placements = await findLtiPlacements(dbCtx, { installationId, organizationId, course: { channelType, channelId } });
-  const placed = placements.some((placement) => {
-    const context = placementContext(placement);
-    return context?.channelType === channelType && context.channelId === channelId;
-  });
-  return placed ? [{ channelType, channelId, organizationId, role: hierarchy.getLeastPrivilegedRole(channelType) }] : [];
+  const tabs = await findLtiChannelTabs(dbCtx, { tenantId, channelId, order: 'asc' });
+  const tab = tabs.find(
+    ({ resourceLink: link }) => link.installationId === installationId && link.organizationId === organizationId && link.channelType === channelType,
+  );
+  if (!tab || !linkContext(tab.resourceLink)) return [];
+  const archivedChannelIds = await loadArchivedChannelIds(dbCtx, { tenantId, organizationId });
+  if (ltiTabClosure({ link: tab.resourceLink, account: tab.account, installation: tab.installation, archivedChannelIds })) return [];
+  return [{ channelType, channelId, organizationId, role: hierarchy.getLeastPrivilegedRole(channelType) }];
 };
 
 /**
- * The guard of the routes an installed LTI tool calls as itself (`ltiMemberRoutes`), each for the course in its path:
- * only a token of an LTI installation, verified locally and bound to this route's tenant. The request acts as the
- * installation's service account with the binding its placements imply on that course (`courseBindings`), masked by
- * the token's scopes, and carries the installation. Every other proof is refused, a person's token and an API key
+ * The guard of the routes an installed LTI tool calls as itself (`ltiMemberRoutes`), each for the LTI context in its
+ * path: only a token of an LTI installation, verified locally and bound to this route's tenant. The request acts as
+ * the installation's service account with the binding its tab there implies (`contextBindings`), masked by the token's
+ * scopes, and carries the installation. Every other proof is refused, a person's token and an API key
  * included.
  */
 export const ltiToolGuard = xMiddleware(
@@ -67,7 +73,7 @@ export const ltiToolGuard = xMiddleware(
     limiters: [serviceBurstLimiter],
     name: 'LTI tool',
     description:
-      'Works only with an access token of an installed LTI tool. The request acts as its installation in the courses it is placed in or below, within the scopes an admin granted.',
+      'Works only with an access token of an installed LTI tool. The request acts as its installation in the LTI contexts where it has a tab that opens, within the scopes an admin granted.',
   },
   async (ctx, next) => {
     const target = routeTarget(ctx);
@@ -77,13 +83,17 @@ export const ltiToolGuard = xMiddleware(
       ctx.header('WWW-Authenticate', bearerChallenge(ref));
       throw unauthorized('access_token_required');
     }
-    await challengeRefusal(ctx, ref, async () => {
+    const { found, scopes } = await challengeRefusal(ctx, ref, async () => {
       const token = await verifyAccessToken(jwt, { tenantId: target.tenantId });
-      const found = await resolveInstallationToken(token);
-      const bindings = await courseBindings(found.account.id, ctx);
-      setServiceActor(ctx, { ...found.account, bindings }, token.scopes);
-      ctx.set('ltiInstallation', found);
+      return { found: await resolveInstallationToken(token), scopes: token.scopes };
     });
-    return serviceBurstLimiter(ctx, next);
+    setServiceActor(ctx, { ...found.account, bindings: [] }, scopes);
+    ctx.set('ltiInstallation', found);
+    // The burst limit counts the request before a path it names costs a read
+    return serviceBurstLimiter(ctx, async () => {
+      const bindings = await contextBindings(found.account.id, found.account.tenantId, ctx);
+      setServiceActor(ctx, { ...found.account, bindings }, scopes);
+      await next();
+    });
   },
 );

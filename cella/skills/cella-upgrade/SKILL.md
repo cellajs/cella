@@ -51,6 +51,7 @@ Resolve in this order. Pinned files never conflict (see Vocabulary).
 | Cella-owned file with fork markers (UU) | Take theirs, grep the pre-merge version (`git show :2:<file> \| grep -n -A2 'fork:'`), re-apply exactly the marked deltas with their markers. |
 | Cella-owned file, no markers, unclear delta | Suspect accidental drift. Diff `:2:` vs `:3:`: no intentional axis on the fork side, take theirs; intentional, re-apply WITH a new `// fork:` marker. |
 | Generated output (sdk/gen, routeTree.gen, openapi cache) | Take either side; regenerate at step 4. |
+| A migration folder the app regenerated under its own name, conflicting with upstream's change to its own folder | `backend/drizzle` is not synced: git's rename detection pairs the two folders. Keep the app's migration and apply the alignment's data statement to the app's folder. |
 
 ## 3. Silent-damage sweep
 

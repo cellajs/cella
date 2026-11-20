@@ -476,7 +476,7 @@ export type StreamError = {
 };
 
 /**
- * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry and the access scopes its own tokens may carry, or rejects it. An approved one is disabled and re-enabled as a service account.
+ * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry, the access scopes its own tokens may carry and the channel types it may get a tab in, or rejects it, which deletes it. An approved one is disabled and re-enabled as a service account.
  */
 export type LtiInstallation = {
   /**
@@ -520,7 +520,11 @@ export type LtiInstallation = {
    */
   grantedScopes: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write' | 'user:read'>;
   /**
-   * `pending` until an admin approves or rejects it
+   * The channel types an admin allowed it a tab in: only there a channel switches its tab on
+   */
+  channelTypes: Array<'organization'>;
+  /**
+   * `pending` until an admin approves it, or rejects it by deleting it
    */
   status: 'pending' | 'active' | 'disabled';
   approvedAt: string | null;
@@ -579,9 +583,13 @@ export type LtiResourceLink = {
     [key: string]: string;
   };
   /**
-   * Whether the tab is on: it shows, launches and lets the LTI tool read its course. Off, it keeps its id
+   * Whether the tab is on: it shows and launches, and lets the LTI tool read who is in its channel if that is an LTI context. Off, it keeps its id
    */
   enabled: boolean;
+  /**
+   * Whom the tab opens for: `members`, the people holding a membership in its channel, whom the LTI tool reads there; `editors`, whoever may update the channel. It bounds who opens the tab, not whom the LTI tool reads
+   */
+  audience: 'members' | 'editors';
   createdAt: string;
   updatedAt: string | null;
   createdBy:
@@ -3855,7 +3863,7 @@ export type FinishLtiLaunchErrors = {
   /**
    * Launch refused
    *
-   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a roles claim, a test user, an archived course, or a new member when the organization has no seat left.
+   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a role the app takes, a test user, a launch without a course by someone not known here yet, an archived course, or a new member when the organization has no seat left.
    */
   403: unknown;
   /**
@@ -3865,9 +3873,9 @@ export type FinishLtiLaunchErrors = {
    */
   404: unknown;
   /**
-   * Course not set up
+   * Not set up yet
    *
-   * A page: an instructor opens the app from this course first.
+   * A page: someone who can change the course on the platform opens the app from it first.
    */
   409: unknown;
   /**
@@ -4185,6 +4193,7 @@ export type ListLtiContextsResponses = {
         | 'failed'
         | 'too_many_members'
         | 'member_limit'
+        | 'no_role'
         | 'inactive'
         | null;
       /**
@@ -4820,20 +4829,31 @@ export type ListLtiInstallationTabsResponses = {
       channelId: string;
       channelName: string;
       /**
-       * Whether the tab is on: only a tab that is on lets the LTI tool read its course
+       * Whether the tab is on
        */
       enabled: boolean;
       /**
-       * The course the tab launches as; null when none is
+       * Whom the tab opens for: `members`, the people holding a membership in its channel, whom the LTI tool reads there; `editors`, whoever may update the channel. It bounds who opens the tab, not whom the LTI tool reads
        */
-      context: {
-        channelType: 'organization';
-        channelId: string;
-        /**
-         * Null for a course above the channel that the caller may not read
-         */
-        name: string | null;
-      } | null;
+      audience: 'members' | 'editors';
+      /**
+       * Why the tab does not open, null when it opens: only a tab that opens lets the LTI tool read who is in its channel, one that is an LTI context
+       */
+      closure:
+        | 'lti_tab_switched_off'
+        | 'lti_installation_not_active'
+        | 'lti_tab_type_holds_no_tabs'
+        | 'lti_tab_type_not_allowed'
+        | 'lti_tab_channel_archived'
+        | null;
+      /**
+       * Whether its channel is archived: then its tab does not open, whatever else allows it
+       */
+      archived: boolean;
+      /**
+       * Whether its channel is an LTI context: there a tab that opens lets the LTI tool read who is in it, with reading members granted
+       */
+      isLtiContext: boolean;
       /**
        * Whether the caller may remove it: they may update its channel
        */
@@ -4862,6 +4882,10 @@ export type ApproveLtiInstallationData = {
      * The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none
      */
     grantedScopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write' | 'user:read'>;
+    /**
+     * The channel types it may get a tab in, of those that hold LTI tabs: a type the app makes an LTI context, and the organization; empty or left out allows none
+     */
+    channelTypes?: Array<'organization'>;
   };
   path: {
     tenantId: string;
@@ -4969,6 +4993,10 @@ export type UpdateLtiInstallationData = {
      * The access scopes the installation's own tokens may carry, each one the LTI tool asked for; empty or left out grants none
      */
     grantedScopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write' | 'user:read'>;
+    /**
+     * Replaces the channel types it may get a tab in; its tabs in a type taken away stay as they are and stop opening until it is allowed again
+     */
+    channelTypes?: Array<'organization'>;
   };
   path: {
     tenantId: string;
@@ -5024,55 +5052,6 @@ export type UpdateLtiInstallationResponses = {
 };
 
 export type UpdateLtiInstallationResponse = UpdateLtiInstallationResponses[keyof UpdateLtiInstallationResponses];
-
-export type RejectLtiInstallationData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    organizationId: string;
-    ltiInstallationId: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}:reject';
-};
-
-export type RejectLtiInstallationErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Conflict
-   */
-  409: ConflictError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type RejectLtiInstallationError = RejectLtiInstallationErrors[keyof RejectLtiInstallationErrors];
-
-export type RejectLtiInstallationResponses = {
-  /**
-   * Installation rejected
-   */
-  204: void;
-};
-
-export type RejectLtiInstallationResponse = RejectLtiInstallationResponses[keyof RejectLtiInstallationResponses];
 
 export type ListLtiTabsData = {
   body?: never;
@@ -5152,24 +5131,13 @@ export type ListLtiTabsResponses = {
        */
       status: 'pending' | 'active' | 'disabled';
       /**
-       * Whether an admin granted it reading course members: a tab that is on lets it read the people of the course the tab launches as
+       * Whether its tab here, on, lets it read who is in the channel: an admin granted it reading members, the channel is an LTI context, and nothing in `refusal` closes the tab
        */
       readsMembers: boolean;
       /**
-       * Why the caller may not place it in the channel or switch its tab on: an archived course above or one the caller may not update, which also keep the tab from being switched off and come first, else a disabled LTI tool; null when they may
+       * Why the caller may not place it in the channel or switch its tab on, and why its tab here does not open: a disabled LTI tool, else one an admin did not allow in its type; null when they may
        */
-      refusal: 'lti_installation_disabled' | 'channel_archived' | 'lti_context_update_required' | null;
-      /**
-       * The course a tab in the channel launches as; null when none is
-       */
-      context: {
-        channelType: 'organization';
-        channelId: string;
-        /**
-         * Null for a course above the channel that the caller may not read
-         */
-        name: string | null;
-      } | null;
+      refusal: 'lti_installation_disabled' | 'lti_channel_type_not_allowed' | null;
       /**
        * The tab once placed, on or off; null for an LTI tool never placed in the channel
        */
@@ -5177,6 +5145,10 @@ export type ListLtiTabsResponses = {
         id: string;
         title: string;
         enabled: boolean;
+        /**
+         * Whom the tab opens for: `members`, the people holding a membership in its channel, whom the LTI tool reads there; `editors`, whoever may update the channel. It bounds who opens the tab, not whom the LTI tool reads
+         */
+        audience: 'members' | 'editors';
       } | null;
     }>;
     /**
@@ -5280,6 +5252,10 @@ export type CreateLtiResourceLinkData = {
     custom?: {
       [key: string]: string;
     };
+    /**
+     * Whom the tab opens for; `members` when left out
+     */
+    audience?: 'members' | 'editors';
   };
   path: {
     tenantId: string;
@@ -5390,7 +5366,11 @@ export type UpdateLtiResourceLinkData = {
       [key: string]: string;
     };
     /**
-     * Switches the tab on or off, keeping its id: it takes the rights placing it takes, and an active LTI tool to switch it on
+     * Whom the tab opens for: `members`, the people holding a membership in its channel, whom the LTI tool reads there; `editors`, whoever may update the channel. It bounds who opens the tab, not whom the LTI tool reads
+     */
+    audience?: 'members' | 'editors';
+    /**
+     * Switches the tab on or off, keeping its id: switching it on takes an active LTI tool allowed in the channel's type
      */
     enabled?: boolean;
   };
@@ -5517,7 +5497,7 @@ export type ListLtiMembersData = {
   };
   query?: {
     /**
-     * Lists only the members with this LTI role in the course: a full URI, or a core context role by its short name, such as `Learner`
+     * Lists only the members with this LTI role there: a full URI, or a core context role by its short name, such as `Learner`
      */
     role?: string;
     /**
@@ -5571,7 +5551,7 @@ export type ListLtiMembersResponses = {
      */
     id: string;
     /**
-     * The course, as a launch's context claim names it: the channel's id, slug and name
+     * The LTI context, as a launch's context claim names it: the channel's id, slug and name
      */
     context: {
       id: string;
@@ -5584,7 +5564,7 @@ export type ListLtiMembersResponses = {
        */
       user_id: string;
       /**
-       * Their LTI roles in the course, as full URIs: the roles a launch there would send them
+       * Their LTI context roles there, as full URIs: the context roles a launch there would send them
        */
       roles: Array<string>;
       /**

@@ -1,0 +1,81 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "bc750f66-290b-47e0-b8ce-a60f8e5d2c87",
+  "prevIds": [
+    "d85373d6-9117-4a6c-81e5-f2a4242f490c"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_installations",
+        "channel_types"
+      ],
+      "writes": [
+        "s|col|public.lti_installations.channel_types",
+        "n|col|public.lti_installations.channel_types",
+        "e|col|public.lti_installations.channel_types"
+      ],
+      "reads": [
+        "n|tbl|public.lti_installations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "lti_resource_links",
+        "audience"
+      ],
+      "writes": [
+        "s|col|public.lti_resource_links.audience",
+        "n|col|public.lti_resource_links.audience",
+        "e|col|public.lti_resource_links.audience"
+      ],
+      "reads": [
+        "n|tbl|public.lti_resource_links",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_installations",
+        "name": "channel_types",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'[]'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "lti_resource_links",
+        "name": "audience",
+        "type": "varchar",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'members'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

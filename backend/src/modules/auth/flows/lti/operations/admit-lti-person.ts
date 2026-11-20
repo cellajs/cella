@@ -17,12 +17,45 @@ import { log } from '#/utils/logger';
 /** A person's organization membership, when they hold a seat. */
 type Seat = Pick<MembershipModel, 'id' | 'role'>;
 
-interface AdmitLtiPersonOpts {
+/** Who a platform names, as the connection's tenant knows them: its `lti` identity and its organization seat. */
+interface LtiPersonOpts {
   connection: LtiConnection;
   organization: OrganizationModel;
+  person: LtiPerson;
+}
+
+/**
+ * The `lti` identity of a person a platform names (the connection's tenant, the platform's issuer and `sub`), under the
+ * lock that a launch and an import of them both take, and their seat in the organization.
+ */
+const lockLtiPerson = async (ctx: DbContext, { connection, organization, person }: LtiPersonOpts) => {
+  const key = { kind: 'lti', tenantId: connection.tenantId, provider: connection.issuer, subject: person.sub } as const;
+  await lockIdentityKey(ctx, key);
+  const identity = await findIdentityBySubject(ctx, key);
+  const [seat] = identity ? await findMembershipsByUserIdsAndChannel(ctx, { userIds: [identity.userId], channelId: organization.id }) : [];
+  return { identity, seat };
+};
+
+type LtiIdentity = NonNullable<Awaited<ReturnType<typeof lockLtiPerson>>['identity']>;
+
+/**
+ * Keeps the email the platform released on the identity, records a launch's sign-in there, the proof that verifies it,
+ * and names the account.
+ */
+const updateLtiPerson = async (
+  ctx: DbContext,
+  identity: LtiIdentity,
+  { connection, person, signedInAt, by }: { connection: LtiConnection; person: LtiPerson; signedInAt?: string; by: ActorId },
+) => {
+  const email = person.email ?? null;
+  const signIn = signedInAt ? { lastSignInAt: signedInAt, verifiedAt: identity.verifiedAt ?? signedInAt, connectionId: connection.id } : undefined;
+  if (signIn || identity.email !== email) await updateIdentity(ctx, { id: identity.id, values: { ...signIn, email } });
+  await nameLtiAccount(ctx, { userId: identity.userId, person, by });
+};
+
+interface AdmitLtiPersonOpts extends LtiPersonOpts {
   /** The tenant's member limit (`restrictions.quotas.user`); 0 for none. */
   memberQuota: number;
-  person: LtiPerson;
   /** When a launch signed the person in; absent for an import. */
   signedInAt?: string;
   /** Who names an account (`nameLtiAccount`): the connection's service account for an import, the person for a launch. */
@@ -30,36 +63,42 @@ interface AdmitLtiPersonOpts {
 }
 
 /**
- * The account of a person a platform names, under the lock of their `lti` identity (the connection's tenant, the
- * platform's issuer and `sub`) that a launch and an import of them both take. It is found by that identity, or made (`createLtiAccount`). A person
- * who holds no seat needs a free one under the tenant's member limit (`hasFreeSeats`). Both keep the email the
- * platform released on the identity, and a launch records the sign-in there, the proof that verifies it.
+ * The account of a person a platform names, found by their `lti` identity (`lockLtiPerson`) or made
+ * (`createLtiAccount`). A person who holds no seat needs a free one under the tenant's member limit (`hasFreeSeats`).
  * @returns The account and its seat; undefined when the person needs a seat and none is left, with nothing written.
  */
 export const admitLtiPerson = async (
   ctx: DbContext,
   { connection, organization, memberQuota, person, signedInAt, by }: AdmitLtiPersonOpts,
 ): Promise<{ userId: UserId; seat?: Seat } | undefined> => {
-  const key = { kind: 'lti', tenantId: connection.tenantId, provider: connection.issuer, subject: person.sub } as const;
-  await lockIdentityKey(ctx, key);
-  const identity = await findIdentityBySubject(ctx, key);
-  const [seat] = identity ? await findMembershipsByUserIdsAndChannel(ctx, { userIds: [identity.userId], channelId: organization.id }) : [];
+  const { identity, seat } = await lockLtiPerson(ctx, { connection, organization, person });
   if (!seat && !(await hasFreeSeats(ctx, { tenantId: organization.tenantId, organizationId: organization.id, quota: memberQuota }))) return;
   if (!identity) return { userId: await createLtiAccount(ctx, { connection, person, signedInAt }) };
-
-  const email = person.email ?? null;
-  const signIn = signedInAt ? { lastSignInAt: signedInAt, verifiedAt: identity.verifiedAt ?? signedInAt, connectionId: connection.id } : undefined;
-  if (signIn || identity.email !== email) await updateIdentity(ctx, { id: identity.id, values: { ...signIn, email } });
-  await nameLtiAccount(ctx, { userId: identity.userId, person, by: by ?? identity.userId });
+  await updateLtiPerson(ctx, identity, { connection, person, signedInAt, by: by ?? identity.userId });
   return { userId: identity.userId, seat };
 };
 
 /**
- * The role the app-owned `ltiContextRole` maps a person to in a channel of `channelType`. An answer that is no role of
- * that type, such as a course role's name for the organization, gives its least privileged role and a warning.
+ * The account of a person the tenant's tie to the platform knows as a member of the organization: an `lti` identity of
+ * the tenant and issuer, from an earlier launch in a context or an import, whose account holds a seat. A launch without
+ * a context signs only them in: it records the sign-in and writes no membership, role or seat.
+ * @returns The account; undefined for anyone else, with nothing written.
  */
-export const ltiRoleIn = (channelType: ChannelEntityType, facts: Omit<LtiRoleFacts, 'channelType'>): MembershipModel['role'] => {
+export const signInKnownLtiMember = async (ctx: DbContext, opts: LtiPersonOpts & { signedInAt: string }) => {
+  const { identity, seat } = await lockLtiPerson(ctx, opts);
+  if (!identity || !seat) return;
+  await updateLtiPerson(ctx, identity, { ...opts, by: identity.userId });
+  return identity.userId;
+};
+
+/**
+ * The role the app-owned `ltiContextRole` maps a person to in a channel of `channelType`, null for none. An answer that
+ * is no role of that type, such as a course role's name for the organization, gives its least privileged role and a
+ * warning.
+ */
+export const ltiRoleIn = (channelType: ChannelEntityType, facts: Omit<LtiRoleFacts, 'channelType'>): MembershipModel['role'] | null => {
   const role = ltiContextRole({ ...facts, channelType });
+  if (role === null) return null;
   const roles: readonly string[] = hierarchy.getRoles(channelType);
   if (roles.includes(role)) return role;
   log.warn('LTI role mapping answered no role of the channel type', { channelType, role, connectionId: facts.connection.id });

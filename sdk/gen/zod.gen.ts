@@ -376,7 +376,7 @@ export const zStreamError = z.object({
 });
 
 /**
- * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry and the access scopes its own tokens may carry, or rejects it. An approved one is disabled and re-enabled as a service account.
+ * An LTI tool installed in the organization: the registration it made by LTI Dynamic Registration, private to the tenant, and the service account it acts as. It waits for an organization admin, who approves it with the personal fields its launches may carry, the access scopes its own tokens may carry and the channel types it may get a tab in, or rejects it, which deletes it. An approved one is disabled and re-enabled as a service account.
  */
 export const zLtiInstallation = z.object({
   id: z.string(),
@@ -392,6 +392,7 @@ export const zLtiInstallation = z.object({
   releasedFields: z.array(z.enum(['name', 'email', 'picture'])),
   requestedScopes: z.array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read'])),
   grantedScopes: z.array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read'])),
+  channelTypes: z.array(z.enum(['organization'])),
   status: z.enum(['pending', 'active', 'disabled']),
   approvedAt: z.string().nullable(),
   createdAt: z.string(),
@@ -445,6 +446,7 @@ export const zLtiResourceLink = z.object({
   title: z.string(),
   custom: z.record(z.string(), z.string()),
   enabled: z.boolean(),
+  audience: z.enum(['members', 'editors']),
   createdAt: z.string(),
   updatedAt: z.string().nullable(),
   createdBy: z
@@ -1827,6 +1829,7 @@ export const zListLtiContextsResponse = z.object({
           'failed',
           'too_many_members',
           'member_limit',
+          'no_role',
           'inactive',
         ])
         .nullable(),
@@ -2032,13 +2035,18 @@ export const zListLtiInstallationTabsResponse = z.object({
       channelId: z.string(),
       channelName: z.string(),
       enabled: z.boolean(),
-      context: z
-        .object({
-          channelType: z.enum(['organization']),
-          channelId: z.string(),
-          name: z.string().nullable(),
-        })
+      audience: z.enum(['members', 'editors']),
+      closure: z
+        .enum([
+          'lti_tab_switched_off',
+          'lti_installation_not_active',
+          'lti_tab_type_holds_no_tabs',
+          'lti_tab_type_not_allowed',
+          'lti_tab_channel_archived',
+        ])
         .nullable(),
+      archived: z.boolean(),
+      isLtiContext: z.boolean(),
       deletable: z.boolean(),
     }),
   ),
@@ -2051,6 +2059,10 @@ export const zApproveLtiInstallationBody = z.object({
   grantedScopes: z
     .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read']))
     .max(5)
+    .optional(),
+  channelTypes: z
+    .array(z.enum(['organization']))
+    .max(1)
     .optional(),
 });
 
@@ -2081,6 +2093,10 @@ export const zUpdateLtiInstallationBody = z.object({
     .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read']))
     .max(5)
     .optional(),
+  channelTypes: z
+    .array(z.enum(['organization']))
+    .max(1)
+    .optional(),
 });
 
 export const zUpdateLtiInstallationPath = z.object({
@@ -2093,17 +2109,6 @@ export const zUpdateLtiInstallationPath = z.object({
  * Updated installation
  */
 export const zUpdateLtiInstallationResponse = zLtiInstallation;
-
-export const zRejectLtiInstallationPath = z.object({
-  tenantId: z.string().max(50),
-  organizationId: z.string().max(50),
-  ltiInstallationId: z.string().max(50),
-});
-
-/**
- * Installation rejected
- */
-export const zRejectLtiInstallationResponse = z.void();
 
 export const zListLtiTabsPath = z.object({
   tenantId: z.string().max(50),
@@ -2131,19 +2136,13 @@ export const zListLtiTabsResponse = z.object({
       createdAt: z.string(),
       status: z.enum(['pending', 'active', 'disabled']),
       readsMembers: z.boolean(),
-      refusal: z.enum(['lti_installation_disabled', 'channel_archived', 'lti_context_update_required']).nullable(),
-      context: z
-        .object({
-          channelType: z.enum(['organization']),
-          channelId: z.string(),
-          name: z.string().nullable(),
-        })
-        .nullable(),
+      refusal: z.enum(['lti_installation_disabled', 'lti_channel_type_not_allowed']).nullable(),
       resourceLink: z
         .object({
           id: z.string(),
           title: z.string(),
           enabled: z.boolean(),
+          audience: z.enum(['members', 'editors']),
         })
         .nullable(),
     }),
@@ -2185,6 +2184,7 @@ export const zCreateLtiResourceLinkBody = z.object({
     .max(255)
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
   custom: z.record(z.string(), z.string().max(255)).optional(),
+  audience: z.enum(['members', 'editors']).optional(),
 });
 
 export const zCreateLtiResourceLinkPath = z.object({
@@ -2216,6 +2216,7 @@ export const zUpdateLtiResourceLinkBody = z.object({
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .optional(),
   custom: z.record(z.string(), z.string().max(255)).optional(),
+  audience: z.enum(['members', 'editors']).optional(),
   enabled: z.boolean().optional(),
 });
 
