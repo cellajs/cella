@@ -31,6 +31,7 @@ import { planLtiContextChannel, setsUpLtiContext, storedLtiContextChannel } from
 import { importLtiMembersOp, ltiMemberImportQueue, maxContextsPerHour } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
+import { maxLtiDeployments } from '#/modules/connections/connections-schema';
 import { ltiContextTypes } from '#/modules/lti-platform/launch-context';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { countTakenSeats } from '#/modules/memberships/operations/organization-seats';
@@ -296,12 +297,6 @@ describe('LTI launch at the app as an LTI tool', async () => {
         type: 'lti_launch_invalid',
       },
       {
-        name: 'a deployment the connection does not hold',
-        run: async () => (await launch(connected, { [ltiClaims.deploymentId]: 'deployment-2' })).response,
-        status: 403,
-        type: 'lti_deployment_unknown',
-      },
-      {
         name: 'the test user role',
         run: async () => (await launch(connected, { [ltiClaims.roles]: [lisContextRoles.learner, ltiTestUserRole] })).response,
         status: 403,
@@ -383,12 +378,12 @@ describe('LTI launch at the app as an LTI tool', async () => {
     }
   });
 
-  // Two first launches at once: one records its deployment, the other is refused whether it read the connection before that record or after.
-  it('records the deployment of the first launch to a connection that holds none, and refuses a concurrent first launch from another', async () => {
-    const connected = await connect(await fakePlatform('platform-a'), []);
-    const deploymentIds = ['deployment-1', 'deployment-2'];
+  // Contract: a platform deploys one registration in several places under one client id (LTI Core 1.3, section 3.1.3).
+  // Two first launches of new deployments at once both record theirs; past the cap a new one is refused.
+  it('launches every deployment of the platform, records two new ones launched at once, and refuses one past the cap', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
     const posts = await Promise.all(
-      deploymentIds.map(async (deploymentId) => {
+      ['deployment-2', 'deployment-3'].map(async (deploymentId) => {
         const started = await login(connected);
         const idToken = await sign({ ...launchClaims(connected, started.nonce), [ltiClaims.deploymentId]: deploymentId }, connected.platform);
         return { id_token: idToken, state: started.state, storage_value: started.value };
@@ -396,12 +391,16 @@ describe('LTI launch at the app as an LTI tool', async () => {
     );
     const responses = await Promise.all(posts.map((post) => finish(post)));
 
-    const winner = responses.findIndex((response) => response.status === 303);
-    expect(winner).not.toBe(-1);
-    await expectRefusalPage(responses[1 - winner], 403, 'lti_deployment_unknown');
+    expect(responses.map(({ status }) => status)).toEqual([303, 303]);
     const [row] = await db.select().from(connectionsTable).where(eq(connectionsTable.id, connected.connection.id));
-    expect(isLtiConnection(row) && row.config.deploymentIds).toEqual([deploymentIds[winner]]);
-    expect(await db.select().from(identitiesTable).where(eq(identitiesTable.kind, 'lti'))).toHaveLength(1);
+    expect(isLtiConnection(row) && [...row.config.deploymentIds].sort()).toEqual(['deployment-1', 'deployment-2', 'deployment-3']);
+
+    const full = await connect(
+      await fakePlatform('platform-full'),
+      Array.from({ length: maxLtiDeployments }, (_, index) => `deployment-${index}`),
+    );
+    const refused = await launch(full, { [ltiClaims.deploymentId]: 'deployment-new' });
+    await expectRefusalPage(refused.response, 403, 'lti_deployment_unknown');
   });
 
   // The embedded cookie is partitioned per parent site; a sibling frame there holds it too.

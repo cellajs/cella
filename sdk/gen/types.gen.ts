@@ -1102,7 +1102,7 @@ export type Connection = {
          */
         version: string;
         /**
-         * The LTI deployment a launch must name: the one the registration returned, else the first launch; empty before either
+         * The platform's LTI deployments the connection takes launches from: the one the registration returned, and each one a launch named first; empty before either
          */
         deploymentIds: Array<string>;
       }

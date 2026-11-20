@@ -1,4 +1,4 @@
-import { and, arrayOverlaps, eq, inArray, ne, or, sql } from 'drizzle-orm';
+import { and, arrayOverlaps, eq, inArray, ne, not, or, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { UserId } from '#/db/utils/ids';
 import { servedColumns } from '#/db/utils/served-columns';
@@ -10,6 +10,7 @@ import {
   isLtiConnection,
   type ServedConnection,
 } from '#/modules/connections/connections-db';
+import { maxLtiDeployments } from '#/modules/connections/connections-schema';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
@@ -282,22 +283,26 @@ export const findLtiConnectionByClient = async (ctx: DbContext, { issuer, client
 };
 
 /**
- * Records the LTI deployment of a connection whose platform named none at registration. Of two concurrent first
- * launches the first to write decides: the other's update waits for that commit and then matches no row.
- * @returns Whether the connection holds `deploymentId` afterwards: false when another launch recorded a different one.
+ * Adds an LTI deployment to a connection that holds fewer than `maxLtiDeployments`. Two launches of new deployments at
+ * once both add theirs: the second update waits for the first's commit, then appends to the list it wrote.
+ * @returns Whether the connection holds `deploymentId` afterwards: false at the cap.
  */
-export const recordFirstLtiDeployment = async (ctx: DbContext, { id, deploymentId, by }: { id: string; deploymentId: string; by: UserId }) => {
+export const addLtiDeployment = async (ctx: DbContext, { id, deploymentId, by }: { id: string; deploymentId: string; by: UserId }) => {
   const deploymentIds = sql`coalesce(${connectionsTable.config} -> 'deploymentIds', '[]'::jsonb)`;
-  const recorded = await ctx.var.db
+  const holds = sql`${deploymentIds} @> jsonb_build_array(${deploymentId}::text)`;
+  const added = await ctx.var.db
     .update(connectionsTable)
-    .set({ config: sql`jsonb_set(${connectionsTable.config}, '{deploymentIds}', jsonb_build_array(${deploymentId}::text))`, ...updateStamps(by) })
-    .where(and(eq(connectionsTable.id, id), sql`${deploymentIds} = '[]'::jsonb`))
+    .set({
+      config: sql`jsonb_set(${connectionsTable.config}, '{deploymentIds}', ${deploymentIds} || jsonb_build_array(${deploymentId}::text))`,
+      ...updateStamps(by),
+    })
+    .where(and(eq(connectionsTable.id, id), not(holds), sql`jsonb_array_length(${deploymentIds}) < ${maxLtiDeployments}`))
     .returning({ id: connectionsTable.id });
-  if (recorded.length) return true;
+  if (added.length) return true;
 
   const holding = await ctx.var.db
     .select({ id: connectionsTable.id })
     .from(connectionsTable)
-    .where(and(eq(connectionsTable.id, id), sql`${deploymentIds} @> jsonb_build_array(${deploymentId}::text)`));
+    .where(and(eq(connectionsTable.id, id), holds));
   return holding.length > 0;
 };

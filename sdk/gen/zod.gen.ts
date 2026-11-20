@@ -915,7 +915,7 @@ export const zConnection = z.object({
       registrationClientUri: z.string().max(2048).optional(),
       productFamilyCode: z.string().max(255),
       version: z.string().max(255),
-      deploymentIds: z.array(z.string().max(255)).max(1),
+      deploymentIds: z.array(z.string().max(255)).max(100),
     }),
     z.object({
       idpEntityIds: z.array(z.string().min(1).max(255)).optional(),

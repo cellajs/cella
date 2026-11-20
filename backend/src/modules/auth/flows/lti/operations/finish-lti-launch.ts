@@ -22,7 +22,7 @@ import type { LtiPerson } from '#/modules/auth/flows/lti/operations/create-lti-a
 import { requestLtiMemberImport } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { findLaunchConnection, validateLtiLaunch } from '#/modules/auth/flows/lti/operations/validate-lti-launch';
 import type { LtiConnection } from '#/modules/connections/connections-db';
-import { recordFirstLtiDeployment } from '#/modules/connections/connections-queries';
+import { addLtiDeployment } from '#/modules/connections/connections-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { channelIdColumnsOf } from '#/modules/memberships/helpers/membership-helpers';
 import type { MembershipModel } from '#/modules/memberships/memberships-db';
@@ -185,15 +185,15 @@ const enterWithoutContext = async (txCtx: DbContext, facts: LaunchFacts) => {
 };
 
 /**
- * Records the deployment of a launch through a connection that held none: validation let any through, and another
- * first launch may have recorded one since.
- * @throws AppError 403 `lti_deployment_unknown` when that launch recorded another.
+ * Records a launch's deployment on its connection at the first launch from it: validation let a new one through below
+ * the cap, and other launches may have added deployments since.
+ * @throws AppError 403 `lti_deployment_unknown` when the connection reached its cap meanwhile.
  */
 const recordLtiDeployment = async (
   txCtx: DbContext,
   { connection, deploymentId, by }: { connection: LtiConnection; deploymentId: string; by: UserId },
 ) => {
-  if (connection.config.deploymentIds.length || (await recordFirstLtiDeployment(txCtx, { id: connection.id, deploymentId, by }))) return;
+  if (connection.config.deploymentIds.includes(deploymentId) || (await addLtiDeployment(txCtx, { id: connection.id, deploymentId, by }))) return;
   throw new AppError(403, 'lti_deployment_unknown', 'warn', { meta: { rule: 'deployment_id', connectionId: connection.id } });
 };
 
@@ -202,8 +202,8 @@ const recordLtiDeployment = async (
  * held. Checks the launch (`validateLtiLaunch`) and maps its context to a channel type (`ltiContextChannelType`). A
  * launch with a context maps the person to a role there (`ltiContextRole`) and enters it (`enterLtiContext`). A launch
  * without one admits nobody new: it signs in only a member the tenant knows from an earlier launch or an import
- * (`signInKnownLtiMember`) and writes no membership, role or seat. Either records the LTI deployment of a connection that
- * held none, in the same transaction, and starts the embedded session: no MFA challenge, the launch is the proof. A
+ * (`signInKnownLtiMember`) and writes no membership, role or seat. Either records an LTI deployment the connection does
+ * not hold yet, in the same transaction, and starts the embedded session: no MFA challenge, the launch is the proof. A
  * launch by someone who sets the context up (`setsUpLtiContext`), through the connection that holds it, asks for a
  * member import (`requestLtiMemberImport`) without waiting for it.
  * @returns The embedded page of the channel to redirect to.
@@ -211,7 +211,7 @@ const recordLtiDeployment = async (
  *   `lti_launch_no_context` for a launch without a context by a person the tenant does not know as a member, 403
  *   `lti_launch_no_roles` for a person `ltiContextRole` maps to no role, 403 `channel_archived` for a person the launch
  *   would add to an archived channel, 403 `lti_member_limit` for a person who needs a seat while none is left, 403
- *   `lti_deployment_unknown` when another first launch recorded a different deployment, 409 `lti_context_not_set_up`,
+ *   `lti_deployment_unknown` when the connection reached its cap of deployments meanwhile, 409 `lti_context_not_set_up`,
  *   409 `write_conflict` when another launch created the context's channel at once, and what `findLaunchConnection` and
  *   `validateLtiLaunch` throw.
  */

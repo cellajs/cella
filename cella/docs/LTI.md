@@ -26,6 +26,8 @@ Canvas sends what the registration asks for by its privacy level. The name alone
 
 Each connection gets a key pair of its own, and the registration names that connection's key set on the API. The app stores the connection, waiting, before it calls the platform: a platform that reads the key set while it registers the app, as Brightspace does, finds it. No key rotation is built. Deleting the connection deletes its key, and its key set answers no more.
 
+A connection takes every deployment of its platform. A platform makes a deployment of the registration in each place an admin installs it, such as an account or a course. The registration's answer may name the first, and the first launch from each records it. The connection lists them, and a course stays one channel whichever deployment launches it.
+
 A connection still waiting is listed nowhere, and one a failed registration left behind goes after a day. A tenant holds a limited number of LTI connections, a tenant quota: past it, a registration link and a registration are refused with a page that says so.
 
 A refused registration's page says why, in words the platform's admin can act on, and stays open until they close it. A refusal the app decides alone leaves the link for another try: a link not valid, a tenant at its quota, or a configuration address the app does not contact. Once the app has asked the platform, every outcome takes a new link, and the page says which of the two it is.
@@ -235,7 +237,7 @@ The template ships the organization's embedded page. An app that maps a context 
 - **A scope taken away:** a token that carries it is refused at its next request. A new token carries what the admin still grants.
 - **An import that stops short:** the context under LTI connections says why, the members imported before stay, and nobody is removed.
 - **An LTI tool deleted on the platform:** the app is not told, and an organization admin deletes the connection.
-- **A deployment the connection does not hold:** the launch is refused, and an organization admin registers the app for that deployment.
+- **A connection with many deployments:** a connection records a bounded number of deployments, and a launch from one more is refused.
 - **A deleted connection:** the LTI tool refuses the platform's launches as from a platform it is not connected to, and the sessions its launches started end.
 - **A connection without a key of its own:** it launches as before, and its contexts under LTI connections ask to register the app at the platform again before members are read.
 - **A tenant at its quota of LTI connections:** a new registration link is refused, and so is a registration through a link made before, with a page that says so. That link works once a connection is deleted, unless another registration took the last place while it ran.

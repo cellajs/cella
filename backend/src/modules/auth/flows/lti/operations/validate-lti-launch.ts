@@ -11,6 +11,7 @@ import { isSignedByPlatform } from '#/modules/auth/flows/lti/helpers/platform-ke
 import { ltiIdSchema, profileClaim } from '#/modules/auth/flows/lti/lti-schema';
 import type { LtiConnection } from '#/modules/connections/connections-db';
 import { findActiveLtiConnections } from '#/modules/connections/connections-queries';
+import { maxLtiDeployments } from '#/modules/connections/connections-schema';
 
 const dbCtx = { var: { db: baseDb } };
 
@@ -102,12 +103,13 @@ const launchRules: LaunchRule[] = [
   },
   { rule: 'message_type', holds: ({ claims }) => claims[ltiClaims.messageType] === 'LtiResourceLinkRequest' },
   { rule: 'version', holds: ({ claims }) => claims[ltiClaims.version] === '1.3.0' },
-  // A connection whose platform named no deployment at registration takes on the first one a launch names.
+  // Every deployment the platform signs under the connection's client id launches (LTI Core 1.3, section 3.1.3): a new
+  // one is recorded by the launch, below the cap.
   {
     rule: 'deployment_id',
     holds: ({ claims, connection: { config } }) => {
       const deploymentId = ltiIdSchema.safeParse(claims[ltiClaims.deploymentId]).data;
-      return !!deploymentId && (config.deploymentIds.includes(deploymentId) || config.deploymentIds.length === 0);
+      return !!deploymentId && (config.deploymentIds.includes(deploymentId) || config.deploymentIds.length < maxLtiDeployments);
     },
     refusal: { status: 403, type: 'lti_deployment_unknown' },
   },
