@@ -5,7 +5,7 @@ import type { listLtiContextsQuerySchema } from '#/modules/auth/flows/lti/lti-sc
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import type { PageWindow } from '#/utils/list-page';
 
-/** A page of the courses of the organization's LTI connections and how their last member import ran, for a caller who may update the organization. */
+/** A page of the contexts of the organization's LTI connections and how their last member import ran, for a caller who may update the organization. */
 export async function getLtiContextsOp(ctx: UserContext, { connectionId, orderBy }: z.infer<typeof listLtiContextsQuerySchema>, page: PageWindow) {
   await getValidChannel(ctx, ctx.var.organizationId, 'organization', 'update');
   const { items, total } = await findOrganizationLtiContexts(ctx, {

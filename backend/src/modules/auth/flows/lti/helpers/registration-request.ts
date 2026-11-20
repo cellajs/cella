@@ -12,7 +12,7 @@ export const ltiKeySetUrl = (connectionId: string) => `${appConfig.backendAuthUr
 
 /**
  * The app as an LTI tool in a Dynamic Registration request for the connection `connectionId`. A platform verifies the
- * app's signatures against that connection's key set alone. The grant and scope ask the platform for its courses'
+ * app's signatures against that connection's key set alone. The grant and scope ask the platform for its contexts'
  * members (NRPS). A platform that grants neither still launches the app.
  */
 export const ltiRegistrationRequest = (connectionId: string) => ({

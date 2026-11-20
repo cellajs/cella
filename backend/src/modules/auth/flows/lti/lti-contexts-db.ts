@@ -15,7 +15,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
  * the import failed and is tried again or was tried for the last time, the platform listed more people than an import
  * reads, the tenant's member limit left people out, the app's role mapping gave some people no role and left them out
  * (`no_role`), or the connection, the tenant or the channel is not active. Or that no import ran: it waits until its
- * connection's hourly budget of courses frees up.
+ * connection's hourly budget of contexts frees up.
  */
 export const ltiImportIssues = [
   'waiting',
@@ -34,7 +34,7 @@ export const ltiImportIssues = [
 export type LtiImportIssue = (typeof ltiImportIssues)[number];
 
 /**
- * An LTI context (a course) of a platform and the channel it became: one row per tenant, issuer and context, written by
+ * An LTI context of a platform, such as a course, and the channel it became: one row per tenant, issuer and context, written by
  * the launch that maps it and by the member import that reads its people. A new registration of the same platform in
  * the tenant takes the row over: its launches find the channel again. It goes with its channel (the organization
  * foreign key and the channel id columns below it). A tenant table read through queries, outside RLS like memberships.

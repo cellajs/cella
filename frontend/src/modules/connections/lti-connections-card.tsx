@@ -44,7 +44,7 @@ const importIssues = {
   inactive: 'c:lti_import.inactive',
 } as const satisfies Record<NonNullable<LtiContext['importIssue']>, TKey>;
 
-/** How the last member import of a course ran; one that stopped short says why, and when. */
+/** How the last member import of a context ran; one that stopped short says why, and when. */
 function ImportState({ context }: { context: LtiContext }) {
   const { t } = useTranslation();
   const { membershipsUrl, importRanAt, importReadCount, importIssue } = context;
@@ -63,7 +63,7 @@ function ImportState({ context }: { context: LtiContext }) {
   );
 }
 
-/** The courses a platform launched the app from, each with the channel it maps to and how its people were last imported. */
+/** The contexts a platform launched the app from, each with the channel it maps to and how its people were last imported. */
 function LtiContextList({ path, connectionId }: { path: QueryOrgContext; connectionId: string }) {
   const { t } = useTranslation();
   const { data, hasNextPage, fetchNextPage, isFetchingNextPage } = useSuspenseInfiniteQuery(ltiContextsQueryOptions(path, connectionId));
@@ -93,7 +93,7 @@ function LtiContextList({ path, connectionId }: { path: QueryOrgContext; connect
   );
 }
 
-/** The course list under its own boundary: a list that fails to load leaves the connection and its actions standing. */
+/** The context list under its own boundary: a list that fails to load leaves the connection and its actions standing. */
 function LtiContexts({ path, connectionId }: { path: QueryOrgContext; connectionId: string }) {
   const { t } = useTranslation();
   return (
@@ -108,7 +108,7 @@ function LtiContexts({ path, connectionId }: { path: QueryOrgContext; connection
   );
 }
 
-/** One LTI platform the app is registered at, with its courses; deleting it ends the launches from there. */
+/** One LTI platform the app is registered at, with its contexts; deleting it ends the launches from there. */
 function LtiConnectionTile({ connection, path }: { connection: Connection; path: QueryOrgContext }) {
   const { t } = useTranslation();
   const { mutate: remove } = useDeleteLtiConnectionMutation();
