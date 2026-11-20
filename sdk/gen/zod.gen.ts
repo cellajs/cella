@@ -912,7 +912,6 @@ export const zConnection = z.object({
       tokenEndpoint: z.string().max(2048),
       authorizationServer: z.string().max(2048).optional(),
       jwksUri: z.string().max(2048),
-      registrationClientUri: z.string().max(2048).optional(),
       productFamilyCode: z.string().max(255),
       version: z.string().max(255),
       deploymentIds: z.array(z.string().max(255)).max(100),

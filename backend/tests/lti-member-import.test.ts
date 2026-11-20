@@ -722,7 +722,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     const connection = await registerAt(side, canvas);
     expect(connection).toMatchObject({
       issuer: 'https://canvas.instructure.com',
-      config: { deploymentIds: ['1:abc123def456'], registrationClientUri: canvas.registration.registration_client_uri },
+      config: { deploymentIds: ['1:abc123def456'] },
     });
     const context = await addCourse(side, connection, canvas.membershipsUrl('1'));
     const second = `${canvas.membershipsUrl('1')}?page=2&per_page=50`;

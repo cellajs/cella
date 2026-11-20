@@ -4472,11 +4472,6 @@
                     "maxLength": 2048,
                     "description": "The platform's key set, which signs its launches"
                   },
-                  "registrationClientUri": {
-                    "type": "string",
-                    "maxLength": 2048,
-                    "description": "The platform's address of this registration, when it gave one"
-                  },
                   "productFamilyCode": {
                     "type": "string",
                     "maxLength": 255,

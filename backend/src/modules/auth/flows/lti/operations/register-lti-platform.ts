@@ -212,11 +212,7 @@ export const registerLtiPlatformOp = async (query: z.infer<typeof ltiRegisterQue
       values: {
         clientId: registration.client_id,
         status: 'active',
-        config: {
-          ...config,
-          ...(registration.registration_client_uri ? { registrationClientUri: registration.registration_client_uri } : {}),
-          deploymentIds: deploymentId ? [deploymentId] : [],
-        },
+        config: { ...config, deploymentIds: deploymentId ? [deploymentId] : [] },
         ...(link.createdBy && updateStamps(link.createdBy)),
       },
     }).catch(async (err) => {

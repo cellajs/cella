@@ -54,7 +54,6 @@ const deploymentIdSchema = z.string().min(1).max(maxLength.field).optional();
  */
 export const ltiRegistrationResponseSchema = z.object({
   client_id: z.string().min(1).max(maxLength.field),
-  registration_client_uri: platformUrlSchema.optional(),
   deployment_id: deploymentIdSchema,
   [ltiToolConfigurationMember]: z.object({ deployment_id: deploymentIdSchema }).optional(),
 });

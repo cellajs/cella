@@ -1090,10 +1090,6 @@ export type Connection = {
          */
         jwksUri: string;
         /**
-         * The platform's address of this registration, when it gave one
-         */
-        registrationClientUri?: string;
-        /**
          * The platform's product, such as `canvas` or `moodle`
          */
         productFamilyCode: string;

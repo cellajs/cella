@@ -33,7 +33,6 @@ const ltiConnectionConfigSchema = z.object({
     .optional()
     .describe('The audience of a token request at the platform, when it names one apart from its token endpoint'),
   jwksUri: platformAddressSchema.describe("The platform's key set, which signs its launches"),
-  registrationClientUri: platformAddressSchema.optional().describe("The platform's address of this registration, when it gave one"),
   productFamilyCode: z.string().max(maxLength.field).describe("The platform's product, such as `canvas` or `moodle`"),
   version: z.string().max(maxLength.field).describe("The platform's version"),
   deploymentIds: z
