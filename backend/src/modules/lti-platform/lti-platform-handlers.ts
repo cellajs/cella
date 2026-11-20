@@ -6,6 +6,7 @@ import { autoPostPage, launchRefusalPage } from '#/modules/lti-platform/helpers/
 import { ltiLaunchRoutes, ltiMemberRoutes, ltiPlatformRoutes, ltiResourceLinkRoutes, ltiTabRoutes } from '#/modules/lti-platform/lti-platform-routes';
 import {
   approveLtiInstallationOp,
+  deleteLtiInstallationOp,
   rejectLtiInstallationOp,
   updateLtiInstallationOp,
 } from '#/modules/lti-platform/operations/decide-lti-installation';
@@ -49,6 +50,11 @@ app.openapi(ltiPlatformRoutes.updateLtiInstallation, async (ctx) => {
 
 app.openapi(ltiPlatformRoutes.rejectLtiInstallation, async (ctx) => {
   await rejectLtiInstallationOp(ctx, ctx.req.valid('param').ltiInstallationId);
+  return ctx.body(null, 204);
+});
+
+app.openapi(ltiPlatformRoutes.deleteLtiInstallation, async (ctx) => {
+  await deleteLtiInstallationOp(ctx, ctx.req.valid('param').ltiInstallationId);
   return ctx.body(null, 204);
 });
 

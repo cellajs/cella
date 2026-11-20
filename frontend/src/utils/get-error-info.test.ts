@@ -18,6 +18,18 @@ describe('getErrorInfo', () => {
     i18n.removeResourceBundle('en', 'appError');
   });
 
+  it('describes an error about an entity type by its `resource_` texts here, never by the detail the server rendered in its language', () => {
+    const error = new ApiError({
+      status: 403,
+      type: 'channel_archived',
+      entityType: 'organization',
+      severity: 'warn',
+      detail: 'Dit is gearchiveerd.',
+    });
+
+    expect(getErrorInfo({ error })).toEqual({ title: 'Organization archived', message: 'Nothing in it changes, and nobody new joins it.' });
+  });
+
   it("takes the server's title and detail for a type that has no text here, such as an app's own", () => {
     const error = new ApiError({ status: 409, type: 'seat_limit_reached', title: 'No seats left', detail: 'Ask an admin to add seats.' });
 

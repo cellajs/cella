@@ -129,6 +129,18 @@ export const ltiPlatformRoutes = createXRoutes(['lti-platform', 'cella'], {
     request: { params: ltiInstallationParamSchema },
     responses: { 204: { description: 'Installation rejected' }, ...errors(409) },
   }),
+  deleteLtiInstallation: xRoute({
+    method: 'delete',
+    path: '/{ltiInstallationId}',
+    xEnabledBy: { feature: 'ltiPlatform' },
+    xGuard: [userGuard, tenantGuard, orgGuard, stepUpFactorGuard],
+    xRateLimiter: [singlePointsLimiter],
+    summary: 'Delete LTI installation',
+    description:
+      'Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.',
+    request: { params: ltiInstallationParamSchema },
+    responses: { 204: { description: 'Installation deleted' } },
+  }),
 });
 
 /** A channel's tabs of LTI tools, for a user who may update the channel. */
@@ -140,7 +152,7 @@ export const ltiTabRoutes = createXRoutes(['lti-platform', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get LTI tabs',
     description:
-      "A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, whether it reads course members, the course a tab there launches as, why the caller may not place it or switch it on, and its resource link once placed, on or off. Requires permission to update the channel.",
+      "A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, a disabled one only where it has a tab in the channel, whether it reads course members, the course a tab there launches as, why the caller may not place it or switch it on, and its resource link once placed, on or off. Requires permission to update the channel.",
     request: { params: tenantOrgParamSchema, query: listLtiTabsQuerySchema },
     responses: {
       200: json('LTI tabs', paginationSchema(ltiTabSchema), {
@@ -148,6 +160,8 @@ export const ltiTabRoutes = createXRoutes(['lti-platform', 'cella'], {
           {
             id: mockLtiInstallationResponse().id,
             name: 'Peer review',
+            launchOrigins: mockLtiInstallationResponse().launchOrigins,
+            createdAt: mockLtiInstallationResponse().createdAt,
             status: 'active',
             readsMembers: true,
             refusal: null,

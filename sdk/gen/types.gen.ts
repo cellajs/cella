@@ -3538,25 +3538,25 @@ export type RegisterLtiPlatformErrors = {
   /**
    * Registration refused
    *
-   * The same page, naming why the platform or its configuration was refused.
+   * A page naming why the configuration address, the platform or its answer was refused, with a button that sends the close message. A refused address leaves the link usable.
    */
   400: unknown;
   /**
    * Registration link refused
    *
-   * The same page: the link was used before, never existed or expired.
+   * The refusal page: the link was used before, never existed or expired.
    */
   401: unknown;
   /**
    * Connection limit reached
    *
-   * The same page: the tenant holds as many LTI connections as its quota allows.
+   * The refusal page: the tenant holds as many LTI connections as its quota allows. Found before the link is spent, it leaves the link usable; found under the quota lock after, it says the link is used.
    */
   403: unknown;
   /**
-   * Already registered
+   * Client id taken
    *
-   * The same page: the platform registered this client id before.
+   * The refusal page: the platform gave a client id a connection holds already, named only when the link's tenant holds it.
    */
   409: unknown;
   /**
@@ -3571,7 +3571,7 @@ export type RegisterLtiPlatformResponses = {
   /**
    * Registered
    *
-   * A page with one line of text that sends the platform the close message.
+   * A page with one line of text that sends the platform the close message as it loads.
    */
   200: unknown;
 };
@@ -4918,6 +4918,51 @@ export type ApproveLtiInstallationResponses = {
 
 export type ApproveLtiInstallationResponse = ApproveLtiInstallationResponses[keyof ApproveLtiInstallationResponses];
 
+export type DeleteLtiInstallationData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    ltiInstallationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}';
+};
+
+export type DeleteLtiInstallationErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeleteLtiInstallationError = DeleteLtiInstallationErrors[keyof DeleteLtiInstallationErrors];
+
+export type DeleteLtiInstallationResponses = {
+  /**
+   * Installation deleted
+   */
+  204: void;
+};
+
+export type DeleteLtiInstallationResponse = DeleteLtiInstallationResponses[keyof DeleteLtiInstallationResponses];
+
 export type UpdateLtiInstallationData = {
   body: {
     /**
@@ -5094,6 +5139,14 @@ export type ListLtiTabsResponses = {
        */
       id: string;
       name: string;
+      /**
+       * The distinct origins the LTI tool's launches go to, which an approval trusts: with `createdAt`, what tells two LTI tools of one name apart
+       */
+      launchOrigins: Array<string>;
+      /**
+       * When the LTI tool was added
+       */
+      createdAt: string;
       /**
        * `active`, or `disabled` while an admin has stopped it: its tabs refuse every launch then
        */

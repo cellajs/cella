@@ -3,14 +3,15 @@ import { Field } from '@base-ui/react/field';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import type { TFunction } from 'i18next';
-import { BlocksIcon, CheckIcon, KeyRoundIcon, PowerIcon, PowerOffIcon, XIcon } from 'lucide-react';
+import { BlocksIcon, CheckIcon, KeyRoundIcon, PowerIcon, PowerOffIcon, TrashIcon, XIcon } from 'lucide-react';
 import { type MouseEvent, useId, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { LtiInstallation } from 'sdk';
+import type { ListLtiInstallationTabsResponse, LtiInstallation } from 'sdk';
 import { zApproveLtiInstallationBody } from 'sdk/zod.gen';
 import type { z } from 'zod';
 import { DateTooltip } from '~/modules/common/date-tooltip';
+import { DeleteForm } from '~/modules/common/delete-form';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ExpandableTile, ExpandableTileDetail, type TileTone } from '~/modules/common/expandable-tile';
 import { FormActions } from '~/modules/common/form-fields/form-actions';
@@ -18,9 +19,11 @@ import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { NamedText } from '~/modules/common/named-text';
 import { openConfirm } from '~/modules/common/open-confirm';
 import { scopeLabel } from '~/modules/common/scope-badges';
+import { LtiToolOrigin } from '~/modules/lti-platform/lti-tool-origin';
 import {
   ltiInstallationTabsQueryOptions,
   useApproveLtiInstallationMutation,
+  useDeleteLtiInstallationMutation,
   useDeleteLtiResourceLinkMutation,
   useRejectLtiInstallationMutation,
   useSetLtiInstallationStatusMutation,
@@ -47,6 +50,10 @@ const statusTones = { pending: 'warning', active: 'info', disabled: 'muted' } as
 const statusLabels = { pending: 'c:waiting_for_approval', active: 'c:active', disabled: 'c:disabled' } as const;
 
 const approveDialogId = (installation: LtiInstallation) => `approve-lti-tool-${installation.id}`;
+
+const deleteDialogId = (installation: LtiInstallation) => `delete-lti-tool-${installation.id}`;
+
+type LtiInstallationTab = ListLtiInstallationTabsResponse['results'][number];
 
 /** Personal fields as a reader sees them. */
 function FieldList({ fields }: { fields: PersonalField[] }) {
@@ -278,15 +285,67 @@ function InstallationApiAccess({ installation, path }: { installation: LtiInstal
   );
 }
 
+/** Where the tabs of an LTI tool are, which go with it: one named, many listed with their channel's type. */
+function DeletedTabs({ tabs }: { tabs: LtiInstallationTab[] }) {
+  const { t } = useTranslation();
+  if (!tabs.length) return <p>{t('c:lti_tool_delete.no_tabs')}</p>;
+  if (tabs.length === 1)
+    return (
+      <p>
+        <NamedText i18nKey="c:lti_tool_delete.tab" name={tabs[0].channelName} />
+      </p>
+    );
+  return (
+    <div className="flex flex-col gap-2">
+      <p>{t('c:lti_tool_delete.tab_counted', { count: tabs.length })}</p>
+      <ul className="flex flex-col gap-1">
+        {tabs.map((tab) => (
+          <li key={tab.id} className="flex min-w-0 items-baseline gap-2">
+            <span className="min-w-0 truncate font-medium">{tab.channelName}</span>
+            <span className="text-muted-foreground">{t(`c:${tab.channelType}`)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** What deleting an LTI tool takes along, read before the person confirms: its tabs, and what it was shared or granted. */
+function DeleteLtiToolForm({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
+  const { t } = useTranslation();
+  const { data } = useQuery(ltiInstallationTabsQueryOptions(path, installation.id));
+  const { mutate: remove, isPending } = useDeleteLtiInstallationMutation();
+  const close = () => dialoger.getState().remove(deleteDialogId(installation));
+
+  return (
+    <div className="flex flex-col gap-4 text-sm">
+      {data && <DeletedTabs tabs={data.results} />}
+      {(installation.releasedFields.length > 0 || installation.grantedScopes.length > 0) && <p>{t('c:lti_tool_delete.access')}</p>}
+      <DeleteForm
+        resource="c:lti_tool"
+        pending={isPending}
+        onCancel={close}
+        onDelete={() => remove({ path: { ...path, ltiInstallationId: installation.id } }, { onSuccess: close })}
+      />
+    </div>
+  );
+}
+
 interface LtiInstallationTileProps {
   installation: LtiInstallation;
   organization: EnrichedOrganization;
+  /** Another LTI tool of the list carries the same name: the tile shows what tells them apart. */
+  sharesName?: boolean;
 }
 
-/** One installed LTI tool: a waiting one is approved or rejected, an approved one disabled or enabled, with where it has tabs. */
-export function LtiInstallationTile({ installation, organization }: LtiInstallationTileProps) {
+/**
+ * One installed LTI tool: a waiting one is approved or rejected, an approved one disabled or enabled and deleted for good,
+ * with where it has tabs.
+ */
+export function LtiInstallationTile({ installation, organization, sharesName = false }: LtiInstallationTileProps) {
   const { t } = useTranslation();
   const approveRef = useRef<HTMLButtonElement>(null);
+  const deleteRef = useRef<HTMLButtonElement>(null);
   const { mutate: reject } = useRejectLtiInstallationMutation();
   const { mutate: setStatus, isPending: settingStatus } = useSetLtiInstallationStatusMutation();
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
@@ -315,11 +374,21 @@ export function LtiInstallationTile({ installation, organization }: LtiInstallat
       body: { status: installation.status === 'active' ? 'disabled' : 'active' },
     });
 
+  const openDeleteDialog = () =>
+    dialoger.getState().create(<DeleteLtiToolForm installation={installation} path={path} />, {
+      id: deleteDialogId(installation),
+      triggerRef: deleteRef,
+      className: 'md:max-w-xl',
+      title: t('c:delete_resource', { resource: t('c:lti_tool') }),
+      description: <NamedText i18nKey="c:confirm.delete_lti_tool" name={installation.name} />,
+    });
+
   return (
     <ExpandableTile
       value={installation.id}
       icon={<BlocksIcon />}
       title={installation.name}
+      badges={sharesName && <LtiToolOrigin createdAt={installation.createdAt} />}
       status={{ tone: statusTones[installation.status], label: t(statusLabels[installation.status]) }}
       meta={installation.launchOrigins.map((origin) => new URL(origin).host).join(', ')}
       lead={
@@ -372,10 +441,16 @@ export function LtiInstallationTile({ installation, organization }: LtiInstallat
             </Button>
           </>
         ) : (
-          <Button variant="secondary" size="sm" className="max-sm:w-full" loading={settingStatus} onClick={toggleStatus}>
-            {installation.status === 'active' ? <PowerOffIcon /> : <PowerIcon />}
-            {t(installation.status === 'active' ? 'c:disable' : 'c:enable')}
-          </Button>
+          <>
+            <Button variant="secondary" size="sm" className="max-sm:w-full" loading={settingStatus} onClick={toggleStatus}>
+              {installation.status === 'active' ? <PowerOffIcon /> : <PowerIcon />}
+              {t(installation.status === 'active' ? 'c:disable' : 'c:enable')}
+            </Button>
+            <Button ref={deleteRef} variant="secondary" size="sm" className="max-sm:w-full" onClick={openDeleteDialog}>
+              <TrashIcon />
+              {t('c:delete')}
+            </Button>
+          </>
         )
       }
     />

@@ -4,12 +4,14 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ListLtiTabsResponse } from 'sdk';
 import { ltiTabId } from 'shared/tools-config';
+import type { TKey } from '~/lib/i18n-locales';
 import { ConfirmForm } from '~/modules/common/confirm-form';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { NamedText } from '~/modules/common/named-text';
 import { openConfirm } from '~/modules/common/open-confirm';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
+import { LtiToolOrigin, sharesNameAmong } from '~/modules/lti-platform/lti-tool-origin';
 import { ltiTabsQueryOptions, useCreateLtiResourceLinkMutation, useUpdateLtiResourceLinkMutation } from '~/modules/lti-platform/query';
 import { Switch } from '~/modules/ui/switch';
 
@@ -20,16 +22,19 @@ export interface LtiTabRow {
   id: string;
   name: string;
   tab: LtiTab;
+  /** Another LTI tool's row carries the same name: the row shows what tells them apart. */
+  sharesName: boolean;
 }
 
 /** A refusal that keeps the tab from being switched either way: the course it launches as. */
 const isCourseRefusal = (refusal: LtiTab['refusal']) => refusal === 'channel_archived' || refusal === 'lti_context_update_required';
 
+/** A course refusal names the course, or the channel under it where the caller may not read the course. */
 const refusalTexts = {
   lti_installation_disabled: 'c:lti_tab_tool_disabled.text',
-  channel_archived: 'c:lti_tab_course_archived.text',
-  lti_context_update_required: 'c:lti_tab_course_required.text',
-} as const satisfies Record<NonNullable<LtiTab['refusal']>, string>;
+  channel_archived: 'c:lti_tab_context_archived.text',
+  lti_context_update_required: 'c:lti_tab_context_required.text',
+} as const satisfies Record<NonNullable<LtiTab['refusal']>, TKey>;
 
 /**
  * The channel's LTI tabs as rows, read in the card with their own pending and failed state: the placed ones in the order
@@ -37,11 +42,9 @@ const refusalTexts = {
  */
 export function useLtiTabRows(channel: EnrichedChannel) {
   const query = useQuery(ltiTabsQueryOptions(channel));
-  const rows: LtiTabRow[] = (query.data?.results ?? []).map((tab) => ({
-    id: ltiTabId(tab.id),
-    name: tab.resourceLink?.title ?? tab.name,
-    tab,
-  }));
+  const named = (query.data?.results ?? []).map((tab) => ({ id: ltiTabId(tab.id), name: tab.resourceLink?.title ?? tab.name, tab }));
+  const sharesName = sharesNameAmong(named);
+  const rows: LtiTabRow[] = named.map((row) => ({ ...row, sharesName: sharesName(row.name) }));
   // Resource link ids are UUID v7: their order is the order they were placed
   const placed = rows
     .filter((row) => row.tab.resourceLink)
@@ -49,12 +52,31 @@ export function useLtiTabRows(channel: EnrichedChannel) {
   return { rows: [...placed, ...rows.filter((row) => !row.tab.resourceLink)], query };
 }
 
-/** Why the row's tab cannot be switched on, or either way: a disabled LTI tool, or the course it launches as. */
-export function LtiTabRefusal({ row }: { row: LtiTabRow }) {
+/** The hosts the row's LTI tool launches to and the moment it was added, when another row carries the same name. */
+export function LtiTabOrigin({ row }: { row: LtiTabRow }) {
+  if (!row.sharesName) return null;
+  return <LtiToolOrigin launchOrigins={row.tab.launchOrigins} createdAt={row.tab.createdAt} />;
+}
+
+/**
+ * Why the row's tab cannot be switched on, or either way: a disabled LTI tool, or the course above `channel` it launches
+ * as, by its name and its type's label, by `channel`'s name where the caller may not read it.
+ */
+export function LtiTabRefusal({ row, channel }: { row: LtiTabRow; channel: EnrichedChannel }) {
   const { t } = useTranslation();
-  const { refusal } = row.tab;
-  if (!refusal) return null;
-  return <span className="text-muted-foreground text-xs leading-tight">{t(refusalTexts[refusal])}</span>;
+  const { refusal, context } = row.tab;
+  if (!refusal || (isCourseRefusal(refusal) && !context)) return null;
+
+  const unnamed = refusal === 'lti_context_update_required' && !context?.name;
+  return (
+    <span className="text-muted-foreground text-xs leading-tight">
+      <NamedText
+        i18nKey={unnamed ? 'c:lti_tab_context_required_unnamed.text' : refusalTexts[refusal]}
+        name={context?.name ?? channel.name}
+        values={{ resource: context ? t(`c:${context.channelType}`) : '' }}
+      />
+    </span>
+  );
 }
 
 interface LtiTabSwitchProps {
@@ -88,7 +110,7 @@ export function LtiTabSwitch({ channel, row, tabIndex, onToggle }: LtiTabSwitchP
         <NamedText
           i18nKey={course.channelId === channel.id ? 'c:confirm.add_lti_tab' : 'c:confirm.add_lti_tab_above'}
           name={tab.name}
-          values={{ course: course.name ?? '' }}
+          values={{ course: course.name ?? '', resource: t(`c:${course.channelType}`), channel: channel.name }}
         />
       ),
       content: (

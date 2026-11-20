@@ -115,6 +115,9 @@ import type {
   DeleteLtiConnectionData,
   DeleteLtiConnectionErrors,
   DeleteLtiConnectionResponses,
+  DeleteLtiInstallationData,
+  DeleteLtiInstallationErrors,
+  DeleteLtiInstallationResponses,
   DeleteLtiResourceLinkData,
   DeleteLtiResourceLinkErrors,
   DeleteLtiResourceLinkResponses,
@@ -484,6 +487,7 @@ import {
   zDeleteConnectionResponse,
   zDeleteInvitationResponse,
   zDeleteLtiConnectionResponse,
+  zDeleteLtiInstallationResponse,
   zDeleteLtiResourceLinkResponse,
   zDeleteMeResponse,
   zDeletePasskeyResponse,
@@ -1695,7 +1699,7 @@ export const sendSsoRecoveryLink = <ThrowOnError extends boolean = true>(
 /**
  * Register at an LTI platform
  *
- * The registration link an organization admin pastes into an LTI platform, which opens it in a frame (LTI Dynamic Registration). Spends the one-use link, reads the platform's OpenID configuration, registers the app as an LTI tool and stores the connection for the link's tenant. Any LTI platform may frame the page, which holds no session.
+ * The registration link an organization admin pastes into an LTI platform, which opens it in a frame (LTI Dynamic Registration). Checks the one-use link, the tenant's quota of LTI connections and the configuration's address, then spends the link, reads the platform's OpenID configuration, registers the app as an LTI tool and stores the connection for the link's tenant. A refusal before the link is spent leaves it usable. Any LTI platform may frame the page, which holds no session.
  *
  * **GET /auth/lti/register** ·· [registerLtiPlatform](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/lti/register) ·· _auth · cella_
  *
@@ -2243,6 +2247,29 @@ export const approveLtiInstallation = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Delete LTI installation
+ *
+ * Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.
+ *
+ * **DELETE /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}** ·· [deleteLtiInstallation](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/DELETE/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}) ·· _lti-platform · cella_
+ *
+ * @param {deleteLtiInstallationData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.ltiInstallationId - `string`
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
+ */
+export const deleteLtiInstallation = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteLtiInstallationData, ThrowOnError>,
+): RequestResult<DeleteLtiInstallationResponses, DeleteLtiInstallationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<DeleteLtiInstallationResponses, DeleteLtiInstallationErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zDeleteLtiInstallationResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}',
+    ...options,
+  });
+
+/**
  * Update LTI installation
  *
  * Replaces the access scopes an approved LTI tool's own tokens may carry, each one the LTI tool asked for. A token that carries a scope taken away here is refused at its next request. Requires permission to update the organization.
@@ -2296,7 +2323,7 @@ export const rejectLtiInstallation = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI tabs
  *
- * A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, whether it reads course members, the course a tab there launches as, why the caller may not place it or switch it on, and its resource link once placed, on or off. Requires permission to update the channel.
+ * A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, a disabled one only where it has a tab in the channel, whether it reads course members, the course a tab there launches as, why the caller may not place it or switch it on, and its resource link once placed, on or off. Requires permission to update the channel.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-tabs** ·· [listLtiTabs](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-tabs) ·· _lti-platform · cella_
  *

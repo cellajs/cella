@@ -13,6 +13,9 @@ export type ConnectionKind = (typeof connectionKinds)[number];
 /** `pending` until the institution activated the service at the federation; `disabled` keeps the row but refuses sign-ins. */
 export const connectionStatuses = ['pending', 'active', 'disabled'] as const;
 
+/** The unique pair of an LTI connection's issuer and client id, across tenants; `pgConstraintMap` names its refusal. */
+export const ltiClientIdIndex = 'connections_issuer_client_id_idx';
+
 /**
  * A tenant's trust in one external party that asserts user identities: an institution reached through an SSO
  * federation, or an LTI platform the app registered at. An SSO connection's id is the public entry key of the
@@ -52,7 +55,7 @@ export const connectionsTable = snakeCase.table(
     // One SSO connection per tenant: the tenant's single organization is the target of every SSO sign-in.
     uniqueIndex('connections_tenant_id_kind_idx').on(table.tenantId, table.kind).where(sql`${table.kind} = 'sso'`),
     // A launch finds its connection by issuer and client id, whichever tenant holds it.
-    uniqueIndex('connections_issuer_client_id_idx').on(table.issuer, table.clientId),
+    uniqueIndex(ltiClientIdIndex).on(table.issuer, table.clientId),
     // An LTI connection is stored `pending` before the platform answers its registration with a client id.
     check(
       'connections_kind_check',

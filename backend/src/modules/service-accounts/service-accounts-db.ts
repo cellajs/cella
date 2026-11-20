@@ -13,8 +13,8 @@ export const serviceAccountStatuses = ['pending', 'active', 'disabled'] as const
 
 /**
  * Service accounts: the actor an API key runs as. Tenant-scoped by construction, holds role bindings in `bindings`
- * and is disabled, never deleted, so provenance keeps pointing at it. An auth table outside RLS: the machine guard
- * resolves it before any tenant context exists.
+ * and is disabled, never deleted: provenance keeps pointing at it. An installed LTI tool's, which writes nothing, goes
+ * with its registration. An auth table outside RLS: the machine guard resolves it before any tenant context exists.
  */
 export const serviceAccountsTable = snakeCase.table(
   'service_accounts',

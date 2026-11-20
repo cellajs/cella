@@ -133,25 +133,38 @@ const readCapped = async (response: Response): Promise<string> => {
 };
 
 /**
- * Fetches a URL a tenant or a third party supplied: the one way the backend reaches such an address. Only HTTPS,
- * and every address the host resolves to must be public. The connection goes to a vetted address without resolving
- * again: a host cannot answer the check with one address and the connection with another. No redirect is followed,
- * and the answer is capped in size and time. Development and test also allow plain HTTP and loopback.
- * @throws AppError 400 `outbound_request_refused` for a scheme, an address or a redirect it refuses, 400
- *   `outbound_request_failed` for a host that does not resolve, answer in time or within the size cap.
+ * The checks {@link guardedFetch} makes before it sends anything: a scheme it allows, and a host whose every address
+ * is public. They ask nothing of the host itself.
+ * @returns The parsed URL and the address a request connects to.
+ * @throws AppError 400 `outbound_request_refused` for a scheme or an address it refuses, 400 `outbound_request_failed`
+ *   for a host that does not resolve.
  */
-export const guardedFetch = async (url: string, init: GuardedFetchInit = {}): Promise<GuardedResponse> => {
-  const { method = 'GET', headers = {}, body, resolve = systemResolver, transport = nodeTransport } = init;
+export const vetAddress = async (url: string, resolve: HostResolver = systemResolver) => {
   if (!isFetchableUrl(url)) throw refused('scheme');
   const parsed = new URL(url);
 
   const addresses = await addressesOf(parsed, resolve);
   const allowed = (address: string) => isPublicDestination(address) || (allowsLocalHosts() && isLoopback(address));
   if (!addresses.length || !addresses.every(({ address }) => allowed(address))) throw refused('address');
+  return { parsed, target: addresses[0] };
+};
+
+/**
+ * Fetches a URL a tenant or a third party supplied: the one way the backend reaches such an address. Only HTTPS,
+ * and every address the host resolves to must be public (`vetAddress`). The connection goes to a vetted address
+ * without resolving again: a host cannot answer the check with one address and the connection with another. No
+ * redirect is followed, and the answer is capped in size and time. Development and test also allow plain HTTP and
+ * loopback.
+ * @throws AppError 400 `outbound_request_refused` for a scheme, an address or a redirect it refuses, 400
+ *   `outbound_request_failed` for a host that does not resolve, answer in time or within the size cap.
+ */
+export const guardedFetch = async (url: string, init: GuardedFetchInit = {}): Promise<GuardedResponse> => {
+  const { method = 'GET', headers = {}, body, resolve = systemResolver, transport = nodeTransport } = init;
+  const { parsed, target } = await vetAddress(url, resolve);
 
   const signal = AbortSignal.timeout(timeoutMs);
   try {
-    const response = await transport({ url: parsed, target: addresses[0], method, headers, body, signal });
+    const response = await transport({ url: parsed, target, method, headers, body, signal });
     if (response.status >= 300 && response.status < 400) {
       await response.body?.cancel();
       throw refused('redirect');

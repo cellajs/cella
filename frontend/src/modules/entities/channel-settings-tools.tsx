@@ -104,7 +104,7 @@ export function ArchiveToolCard({ channel, name, resource, descendantsDefault }:
     descendantsDefault === 'hidden' || !descendantTypes.length || descendantCount === 0
       ? undefined
       : {
-          label: archived ? t('c:unarchive_descendants.text') : t('c:archive_descendants.text', { count: descendantCount }),
+          label: t(archived ? 'c:unarchive_descendants.text' : 'c:archive_descendants.text'),
           on: descendantsDefault === 'on',
         };
 

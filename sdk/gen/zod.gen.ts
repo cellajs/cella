@@ -2065,6 +2065,17 @@ export const zApproveLtiInstallationPath = z.object({
  */
 export const zApproveLtiInstallationResponse = zLtiInstallation;
 
+export const zDeleteLtiInstallationPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  ltiInstallationId: z.string().max(50),
+});
+
+/**
+ * Installation deleted
+ */
+export const zDeleteLtiInstallationResponse = z.void();
+
 export const zUpdateLtiInstallationBody = z.object({
   grantedScopes: z
     .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write', 'user:read']))
@@ -2116,6 +2127,8 @@ export const zListLtiTabsResponse = z.object({
     z.object({
       id: z.string(),
       name: z.string(),
+      launchOrigins: z.array(z.string()),
+      createdAt: z.string(),
       status: z.enum(['pending', 'active', 'disabled']),
       readsMembers: z.boolean(),
       refusal: z.enum(['lti_installation_disabled', 'channel_archived', 'lti_context_update_required']).nullable(),

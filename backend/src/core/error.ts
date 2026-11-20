@@ -32,6 +32,21 @@ const errorNamespaces = ['appError', 'error'] as const;
  */
 export const errorTitle = (type: ErrorKey, status: number) => i18n.t(type, { ns: errorNamespaces, defaultValue: STATUS_CODES[status] ?? 'Error' });
 
+/** The label of an entity type, as a `{{resource}}` slot takes it. */
+const resourceLabel = (entityType: string) => i18n.t(entityType, { ns: 'c', defaultValue: entityType });
+
+/**
+ * The title and text a page shows for an error about an entity type, as the frontend shows them: the type's
+ * `resource_` form with the type's label, where the locale has one.
+ * @returns Null without an entity type or without that form; a null `text` where the form has no text of its own.
+ */
+export const resourceErrorTexts = (type: ErrorKey, entityType?: string) => {
+  const key = `resource_${type}`;
+  if (!entityType || !i18n.exists(key, { ns: errorNamespaces })) return null;
+  const options = { ns: errorNamespaces, resource: resourceLabel(entityType), defaultValue: '' };
+  return { title: i18n.t(key, options), text: i18n.t(`${key}.text`, options) || null };
+};
+
 type AppErrorOpts = {
   entityType?: ErrorSchemaType['entityType'];
   meta?: ErrorMeta;
@@ -54,8 +69,10 @@ export class AppError extends Error {
 
   constructor(status: AppErrorStatus, type: ErrorKey, severity: ErrorSchemaType['severity'], opts?: AppErrorOpts) {
     const title = errorTitle(type, status);
+    // Without an entity type the slot reads empty in either form, never as its braces, as the frontend renders it.
+    const resource = opts?.entityType ? resourceLabel(opts.entityType) : '';
     // Passed to `super`, the cause stays non-enumerable as on a native error, so a log line never copies a library's plain-object cause.
-    super(opts?.message ?? i18n.t(`${type}.text`, { ns: errorNamespaces, defaultValue: title }), { cause: opts?.originalError?.cause });
+    super(opts?.message ?? i18n.t(`${type}.text`, { ns: errorNamespaces, defaultValue: title, resource }), { cause: opts?.originalError?.cause });
 
     this.name = title;
     this.status = status;

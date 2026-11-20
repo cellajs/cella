@@ -37,6 +37,6 @@ export const useArchiveChannelMutation = () =>
       invalidateArchivedChannel(channel.id);
       const resource = i18n.t(`c:${channel.entityType}`);
       toaster.success(i18n.t(archived ? 'c:success.archive_resource' : 'c:success.unarchive_resource', { resource }));
-      if (rejectedIds.length) toaster.warning(i18n.t('c:archive_rejected.text', { count: rejectedIds.length }));
+      if (rejectedIds.length) toaster.warning(i18n.t('c:archive_rejected.text'));
     },
   });

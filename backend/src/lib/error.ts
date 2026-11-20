@@ -9,6 +9,7 @@ import { AppError, type AppErrorStatus, type ErrorKey, errorTitle } from '#/core
 import { checksAuthoringRules, clientPath, undocumentedErrorStatus } from '#/core/openapi-validation';
 import { keepOrganizationAdminConstraint } from '#/db/membership-rules';
 import { env } from '#/env';
+import { ltiClientIdIndex } from '#/modules/connections/connections-db';
 import { problemJsonType } from '#/schemas/error-response-schemas';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
@@ -43,6 +44,14 @@ const pgErrorMap: Record<string, { status: AppErrorStatus; type: ErrorKey; messa
 /** Named database constraints whose refusal is a rule the user can act on, mapped ahead of the generic code map. */
 const pgConstraintMap: Record<string, { status: AppErrorStatus; type: ErrorKey; message: string }> = {
   [keepOrganizationAdminConstraint]: { status: 409, type: 'last_admin', message: 'An organization keeps at least one admin' },
+  // A connection of another tenant may hold the pair: the refusal names none.
+  [ltiClientIdIndex]: { status: 409, type: 'lti_client_id_taken', message: 'The platform gave a client id another connection holds' },
+};
+
+/** The error type a database error answers by its named constraint (`pgConstraintMap`); undefined for any other error. */
+export const constraintErrorType = (err: unknown): ErrorKey | undefined => {
+  const constraint = extractPgError(err)?.constraint;
+  return constraint ? pgConstraintMap[constraint]?.type : undefined;
 };
 
 type PgErrorInfo = { code: string; detail?: string; constraint?: string };

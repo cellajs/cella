@@ -34,14 +34,23 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
     xGuard: [publicGuard],
     summary: 'Register at an LTI platform',
     description:
-      "The registration link an organization admin pastes into an LTI platform, which opens it in a frame (LTI Dynamic Registration). Spends the one-use link, reads the platform's OpenID configuration, registers the app as an LTI tool and stores the connection for the link's tenant. Any LTI platform may frame the page, which holds no session.",
+      "The registration link an organization admin pastes into an LTI platform, which opens it in a frame (LTI Dynamic Registration). Checks the one-use link, the tenant's quota of LTI connections and the configuration's address, then spends the link, reads the platform's OpenID configuration, registers the app as an LTI tool and stores the connection for the link's tenant. A refusal before the link is spent leaves it usable. Any LTI platform may frame the page, which holds no session.",
     request: { query: ltiRegisterQuerySchema },
     responses: {
-      200: { description: 'Registered\n\nA page with one line of text that sends the platform the close message.' },
-      400: { description: 'Registration refused\n\nThe same page, naming why the platform or its configuration was refused.' },
-      401: { description: 'Registration link refused\n\nThe same page: the link was used before, never existed or expired.' },
-      403: { description: 'Connection limit reached\n\nThe same page: the tenant holds as many LTI connections as its quota allows.' },
-      409: { description: 'Already registered\n\nThe same page: the platform registered this client id before.' },
+      200: { description: 'Registered\n\nA page with one line of text that sends the platform the close message as it loads.' },
+      400: {
+        description:
+          'Registration refused\n\nA page naming why the configuration address, the platform or its answer was refused, with a button that sends the close message. A refused address leaves the link usable.',
+      },
+      401: { description: 'Registration link refused\n\nThe refusal page: the link was used before, never existed or expired.' },
+      403: {
+        description:
+          'Connection limit reached\n\nThe refusal page: the tenant holds as many LTI connections as its quota allows. Found before the link is spent, it leaves the link usable; found under the quota lock after, it says the link is used.',
+      },
+      409: {
+        description:
+          "Client id taken\n\nThe refusal page: the platform gave a client id a connection holds already, named only when the link's tenant holds it.",
+      },
     },
   }),
   initiateLtiLogin: xRoute({

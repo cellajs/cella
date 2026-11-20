@@ -8,6 +8,7 @@ import type { MembershipEntity } from '#/lib/module';
 import { withActorRef, withActorRefs } from '#/modules/actors/actor-refs';
 import { resolveEntities } from '#/modules/entities/entities-queries';
 import { placementContext } from '#/modules/lti-platform/helpers/context-channel';
+import { launchOrigins } from '#/modules/lti-platform/helpers/launch-message';
 import { ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
 import {
   deleteLtiResourceLink,
@@ -110,9 +111,9 @@ export async function getLtiResourceLinksOp(ctx: UserContext, { channelType, cha
 }
 
 /**
- * A channel's tabs of LTI tools, for a caller who may update it: each approved LTI installation of the tenant, whether it
- * reads course members, the course a tab launches as, why the caller may not place it or switch it on, and its resource
- * link once placed.
+ * A channel's tabs of LTI tools, for a caller who may update it: each approved LTI installation of the tenant, a
+ * disabled one only where it has a tab, whether it reads course members, the course a tab launches as, why the caller
+ * may not place it or switch it on, and its resource link once placed.
  */
 export async function getLtiTabsOp(ctx: UserContext, { channelType, channelId, orderBy }: z.infer<typeof listLtiTabsQuerySchema>) {
   const { tenantId } = ctx.var;
@@ -120,23 +121,26 @@ export async function getLtiTabsOp(ctx: UserContext, { channelType, channelId, o
   const course = await launchCourse(ctx, channelType, entity);
   const records = await findLtiInstallations(ctx, { tenantId, order: orderBy.order });
   const links = await findLtiResourceLinks(ctx, { tenantId, channelId, order: 'asc' });
-  return records
-    .filter(({ installation }) => installation.approvedAt)
-    .map(({ account, installation, client }) => {
-      const link = links.find(({ installationId }) => installationId === account.id);
-      // A course refusal first: it keeps the caller from switching either way, a disabled LTI tool only from switching on
-      const refusal: (typeof ltiTabRefusals)[number] | null =
-        courseRefusal(course) ?? (account.status !== 'active' ? 'lti_installation_disabled' : null);
-      return {
+  return records.flatMap(({ account, installation, client }) => {
+    const link = links.find(({ installationId }) => installationId === account.id);
+    if (!installation.approvedAt || (account.status !== 'active' && !link)) return [];
+    // A course refusal first: it keeps the caller from switching either way, a disabled LTI tool only from switching on
+    const refusal: (typeof ltiTabRefusals)[number] | null =
+      courseRefusal(course) ?? (account.status !== 'active' ? 'lti_installation_disabled' : null);
+    return [
+      {
         id: account.id,
         name: client.name,
+        launchOrigins: launchOrigins(client),
+        createdAt: installation.createdAt,
         status: account.status,
         readsMembers: installation.grantedScopes.some((scope) => ltiServiceScope(scope) === ltiNrps.scope),
         refusal,
         context: course && { channelType: course.channelType, channelId: course.channelId, name: course.name },
         resourceLink: link ? { id: link.id, title: link.title, enabled: link.enabled } : null,
-      };
-    });
+      },
+    ];
+  });
 }
 
 /**
