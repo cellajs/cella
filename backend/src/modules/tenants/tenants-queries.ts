@@ -166,10 +166,10 @@ export const countTenantsCreatedSince = async (ctx: DbContext, { kind, since }: 
   return total;
 };
 
-/** Inserts a tenant; kind, status and restrictions take their column defaults. */
+/** Inserts a tenant; kind, status and restrictions take their column defaults, and the answer lays its restrictions over the config. */
 export const insertTenant = async (ctx: DbContext, { values }: { values: InsertTenantModel }): Promise<TenantModel> => {
   const [tenant] = await ctx.var.db.insert(tenantsTable).values(values).returning();
-  return tenant;
+  return { ...tenant, restrictions: normalizeRestrictions(tenant.restrictions) };
 };
 
 interface UpdateTenantOpts {

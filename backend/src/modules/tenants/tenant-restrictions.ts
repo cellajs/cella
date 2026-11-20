@@ -14,7 +14,7 @@ type QuotaKey = EntityType | (typeof otherQuotaKeys)[number];
 /** Every key a tenant quota can name: the entity types, then the others. */
 export const quotaKeys: QuotaKey[] = [...appConfig.entityTypes, ...otherQuotaKeys];
 
-/** The restrictions a new tenant starts with: `appConfig.defaultRestrictions`, which names a quota for every key. */
+/** The restrictions a tenant reads where it stores none: `appConfig.defaultRestrictions`, which names a quota for every key. */
 export const defaultRestrictions = (): Restrictions => {
   // A missing quota fails the typecheck here: the config's own type cannot see the app's entity types.
   const quotas: Record<QuotaKey, RestrictionCap> = appConfig.defaultRestrictions.quotas;
@@ -84,5 +84,5 @@ export const publicSharingTenantKinds = (): TenantKind[] => tenantKindValues.fil
 export const servesPublicly = (tenant: Pick<TenantModel, 'kind' | 'status' | 'expiresAt'>): boolean =>
   tenant.status === 'active' && (!tenant.expiresAt || tenant.expiresAt > getIsoDate()) && appConfig.tenantKinds[tenant.kind].publicSharing;
 
-/** Stored restrictions laid over the current defaults, so a row gains the fields it predates or a patch removed. */
+/** Stored restrictions laid over the current defaults: `{}` reads as the config, and a row gains the fields it predates or a patch removed. */
 export const normalizeRestrictions = (stored?: MergePatch<Restrictions> | null): Restrictions => applyMergePatch(defaultRestrictions(), stored ?? {});

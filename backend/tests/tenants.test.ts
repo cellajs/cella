@@ -33,10 +33,7 @@ describe('tenant responses with stored restrictions that lack a field', async ()
     const headers = { ...defaultHeaders, Cookie: await createTestSession(admin) };
     const { quotas, rateLimits } = defaultRestrictions();
     const name = `Stale tenant ${nanoid(8)}`;
-    const [tenant] = await db
-      .insert(tenantsTable)
-      .values({ name, restrictions: { quotas, rateLimits } as Restrictions })
-      .returning();
+    const [tenant] = await db.insert(tenantsTable).values({ name, restrictions: { quotas, rateLimits } }).returning();
     return { tenant, headers };
   };
 
@@ -111,6 +108,31 @@ describe('tenant responses with the organization the tenant holds', async () => 
     expect((retried.data as Tenant).id).toBe((created.data as Tenant).id);
     expect((retried.data as Tenant).organization).toBeNull();
   });
+});
+
+/**
+ * A column default is frozen into a migration in the mode `pnpm generate` ran in. A new tenant follows the config of the
+ * mode the app runs in.
+ */
+describe('restrictions of a new tenant', async () => {
+  const call = await createAppClient();
+
+  it.each([false, true])(
+    'must not take restrictions other than the running config states: unregistered clients %s',
+    async (allowUnregisteredClients) => {
+      const { quotas } = appConfig.defaultRestrictions;
+      onTestFinished(overrideConfig(appConfig.defaultRestrictions, { allowUnregisteredClients, quotas: { ...quotas, serviceAccount: 7 } }));
+      const user = await createTestUser(`new-tenant-${nanoid(8)}@test.com`);
+      const headers = { ...defaultHeaders, Cookie: await createTestSession(user) };
+
+      const created = await call(createTenant, { body: { name: `New tenant ${nanoid(8)}` }, headers });
+
+      expect(created.error).toBeUndefined();
+      const { restrictions } = created.data as Tenant;
+      expect(restrictions.allowUnregisteredClients).toBe(allowUnregisteredClients);
+      expect(restrictions.quotas.serviceAccount).toBe(7);
+    },
+  );
 });
 
 /**
