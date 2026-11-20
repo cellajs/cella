@@ -26,8 +26,8 @@ import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-k
 import { ltiLaunchUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
-import { ltiRoleIn, setsUpLtiContext } from '#/modules/auth/flows/lti/operations/admit-lti-person';
-import { planLtiContextChannel, storedLtiContextChannel } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
+import { ltiRoleIn } from '#/modules/auth/flows/lti/operations/admit-lti-person';
+import { planLtiContextChannel, setsUpLtiContext, storedLtiContextChannel } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
 import { importLtiMembersOp, ltiMemberImportQueue, maxContextsPerHour } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';

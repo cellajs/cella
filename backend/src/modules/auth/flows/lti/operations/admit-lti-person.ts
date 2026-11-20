@@ -1,5 +1,4 @@
-import { appConfig, buildSubject, type ChannelEntityType, checkAccess, hierarchy, type OrganizationRole, type RestrictionCap } from 'shared';
-import { generateId } from 'shared/utils/entity-id';
+import { buildSubjectFromEntity, type ChannelEntityType, checkAccess, hierarchy, type OrganizationRole, type RestrictionCap } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId, UserId } from '#/db/utils/ids';
 import type { MembershipEntity } from '#/lib/module';
@@ -108,28 +107,23 @@ export const ltiRoleIn = (channelType: ChannelEntityType, facts: Omit<LtiRoleFac
   return hierarchy.getLeastPrivilegedRole(channelType);
 };
 
-/**
- * Whether a membership at `role` may update a channel of `channelType` in the organization: the role `ltiRoleIn` gives
- * a person then sets a context of that type up, creating its channel on the first launch and starting its member
- * import. The permission engine judges the role alone, on a channel of that type that need not exist yet: a grant from
- * a channel above or through a row condition does not count.
- */
-export const setsUpLtiContext = (organizationId: string, channelType: ChannelEntityType, role: MembershipModel['role']) => {
-  const channelId = generateId();
-  const ancestors = Object.fromEntries(hierarchy.getOrderedAncestors(channelType).map((type) => [appConfig.entityIdColumnKeys[type], null]));
-  const subject = buildSubject(channelType, { ...ancestors, organizationId }, { id: channelId });
-  // The person may have no account yet: a fresh id stands in, and no row condition reads it.
-  const access = accessFrom({ var: membershipActorVars(generateId(), [{ channelType, channelId, organizationId, role }]) });
-  return checkAccess(access, 'update', subject).allowed;
-};
+/** Whether an organization membership at `role` may update the organization, as the permission engine judges the role alone. */
+export const mayUpdateOrganization = (organization: OrganizationModel, userId: string, role: OrganizationRole) =>
+  checkAccess(
+    accessFrom({
+      var: membershipActorVars(userId, [{ channelType: 'organization', channelId: organization.id, organizationId: organization.id, role }]),
+    }),
+    'update',
+    buildSubjectFromEntity('organization', organization),
+  ).allowed;
 
 /** The organization role a person gets for `role`: the highest at or below it that may not update the organization. */
-const belowOrganizationUpdate = (organizationId: string, role: string): OrganizationRole => {
+const belowOrganizationUpdate = (organization: OrganizationModel, userId: UserId, role: string): OrganizationRole => {
   const roles = hierarchy.getRoles('organization');
   const names: readonly string[] = roles;
   const from = names.indexOf(role);
   return (
-    (from < 0 ? undefined : roles.slice(from).find((candidate) => !setsUpLtiContext(organizationId, 'organization', candidate))) ??
+    (from < 0 ? undefined : roles.slice(from).find((candidate) => !mayUpdateOrganization(organization, userId, candidate))) ??
     hierarchy.getLeastPrivilegedRole('organization')
   );
 };
@@ -159,7 +153,8 @@ interface ApplyLtiRoleOpts {
  */
 export const applyLtiRole = async (ctx: DbContext, { organization, contextId, listed, channel, userId, seat, role, by }: ApplyLtiRoleOpts) => {
   const organizationRole = belowOrganizationUpdate(
-    organization.id,
+    organization,
+    userId,
     channel.entityType === 'organization' ? role : resolveOrganizationMembershipRole(channel.entityType, role),
   );
   const admissions: LtiAdmission[] = [];

@@ -1,7 +1,8 @@
 import type { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { appConfig, type ChannelEntityType, type RestrictionCap } from 'shared';
+import { appConfig, buildSubject, type ChannelEntityType, checkAccess, hierarchy, type RestrictionCap } from 'shared';
+import { generateId } from 'shared/utils/entity-id';
 import { buildNotificationPath } from 'shared/utils/notification-link';
 import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -16,13 +17,7 @@ import { launchMembershipsUrl } from '#/modules/auth/flows/lti/helpers/platform-
 import { createLtiContextChannel, type LtiContext, ltiContextChannelType } from '#/modules/auth/flows/lti/lti-context-channel';
 import { findLtiContext, upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
 import type { ltiFinishFormSchema } from '#/modules/auth/flows/lti/lti-schema';
-import {
-  admitLtiPerson,
-  applyLtiRole,
-  ltiRoleIn,
-  setsUpLtiContext,
-  signInKnownLtiMember,
-} from '#/modules/auth/flows/lti/operations/admit-lti-person';
+import { admitLtiPerson, applyLtiRole, ltiRoleIn, signInKnownLtiMember } from '#/modules/auth/flows/lti/operations/admit-lti-person';
 import type { LtiPerson } from '#/modules/auth/flows/lti/operations/create-lti-account';
 import { requestLtiMemberImport } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { findLaunchConnection, validateLtiLaunch } from '#/modules/auth/flows/lti/operations/validate-lti-launch';
@@ -37,10 +32,25 @@ import { findOrganizationByTenant } from '#/modules/organization/organization-qu
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { findTenant } from '#/modules/tenants/tenants-queries';
 import { findUserById } from '#/modules/user/user-queries';
+import { accessFrom, membershipActorVars } from '#/permissions/access';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 const dbCtx = { var: { db: baseDb } };
+
+/**
+ * Whether the role `ltiRoleIn` gives a person sets a context of `channelType` up: creates its channel on the first
+ * launch and starts its member import. The permission engine judges the role alone, on a channel of that type that
+ * need not exist yet: a grant from a channel above or through a row condition does not count.
+ */
+export const setsUpLtiContext = (organizationId: string, channelType: ChannelEntityType, role: MembershipModel['role']) => {
+  const channelId = generateId();
+  const ancestors = Object.fromEntries(hierarchy.getOrderedAncestors(channelType).map((type) => [appConfig.entityIdColumnKeys[type], null]));
+  const subject = buildSubject(channelType, { ...ancestors, organizationId }, { id: channelId });
+  // The person may have no account yet: a fresh id stands in, and no row condition reads it.
+  const access = accessFrom({ var: membershipActorVars(generateId(), [{ channelType, channelId, organizationId, role }]) });
+  return checkAccess(access, 'update', subject).allowed;
+};
 
 /** Where a launch's context leads: a channel the app has, or a context whose channel of `channelType` this launch creates. */
 type ContextPlan = { channel: MembershipEntity } | { create: LtiContext; channelType: ChannelEntityType };
