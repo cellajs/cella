@@ -42,11 +42,13 @@ interface TabNavShellProps {
   avatar?: AvatarEntity;
   className?: string;
   indicator?: TabIndicator;
+  /** After the tabs, outside the row that scrolls sideways. */
+  end?: ReactNode;
   children: ReactNode;
 }
 
 /** Sticky shell of PageTabNav and LocalTabNav; container queries size the left cell, so it also works inside a sheet. */
-export function TabNavShell({ title, avatar, className, indicator, children }: TabNavShellProps) {
+export function TabNavShell({ title, avatar, className, indicator, end, children }: TabNavShellProps) {
   return (
     <StickyBox
       publishVar="--sticky-stack-nav"
@@ -66,6 +68,8 @@ export function TabNavShell({ title, avatar, className, indicator, children }: T
           {children}
         </div>
       </div>
+      {/* A control that renders nothing takes no width from the tabs */}
+      {end && <div className="col-start-3 flex items-center pr-3 empty:hidden">{end}</div>}
     </StickyBox>
   );
 }

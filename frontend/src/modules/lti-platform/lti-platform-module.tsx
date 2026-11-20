@@ -9,7 +9,7 @@ defineFrontendModule({
   owner: 'cella',
   scope: ['frontend', 'backend'],
   description:
-    "The app as an LTI platform: an organization admin adds and approves LTI tools in settings and sees where each has tabs, a channel's Tabs card places, removes and orders their tabs with its own, and each tab opens its LTI tool in a launch frame that answers the LTI tool's platform storage messages.",
+    "The app as an LTI platform: an organization admin adds and approves LTI tools in settings and sees where each has tabs, a channel's Tabs card places, removes and orders their tabs with its own, its tab bar adds one, and each tab opens its LTI tool in a launch frame that answers the LTI tool's platform storage messages.",
   ...(appConfig.has.ltiPlatform && {
     tools: [
       {
