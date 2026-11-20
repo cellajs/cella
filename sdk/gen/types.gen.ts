@@ -985,25 +985,25 @@ export type Tenant = {
   expiresAt: string | null;
   restrictions: {
     /**
-     * Caps per tenant on entities, service accounts, API keys and LTI connections (0 = unlimited)
+     * Caps per tenant on entities, service accounts, API keys and LTI connections
      */
     quotas: {
-      user: number;
-      organization: number;
-      attachment: number;
-      serviceAccount: number;
-      apiKey: number;
-      ltiConnection: number;
+      user: number | 'unlimited';
+      organization: number | 'unlimited';
+      attachment: number | 'unlimited';
+      serviceAccount: number | 'unlimited';
+      apiKey: number | 'unlimited';
+      ltiConnection: number | 'unlimited';
     };
     rateLimits: {
       /**
-       * Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)
+       * Max API points per hour per actor within this tenant (`unlimited` = no tenant limit; the global safety ceiling still applies)
        */
-      apiPointsPerHour: number;
+      apiPointsPerHour: number | 'unlimited';
       /**
-       * Max invitation mails per day the tenant sends, new and resent alike (0 = no cap)
+       * Max invitation mails per day the tenant sends, new and resent alike
        */
-      invitationEmailsPerDay: number;
+      invitationEmailsPerDay: number | 'unlimited';
     };
     /**
      * Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)
@@ -7008,6 +7008,10 @@ export type GetPublicCountsErrors = {
    */
   400: BadRequestError;
   /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -8084,6 +8088,10 @@ export type CreateRequestErrors = {
    */
   400: BadRequestError;
   /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
    * Payload too large
    */
   413: PayloadTooLargeError;
@@ -8349,7 +8357,7 @@ export type CreateServiceAccountData = {
     role: 'admin' | 'member';
     key?: {
       name: string;
-      scopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
+      scopes: 'all' | Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'>;
       expiresAt?: string;
     };
   };
@@ -8543,13 +8551,17 @@ export type ListApiKeysResponses = {
 export type ListApiKeysResponse = ListApiKeysResponses[keyof ListApiKeysResponses];
 
 export type CreateApiKeyData = {
-  body: {
-    name: string;
-    scopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
-    expiresAt?: string;
-    rollFrom?: string;
-    rollOverlapDays?: number;
-  };
+  body:
+    | {
+        name: string;
+        rollFrom: string;
+        rollOverlapDays?: number;
+      }
+    | {
+        name: string;
+        scopes: 'all' | Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'>;
+        expiresAt?: string;
+      };
   path: {
     tenantId: string;
     organizationId: string;
@@ -9119,25 +9131,25 @@ export type UpdateTenantData = {
      */
     restrictions?: {
       /**
-       * Caps per tenant on entities, service accounts, API keys and LTI connections (0 = unlimited)
+       * Caps per tenant on entities, service accounts, API keys and LTI connections
        */
       quotas?: {
-        user?: number | null;
-        organization?: number | null;
-        attachment?: number | null;
-        serviceAccount?: number | null;
-        apiKey?: number | null;
-        ltiConnection?: number | null;
+        user?: number | 'unlimited' | null;
+        organization?: number | 'unlimited' | null;
+        attachment?: number | 'unlimited' | null;
+        serviceAccount?: number | 'unlimited' | null;
+        apiKey?: number | 'unlimited' | null;
+        ltiConnection?: number | 'unlimited' | null;
       } | null;
       rateLimits?: {
         /**
-         * Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)
+         * Max API points per hour per actor within this tenant (`unlimited` = no tenant limit; the global safety ceiling still applies)
          */
-        apiPointsPerHour?: number | null;
+        apiPointsPerHour?: number | 'unlimited' | null;
         /**
-         * Max invitation mails per day the tenant sends, new and resent alike (0 = no cap)
+         * Max invitation mails per day the tenant sends, new and resent alike
          */
-        invitationEmailsPerDay?: number | null;
+        invitationEmailsPerDay?: number | 'unlimited' | null;
       } | null;
       /**
        * Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)
@@ -9316,6 +9328,9 @@ export type CreateConnectionData = {
      */
     idpEntityIds: Array<string>;
     status?: 'pending' | 'active' | 'disabled';
+    /**
+     * Admit the institution's members without an invitation; off unless set
+     */
     jitProvisioning?: boolean;
     logoUrl?: string;
   };
@@ -9427,6 +9442,9 @@ export type UpdateConnectionData = {
      */
     idpEntityIds?: Array<string>;
     status?: 'pending' | 'active' | 'disabled';
+    /**
+     * Admit the institution's members without an invitation; off unless set
+     */
     jitProvisioning?: boolean;
     logoUrl?: string;
   };

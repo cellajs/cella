@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
+import { assertSwitchOn } from '#/middlewares/config-switch';
 import { createRequestOp } from '#/modules/requests/operations/create-request';
 import { deleteRequestsOp } from '#/modules/requests/operations/delete-requests';
 import { getRequestsOp } from '#/modules/requests/operations/get-requests';
@@ -11,6 +12,7 @@ const app = new OpenAPIHono<Env>();
 
 app.openapi(requestRoutes.createRequest, async (ctx) => {
   const input = ctx.req.valid('json');
+  if (input.kind === 'waitlist') assertSwitchOn({ feature: 'waitlist' });
   const stored = createRequestOp(ctx, input);
   // A waitlist or info answer waits for nothing: its time would tell an address with an account, or one listed
   // already, from a new one. A contact message is stored alike for every address, so its sender hears when that fails.

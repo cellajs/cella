@@ -1,5 +1,6 @@
-import { and, countDistinct, eq, getColumns, gt, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, countDistinct, eq, gt, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
+import { servedColumns } from '#/db/utils/served-columns';
 import {
   type AddressedTokenKind,
   type CodeTokenKind,
@@ -19,7 +20,7 @@ export type { PendingSignUp } from '#/modules/auth/core/tokens/tokens-db';
  */
 export type TokenRecord = Omit<UnsafeTokenModel, 'secretHash' | 'singleUseToken' | 'email'> & { email: string };
 
-const { secretHash: _secretHash, singleUseToken: _singleUseToken, ...tokenColumns } = getColumns(tokensTable);
+const tokenColumns = servedColumns(tokensTable);
 
 /**
  * A row these queries read, of an addressed kind, which `issueTokens` always gives an address.

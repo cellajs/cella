@@ -98,11 +98,12 @@ export const config = {
       ltiConnection: 3,
     },
     rateLimits: { apiPointsPerHour: 1000, invitationEmailsPerDay: 250 },
+    allowUnregisteredClients: false,
   },
 
   /**
    * Tenants one user may create through onboarding (`selfCreateTenant`); a tenant reused while it holds no organization
-   * counts once, and system admins have no cap. `0` turns self-service creation off, where a quota's `0` means unlimited.
+   * counts once, and system admins have no cap. `0` turns self-service creation off.
    */
   selfServiceTenantsPerUser: 10,
 
@@ -233,6 +234,7 @@ export const config = {
     chatSupport: false,
     demos: false,
     ltiPlatform: false,
+    publicCounts: false,
   },
 
   shareTarget: undefined as ShareTargetConfig | undefined,

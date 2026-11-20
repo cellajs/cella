@@ -17,8 +17,9 @@ export const development = {
   // Same-origin in development too: the Vite dev server is the origin and proxies the service paths to the service
   // ports (vite.config.ts), so cookies and CSP behave like production. `devAppIndex` moves this port with the services.
   origin,
-  // The authorization server runs locally so the MCP consent flow can be exercised end to end.
+  // The authorization server runs locally so the MCP consent flow can be exercised end to end, from an AI client too.
   services: { oauth: { enabled: true }, mcp: { enabled: true } },
+  defaultRestrictions: { allowUnregisteredClients: true },
 
   // The template's shared development buckets hold the seed files and the GeoIP databases, so seeded attachments
   // render before the app has storage of its own.

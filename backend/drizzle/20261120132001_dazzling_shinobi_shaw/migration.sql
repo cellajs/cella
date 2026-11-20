@@ -1,0 +1,1 @@
+ALTER TABLE "connections" ALTER COLUMN "jit_provisioning" SET DEFAULT false;

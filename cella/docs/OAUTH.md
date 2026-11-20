@@ -36,7 +36,7 @@ The worker is a `SERVICE` of the backend image. The issuer shares the app origin
 
 | Client | Identified by | Authenticates with | Consent |
 | --- | --- | --- | --- |
-| MCP client (Claude Desktop, VS Code) | A Client ID Metadata Document: `client_id` is the HTTPS URL of its metadata | Nothing (public client, PKCE) | The person, if the tenant allows consented clients |
+| MCP client (Claude Desktop, VS Code) | A Client ID Metadata Document: `client_id` is the HTTPS URL of its metadata | Nothing (public client, PKCE) | The person, if the tenant allows unregistered clients, which only development mode or a system admin turns on |
 | Registered app (a portfolio site, a partner) | A row in `oauth_clients` | Its secret, or nothing when public | The person, if the app is installed in the tenant |
 | Service account | Its own id | Any of its live API keys as the client secret, which caps the token at that key's scopes | None: `client_credentials` |
 | Installed LTI tool | Its registration's `client_id` | An assertion signed with a key of the set it registered (`private_key_jwt`) | The admin's approval: `client_credentials`, within the granted scopes |

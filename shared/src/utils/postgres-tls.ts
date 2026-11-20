@@ -22,8 +22,8 @@ const stripPostgresSslParams = (url: string): string => {
 };
 
 /**
- * The database CA as PEM, decoded from the single-line base64 runtime secret; callers pass the raw env value. Production
- * requires the Pulumi-provisioned CA and verified TLS.
+ * The database CA as PEM, decoded from the single-line base64 runtime secret; callers pass the raw env value. A deployed
+ * mode (`appConfig.isDeployed`) requires the Pulumi-provisioned CA and verified TLS.
  * @returns undefined without a CA when none is required.
  * @throws Error when the CA is required and absent.
  */
@@ -31,7 +31,7 @@ export const resolvePostgresSslCa = (ca: string | undefined, required: boolean):
   if (!ca) {
     if (!required) return undefined;
     throw new Error(
-      'FATAL: DATABASE_SSL_CA is required in production for verified TLS to PostgreSQL. ' +
+      'FATAL: DATABASE_SSL_CA is required in a deployed mode for verified TLS to PostgreSQL. ' +
         'It is provisioned automatically by `pulumi up` (Scaleway RDB CA). Run ' +
         '`pnpm infra apply`, or check the database-ssl-ca runtime secret.',
     );
@@ -59,10 +59,11 @@ const verifiedPostgresSsl = (connectionString: string, ca: string | undefined): 
 };
 
 /**
- * The `connectionString` and `ssl` options of a connection to `url`, taken together: the string without its ssl params,
- * so they cannot downgrade the verified `ssl`. `ssl` is undefined without a CA.
+ * The `connectionString` and `ssl` options of a connection to `url`, taken together. With a CA, the string loses its
+ * ssl params, which could downgrade the verified `ssl`. Without one, `ssl` is undefined and the string keeps its
+ * `sslmode`.
  */
 export const verifiedPostgresConnection = (url: string, ca: string | undefined) => ({
-  connectionString: stripPostgresSslParams(url),
+  connectionString: ca ? stripPostgresSslParams(url) : url,
   ssl: verifiedPostgresSsl(url, ca),
 });

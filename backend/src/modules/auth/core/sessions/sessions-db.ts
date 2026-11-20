@@ -1,9 +1,10 @@
-import { getColumns, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { check, index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { writerColumn } from '#/db/utils/audit-columns';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
+import { servedColumns } from '#/db/utils/served-columns';
 import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { authStrategiesEnum, stepUpProofs } from '#/modules/auth/core/strategies';
 import { connectionsTable } from '#/modules/connections/connections-db';
@@ -79,11 +80,10 @@ export const sessionsTable = snakeCase.table(
   ],
 );
 
-const { secretHash: _secretHash, steppedUpSecretHash: _steppedUpSecretHash, ...safeColumns } = getColumns(sessionsTable);
 /** Every column but the secrets: what any response may carry. */
-export const sessionSafeColumns = safeColumns;
+export const sessionSafeColumns = servedColumns(sessionsTable);
 
-const { id, userId, kind, authStrategy, connectionId, createdAt, expiresAt } = safeColumns;
+const { id, userId, kind, authStrategy, connectionId, createdAt, expiresAt } = sessionSafeColumns;
 /** The columns of {@link SessionFacts}. */
 export const sessionFactColumns = { id, userId, kind, authStrategy, connectionId, createdAt, expiresAt };
 

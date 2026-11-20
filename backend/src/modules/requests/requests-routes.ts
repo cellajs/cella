@@ -1,4 +1,4 @@
-import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { bulkPointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -15,9 +15,9 @@ export const requestRoutes = createXRoutes(['requests', 'cella'], {
     middleware: [isNoBot],
     summary: 'Create request',
     description:
-      'Submits a request: a contact form message, an info request or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist entry or info request is dropped.',
+      'Submits a request: a contact form message, an info request or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist entry or info request is dropped. A waitlist entry answers 404 while the app keeps no waitlist.',
     request: { body: jsonBody(requestCreateBodySchema) },
-    responses: { 204: { description: 'Request received' } },
+    responses: { 204: { description: 'Request received' }, ...errors(404) },
   }),
   listRequests: xRoute({
     method: 'get',

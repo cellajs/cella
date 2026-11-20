@@ -1,12 +1,13 @@
 import process from 'node:process';
 import pg from 'pg';
+import { appConfig } from 'shared';
 import { resolvePostgresSslCa, verifiedPostgresConnection } from 'shared/utils/postgres-tls';
 import { createPgConnection, type Tx, transactionOpenedWith } from '#/db/create-connection';
 import { tenantTransactionOpening } from '#/db/tenant-transaction-opening';
 import { env } from '../env';
 
-// Production requires the provisioned RDB CA, so the TLS connection is always verified.
-const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production' && !env.NODB);
+// A deployed mode requires the provisioned RDB CA, so the TLS connection is always verified.
+const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, appConfig.isDeployed && !env.NODB);
 
 /** The pool opens lazily on first query, so unconditional construction is safe under NODB. */
 export const db = createPgConnection(env.DATABASE_URL, { name: 'yjs', max: env.YJS_DATABASE_POOL_MAX, sslCa, debug: env.DEBUG });

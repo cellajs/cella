@@ -12,6 +12,8 @@ export const secretColumns = {
   connections: ['privateJwk'],
   oauth_clients: ['secretHash'],
   passkey_challenges: ['challengeHash'],
+  // The Web Push auth secret, which the pattern below cannot tell by name.
+  push_subscriptions: ['auth'],
   sessions: ['secretHash', 'steppedUpSecretHash'],
   signing_keys: ['privateJwk'],
   tokens: ['secretHash', 'singleUseToken'],

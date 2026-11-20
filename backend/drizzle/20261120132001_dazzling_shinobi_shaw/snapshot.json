@@ -1,0 +1,38 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "334ffa7c-0125-4da6-8801-9fbfc9880088",
+  "prevIds": [
+    "bc750f66-290b-47e0-b8ce-a60f8e5d2c87"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "connections",
+        "jit_provisioning"
+      ],
+      "writes": [
+        "s|colprop|public.connections.jit_provisioning.default"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public",
+        "n|col|public.connections.jit_provisioning"
+      ],
+      "sqlHash": "1bcf114b79139563"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"connections\",\"jit_provisioning\"]",
+      "set": {
+        "default": "false"
+      }
+    }
+  ]
+}

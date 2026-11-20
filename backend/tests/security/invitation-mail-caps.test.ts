@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { deleteInvitation, inviteMembers, resendInvitation } from 'sdk';
+import type { RestrictionCap } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
@@ -89,7 +90,7 @@ describe('Invitation mail caps', async () => {
   it('must not spend the day on invitations the member limit refuses, held ones included', async () => {
     const { organization, first } = await tenantWithAdmins('refused-draft');
     const restrictions = defaultRestrictions();
-    const limit = async (user: number) => {
+    const limit = async (user: RestrictionCap) => {
       const quotas = { ...restrictions.quotas, user };
       const rateLimits = { ...restrictions.rateLimits, invitationEmailsPerDay: 3 };
       await db
@@ -104,7 +105,7 @@ describe('Invitation mail caps', async () => {
     for (const name of ['a', 'b', 'c']) {
       await expectRefusal(await invite(organization, first, [`refused-draft-${name}@security-test.com`]), 403, 'restrict_by_org');
     }
-    await limit(0);
+    await limit('unlimited');
     const held = await invite(organization, first, ['refused-draft-d@security-test.com']);
     expect(held.response.status).toBe(200);
     expect(held.data).toMatchObject({ held: true });

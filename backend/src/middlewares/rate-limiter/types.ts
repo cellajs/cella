@@ -70,8 +70,8 @@ export interface RateLimiterOpts {
   description?: string;
   /** Dynamic points to consume per request (for points-weighted limiters). Called at request time. */
   getConsumePoints?: (ctx: Context<Env>) => number | Promise<number>;
-  /** Tenant budget clamped to the static `limits.points` ceiling; 0 means no tenant limit and uses that ceiling. */
-  getPointsBudget?: (ctx: Context<Env>) => number;
+  /** Tenant budget clamped to the static `limits.points` ceiling; null means no tenant limit and uses that ceiling. */
+  getPointsBudget?: (ctx: Context<Env>) => number | null;
   /**
    * For a `limit` of at most an hour on a route called too often to pay a database transaction per request: requests
    * count in process while the key is under 80% of its budget and reach the database past that. A limiter with a

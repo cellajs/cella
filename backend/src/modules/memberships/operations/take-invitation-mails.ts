@@ -63,7 +63,7 @@ export async function takeInvitationMails(
 
   const count = mailNow.length - heldBack.size + mailAtPublish;
   const budget = tenant.restrictions.rateLimits.invitationEmailsPerDay;
-  if (!count || budget === 0) return { emails: mailNow, heldBack, reserved: { addresses } };
+  if (!count || budget === 'unlimited') return { emails: mailNow, heldBack, reserved: { addresses } };
 
   const total = await reserveAttempt(tenantMails, tenantId, { points: budget, duration: day }, count);
   if (total.granted) return { emails: mailNow, heldBack, reserved: { addresses, tenant: { store: total.store, points: count } } };

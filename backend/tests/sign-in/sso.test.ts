@@ -111,6 +111,7 @@ const seedConnection = async (overrides: Partial<InsertConnectionModel> = {}) =>
       name: 'Hogeschool Utrecht',
       claimValues: ['hu.nl', 'student.hu.nl'],
       status: 'active',
+      jitProvisioning: true,
       config: { idpEntityIds: ['https://idp.hu.nl/students', 'https://idp.hu.nl/employees'] },
       ...overrides,
     })

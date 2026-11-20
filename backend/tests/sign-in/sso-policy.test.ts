@@ -4,7 +4,7 @@ import { nanoid } from 'nanoid';
 /** Addresses compare lower case: a generated local part must be too. */
 const suffix = () => nanoid(6).toLowerCase();
 
-import { getAuthHealth, getMyAuth, getOrganization, getTokenData, sendMagicLink } from 'sdk';
+import { getAuthHealth, getMyAuth, getOrganization, getTokenData, listUsers, sendMagicLink } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -131,6 +131,22 @@ describe("the tenant's sign-in policy", async () => {
 
     // Positive control: through the tenant's own connection.
     expect((await signedIn(connection.id)).response.status).toBe(200);
+  });
+
+  it("shows a session the policy refuses none of the tenant's people on a user-level route", async () => {
+    const { organization, connection } = await seed({}, ['surfconext']);
+    const student = await createOrganizationAdminUser(`student-${suffix()}@hu.nl`, organization.id, memberRole, organization.tenantId);
+    await linkIdentity(student, { kind: 'sso', provider: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: connection.id });
+    const colleague = await createOrganizationAdminUser(`colleague-${suffix()}@hu.nl`, organization.id, memberRole, organization.tenantId);
+
+    const listed = async (session: Parameters<typeof createTestSession>[1]) => {
+      const { data } = await call(listUsers, { headers: { ...defaultHeaders, Cookie: await createTestSession(student, session) } });
+      return (data as { results: { id: string }[] }).results.map(({ id }) => id);
+    };
+
+    expect(await listed({ authStrategy: 'magic' })).not.toContain(colleague.id);
+    // Positive control: through the tenant's own connection.
+    expect(await listed({ authStrategy: 'surfconext', connectionId: connection.id })).toContain(colleague.id);
   });
 
   it('mails no magic link to an address the institution proved while the tenant excludes magic links', async () => {

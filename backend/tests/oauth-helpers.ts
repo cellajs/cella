@@ -29,7 +29,7 @@ export const bearerHeaders = (token: string) => ({ 'Content-Type': 'application/
 export async function serviceAccountWithKey(
   org: OrgPath,
   adminCookie: string,
-  { role = adminRole, scopes = null }: { role?: ServiceAccountBody['role']; scopes?: KeyScopes } = {},
+  { role = adminRole, scopes = 'all' }: { role?: ServiceAccountBody['role']; scopes?: KeyScopes } = {},
 ) {
   const call = await createAppClient();
   const { data, response } = await call(createServiceAccount, {

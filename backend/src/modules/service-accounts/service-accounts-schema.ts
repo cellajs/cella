@@ -64,17 +64,21 @@ export const createdApiKeySchema = apiKeySchema
 
 const apiKeyInputSchema = z.object({
   name: validNameSchema,
-  /** Mask over the account's bindings. Omitted or null = every scope the bindings allow. */
-  scopes: z.array(scopeEnum).min(1).max(accessScopes.all.length).nullable().optional(),
+  /** Mask over the account's bindings: the scopes the key may use, or `all` for every one the bindings allow, people included. */
+  scopes: z.union([z.literal('all'), z.array(scopeEnum).min(1).max(accessScopes.all.length)]),
   expiresAt: z.string().max(64).pipe(z.iso.datetime()).openapi({ format: 'date-time' }).optional(),
 });
 
-export const createApiKeyBodySchema = apiKeyInputSchema.extend({
-  /** Roll: issue this key as the successor of an existing one, which keeps working for `rollOverlapDays`. */
-  rollFrom: validIdSchema.optional(),
+/** Roll: the successor of an existing key, with its scopes and expiry. */
+const rollApiKeyBodySchema = z.object({
+  name: validNameSchema,
+  rollFrom: validIdSchema,
   /** Days the rolled key stays valid, long enough to deploy the successor. */
   rollOverlapDays: z.number().int().min(0).max(30).default(7),
 });
+
+// A body that names `rollFrom` is a roll whatever else it carries: the roll comes first.
+export const createApiKeyBodySchema = z.union([rollApiKeyBodySchema, apiKeyInputSchema]);
 
 export const createServiceAccountBodySchema = z.object({
   name: validNameSchema,
@@ -96,4 +100,5 @@ export const serviceAccountListQuerySchema = listQuerySchema;
 export type CreateServiceAccountInput = z.infer<typeof createServiceAccountBodySchema>;
 export type UpdateServiceAccountInput = z.infer<typeof updateServiceAccountBodySchema>;
 export type CreateApiKeyInput = z.infer<typeof createApiKeyBodySchema>;
+export type ApiKeyInput = z.infer<typeof apiKeyInputSchema>;
 export type ServiceAccountListQuery = z.infer<typeof serviceAccountListQuerySchema>;

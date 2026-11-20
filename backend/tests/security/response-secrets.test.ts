@@ -13,6 +13,7 @@ import { totpsTable } from '#/modules/auth/flows/totps/totps-db';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
+import { pushSubscriptionsTable } from '#/modules/push/push-subscription-db';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { adminRole, memberRole } from '../fixtures';
 import { createTestOrganization, createTestSession, createTestUser, insertTestSession, rawJsonRequest, testTotpSecret } from '../helpers';
@@ -29,6 +30,7 @@ const secretTables = {
   connections: connectionsTable,
   oauth_clients: oauthClientsTable,
   passkey_challenges: passkeyChallengesTable,
+  push_subscriptions: pushSubscriptionsTable,
   sessions: sessionsTable,
   signing_keys: signingKeysTable,
   tokens: tokensTable,
@@ -163,7 +165,7 @@ describe('Secret columns in responses', async () => {
       send: () =>
         sendAndKeep(
           serviceAccounts(),
-          { method: 'POST', body: { name: 'CI bot', role: memberRole, key: { name: 'deploy', scopes: null } } },
+          { method: 'POST', body: { name: 'CI bot', role: memberRole, key: { name: 'deploy', scopes: 'all' } } },
           (body) => {
             serviceAccountId = (body.serviceAccount as { id: string }).id;
             apiKeyId = (body.apiKey as { id: string }).id;

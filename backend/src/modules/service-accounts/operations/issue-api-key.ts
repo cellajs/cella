@@ -4,11 +4,11 @@ import type { InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import { generateApiKey } from '#/modules/service-accounts/helpers/api-key';
 import type { ServiceAccountModel } from '#/modules/service-accounts/service-accounts-db';
 import { insertApiKey } from '#/modules/service-accounts/service-accounts-queries';
-import type { CreateApiKeyInput } from '#/modules/service-accounts/service-accounts-schema';
+import type { ApiKeyInput } from '#/modules/service-accounts/service-accounts-schema';
 
 interface IssueApiKeyOpts extends Pick<InsertApiKeyModel, 'createdBy'> {
   account: Pick<ServiceAccountModel, 'id' | 'tenantId' | 'oauthClientId' | 'connectionId'>;
-  key: Pick<CreateApiKeyInput, 'name' | 'scopes' | 'expiresAt'>;
+  key: ApiKeyInput;
 }
 
 /**
@@ -24,7 +24,7 @@ export async function issueApiKey(ctx: DbContext, { account, createdBy, key }: I
   const { id: actorId, tenantId } = account;
   const { key: secret, parsed } = generateApiKey('secret');
   const apiKey = await insertApiKey(ctx, {
-    values: { actorId, tenantId, name: key.name, scopes: key.scopes ?? null, expiresAt: key.expiresAt, createdBy, ...parsed },
+    values: { actorId, tenantId, name: key.name, scopes: key.scopes === 'all' ? null : key.scopes, expiresAt: key.expiresAt, createdBy, ...parsed },
   });
   return { apiKey, secret };
 }

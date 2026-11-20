@@ -396,7 +396,7 @@ describe('OAuth grants', async () => {
 
     it('must not act or mint via a service token after its API key is revoked', async () => {
       const bot = await botWithKey();
-      const second = await call(createApiKey, { path: bot.path, body: { name: 'second' }, headers: bot.headers });
+      const second = await call(createApiKey, { path: bot.path, body: { name: 'second', scopes: 'all' }, headers: bot.headers });
       const secondKey = second.data as { secret: string };
 
       const jwt = await bot.tokenFor(bot.key.secret);

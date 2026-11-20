@@ -41,7 +41,7 @@ export const connectionsTable = snakeCase.table(
     name: varchar({ length: maxLength.field }).notNull(),
     status: varchar({ enum: connectionStatuses }).notNull().default('pending'),
     /** An active connection admits the institution's members without an invitation; off, invited addresses only. */
-    jitProvisioning: boolean().notNull().default(true),
+    jitProvisioning: boolean().notNull().default(false),
     config: jsonb().$type<ConnectionConfig>().notNull().default({}),
     /**
      * An LTI connection's own RS256 key pair, minted at registration: the private JWK, encrypted for this row

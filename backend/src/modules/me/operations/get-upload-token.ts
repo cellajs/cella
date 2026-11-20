@@ -54,8 +54,9 @@ const assertMayUploadAttachments = (ctx: UserContext, organizationId?: string) =
 const attachmentsLeft = async (ctx: UserContext, organizationId?: string) => {
   const tenantId = ctx.var.memberships.find((membership) => membership.organizationId === organizationId)?.tenantId;
   const tenant = tenantId ? await loadTenant(tenantId) : undefined;
-  const quota = tenant?.restrictions.quotas.attachment ?? 0;
-  if (!tenant || ctx.var.isSystemAdmin || quota === 0) return maxFilesPerUpload;
+  if (!tenant || ctx.var.isSystemAdmin) return maxFilesPerUpload;
+  const quota = tenant.restrictions.quotas.attachment;
+  if (quota === 'unlimited') return maxFilesPerUpload;
 
   const held = await tenantReadById(tenant.id, async (db) => {
     const [row] = await db

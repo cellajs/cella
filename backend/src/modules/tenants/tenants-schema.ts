@@ -13,18 +13,19 @@ import { mergePatchSchema } from '#/schemas/merge-patch-schema';
 const tenantStatusSchema = z.enum(tenantStatusValues);
 const tenantKindSchema = z.enum(tenantKindValues);
 
-const countSchema = z.number().int().min(0);
+/** A cap: how many the tenant may take, `0` none, or `unlimited`. */
+const capSchema = z.union([z.number().int().min(0), z.literal('unlimited')]);
 
 const rateLimitsSchema = z.object({
-  apiPointsPerHour: countSchema.describe(
-    'Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)',
+  apiPointsPerHour: capSchema.describe(
+    'Max API points per hour per actor within this tenant (`unlimited` = no tenant limit; the global safety ceiling still applies)',
   ),
-  invitationEmailsPerDay: countSchema.describe('Max invitation mails per day the tenant sends, new and resent alike (0 = no cap)'),
+  invitationEmailsPerDay: capSchema.describe('Max invitation mails per day the tenant sends, new and resent alike'),
 });
 
 const quotasSchema = z
-  .object(recordFromKeys(quotaKeys, () => countSchema))
-  .describe('Caps per tenant on entities, service accounts, API keys and LTI connections (0 = unlimited)');
+  .object(recordFromKeys(quotaKeys, () => capSchema))
+  .describe('Caps per tenant on entities, service accounts, API keys and LTI connections');
 
 const restrictionsSchema = z.object({
   quotas: quotasSchema,

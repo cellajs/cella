@@ -1,10 +1,11 @@
 import type { z } from '@hono/zod-openapi';
-import { and, count, eq, getColumns, inArray, isNull, ne, notExists, notInArray, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, isNull, ne, notExists, notInArray, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { type EntityRole, hierarchy, type TenantKind } from 'shared';
 import type { ActorContext, DbContext, UserContext } from '#/core/context';
 import { preconditionWhere } from '#/core/preconditions';
 import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
+import { servedColumns } from '#/db/utils/served-columns';
 import { updateStamps } from '#/db/utils/stamps';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { getChannelCountsSelect } from '#/modules/entities/entities-queries';
@@ -177,7 +178,7 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
 
   const countData = includeCounts ? getChannelCountsSelect(entityType) : null;
   const selectShape = {
-    ...getColumns(organizationsTable),
+    ...servedColumns(organizationsTable),
     organizationFlags: organizationFlagsSelect,
     setupConfig: setupConfigSelect,
     ...(countData && { counts: countData.countsSelect }),

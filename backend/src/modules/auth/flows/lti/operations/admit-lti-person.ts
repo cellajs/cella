@@ -1,4 +1,4 @@
-import { buildSubjectFromEntity, type ChannelEntityType, checkAccess, hierarchy, type OrganizationRole } from 'shared';
+import { buildSubjectFromEntity, type ChannelEntityType, checkAccess, hierarchy, type OrganizationRole, type RestrictionCap } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId, UserId } from '#/db/utils/ids';
 import type { MembershipEntity } from '#/lib/module';
@@ -54,8 +54,8 @@ const updateLtiPerson = async (
 };
 
 interface AdmitLtiPersonOpts extends LtiPersonOpts {
-  /** The tenant's member limit (`restrictions.quotas.user`); 0 for none. */
-  memberQuota: number;
+  /** The tenant's member limit (`restrictions.quotas.user`). */
+  memberQuota: RestrictionCap;
   /** When a launch signed the person in; absent for an import. */
   signedInAt?: string;
   /** Who names an account (`nameLtiAccount`): the connection's service account for an import, the person for a launch. */

@@ -1,10 +1,11 @@
+import { appConfig } from 'shared';
 import { resolvePostgresSslCa } from 'shared/utils/postgres-tls';
 import { createPgConnection, type DB } from '#/db/create-connection';
 import { resourceLimits } from '../constants';
 import { env } from '../env';
 
-// Production requires the Pulumi-provisioned database CA and verified TLS.
-export const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production');
+// A deployed mode requires the Pulumi-provisioned database CA and verified TLS.
+export const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, appConfig.isDeployed);
 
 /** What a statement runs through: the worker's pool or one of its transactions. Only `execute`, so a test can pass a stand-in. */
 export type Executor = Pick<DB, 'execute'>;

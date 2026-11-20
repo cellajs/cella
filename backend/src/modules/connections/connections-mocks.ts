@@ -30,7 +30,7 @@ export const mockLtiConnectionResponse = (key = 'connection:lti') =>
     claimValues: [],
     name: 'lms.example.com',
     status: 'active' as const,
-    jitProvisioning: true,
+    jitProvisioning: false,
     config: {
       authorizationEndpoint: 'https://lms.example.com/lti/authorize',
       tokenEndpoint: 'https://lms.example.com/oauth/token',

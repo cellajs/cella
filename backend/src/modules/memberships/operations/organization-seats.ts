@@ -1,3 +1,4 @@
+import type { RestrictionCap } from 'shared';
 import type { DbContext } from '#/core/context';
 import { countInvitationSeats } from '#/modules/memberships/invitations-queries';
 import { countMembershipsByChannel } from '#/modules/memberships/memberships-queries';
@@ -17,8 +18,8 @@ export const countTakenSeats = async (ctx: DbContext, { organizationId, exceptEm
 
 interface HasFreeSeatsOpts extends CountTakenSeatsOpts {
   tenantId: string;
-  /** The tenant's member limit (`restrictions.quotas.user`); 0 for none. */
-  quota: number;
+  /** The tenant's member limit (`restrictions.quotas.user`). */
+  quota: RestrictionCap;
   /** The seats the caller takes; one when left out. */
   seats?: number;
 }
@@ -29,7 +30,7 @@ interface HasFreeSeatsOpts extends CountTakenSeatsOpts {
  * the second finds none.
  */
 export const hasFreeSeats = async (txCtx: DbContext, { tenantId, quota, seats = 1, ...taken }: HasFreeSeatsOpts) => {
-  if (quota === 0 || seats === 0) return true;
+  if (quota === 'unlimited' || seats === 0) return true;
   await lockTenantQuota(txCtx, { tenantId, key: 'user' });
   return (await countTakenSeats(txCtx, taken)) + seats <= quota;
 };

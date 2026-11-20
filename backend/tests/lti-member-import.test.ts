@@ -917,7 +917,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect((listed.data as { results: { id: string }[] }).results.map(({ id }) => id)).not.toContain(account.id);
     const path = { ...side.path, serviceAccountId: account.id };
     await expectRefusal(await call(updateServiceAccount, { path, body: { status: 'active' }, headers: side.headers }), 404, 'not_found');
-    await expectRefusal(await call(createApiKey, { path, body: { name: 'key', scopes: null }, headers: side.headers }), 404, 'not_found');
+    await expectRefusal(await call(createApiKey, { path, body: { name: 'key', scopes: 'all' }, headers: side.headers }), 404, 'not_found');
   });
 
   // A connection deleted while its import reads the platform takes the import with it: no one is written after the

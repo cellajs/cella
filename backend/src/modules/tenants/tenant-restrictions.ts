@@ -1,4 +1,4 @@
-import { appConfig, type EntityType, recordFromKeys, type TenantKind, type TenantKindConfig, tenantKindValues } from 'shared';
+import { appConfig, type EntityType, type RestrictionCap, recordFromKeys, type TenantKind, type TenantKindConfig, tenantKindValues } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
@@ -14,16 +14,16 @@ type QuotaKey = EntityType | (typeof otherQuotaKeys)[number];
 /** Every key a tenant quota can name: the entity types, then the others. */
 export const quotaKeys: QuotaKey[] = [...appConfig.entityTypes, ...otherQuotaKeys];
 
-/** The restrictions a new tenant starts with: `appConfig.defaultRestrictions`, 0 for a quota it does not list. */
+/** The restrictions a new tenant starts with: `appConfig.defaultRestrictions`, which names a quota for every key. */
 export const defaultRestrictions = (): Restrictions => {
-  const defaultQuotas: Partial<Restrictions['quotas']> = appConfig.defaultRestrictions.quotas;
-
-  return {
-    quotas: recordFromKeys(quotaKeys, (key) => defaultQuotas[key] ?? 0),
-    rateLimits: { ...appConfig.defaultRestrictions.rateLimits },
-    allowUnregisteredClients: true,
-  };
+  // A missing quota fails the typecheck here: the config's own type cannot see the app's entity types.
+  const quotas: Record<QuotaKey, RestrictionCap> = appConfig.defaultRestrictions.quotas;
+  const { rateLimits, allowUnregisteredClients } = appConfig.defaultRestrictions;
+  return { quotas: recordFromKeys(quotaKeys, (key) => quotas[key]), rateLimits: { ...rateLimits }, allowUnregisteredClients };
 };
+
+/** Whether `used` fits under `cap`. */
+const withinCap = (cap: RestrictionCap, used: number): boolean => cap === 'unlimited' || used <= cap;
 
 /** The restrictions a new tenant of `kind` starts with: the defaults, with the kind's patch (`appConfig.tenantKinds`) laid over. */
 export const kindRestrictions = (kind: TenantKind): Restrictions => {
@@ -39,7 +39,7 @@ export const listedTenantKinds = (): TenantKind[] => tenantKindValues.filter((ki
 export const countedTenantKinds = (): TenantKind[] => tenantKindValues.filter((kind) => appConfig.tenantKinds[kind].counted);
 
 /**
- * Rejects when the tenant's hard cap on `key` would be passed (0 = unlimited). `existing` is the count the tenant holds
+ * Rejects when the tenant's hard cap on `key` would be passed. `existing` is the count the tenant holds
  * now, `adding` the rows about to be created. System admins bypass. Organizations keep a check of their own: the 1:1
  * slot binds system admins too and clamps a batch.
  * @throws AppError 403 `restrict_by_app` with the key in `meta.resource` and the cap in `meta.quota`; an entity key also
@@ -47,7 +47,7 @@ export const countedTenantKinds = (): TenantKind[] => tenantKindValues.filter((k
  */
 export const assertTenantQuota = (ctx: ActorContext, key: QuotaKey, existing: number, adding = 1): void => {
   const quota = ctx.var.tenant.restrictions.quotas[key];
-  if (ctx.var.isSystemAdmin || quota === 0 || existing + adding <= quota) return;
+  if (ctx.var.isSystemAdmin || withinCap(quota, existing + adding)) return;
   const entityType = appConfig.entityTypes.find((type) => type === key);
   throw new AppError(403, 'restrict_by_app', 'warn', { ...(entityType && { entityType }), meta: { resource: key, quota } });
 };

@@ -4085,45 +4085,109 @@
                 "type": "object",
                 "properties": {
                   "user": {
-                    "type": "integer",
-                    "minimum": 0
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "string",
+                        "enum": ["unlimited"]
+                      }
+                    ]
                   },
                   "organization": {
-                    "type": "integer",
-                    "minimum": 0
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "string",
+                        "enum": ["unlimited"]
+                      }
+                    ]
                   },
                   "attachment": {
-                    "type": "integer",
-                    "minimum": 0
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "string",
+                        "enum": ["unlimited"]
+                      }
+                    ]
                   },
                   "serviceAccount": {
-                    "type": "integer",
-                    "minimum": 0
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "string",
+                        "enum": ["unlimited"]
+                      }
+                    ]
                   },
                   "apiKey": {
-                    "type": "integer",
-                    "minimum": 0
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "string",
+                        "enum": ["unlimited"]
+                      }
+                    ]
                   },
                   "ltiConnection": {
-                    "type": "integer",
-                    "minimum": 0
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "string",
+                        "enum": ["unlimited"]
+                      }
+                    ]
                   }
                 },
                 "required": ["user", "organization", "attachment", "serviceAccount", "apiKey", "ltiConnection"],
-                "description": "Caps per tenant on entities, service accounts, API keys and LTI connections (0 = unlimited)"
+                "description": "Caps per tenant on entities, service accounts, API keys and LTI connections"
               },
               "rateLimits": {
                 "type": "object",
                 "properties": {
                   "apiPointsPerHour": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "description": "Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)"
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "string",
+                        "enum": ["unlimited"]
+                      }
+                    ],
+                    "description": "Max API points per hour per actor within this tenant (`unlimited` = no tenant limit; the global safety ceiling still applies)"
                   },
                   "invitationEmailsPerDay": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "description": "Max invitation mails per day the tenant sends, new and resent alike (0 = no cap)"
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "string",
+                        "enum": ["unlimited"]
+                      }
+                    ],
+                    "description": "Max invitation mails per day the tenant sends, new and resent alike"
                   }
                 },
                 "required": ["apiPointsPerHour", "invitationEmailsPerDay"]
@@ -13685,6 +13749,9 @@
         "tags": ["me", "cella"],
         "summary": "Get upload token",
         "description": "Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. An attachment token needs an organization the user may create attachments in, and is refused at its tenant's attachment quota before any file is stored. Only a system admin gets a newsletter image token.",
+        "x-enabled-by": {
+          "feature": "uploads"
+        },
         "x-anonymous": true,
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["uploadTokenLimiter"],
@@ -15564,6 +15631,9 @@
         "tags": ["metrics", "cella"],
         "summary": "Get public counts",
         "description": "Returns the number of users and of each channel entity type, such as organizations. This endpoint is public and uses a 1 minute in memory cache for performance.",
+        "x-enabled-by": {
+          "feature": "publicCounts"
+        },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["readLimiter"],
         "responses": {
@@ -15592,6 +15662,9 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -17938,7 +18011,7 @@
         "operationId": "createRequest",
         "tags": ["requests", "cella"],
         "summary": "Create request",
-        "description": "Submits a request: a contact form message, an info request or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist entry or info request is dropped.",
+        "description": "Submits a request: a contact form message, an info request or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist entry or info request is dropped. A waitlist entry answers 404 while the app keeps no waitlist.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["spamLimiter"],
         "requestBody": {
@@ -17974,6 +18047,9 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
@@ -18436,13 +18512,21 @@
                         "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                       },
                       "scopes": {
-                        "type": ["array", "null"],
-                        "items": {
-                          "type": "string",
-                          "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
-                        },
-                        "minItems": 1,
-                        "maxItems": 5
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": ["all"]
+                          },
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
+                            },
+                            "minItems": 1,
+                            "maxItems": 5
+                          }
+                        ]
                       },
                       "expiresAt": {
                         "type": "string",
@@ -18450,7 +18534,7 @@
                         "format": "date-time"
                       }
                     },
-                    "required": ["name"]
+                    "required": ["name", "scopes"]
                   }
                 },
                 "required": ["name", "role"]
@@ -19083,40 +19167,64 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255,
-                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
-                  },
-                  "scopes": {
-                    "type": ["array", "null"],
-                    "items": {
-                      "type": "string",
-                      "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255,
+                        "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
+                      },
+                      "rollFrom": {
+                        "type": "string",
+                        "maxLength": 50
+                      },
+                      "rollOverlapDays": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 30,
+                        "default": 7
+                      }
                     },
-                    "minItems": 1,
-                    "maxItems": 5
+                    "required": ["name", "rollFrom"]
                   },
-                  "expiresAt": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "format": "date-time"
-                  },
-                  "rollFrom": {
-                    "type": "string",
-                    "maxLength": 50
-                  },
-                  "rollOverlapDays": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "maximum": 30,
-                    "default": 7
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255,
+                        "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
+                      },
+                      "scopes": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": ["all"]
+                          },
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
+                            },
+                            "minItems": 1,
+                            "maxItems": 5
+                          }
+                        ]
+                      },
+                      "expiresAt": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "format": "date-time"
+                      }
+                    },
+                    "required": ["name", "scopes"]
                   }
-                },
-                "required": ["name"]
+                ]
               }
             }
           }
@@ -20259,44 +20367,132 @@
                         "type": ["object", "null"],
                         "properties": {
                           "user": {
-                            "type": ["integer", "null"],
-                            "minimum": 0
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "organization": {
-                            "type": ["integer", "null"],
-                            "minimum": 0
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "attachment": {
-                            "type": ["integer", "null"],
-                            "minimum": 0
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "serviceAccount": {
-                            "type": ["integer", "null"],
-                            "minimum": 0
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "apiKey": {
-                            "type": ["integer", "null"],
-                            "minimum": 0
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "ltiConnection": {
-                            "type": ["integer", "null"],
-                            "minimum": 0
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         },
-                        "description": "Caps per tenant on entities, service accounts, API keys and LTI connections (0 = unlimited)"
+                        "description": "Caps per tenant on entities, service accounts, API keys and LTI connections"
                       },
                       "rateLimits": {
                         "type": ["object", "null"],
                         "properties": {
                           "apiPointsPerHour": {
-                            "type": ["integer", "null"],
-                            "minimum": 0,
-                            "description": "Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)"
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Max API points per hour per actor within this tenant (`unlimited` = no tenant limit; the global safety ceiling still applies)"
                           },
                           "invitationEmailsPerDay": {
-                            "type": ["integer", "null"],
-                            "minimum": 0,
-                            "description": "Max invitation mails per day the tenant sends, new and resent alike (0 = no cap)"
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Max invitation mails per day the tenant sends, new and resent alike"
                           }
                         }
                       },
@@ -20344,44 +20540,132 @@
                         "type": ["object", "null"],
                         "properties": {
                           "user": {
-                            "type": ["integer", "null"],
-                            "minimum": 0
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "organization": {
-                            "type": ["integer", "null"],
-                            "minimum": 0
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "attachment": {
-                            "type": ["integer", "null"],
-                            "minimum": 0
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "serviceAccount": {
-                            "type": ["integer", "null"],
-                            "minimum": 0
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "apiKey": {
-                            "type": ["integer", "null"],
-                            "minimum": 0
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "ltiConnection": {
-                            "type": ["integer", "null"],
-                            "minimum": 0
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         },
-                        "description": "Caps per tenant on entities, service accounts, API keys and LTI connections (0 = unlimited)"
+                        "description": "Caps per tenant on entities, service accounts, API keys and LTI connections"
                       },
                       "rateLimits": {
                         "type": ["object", "null"],
                         "properties": {
                           "apiPointsPerHour": {
-                            "type": ["integer", "null"],
-                            "minimum": 0,
-                            "description": "Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)"
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Max API points per hour per actor within this tenant (`unlimited` = no tenant limit; the global safety ceiling still applies)"
                           },
                           "invitationEmailsPerDay": {
-                            "type": ["integer", "null"],
-                            "minimum": 0,
-                            "description": "Max invitation mails per day the tenant sends, new and resent alike (0 = no cap)"
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["unlimited"]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Max invitation mails per day the tenant sends, new and resent alike"
                           }
                         }
                       },
@@ -20770,7 +21054,8 @@
                     "enum": ["pending", "active", "disabled"]
                   },
                   "jitProvisioning": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Admit the institution's members without an invitation; off unless set"
                   },
                   "logoUrl": {
                     "type": "string",
@@ -20896,7 +21181,8 @@
                     "enum": ["pending", "active", "disabled"]
                   },
                   "jitProvisioning": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Admit the institution's members without an invitation; off unless set"
                   },
                   "logoUrl": {
                     "type": "string",
@@ -20945,7 +21231,8 @@
                     "enum": ["pending", "active", "disabled"]
                   },
                   "jitProvisioning": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Admit the institution's members without an invitation; off unless set"
                   },
                   "logoUrl": {
                     "type": "string",
@@ -21137,7 +21424,7 @@
                       "claimValues": [],
                       "name": "lms.example.com",
                       "status": "active",
-                      "jitProvisioning": true,
+                      "jitProvisioning": false,
                       "config": {
                         "authorizationEndpoint": "https://lms.example.com/lti/authorize",
                         "tokenEndpoint": "https://lms.example.com/oauth/token",

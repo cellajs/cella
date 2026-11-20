@@ -95,6 +95,8 @@ export interface HasFlagsConfig {
   demos: boolean;
   /** The app as an LTI platform: organization admins install LTI tools that register by Dynamic Registration. Needs `services.oauth`. */
   ltiPlatform: boolean;
+  /** Anyone may read the counts of users and channels (`getPublicCounts`), for a public page. */
+  publicCounts: boolean;
 }
 
 /**
@@ -103,6 +105,12 @@ export interface HasFlagsConfig {
  */
 export const tenantKindValues = ['live', 'test', 'demo'] as const;
 export type TenantKind = (typeof tenantKindValues)[number];
+
+/** A tenant cap: how many it allows, `0` none, or `unlimited`. */
+export type RestrictionCap = number | 'unlimited';
+
+/** The keys a tenant quota names: every entity type, then machine actors, their keys and LTI connections. */
+type QuotaKeyOf<T extends ConfigStringArrays> = (T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey' | 'ltiConnection';
 
 /** What a tenant kind takes part in; `Q` names the keys a quota can take. */
 export interface TenantKindConfig<Q extends string = string> {
@@ -118,8 +126,8 @@ export interface TenantKindConfig<Q extends string = string> {
   operatorNotices: boolean;
   /** Laid over `defaultRestrictions` when a tenant of this kind is created. */
   restrictions?: {
-    quotas?: Partial<Record<Q, number>>;
-    rateLimits?: Partial<{ apiPointsPerHour: number; invitationEmailsPerDay: number }>;
+    quotas?: Partial<Record<Q, RestrictionCap>>;
+    rateLimits?: Partial<{ apiPointsPerHour: RestrictionCap; invitationEmailsPerDay: RestrictionCap }>;
   };
 }
 
@@ -372,13 +380,18 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   /** Product types numbered per home channel, each with the lowercase letter its share links carry: `/{code}/a7`. */
   numberedProducts: { readonly [K in T['productEntityTypes'][number] & string]?: string };
   defaultRestrictions: {
-    /** Hard caps per tenant on entity types, machine actors and their keys, and LTI connections; 0 = unlimited. */
-    quotas: Partial<Record<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey' | 'ltiConnection', number>>;
-    /** API points per hour per actor; invitation mails per day the tenant sends, new and resent alike. 0 lifts either. */
-    rateLimits: { apiPointsPerHour: number; invitationEmailsPerDay: number };
+    /** Hard caps per tenant on entity types, machine actors and their keys, and LTI connections: one per key. */
+    quotas: Record<QuotaKeyOf<T>, RestrictionCap>;
+    /**
+     * API points per hour per actor; invitation mails per day the tenant sends, new and resent alike. `unlimited` lifts
+     * the tenant's points cap to the global ceiling and its mail cap altogether.
+     */
+    rateLimits: { apiPointsPerHour: RestrictionCap; invitationEmailsPerDay: RestrictionCap };
+    /** Whether members may consent to an OAuth client with no registration: an AI client naming a Client ID Metadata Document. */
+    allowUnregisteredClients: boolean;
   };
   selfServiceTenantsPerUser: number;
-  tenantKinds: Record<TenantKind, TenantKindConfig<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey' | 'ltiConnection'>>;
+  tenantKinds: Record<TenantKind, TenantKindConfig<QuotaKeyOf<T>>>;
   demo: DemoConfig;
   retention: RetentionConfig;
 

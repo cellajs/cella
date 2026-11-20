@@ -1,4 +1,5 @@
 import type { PoolClient } from 'pg';
+import { appConfig } from 'shared';
 import { resolvePostgresSslCa } from 'shared/utils/postgres-tls';
 import { createPgConnection, type DB, isPool, type SessionTimeouts } from '#/db/create-connection';
 import { migrateSessionTimeouts } from '#/db/migrate-timeouts';
@@ -9,8 +10,8 @@ export type { DB, DbOrTx, Tx } from '#/db/create-connection';
 /** The folder of the migration files, and the schema of the table where drizzle records the applied ones. */
 export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' };
 
-// Production requires a verified TLS connection to the managed PostgreSQL.
-const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production' && !env.NODB);
+// A deployed mode requires a verified TLS connection to the managed PostgreSQL.
+const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, appConfig.isDeployed && !env.NODB);
 
 const connect = (connectionString: string, max: number, sessionTimeouts?: SessionTimeouts): DB =>
   createPgConnection(connectionString, { max, sslCa, debug: env.DEBUG, sessionTimeouts });

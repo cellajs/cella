@@ -206,7 +206,7 @@ describe('LTI platform', async () => {
     await expectRefusal(enabled, 409, 'service_account_pending');
 
     await call(approveLtiInstallation, { path: installationPath(admin, installationId), body: { releasedFields: [] }, headers: admin.headers });
-    const key = await call(createApiKey, { path: accountPath, body: { name: 'key', scopes: null }, headers: admin.headers });
+    const key = await call(createApiKey, { path: accountPath, body: { name: 'key', scopes: 'all' }, headers: admin.headers });
     await expectRefusal(key, 409, 'installation_takes_no_api_key');
   });
 

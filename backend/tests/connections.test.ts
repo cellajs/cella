@@ -46,7 +46,7 @@ describe('connections, managed per tenant by system admins', async () => {
       kind: 'sso',
       federation: 'surfconext',
       status: 'pending',
-      jitProvisioning: true,
+      jitProvisioning: false,
       claimValues: ['hu.nl', 'student.hu.nl'],
       config: { idpEntityIds: institution.idpEntityIds },
     });

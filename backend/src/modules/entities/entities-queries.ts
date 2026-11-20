@@ -1,12 +1,13 @@
 import type { z } from '@hono/zod-openapi';
 import { type AnyColumn, and, count, eq, inArray, isNull, type SQL, sql } from 'drizzle-orm';
-import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
+import type { AnyPgTable, PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import { type ChannelEntityType, type EntityType, hierarchy, isProduct, type ProductEntityType, roles } from 'shared';
 import type { ActorContext, DbContext } from '#/core/context';
 import { tenantRead } from '#/db/tenant-context';
 import { hasDeletedAt } from '#/db/utils/audit-columns';
 import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
 import { hasPublishedAt, publishedRowsPredicate } from '#/db/utils/published-predicate';
+import { servedColumns } from '#/db/utils/served-columns';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { zeroChannelCounts } from '#/modules/entities/helpers/build-zero-counts';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
@@ -160,7 +161,8 @@ interface ResolveEntityOpts<T extends EntityType> {
 /**
  * @internal Never call this from a route handler: it runs no permission check. Use the
  * `getValidChannel` / `getValidProduct` wrappers there, and this only in internal utilities
- * such as slug availability, or self-operations on the caller's own data.
+ * such as slug availability, or self-operations on the caller's own data. The row comes without
+ * its `secretColumns`, since a response may spread it.
  */
 export const resolveEntity = async <T extends EntityType>(
   ctx: DbContext,
@@ -173,8 +175,9 @@ export const resolveEntity = async <T extends EntityType>(
   const identityCondition = bySlug && hasSlug(table) ? eq(table.slug, identifier) : eq(table.id, identifier);
   const condition = hasDeletedAt(table) ? and(identityCondition, isNull(table.deletedAt)) : identityCondition;
 
+  const columns = servedColumns<PgTable>(table);
   const query = ctx.var.db
-    .select()
+    .select(columns)
     // biome-ignore lint/suspicious/noExplicitAny: Drizzle .from() rejects generic table types (https://github.com/drizzle-team/drizzle-orm/issues/4367)
     .from(table as any)
     .where(condition);
@@ -202,8 +205,9 @@ export const resolveEntities = async <T extends EntityType>(
   const table = getEntityTable(entityType);
   const condition = hasDeletedAt(table) ? and(inArray(table.id, ids), isNull(table.deletedAt)) : inArray(table.id, ids);
 
+  const columns = servedColumns<PgTable>(table);
   const query = ctx.var.db
-    .select()
+    .select(columns)
     // biome-ignore lint/suspicious/noExplicitAny: Drizzle .from() rejects generic table types (https://github.com/drizzle-team/drizzle-orm/issues/4367)
     .from(table as any)
     .where(condition);

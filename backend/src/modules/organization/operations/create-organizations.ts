@@ -30,9 +30,9 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: z.infer<
   // 1 tenant = 1 organization: a hard unique index on organizations.tenant_id, so it binds system admins too.
   const tenantOrgSlots = Math.max(0, 1 - existingOrgsCount);
 
-  // Organization quota from tenant restrictions (0 = unlimited; system admins bypass this soft cap).
+  // Organization quota from tenant restrictions; system admins bypass this soft cap.
   const orgQuota = ctx.var.tenant.restrictions.quotas.organization;
-  const quotaSlots = orgQuota === 0 ? items.length : orgQuota - existingOrgsCount;
+  const quotaSlots = orgQuota === 'unlimited' ? items.length : orgQuota - existingOrgsCount;
 
   const availableSlots = Math.min(isSystemAdmin ? items.length : quotaSlots, tenantOrgSlots);
 

@@ -21,14 +21,14 @@ import { serviceAccountsTable } from '#/modules/service-accounts/service-account
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { hashToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders, memberRole } from './fixtures';
-import { createTestOrganization, type ErrorResponse, expectRefusal, membersOf } from './helpers';
+import { createTestOrganization, type ErrorResponse, expectRefusal, membersOf, rawJsonRequest } from './helpers';
 import { bearerHeaders } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 
 afterEach(async () => await clearSecurityTestData());
 
-type Scope = NonNullable<NonNullable<NonNullable<CreateServiceAccountData['body']>['key']>['scopes']>[number];
+type Scope = Exclude<NonNullable<NonNullable<CreateServiceAccountData['body']>['key']>['scopes'], 'all'>[number];
 
 describe('Service accounts and API keys', async () => {
   const call = await createAppClient();
@@ -40,11 +40,11 @@ describe('Service accounts and API keys', async () => {
     return { org, user, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
 
-  async function issueKey(opts: { role?: OrganizationRole; scopes?: Scope[] | null; expiresAt?: string } = {}) {
+  async function issueKey(opts: { role?: OrganizationRole; scopes?: Scope[]; expiresAt?: string } = {}) {
     const ctx = await orgWithAdmin();
     const { data, response } = await call(createServiceAccount, {
       path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
-      body: { name: 'CI bot', role: opts.role ?? memberRole, key: { name: 'deploy', scopes: opts.scopes ?? null, expiresAt: opts.expiresAt } },
+      body: { name: 'CI bot', role: opts.role ?? memberRole, key: { name: 'deploy', scopes: opts.scopes ?? 'all', expiresAt: opts.expiresAt } },
       headers: ctx.headers,
     });
     expect(response.status).toBe(201);
@@ -146,6 +146,32 @@ describe('Service accounts and API keys', async () => {
     const [old] = await db.select().from(apiKeysTable).where(eq(apiKeysTable.id, apiKey.id));
     expect(old.expiresAt).not.toBeNull();
     expect(new Date(old.expiresAt as string).getTime()).toBeGreaterThan(Date.now());
+  });
+
+  // A roll once issued an unscoped successor that never expired, whatever the key it replaced could do.
+  it("gives a rolled key's successor its scopes and expiry", async () => {
+    const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+    const { org, account, apiKey, headers } = await issueKey({ scopes: ['attachment:read'], expiresAt });
+    const { data, response } = await call(createApiKey, {
+      path: { tenantId: org.tenantId, organizationId: org.id, serviceAccountId: account.id },
+      body: { name: 'deploy v2', rollFrom: apiKey.id },
+      headers,
+    });
+    expect(response.status).toBe(201);
+
+    const [successor] = await db
+      .select()
+      .from(apiKeysTable)
+      .where(eq(apiKeysTable.id, (data as { id: string }).id));
+    expect(successor.scopes).toEqual(['attachment:read']);
+    expect(new Date(successor.expiresAt as string).getTime()).toBe(new Date(expiresAt).getTime());
+  });
+
+  it('refuses a key that states no scopes', async () => {
+    const { org, account, headers } = await issueKey();
+    const path = `/tenants/${org.tenantId}/organizations/${org.id}/service-accounts/${account.id}/api-keys`;
+    const { status } = await rawJsonRequest(path, headers.Cookie, { method: 'POST', body: { name: 'unstated' } });
+    expect(status).toBe(400);
   });
 
   it('lists accounts and their keys for an admin, never the hash or the plaintext', async () => {
