@@ -110,6 +110,7 @@ export async function getLtiTabsOp(ctx: UserContext, { channelType, channelId, o
       {
         id: account.id,
         name: client.name,
+        description: client.ltiToolConfig.description ?? null,
         launchOrigins: launchOrigins(client),
         createdAt: installation.createdAt,
         status: account.status,

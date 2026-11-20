@@ -11917,6 +11917,7 @@
                     {
                       "id": "9b9d0dbd-b448-4c18-9d94-f8a4860f7b4b",
                       "name": "Peer review",
+                      "description": "Students review the drafts of their peers.",
                       "launchOrigins": ["https://peer-review.example.com", "https://launch.peer-review.example.com"],
                       "createdAt": "2024-09-19T11:48:50.276Z",
                       "status": "active",
@@ -11946,6 +11947,10 @@
                           },
                           "name": {
                             "type": "string"
+                          },
+                          "description": {
+                            "type": ["string", "null"],
+                            "description": "What the LTI tool says it does, from its registration; null when it says nothing"
                           },
                           "launchOrigins": {
                             "type": "array",
@@ -11994,7 +11999,7 @@
                             "description": "The tab once placed, on or off; null for an LTI tool never placed in the channel"
                           }
                         },
-                        "required": ["id", "name", "launchOrigins", "createdAt", "status", "readsMembers", "refusal", "resourceLink"]
+                        "required": ["id", "name", "description", "launchOrigins", "createdAt", "status", "readsMembers", "refusal", "resourceLink"]
                       }
                     },
                     "nextPageToken": {

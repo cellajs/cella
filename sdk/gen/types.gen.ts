@@ -5186,6 +5186,10 @@ export type ListLtiTabsResponses = {
       id: string;
       name: string;
       /**
+       * What the LTI tool says it does, from its registration; null when it says nothing
+       */
+      description: string | null;
+      /**
        * The distinct origins the LTI tool's launches go to, which an approval trusts: with `createdAt`, what tells two LTI tools of one name apart
        */
       launchOrigins: Array<string>;
