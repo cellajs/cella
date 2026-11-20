@@ -5,7 +5,7 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import type { LtiMember } from '#/modules/auth/flows/lti/helpers/platform-memberships';
 import type { LtiContextModel } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { findLtiContextPeopleBefore, releaseLtiContextMemberships } from '#/modules/auth/flows/lti/lti-contexts-queries';
-import { mayUpdateOrganization } from '#/modules/auth/flows/lti/operations/admit-lti-person';
+import { setsUpLtiContext } from '#/modules/auth/flows/lti/operations/admit-lti-person';
 import type { LtiConnection } from '#/modules/connections/connections-db';
 import { holdConnection } from '#/modules/connections/connections-queries';
 import { deleteLoneOrganizationMembership, deleteMembershipsByIds } from '#/modules/memberships/memberships-queries';
@@ -43,7 +43,7 @@ const endPersonLtiMemberships = async (ctx: DbContext, { connection, context, or
   if (below.length) await deleteMembershipsByIds({ var: { db: ctx.var.db, organizationId: organization.id } }, { ids: below });
   const seat = ending.find(({ channelType }) => channelType === 'organization');
   const seatEnds =
-    seat && isOrganizationRole(seat.role) && !mayUpdateOrganization(organization, person.userId, seat.role)
+    seat && isOrganizationRole(seat.role) && !setsUpLtiContext(organization.id, 'organization', seat.role)
       ? await deleteLoneOrganizationMembership(ctx, { id: seat.id, role: seat.role })
       : false;
   if (!below.length && !seatEnds) return false;
