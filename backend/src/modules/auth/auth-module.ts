@@ -20,7 +20,7 @@ defineBackendModule({
     sign-up, sign-in, MFA, step-up, email verification and account linking. As an LTI tool the app registers at an LTI
     platform by Dynamic Registration, imports a course's people from a platform built on the template, lists each
     course with how its last import ran for an organization admin, and rotates each connection's key.`,
-  // Daily, clear of the nightly retention run: each step of a rotation waits days.
+  // Daily: the steps of a rotation are days apart.
   jobs: [{ name: 'lti.rotate-connection-keys', cron: '40 4 * * *', run: () => rotateLtiConnectionKeys() }],
   routes: [
     { path: '/auth/', app: authGeneralHandlers },

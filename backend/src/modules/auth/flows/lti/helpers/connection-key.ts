@@ -23,6 +23,7 @@ const encryptionPurpose = (connectionId: string) => `lti-connection-key:${connec
 /** One key of a connection: its private JWK with `kid`, `alg` and `use`, and the moment it was minted and published. */
 interface ConnectionKey {
   jwk: JWK;
+  /** An ISO 8601 moment in UTC. */
   mintedAt: string;
 }
 

@@ -174,12 +174,12 @@ export const updateConnection = async (ctx: DbContext, { id, tenantId, values }:
   return row;
 };
 
-/** The ids of the LTI connections that hold keys, whichever tenant holds them: what the key rotation walks. */
+/** The ids of the registered LTI connections that hold keys, whichever tenant holds them: what the key rotation walks. */
 export const findKeyedLtiConnectionIds = async (ctx: DbContext) => {
   const rows = await ctx.var.db
     .select({ id: connectionsTable.id })
     .from(connectionsTable)
-    .where(and(eq(connectionsTable.kind, 'lti'), isNotNull(connectionsTable.privateJwk)));
+    .where(and(eq(connectionsTable.kind, 'lti'), ne(connectionsTable.status, 'pending'), isNotNull(connectionsTable.privateJwk)));
   return rows.map(({ id }) => id);
 };
 
