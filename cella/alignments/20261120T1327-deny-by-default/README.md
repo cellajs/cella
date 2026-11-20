@@ -40,7 +40,8 @@ No script: manual.
 4. Caught by the compiler for SDK calls. Pass `scopes` (`'all'` or a list) wherever the app creates an API key or a service account with one; a raw client sends it too.
 5. Not caught. Turn on `has.publicCounts` if the app shows the counts, and `defaultRestrictions.allowUnregisteredClients` if its tenants connect AI clients by Client ID Metadata Document.
 6. Not caught. Run `pnpm generate`: the migration sets the `connections.jit_provisioning` default to false. An SSO connection created without `jitProvisioning` now admits invited addresses only.
-7. Not caught. Where app code decides about other people or a tenant's content from `ctx.var.memberships` on a user-level route, read `accessFrom(ctx)` or `actor.bindings`.
+7. Not caught. Add `data.sql` to that migration: it turns every cap of `0` that `tenants.restrictions` stores into `'unlimited'`, the meaning it had. An entity type the config named no cap for was stored as `0` on every tenant, and refuses every create until then.
+8. Not caught. Where app code decides about other people or a tenant's content from `ctx.var.memberships` on a user-level route, read `accessFrom(ctx)` or `actor.bindings`.
 
 ## Verify
 

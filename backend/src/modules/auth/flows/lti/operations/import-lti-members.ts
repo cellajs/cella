@@ -53,7 +53,6 @@ interface ImportTarget {
   connection: LtiConnection;
   channel: MembershipEntity;
   organization: OrganizationModel;
-  /** The tenant's member limit; 0 for none. */
   memberQuota: RestrictionCap;
   by: ServiceAccountId;
 }
