@@ -2,7 +2,7 @@
 breaking: true
 clientCacheBump: true
 caughtBy: nothing
-grep: ltiAsksEmail, deploymentIds, registrationClientUri, recordFirstLtiDeployment, lti_deployment_unknown, lti_deployment
+grep: ltiAsksEmail, deploymentIds, registrationClientUri, recordFirstLtiDeployment, ltiRegistrationRequest, lti_deployment_unknown, lti_deployment
 ---
 
 # LTI tool: email by opt-in, every deployment
@@ -21,8 +21,8 @@ email only by opt-in. LTI Core 1.3 section 3.1.3 makes an LTI tool accept severa
 
 ## Blast radius
 
-Every LTI tool app, with no compile error: new registrations ask for names alone, and stored LTI addresses are cleared
-unless the app opts in. A platform app on the template sees name-only requests from such LTI tools. `clientCacheVersion`
+Every LTI tool app, mostly with no compile error: new registrations ask for names alone, and email addresses stored on
+`lti` identities are cleared unless the app opts in. A platform app on the template sees name-only requests from such LTI tools. `clientCacheVersion`
 rises. No migration.
 
 ## Run
@@ -34,7 +34,7 @@ No script: manual.
 1. Not caught by the compiler. If the app needs people's email addresses from LTI launches or imports, set `ltiAsksEmail: true` in its `shared/config/config.default.ts` before it deploys the upgrade: every launch and import after the deploy clears an address the app does not ask for.
 2. Not caught by the compiler. If the app wants email from a platform it registered at before, register the app there again after setting `ltiAsksEmail`: a platform keeps the claims a registration asked for.
 3. Not caught by the compiler. As a platform, an LTI tool on the template that registers after the upgrade asks for the name alone, the app's own LTI tool side included: an approval or a seed that releases `email` to it is refused as a field it did not ask for.
-4. Partly caught by the compiler: a call of `recordFirstLtiDeployment` and a read of `config.registrationClientUri` fail to compile, a read of `config.deploymentIds[0]` does not. Search the app for `deploymentIds[0]`: where it reads an LTI connection's one deployment, read the list. Call `addLtiDeployment` where it called `recordFirstLtiDeployment`, and drop reads of `config.registrationClientUri`.
+4. Partly caught by the compiler: a call of `recordFirstLtiDeployment`, a call of `ltiRegistrationRequest` without its new second parameter (the platform's product family) and a read of `config.registrationClientUri` fail to compile, a read of `config.deploymentIds[0]` does not. Search the app for `deploymentIds[0]`: where it reads an LTI connection's one deployment, read the list. Call `addLtiDeployment` where it called `recordFirstLtiDeployment`, and drop reads of `config.registrationClientUri`.
 5. Not caught by the compiler. Where the app's `app.json` overrides `lti_deployment`, move it to `lti_deployments`, which reads "Deployments". Where its `appError.json` overrides `lti_deployment_unknown`, check it: the error now means a launch with no deployment, or a new one past the connection's cap.
 6. Not caught by the compiler. Where the app sets its own `clientCacheVersion`, raise it.
 

@@ -3880,7 +3880,7 @@ export type FinishLtiLaunchErrors = {
   /**
    * Launch refused
    *
-   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a role the app takes, a test user, a launch without a context by someone not known here yet, an archived channel, or a new member when the organization has no seat left.
+   * A page: not same-origin, a launch without a deployment or from one past what the connection takes, an anonymous launch, a launch without a role the app takes, a test user, a launch without a context by someone not known here yet, an archived channel, or a new member when the organization has no seat left.
    */
   403: unknown;
   /**

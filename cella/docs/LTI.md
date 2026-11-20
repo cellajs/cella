@@ -24,7 +24,7 @@ The registration asks for each person's name, and for their email address only w
 
 A platform whose configuration names Canvas as its product family makes the launch a course tab, hidden until a teacher enables it. Canvas shows it to whoever takes part in the course as a student or may read it as an admin, an account admin who is not enrolled included.
 
-Canvas sends what the registration asks for by its privacy level. The name alone is `name_only`, which also sends the person's and the course's SIS ids. Email makes it `public`, which adds the person's picture and, for an observer, the students they observe. The app keeps the name, and the email when it asked for one, and drops the rest.
+Canvas sends what the registration asks for by its privacy level. The name alone is `name_only`, which also sends the person's and the course's SIS ids. Email makes it `public`, which adds the person's picture and, for an observer, the students they observe. The app keeps what the registration asked for and drops the rest.
 
 Each connection gets a key pair of its own, and the registration names that connection's key set on the API. The app stores the connection, waiting, before it calls the platform: a platform that reads the key set while it registers the app, as Brightspace does, finds it. No key rotation is built. Deleting the connection deletes its key, and its key set answers no more.
 
@@ -121,23 +121,25 @@ The platform's configuration offers the NRPS scope and names its issuer as the a
 
 A course, a group or another place on the platform that people are members of is an LTI context. As an LTI tool, your app maps each context to one of its channel types in [lti-context-channel.ts](../../backend/src/modules/auth/flows/lti/lti-context-channel.ts), or to none. The template maps a course or a group, or a context that names no type, to the organization. Any other context, such as Canvas's account and user navigation, counts as none.
 
-An app whose contexts are channels below the organization names that channel type there, and may name another for a group. The first launch by someone who sets the context up creates the channel, named after the context, and every launch maps LTI roles to the channel's roles. A role in such a channel follows the platform up and down. An organization role only goes up, and never to one that may update the organization, as the permission engine decides.
+The role mapping in the same file decides who sets a context up: whoever it gives a role that may update a channel of that type, as the permission engine judges that role alone. Their launch starts the context's member import.
+
+An app whose contexts are channels below the organization names that channel type there, and may name another for a group. The first launch by someone who sets the context up creates the channel, named after the context, and every launch maps LTI roles to the channel's roles. A role in such a channel follows the platform up and down. An organization role only goes up.
 
 Every context mapped to a channel type gets a channel of its own: a platform's course section becomes one too, unless the app maps it to none.
 
-The mapping also decides who sets a context up: whoever it gives a role that may update a channel of that type, as the permission engine judges that role alone. Their launch creates the channel of a context nobody opened yet, and starts its member import.
-
-The mapping gets the roles as the platform sent them. Canvas sends the institution role Administrator to anyone who administers one of its accounts, with no context role where they are not enrolled. The template gives institution and system roles alone no role: such an admin is refused and sets nothing up. An app may answer them itself.
+The mapping gets the roles as the platform sent them. Canvas sends the institution role Administrator to anyone who administers one of its accounts, with no context role where they are not enrolled. An app may answer such roles itself.
 
 The role mapping may give no role, which refuses the launch with a page and leaves the person out of an import. The template's mapping has three cases:
 
-- **Instructor or Administrator of the context:** the channel's most privileged role: they set it up. In the organization that is the highest role that may not update it.
+- **Instructor or Administrator of the context:** the channel's most privileged role: they set it up.
 - **Any other context role:** the channel's least privileged role.
-- **Institution or system roles alone, or no roles at all:** no role, and the launch is refused.
+- **Institution or system roles alone, or no roles at all:** no role.
 
 A launch without a context admits nobody new. It signs in a person this tenant already knows from the same platform as a member of the organization, from a launch in a context or an import, and changes no membership, role or seat. Anyone else gets a page that says the app opens from a page they are a member of.
 
-A person a context admits also becomes a member of the organization, at the organization role their role in the context's channel gives there. When that role may update the organization, they get the highest role below it that may not. A launch without a context lands a known person on the organization's embedded page. An app whose contexts sit below the organization decides what those roles see of people ([What members see](./PERMISSIONS.md#what-members-see)) and what that page shows.
+A person a context admits also becomes a member of the organization, at the organization role their role in the context's channel gives there. When that role may update the organization, as the permission engine decides, they get the highest role below it that may not.
+
+A launch without a context lands a known person on the organization's embedded page. An app whose contexts sit below the organization decides what those roles see of people ([What members see](./PERMISSIONS.md#what-members-see)) and what that page shows.
 
 A person who arrives for the first time gets an account without a proven email address, and takes a seat of the tenant's member limit. An account named before the platform released a name takes the name a later launch or import brings, as long as nothing else signs it in.
 
@@ -171,7 +173,7 @@ As an LTI tool, your app also reads who is in a context by NRPS, before any of t
 
 The import starts when someone who sets the context up launches, once a launch carried the NRPS claim. A launch without the claim keeps the member list an earlier one named, as Moodle names it on some launch paths only. A platform that refuses the scope or the member list makes the app forget it until a launch names it again.
 
-The import runs on the [jobs worker](./JOBS.md), at most once in a short while per context, and the launch never waits for it. A connection imports a limited number of different contexts in any hour: a class whose teams each have a tab fits. Each read stops at a limit of pages and of people, and what an import adds is bounded by the tenant's seats.
+The import runs on the [jobs worker](./JOBS.md), at most once in a short while per context, and the launch never waits for it. A connection imports a limited number of different contexts in any hour: a context whose teams each have a tab fits. Each read stops at a limit of pages and of people, and what an import adds is bounded by the tenant's seats.
 
 A context past either number says its import waits, unless its last import was refused in a way only the platform or a new registration changes. No button starts one: the next such launch after that while does.
 
@@ -193,7 +195,7 @@ So members are read from any platform that registers the app by Dynamic Registra
 
 Each person listed gets the account their own launch finds later, and the role a launch would give them, by the same rules.
 
-A read of the whole list is the platform's word on who is in the context. The app records the memberships a context gives in its own channel and the seat that comes with them, and which of them a list held. After a read that names an active member, a person an earlier list held loses such a recorded membership once this list leaves them out or names them Inactive.
+The app records the memberships a context gives in its own channel and the seat that comes with them, and which of them a list held. After a read that names an active member, a person an earlier list held loses such a recorded membership once this list leaves them out or names them Inactive.
 
 Their seat in the organization goes too, when LTI gave it, nothing else holds them there and its role may not update the organization. Their account stays, and a later launch or import admits them again.
 
