@@ -23,12 +23,12 @@ import { findUserModelsByIds } from '#/modules/user/user-queries';
 export const unauthorized = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
 
 /**
- * Runs a guard's check of a key or token. A 401 it throws carries the challenge of a refused proof, `invalid_token` with
- * the reason, so a client knows to get a new one (RFC 6750 §3.1).
+ * Runs a guard's check of a key or token and answers what it returns. A 401 it throws carries the challenge of a
+ * refused proof, `invalid_token` with the reason: a client knows to get a new one (RFC 6750 §3.1).
  */
-export const challengeRefusal = async (ctx: Context<Env>, ref: ResourceRef, check: () => Promise<void>): Promise<void> => {
+export const challengeRefusal = async <T>(ctx: Context<Env>, ref: ResourceRef, check: () => Promise<T>): Promise<T> => {
   try {
-    await check();
+    return await check();
   } catch (error) {
     if (error instanceof AppError && error.status === 401) {
       const description = String(error.meta?.reason ?? 'invalid_token');

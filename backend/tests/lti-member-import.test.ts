@@ -474,32 +474,42 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(await orgMembershipOf(unlisted.id, side.org.id)).toMatchObject({ role: memberRole });
   });
 
-  // Attack: a platform that never ends its list holds no import, and no worker, for long.
+  // Attack: a platform that never ends its list holds no import, and no worker, for long. A person it lists without a
+  // role the app takes does not hide that the list went on.
   it('stops reading at the bound of a platform that lists without end', async () => {
     const side = await connectToFakePlatform();
     const api = fakePlatformApi((url) => ({
       members: Array.from({ length: Number(url.searchParams.get('limit')) }, (_, index) => ({
-        user_id: `lms-${index % 3}`,
-        roles: [lisContextRoles.learner],
+        user_id: `lms-${index % 4}`,
+        roles: index % 4 ? [lisContextRoles.learner] : [],
       })),
       next: url.href,
     }));
 
     await importLtiMembersOp(side.context.id, api.options);
     expect(api.memberReads()).toHaveLength(maxMembersPages);
-    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 3, importIssue: 'too_many_members' });
+    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 4, importIssue: 'too_many_members' });
   });
 
-  // Attack: a platform that names any number of courses makes the app start at most `maxCoursesPerHour` imports an hour.
-  // The course says its import waits, unless the last import was refused in a way that lasts.
-  it('queues no import of a connection whose courses within the hour reached their bound, and records that it waits', async () => {
+  // Attack: a platform that names any number of courses makes the app start at most `maxCoursesPerHour` imports in an
+  // hour's window: the take of the last course decides. A course past it says its import waits, unless the last
+  // import was refused in a way that lasts.
+  it('starts no import of a connection whose courses in the window reached their bound, and records that it waits', async () => {
     const side = await connectToFakePlatform();
-    expect(await takeFromImportBudget('courses', side.connection.id, maxCoursesPerHour)).toBe(true);
+    expect(await takeFromImportBudget('courses', side.connection.id, maxCoursesPerHour - 1)).toBe(true);
+    const api = fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] }));
+    const other = await addCourse(side, side.connection, `${side.issuer}/api/lti/courses/course-2/memberships`, 'course-2');
+    await importLtiMembersOp(side.context.id, api.options);
+    await importLtiMembersOp(other.id, api.options);
+    expect(api.memberReads()).toHaveLength(1);
+    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 1, importIssue: null });
+    expect(await contextRow(other.id)).toMatchObject({ importRanAt: null, importIssue: 'waiting' });
 
     send.mockClear();
-    await requestLtiMemberImport(side.context, side.admin.id);
+    const third = await addCourse(side, side.connection, `${side.issuer}/api/lti/courses/course-3/memberships`, 'course-3');
+    await requestLtiMemberImport(third, side.admin.id);
     expect(send).not.toHaveBeenCalled();
-    expect(await contextRow(side.context.id)).toMatchObject({ importRanAt: null, importIssue: 'waiting' });
+    expect(await contextRow(third.id)).toMatchObject({ importRanAt: null, importIssue: 'waiting' });
 
     // A refusal that lasts stays in place: the connection or the platform has to change before an import reads.
     for (const importIssue of ['register_again', 'scope_not_granted', 'members_refused'] as const) {
@@ -511,17 +521,16 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(send).not.toHaveBeenCalled();
 
     // A retry of a course counted when it first ran still reads.
-    const api = fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] }));
-    await importLtiMembersOp(side.context.id, api.options);
-    expect(api.requests).toEqual([]);
     await importLtiMembersOp(side.context.id, { ...api.options, retry: true });
-    expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 1, importIssue: null });
+    expect(api.memberReads()).toHaveLength(2);
   });
 
-  // Attack: the people an hour allows count as their pages are read, and nothing gives them back. Reading a course again
-  // with an empty list frees nobody, and a first attempt that fails after a page, then its retries, each count what
-  // they read: a page past the bound ends the read, and the course records that it waits.
-  it("counts every page read against the connection's hourly people, retries included, and gives nothing back", async () => {
+  // Attack: the people of an hour's window count as their pages are read, and nothing gives them back. A page is read
+  // only while the window has room and always counts: with one point left one page is read, not one per course.
+  // Reading a course again with an empty list frees nobody, and a first attempt that fails after a page, then its
+  // retries, each count what they read. A read the bound stopped keeps its people, records that it waits, and leaves
+  // the last import's time and count, also when someone it read has no role the app takes.
+  it("counts every page read against the connection's people in the window, retries included, and gives nothing back", async () => {
     const two = [
       { user_id: 'lms-first', roles: [lisContextRoles.learner] },
       { user_id: 'lms-second', roles: [lisContextRoles.learner] },
@@ -531,21 +540,30 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     await importLtiMembersOp(reread.context.id, fakePlatformApi(() => ({ members: two })).options);
     expect(await contextRow(reread.context.id)).toMatchObject({ importReadCount: 2, importIssue: null });
     await importLtiMembersOp(reread.context.id, fakePlatformApi(() => ({ members: [] })).options);
-    const other = await addCourse(reread, reread.connection, `${reread.issuer}/api/lti/courses/course-2/memberships`, 'course-2');
-    await importLtiMembersOp(other.id, fakePlatformApi(() => ({ members: two })).options);
-    expect(await contextRow(other.id)).toMatchObject({ importReadCount: 0, importIssue: 'waiting' });
+    const courses = [
+      await addCourse(reread, reread.connection, `${reread.issuer}/api/lti/courses/course-2/memberships`, 'course-2'),
+      await addCourse(reread, reread.connection, `${reread.issuer}/api/lti/courses/course-3/memberships`, 'course-3'),
+    ];
+    const lastPoint = fakePlatformApi(() => ({ members: two }));
+    for (const course of courses) await importLtiMembersOp(course.id, lastPoint.options);
+    expect(lastPoint.memberReads()).toHaveLength(1);
+    expect(await contextRow(courses[0].id)).toMatchObject({ importReadCount: 2, importIssue: null });
+    expect(await contextRow(courses[1].id)).toMatchObject({ importRanAt: null, importIssue: 'waiting' });
 
     const failing = await connectToFakePlatform();
     expect(await takeFromImportBudget('people', failing.connection.id, maxPeoplePerHour - 5)).toBe(true);
+    const firstPage = [...two, { user_id: 'lms-roleless', roles: [] }];
     const api = fakePlatformApi((url) =>
-      url.searchParams.has('page')
-        ? new Response(null, { status: 500 })
-        : { members: [...two, { user_id: 'lms-third', roles: [lisContextRoles.learner] }], next: `${url.origin}${url.pathname}?page=2` },
+      url.searchParams.has('page') ? new Response(null, { status: 500 }) : { members: firstPage, next: `${url.origin}${url.pathname}?page=2` },
     );
     await expect(importLtiMembersOp(failing.context.id, { ...api.options, lastAttempt: false })).rejects.toThrow();
+    const failedAt = (await contextRow(failing.context.id))?.importRanAt;
+    expect(failedAt).toBeTruthy();
     await importLtiMembersOp(failing.context.id, { ...api.options, retry: true });
-    expect(await contextRow(failing.context.id)).toMatchObject({ importReadCount: 0, importIssue: 'waiting' });
-    expect(await db.select().from(identitiesTable).where(eq(identitiesTable.tenantId, failing.org.tenantId))).toEqual([]);
+    await importLtiMembersOp(failing.context.id, { ...api.options, retry: true });
+    expect(api.memberReads()).toHaveLength(3);
+    expect(await contextRow(failing.context.id)).toMatchObject({ importRanAt: failedAt, importReadCount: 0, importIssue: 'waiting' });
+    expect(await db.select().from(identitiesTable).where(eq(identitiesTable.tenantId, failing.org.tenantId))).toHaveLength(2);
   });
 
   // Contract: NRPS 2.0 as the spec's example answers it (section 2.1, its trailing comma dropped) and as Canvas does,

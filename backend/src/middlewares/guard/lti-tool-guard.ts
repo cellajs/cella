@@ -37,27 +37,23 @@ const resolveInstallationToken = async (token: VerifiedAccessToken) => {
  * privileged role of the channel's type, when the installation has a tab in exactly that channel of the route's
  * organization, its id compared whatever its case, that opens (`ltiTabClosure`), and the channel is an LTI context
  * (`linkContext`). A tab in a channel above or below gives nothing. Nothing is stored: a tab switched off, a withdrawn
- * channel type, an archive or a deleted channel takes it away at once. A path that names no such channel, or a channel
- * type the app does not have, binds nothing: the tenant then refuses the actor with a 403, before the route validates
- * its path.
+ * channel type or a deleted channel takes it away at the next request, and an archive once this process reads the
+ * organization's archived channels again. Those are read only for a channel the installation has a tab in. A path that
+ * names no such channel, or a channel type the app does not have, binds nothing: the tenant then refuses the actor with
+ * a 403, before the route validates its path.
  */
 const contextBindings = async (installationId: string, tenantId: string, ctx: Context<Env>): Promise<RoleBinding[]> => {
   const channelType = appConfig.channelEntityTypes.find((type) => type === ctx.req.param('channelType'));
   const [channelId, organizationId] = [ctx.req.param('channelId')?.toLowerCase(), ctx.req.param('organizationId')?.toLowerCase()];
   if (!channelType || !channelId || !organizationId || !isUuid(channelId) || !isUuid(organizationId)) return [];
-  const [tabs, archivedChannelIds] = await Promise.all([
-    findLtiChannelTabs(dbCtx, { tenantId, channelId, order: 'asc' }),
-    loadArchivedChannelIds(dbCtx, { tenantId, organizationId }),
-  ]);
-  const placed = tabs.some(
-    ({ resourceLink: link, account, installation }) =>
-      link.installationId === installationId &&
-      link.organizationId === organizationId &&
-      link.channelType === channelType &&
-      !ltiTabClosure({ link, account, installation, archivedChannelIds }) &&
-      linkContext(link),
+  const tabs = await findLtiChannelTabs(dbCtx, { tenantId, channelId, order: 'asc' });
+  const own = tabs.find(
+    ({ resourceLink: link }) => link.installationId === installationId && link.organizationId === organizationId && link.channelType === channelType,
   );
-  return placed ? [{ channelType, channelId, organizationId, role: hierarchy.getLeastPrivilegedRole(channelType) }] : [];
+  if (!own || !linkContext(own.resourceLink)) return [];
+  const archivedChannelIds = await loadArchivedChannelIds(dbCtx, { tenantId, organizationId });
+  if (ltiTabClosure({ link: own.resourceLink, account: own.account, installation: own.installation, archivedChannelIds })) return [];
+  return [{ channelType, channelId, organizationId, role: hierarchy.getLeastPrivilegedRole(channelType) }];
 };
 
 /**
@@ -87,13 +83,17 @@ export const ltiToolGuard = xMiddleware(
       ctx.header('WWW-Authenticate', bearerChallenge(ref));
       throw unauthorized('access_token_required');
     }
-    await challengeRefusal(ctx, ref, async () => {
+    const { found, scopes } = await challengeRefusal(ctx, ref, async () => {
       const token = await verifyAccessToken(jwt, { tenantId: target.tenantId });
-      const found = await resolveInstallationToken(token);
-      const bindings = await contextBindings(found.account.id, found.account.tenantId, ctx);
-      setServiceActor(ctx, { ...found.account, bindings }, token.scopes);
-      ctx.set('ltiInstallation', found);
+      return { found: await resolveInstallationToken(token), scopes: token.scopes };
     });
-    return serviceBurstLimiter(ctx, next);
+    setServiceActor(ctx, { ...found.account, bindings: [] }, scopes);
+    ctx.set('ltiInstallation', found);
+    // The burst limit counts the request before a path it names costs a read
+    return serviceBurstLimiter(ctx, async () => {
+      const bindings = await contextBindings(found.account.id, found.account.tenantId, ctx);
+      setServiceActor(ctx, { ...found.account, bindings }, scopes);
+      await next();
+    });
   },
 );

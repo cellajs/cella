@@ -14,7 +14,7 @@ import type { LtiConnection } from '#/modules/connections/connections-db';
 /** How a member read reaches the platform, and the signal that ends it before its next page. */
 export type ReadLtiMembersOptions = PlatformFetchOptions & {
   signal?: AbortSignal;
-  /** Counts each page's members as it is read; false stops the read before that page's people, as bounded. */
+  /** Counts each page's members once it is read, whatever it answers; false reads no page after it, as bounded. */
   countRead?: (members: number) => Promise<boolean>;
 };
 
@@ -212,7 +212,7 @@ const readMemberPages = async (
     if (response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429) return { refusal: 'members_refused' };
     const container = response.status === 200 && membershipContainerSchema.safeParse(parseJson(response.text)).data;
     if (!container) throw readFailed('members_page', connection);
-    if (countRead && !(await countRead(container.members.length))) return { people: [...people.values()], issue: 'waiting' };
+    const mayReadOn = countRead ? await countRead(container.members.length) : true;
 
     for (const row of container.members) {
       const member = memberSchema.safeParse(row).data;
@@ -223,6 +223,7 @@ const readMemberPages = async (
     pages += 1;
     const next = nextLink(response.headers.get('Link'), page);
     if (!next) return { people: [...people.values()], issue: null };
+    if (!mayReadOn) return { people: [...people.values()], issue: 'waiting' };
     const trusted = trustedMembershipsUrl(next, first);
     if (!trusted) return { refusal: 'address_refused' };
     page = trusted;
@@ -236,10 +237,10 @@ const readMemberPages = async (
  * page lies at the membership address a launch of the connection named (`trustedMembershipsUrl`). A connection without
  * a key signs and sends nothing. A member that fails validation, names a test user or is not active is left out, and a
  * person listed twice counts once. A 401 gets one new token; any other client error but 408 and 429 is the platform's
- * refusal. The read stops at `maxMembersPages` pages, `maxMembers` people, an aborted `signal`, or a page `countRead`
- * refuses, whose people it leaves out.
- * @returns The people, with `too_many_members` when the platform lists more and `waiting` when `countRead` refused a
- *   page; or the refusal of the token or the list,
+ * refusal. The read stops at `maxMembersPages` pages, `maxMembers` people, an aborted `signal`, or after a page whose
+ * count `countRead` answers false: that page's people stay.
+ * @returns The people, with `too_many_members` when the platform lists more and `waiting` when `countRead` stopped the
+ *   read before the list ended; or the refusal of the token or the list,
  *   `address_refused` for an address the app does not reach, or `register_again` for a connection without a key.
  * @throws AppError 400 `outbound_request_failed` for an answer that is neither a page nor a refusal, or a platform
  *   that does not answer.

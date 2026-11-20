@@ -35,46 +35,79 @@ const importRetryLimit = 5;
 const importBudgetSeconds = 120;
 
 /**
- * The most courses of one connection imported within an hour, however many its platform names. A class whose 60 teams
- * each switch on a tab of their own imports 61 contexts with its course: two such classes fit in an hour.
+ * The most courses of one connection imported in each hour's window, however many its platform names. A class whose 60
+ * teams each switch on a tab of their own imports 61 contexts with its course: two such classes fit in one window.
  */
 export const maxCoursesPerHour = 150;
 
 /**
- * The most people the imports of one connection read within an hour: five imports of the longest list one import
- * reads, or some thirty courses of 300. A platform's reach stays near what 30 usual courses an hour read, however it
- * spreads its people over courses.
+ * The most people the imports of one connection read in each hour's window, past which they read one page at most:
+ * five imports of the longest list one import reads, or some thirty courses of 300. A platform's reach stays near what
+ * 30 usual courses a window read, however it spreads its people over courses.
  */
 export const maxPeoplePerHour = 5 * maxMembers;
 
 /**
- * A connection's hourly budgets, buckets of the rate limit store keyed by the connection: a course for each import a
- * launch starts, and the people each page of every attempt reads, a retry's included. Nothing gives a point back: a
- * course read again with fewer people, or a failed attempt, frees none.
+ * A connection's budgets, buckets of the rate limit store keyed by the connection, each counted over a fixed window of
+ * an hour from its first point: a course for each import a launch starts, and the people of each page every attempt
+ * reads, a retry's included. Nothing gives a point back: a course read again with fewer people, or a failed attempt,
+ * frees none. A store that cannot be read or written makes the import wait: it grants nothing from process memory.
  */
 const importBudgets = {
   courses: { keyPrefix: 'lti_import_courses', points: maxCoursesPerHour },
   people: { keyPrefix: 'lti_import_people', points: maxPeoplePerHour },
 } as const;
 
+type ImportBudget = keyof typeof importBudgets;
+
 const budgetHour = 60 * 60;
 
-const budgetStore = (budget: keyof typeof importBudgets) => getRateLimiterInstance({ ...importBudgets[budget], duration: budgetHour });
+const budgetStore = (budget: ImportBudget) => getRateLimiterInstance({ ...importBudgets[budget], duration: budgetHour, failClosed: true });
 
-/** Takes `cost` from one of the connection's hourly budgets while it holds it; false, with nothing taken, when it does not. */
-export const takeFromImportBudget = async (budget: keyof typeof importBudgets, connectionId: string, cost: number) => {
+/**
+ * Takes `cost` from one of the connection's budgets while it holds it.
+ * @returns False, with nothing taken, when it does not or its store fails.
+ */
+export const takeFromImportBudget = async (budget: ImportBudget, connectionId: string, cost: number) => {
   const { points } = importBudgets[budget];
-  return (await reserveAttempt(budgetStore(budget), connectionId, { points, duration: budgetHour }, cost)).granted;
+  try {
+    return (await reserveAttempt(budgetStore(budget), connectionId, { points, duration: budgetHour }, cost)).granted;
+  } catch (error) {
+    log.warn('LTI import budget not taken', { budget, connectionId, error });
+    return false;
+  }
 };
 
-/** Whether either hourly budget of the connection is spent (`importBudgets`). */
-const connectionImportsSpent = async (connectionId: string) => {
-  for (const [budget, { points }] of Object.entries(importBudgets)) {
-    const state = await budgetStore(budget as keyof typeof importBudgets).get(connectionId);
-    if (state && state.consumedPoints >= points) return true;
+/**
+ * Counts a page of `members` that was read into the connection's people budget, whatever it holds: the count passes
+ * the budget by one page at most.
+ * @returns Whether the budget has room for another page; false when its store fails.
+ */
+const countReadPeople = async (connectionId: string, members: number) => {
+  const { points } = importBudgets.people;
+  try {
+    const counted = await reserveAttempt(budgetStore('people'), connectionId, { points, duration: budgetHour }, 0, members);
+    return counted.granted && counted.state.remainingPoints > 0;
+  } catch (error) {
+    log.warn('LTI import budget not counted', { budget: 'people', connectionId, error });
+    return false;
   }
-  return false;
 };
+
+/** Whether one of the connection's budgets has room in its window; false when its store cannot be read. */
+const budgetHasRoom = async (budget: ImportBudget, connectionId: string) => {
+  try {
+    const state = await budgetStore(budget).get(connectionId);
+    return !state || state.consumedPoints < importBudgets[budget].points;
+  } catch (error) {
+    log.warn('LTI import budget not read', { budget, connectionId, error });
+    return false;
+  }
+};
+
+/** Whether either budget of the connection is spent (`importBudgets`), or cannot be read. */
+const connectionImportsSpent = async (connectionId: string) =>
+  !(await budgetHasRoom('courses', connectionId)) || !(await budgetHasRoom('people', connectionId));
 
 /** Whether an import of the context ran within `importPeriod`. */
 const importedLately = ({ importRanAt }: LtiContextModel) => !!importRanAt && importRanAt > isoDateAgo(importPeriod);
@@ -114,6 +147,10 @@ interface ImportLtiMembersOpts extends Omit<ReadLtiMembersOptions, 'countRead'> 
   retry?: boolean;
 }
 
+/** Whether an import may read now: the people budget has room, and a first attempt takes a course of its budget. */
+const importMayRead = async (connectionId: string, retry: boolean) =>
+  (await budgetHasRoom('people', connectionId)) && (retry || (await takeFromImportBudget('courses', connectionId, 1)));
+
 /** The refusals after which the platform names the member list again before an import reads it: a withdrawn grant. */
 const forgetsAddress = new Set<LtiImportIssue>(['scope_not_granted', 'members_refused']);
 
@@ -123,10 +160,11 @@ const forgetsAddress = new Set<LtiImportIssue>(['scope_not_granted', 'members_re
  * did not list as active. Run twice, or beside a launch of a listed person, it makes one account per
  * person. A person who needs a seat while the member limit leaves none is left out. An inactive connection or tenant,
  * or a channel that is archived or gone, ends it at once. A deleted connection ends it before the next person, without
- * an error and unrecorded. An aborted `signal` ends it before the next page or person. A first attempt while the
- * connection's hourly budget is spent reads nothing and records that it waits, and a page past the people the hour
- * allows ends the read: the people before it are imported and the import records that it waits. A refusal of the scope or the member
- * list forgets the membership address, which the next launch that names it stores again.
+ * an error and unrecorded. An aborted `signal` ends it before the next page or person. An attempt while the
+ * connection's people budget has no room, or a first attempt while its courses budget is spent, reads nothing and
+ * records that it waits (`importBudgets`). A page that leaves the people budget without room ends the read after it:
+ * the people read are imported, and the import records that it waits. A refusal of the scope or the member list
+ * forgets the membership address, which the next launch that names it stores again.
  * @throws What fails after the connection's service account is known, such as a failed read or an abort: recorded as
  *   `retrying` or, on the last attempt, `failed`.
  */
@@ -147,26 +185,27 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
     ]);
     // Joining an archived channel is a create inside it, which an archive refuses.
     if (connection.status !== 'active' || tenant?.status !== 'active' || !organization || !channel || channel.archived) return record(0, 'inactive');
-    if (!retry && ((await connectionImportsSpent(connection.id)) || !(await takeFromImportBudget('courses', connection.id, 1))))
-      return recordLtiImportWaiting(dbCtx, { id: context.id, by });
+    if (!(await importMayRead(connection.id, retry))) return recordLtiImportWaiting(dbCtx, { id: context.id, by });
 
-    const countRead = (members: number) => takeFromImportBudget('people', connection.id, members);
+    const countRead = (members: number) => countReadPeople(connection.id, members);
     const read = await readLtiMembers(connection, context.membershipsUrl, { ...options, countRead });
     if ('refusal' in read) {
       return recordLtiImport(dbCtx, { id: context.id, readCount: 0, issue: read.refusal, forgetAddress: forgetsAddress.has(read.refusal), by });
     }
 
     const target: ImportTarget = { connection, channel, organization, memberQuota: tenant.restrictions.quotas.user, by };
-    let issue: LtiImportIssue | null = read.issue;
+    let leftOut: 'member_limit' | 'no_role' | null = null;
     for (const person of read.people) {
       options.signal?.throwIfAborted();
       const outcome = await baseDb.transaction((tx) => importPerson({ var: { db: tx } }, target, person));
       if (outcome === 'connection_gone') return;
       // A member limit is what an admin acts on: it outranks people left without a role.
-      if (outcome === 'member_limit' || (outcome === 'no_role' && issue !== 'member_limit')) issue = outcome;
+      if (outcome === 'member_limit' || (outcome === 'no_role' && !leftOut)) leftOut = outcome;
     }
-    await record(read.people.length, issue);
-    log.info('LTI members imported', { contextId: context.id, connectionId: connection.id, read: read.people.length, issue });
+    log.info('LTI members imported', { contextId: context.id, connectionId: connection.id, read: read.people.length, issue: read.issue ?? leftOut });
+    // A read that stopped short outranks a person left out: the list was not read to its end.
+    if (read.issue === 'waiting') return recordLtiImportWaiting(dbCtx, { id: context.id, by });
+    await record(read.people.length, read.issue ?? leftOut);
   } catch (error) {
     await record(0, lastAttempt ? 'failed' : 'retrying');
     throw error;
@@ -180,8 +219,8 @@ const importJobSchema = z.object({ contextId: z.uuid() });
  * The member import's queue (`cella/docs/JOBS.md`): it reads a platform's member list, outside the database. One job per
  * context waits and one runs at a time. Imports of one connection, its group, run one after the other, and those of
  * different connections beside each other: one platform holds up its own imports alone. Each runs within
- * `importBudgetSeconds`. A job that waited behind another finds that import within `importPeriod` and ends, or the
- * connection's hour spent and records that it waits, while a retry goes on. A failed import is retried with growing
+ * `importBudgetSeconds`. A job that waited behind another finds that import within `importPeriod` and ends, or a
+ * budget of the connection without room and records that it waits. A failed import is retried with growing
  * delays, and never ends the grant.
  */
 export const ltiMemberImportQueue = {
@@ -205,9 +244,9 @@ export const ltiMemberImportQueue = {
 
 /**
  * Queues a member import of a context after a launch by its Instructor or Administrator `by`, when the context holds
- * a membership address and no import ran for it within `importPeriod`. While its connection's hour is spent
- * (`maxCoursesPerHour`, `maxPeoplePerHour`) it queues nothing and records that the import waits. The launch never waits for it: a job
- * store that refuses the job, or a failed write, is logged.
+ * a membership address and no import ran for it within `importPeriod`. While a budget of its connection is spent in
+ * this window (`importBudgets`) it queues nothing and records that the import waits. The launch never waits for it: a
+ * job store that refuses the job, or a failed write, is logged.
  */
 export const requestLtiMemberImport = async (context: LtiContextModel, by: UserId) => {
   const { connectionId } = context;
