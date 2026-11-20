@@ -397,15 +397,6 @@ describe('LTI installation API access', async () => {
     expect((await launch(ltiTool))[ltiClaims.namesRoleService]).toBeUndefined();
   });
 
-  // Attack: whoever serves the key set mints the installation's tokens. It lies on the domains the admin approves, as launches do.
-  it('refuses a registration whose key set lies off the domains it declares', async () => {
-    const org = await orgWithAdmin();
-    const offDomains = ltiToolRegistration('https://keys.example.net/jwks', ltiNrps.scope);
-    const response = await register(org, offDomains);
-    expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ error: 'invalid_client_metadata', error_description: 'Refused: jwks_uri' });
-  });
-
   // Attack: a grant of a scope no route reads would turn on with the first route that does. Only a read one is recorded,
   // and a registration recorded before that filter, which holds another, still gets only a read one granted.
   it('records only the scopes a route reads, and refuses granting another that a registration holds', async () => {

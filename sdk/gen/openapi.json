@@ -2393,7 +2393,7 @@
           },
           "domain": {
             "type": "string",
-            "description": "The domain the LTI tool names itself by: a label it picks"
+            "description": "The domain the LTI tool names itself by: a label it picks, which its addresses need not lie on"
           },
           "launchOrigins": {
             "type": "array",
@@ -2408,6 +2408,18 @@
           },
           "description": {
             "type": ["string", "null"]
+          },
+          "clientUri": {
+            "type": ["string", "null"],
+            "description": "The LTI tool's home page, an HTTPS address it named; null when it named none"
+          },
+          "tosUri": {
+            "type": ["string", "null"],
+            "description": "Its terms of service, an HTTPS address it named; null when it named none"
+          },
+          "policyUri": {
+            "type": ["string", "null"],
+            "description": "Its privacy policy, an HTTPS address it named; null when it named none"
           },
           "claims": {
             "type": "array",
@@ -2581,6 +2593,9 @@
           "launchOrigins",
           "keySetOrigin",
           "description",
+          "clientUri",
+          "tosUri",
+          "policyUri",
           "claims",
           "requestedFields",
           "releasedFields",
@@ -2604,6 +2619,9 @@
           "launchOrigins": ["https://peer-review.example.com", "https://launch.peer-review.example.com"],
           "keySetOrigin": "https://peer-review.example.com",
           "description": "Students review the drafts of their peers.",
+          "clientUri": "https://peer-review.example.com",
+          "tosUri": "https://peer-review.example.com/terms",
+          "policyUri": "https://peer-review.example.com/privacy",
           "claims": ["iss", "sub", "name", "email"],
           "requestedFields": ["name", "email"],
           "releasedFields": ["name"],
@@ -11099,6 +11117,9 @@
                       "launchOrigins": ["https://peer-review.example.com", "https://launch.peer-review.example.com"],
                       "keySetOrigin": "https://peer-review.example.com",
                       "description": "Students review the drafts of their peers.",
+                      "clientUri": "https://peer-review.example.com",
+                      "tosUri": "https://peer-review.example.com/terms",
+                      "policyUri": "https://peer-review.example.com/privacy",
                       "claims": ["iss", "sub", "name", "email"],
                       "requestedFields": ["name", "email"],
                       "releasedFields": ["name"],

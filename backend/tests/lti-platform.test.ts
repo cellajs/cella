@@ -125,6 +125,59 @@ describe('LTI platform', async () => {
     });
   });
 
+  // Contract: LTI Dynamic Registration 1.0 admits each of these registrations (sections 2.2.1 and 2.2.3), which the
+  // platform refused before. Each is accepted, and the registration answer says what the platform recorded.
+  it('takes a registration without a resource link message, with more types, and with addresses off its domain', async () => {
+    const admin = await orgWithUser();
+    const request = ltiRegistrationRequest(generateId());
+    const config = request[ltiToolConfigurationMember];
+    const registered = async (body: object) => {
+      const response = await register((await startRegistration(admin)).token, body);
+      expect(response.status).toBe(201);
+      return (await response.json()) as Record<string, unknown> & { [ltiToolConfigurationMember]: { messages: unknown[]; deployment_id: string } };
+    };
+
+    // Support for the resource link launch is implicit: a deep linking message alone, or none.
+    const deepLinkingOnly = await registered({
+      ...request,
+      [ltiToolConfigurationMember]: { ...config, messages: [{ type: 'LtiDeepLinkingRequest' }] },
+    });
+    expect(deepLinkingOnly[ltiToolConfigurationMember].messages).toEqual([]);
+    const { messages: _messages, ...withoutMessages } = config;
+    expect((await registered({ ...request, [ltiToolConfigurationMember]: withoutMessages }))[ltiToolConfigurationMember].messages).toEqual([]);
+
+    // Response and grant types hold what the platform needs beside others; it answers the ones it records.
+    const moreTypes = await registered({
+      ...request,
+      response_types: ['code', 'id_token'],
+      grant_types: ['authorization_code', 'implicit', 'client_credentials'],
+    });
+    expect(moreTypes).toMatchObject({ response_types: ['id_token'], grant_types: ['implicit', 'client_credentials'] });
+
+    // The domain is a label: the admin sees every origin a launch goes to and the key set's, and the pages it names.
+    const offDomain = await registered({
+      ...request,
+      initiate_login_uri: 'https://login.example.org/lti',
+      jwks_uri: 'https://keys.example.net/jwks',
+      client_uri: 'https://peer-review.example.com',
+      tos_uri: 'https://peer-review.example.com/terms',
+      // Attack: a script address in a link of the approval dialog. Only an HTTPS page is kept.
+      policy_uri: 'javascript:alert(1)',
+    });
+    const listed = await call(listLtiInstallations, { path: admin.path, headers: admin.headers });
+    const installation = (listed.data as { results: Record<string, unknown>[] }).results.find(
+      ({ id }) => id === offDomain[ltiToolConfigurationMember].deployment_id,
+    );
+    expect(installation).toMatchObject({
+      launchOrigins: expect.arrayContaining(['https://login.example.org']),
+      keySetOrigin: 'https://keys.example.net',
+      clientUri: 'https://peer-review.example.com',
+      tosUri: 'https://peer-review.example.com/terms',
+      policyUri: null,
+    });
+    expect(offDomain).not.toHaveProperty('policy_uri');
+  });
+
   it('refuses a registration token used before', async () => {
     const admin = await orgWithUser();
     const { token } = await startRegistration(admin);

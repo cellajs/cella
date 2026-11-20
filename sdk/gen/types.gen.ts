@@ -490,7 +490,7 @@ export type LtiInstallation = {
   name: string;
   logoUri: string | null;
   /**
-   * The domain the LTI tool names itself by: a label it picks
+   * The domain the LTI tool names itself by: a label it picks, which its addresses need not lie on
    */
   domain: string;
   /**
@@ -502,6 +502,18 @@ export type LtiInstallation = {
    */
   keySetOrigin: string;
   description: string | null;
+  /**
+   * The LTI tool's home page, an HTTPS address it named; null when it named none
+   */
+  clientUri: string | null;
+  /**
+   * Its terms of service, an HTTPS address it named; null when it named none
+   */
+  tosUri: string | null;
+  /**
+   * Its privacy policy, an HTTPS address it named; null when it named none
+   */
+  policyUri: string | null;
   /**
    * The claims the LTI tool asked for that the platform can release
    */

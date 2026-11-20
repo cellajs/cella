@@ -42,11 +42,13 @@ A person is known to a tenant by the platform's issuer and their id there. The s
 
 As a platform, an admin pastes the address an LTI tool's admin handed over under LTI tools in organization settings. The LTI tool's registration page opens in a dialog, which closes when the LTI tool says it is done. The new LTI tool then waits for approval. An LTI tool that closes its page without registering leaves the dialog open, saying so.
 
+The platform takes any registration Dynamic Registration admits: it records the messages, types and claims it supports, and answers what it recorded.
+
 ## Approval
 
 An LTI tool asks for the personal fields it wants: name, email, picture. When approving, the admin chooses which of them a launch carries, and none is chosen by default. Whatever the admin releases, a launch always carries the person's id (the same for every LTI tool), their role, their language, the channel's name and short name, and the organization's tenant id.
 
-The approval dialog also shows where launches go and the site whose keys act as the LTI tool. Registration refuses an LTI tool whose launch addresses or key set lie off the domains it declares.
+The approval dialog also shows every site launches go to and the site whose keys act as the LTI tool, on whatever domain the LTI tool names itself by. It links the LTI tool's home page, terms and privacy policy, when the LTI tool names them by HTTPS addresses.
 
 An LTI tool may also ask for the scope of an LTI service the app serves, today Names and Role Provisioning Services (NRPS), which lists a context's members. The app records it as the access scope it stands for, `user:read`. The approval dialog lists it under API access, none chosen by default.
 
