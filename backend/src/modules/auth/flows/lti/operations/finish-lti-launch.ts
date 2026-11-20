@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { appConfig, type ChannelEntityType } from 'shared';
+import { appConfig, type ChannelEntityType, type RestrictionCap } from 'shared';
 import { buildNotificationPath } from 'shared/utils/notification-link';
 import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -104,7 +104,7 @@ interface ContextEntry {
 
 interface EnterLtiContextOpts extends LaunchFacts {
   /** The tenant's member limit; 0 for none. */
-  memberQuota: number;
+  memberQuota: RestrictionCap;
   /** The membership address the launch names, when the app trusts it (`launchMembershipsUrl`). */
   membershipsUrl: string | undefined;
   entry: ContextEntry;

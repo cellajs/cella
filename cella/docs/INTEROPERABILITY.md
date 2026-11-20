@@ -50,7 +50,7 @@ Every entity type with a policy has `<type>:read` and `<type>:write`, and `write
 
 - **Narrowing only:** a key or token holding `attachment:read` reads what its role reads, nothing else.
 - **Unknown scope:** fails closed.
-- **No mask:** a session or a key issued without scopes is unmasked.
+- **No mask:** a session is unmasked, and so is a key issued with `scopes: 'all'`. A key always states its scopes, and a rolled key keeps those of the key it replaces, with its expiry.
 - **REST refusal:** answers as for an actor without the permission, with no `insufficient_scope` challenge.
 - **MCP refusal:** names the scope to step up to.
 - **One list:** the same ids appear in the OpenAPI `oauth2` scheme, discovery documents and the consent screen; LTI names `user:read` by its NRPS scope.

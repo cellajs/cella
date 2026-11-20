@@ -177,14 +177,22 @@ interface ScheduleApiKeyExpiryOpts {
   expiresAt: string;
 }
 
-/** Sets `expiresAt` on a live key of the actor for the roll overlap, never later than an expiry it already has; null when no such key exists. */
+/**
+ * Sets `expiresAt` on a live key of the actor for the roll overlap, never later than an expiry it already has.
+ * @returns The key's scopes and expiry from before the change, for its successor; null when no such key exists.
+ */
 export async function scheduleApiKeyExpiry(ctx: DbContext, { actorId, id, expiresAt }: ScheduleApiKeyExpiryOpts) {
   const [row] = await ctx.var.db
+    .select({ scopes: apiKeysTable.scopes, expiresAt: apiKeysTable.expiresAt })
+    .from(apiKeysTable)
+    .where(and(eq(apiKeysTable.id, id), eq(apiKeysTable.actorId, actorId), isNull(apiKeysTable.revokedAt)))
+    .for('update');
+  if (!row) return null;
+  await ctx.var.db
     .update(apiKeysTable)
     .set({ expiresAt: sql`LEAST(${apiKeysTable.expiresAt}, ${expiresAt}::timestamptz)` })
-    .where(and(eq(apiKeysTable.id, id), eq(apiKeysTable.actorId, actorId), isNull(apiKeysTable.revokedAt)))
-    .returning({ id: apiKeysTable.id });
-  return row ?? null;
+    .where(eq(apiKeysTable.id, id));
+  return row;
 }
 
 interface RevokeApiKeyOpts {

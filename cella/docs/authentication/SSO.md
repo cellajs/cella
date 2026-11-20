@@ -13,7 +13,7 @@ the people it knows through that connection to sign in this way.
 | Concept | Meaning |
 | --- | --- |
 | **Federation** | Declared in `appConfig.federations` as public metadata. This deployment's client there comes from `SSO_<KEY>_CLIENT_ID` and `SSO_<KEY>_CLIENT_SECRET`. |
-| **Connection** | A tenant's trust in one institution: its federation, domains, IdPs, status and `jitProvisioning`. It stays `pending` until the institution activates the app at the federation. A domain belongs to one connection. |
+| **Connection** | A tenant's trust in one institution: its federation, domains, IdPs, status and `jitProvisioning`, off until an admin turns it on. It stays `pending` until the institution activates the app at the federation. A domain belongs to one connection. |
 | **Entry** | `/auth/sso/:connectionId`, the link an institution shares, pinned to its IdPs. A start from the federation has no pin. The federation's own picker then lists the connected institutions. |
 | **Callback** | One redirect URI, registered at every federation. |
 
@@ -59,12 +59,12 @@ A person with an identity through the tenant's connection must act with an allow
 
 Externals without such an identity are untouched. System admins are exempt.
 
-The policy guards tenant routes only. Under a refused method the person still reads:
+On a user-level route the tenant's memberships lend a refused session nothing: `userGuard` leaves them out of its bindings. Under a refused method the person still reads:
 
-- `GET /notifications`: their own inbox, which names the tenant's channels and items
-- `GET /organizations`: their organizations
-- `/me/memberships`: their memberships
-- `GET /users/{id}`: the profiles of the people their roles let them see
+- `GET /organizations` and `/me/memberships`: their organizations and memberships, so the menu offers the way in
+- `GET /notifications`: their own inbox, where a row from the tenant names no actor, channel or item
+
+They see none of the tenant's people.
 
 An address proven through a federation inherits the policy for magic links. While the tenant excludes `magic`, no magic link is sent for that address. The request answers 204 as for any address. The account gets a mail pointing to its institution's sign-in.
 

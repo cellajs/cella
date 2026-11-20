@@ -25,6 +25,7 @@ export type {
   FederationConfig,
   NavigationConfig,
   RequiredConfig,
+  RestrictionCap,
   S3Config,
   S3ConfigInput,
   TenantKind,

@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { and, count, eq, getColumns, getTableName, inArray, isNull, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getTableName, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { PgColumn, PgTable, PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import { appConfig, entityIdColumnName, hierarchy } from 'shared';
 import type { ActorContext, DbContext } from '#/core/context';
@@ -11,6 +11,7 @@ import { exactTotal, type ListTotalSource, resolveListTotal } from '#/db/utils/l
 import { homeChannelId } from '#/db/utils/number-column';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { requestScopeWhere } from '#/db/utils/request-scope';
+import { servedColumns } from '#/db/utils/served-columns';
 import { attachmentsTable, type InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
 import { getOrganizationEntityCount, productViewCountJoin, productViewCountSelect } from '#/modules/entities/entities-queries';
@@ -105,7 +106,7 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
   const whereClause = and(...filters);
 
   const itemsQuery = db
-    .select({ ...getColumns(attachmentsTable), viewCount: productViewCountSelect() })
+    .select({ ...servedColumns(attachmentsTable), viewCount: productViewCountSelect() })
     .from(attachmentsTable)
     .leftJoin(productCountersTable, productViewCountJoin(attachmentsTable.id))
     .where(whereClause)

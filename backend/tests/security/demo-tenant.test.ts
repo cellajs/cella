@@ -42,7 +42,7 @@ import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createTestTenant } from './helpers';
 
-overrideConfig(appConfig.has, { demos: true });
+overrideConfig(appConfig.has, { demos: true, publicCounts: true });
 
 afterEach(clearSecurityTestData);
 

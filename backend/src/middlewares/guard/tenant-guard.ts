@@ -3,8 +3,7 @@ import type { Actor, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { routeTarget } from '#/middlewares/guard/route-target';
-import { isFederationKey } from '#/modules/auth/core';
-import { findUserSsoConnection } from '#/modules/connections/connections-queries';
+import { refusingConnection } from '#/middlewares/guard/sign-in-policy';
 import { countOrganizationsByTenant } from '#/modules/organization/organization-queries';
 import { loadTenant } from '#/modules/tenants/load-tenant';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
@@ -12,12 +11,14 @@ import { getIsoDate } from '#/utils/iso-date';
 
 /**
  * A foothold in the tenant: a service account holds at least one binding (its bindings live in its own tenant); a user
- * has a membership there or is system admin. The tenant's creator holds one only while the tenant has no organization
- * (bootstrap): creating it makes them its admin, and leaving it ends their part in the tenant.
+ * has a membership there or is system admin. Its membership rows decide: a session's bindings leave out a tenant whose
+ * sign-in policy refuses it, which the policy check below answers. The tenant's creator holds one only while the tenant
+ * has no organization (bootstrap): creating it makes them its admin, and leaving it ends their part in the tenant.
  */
 const holdsFoothold = async (ctx: Context<Env>, actor: Actor, tenant: TenantModel): Promise<boolean> => {
   if (actor.kind === 'service') return actor.bindings.length > 0;
-  if (ctx.var.isSystemAdmin || actor.bindings.some((binding) => binding.tenantId === tenant.id)) return true;
+  const rows = ctx.var.memberships ?? actor.bindings;
+  if (ctx.var.isSystemAdmin || rows.some((row) => row.tenantId === tenant.id)) return true;
   if (tenant.createdBy !== actor.id) return false;
   return (await countOrganizationsByTenant(ctx, { tenantId: tenant.id })) === 0;
 };
@@ -60,21 +61,13 @@ export const tenantGuard = xMiddleware(
       throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant', tenantStatus: 'expired' } });
     }
 
-    // The tenant's sign-in policy: a person who holds an identity through this tenant's connection must have
-    // signed in with an allowed method, whether by session or by a token their session authorized, and with a
-    // federation only through that connection. Externals without such an identity are untouched. System admins are
-    // exempt. A session's method and connection are in the cached facts, so only a mismatch or a federation sign-in
-    // pays for the lookup.
-    if (actor.kind === 'user' && !ctx.var.isSystemAdmin && tenant.authStrategies.length > 0) {
-      const strategy = actor.authStrategy ?? null;
-      const allowed = !!strategy && tenant.authStrategies.includes(strategy);
-      if (!allowed || (strategy && isFederationKey(strategy))) {
-        const connection = await findUserSsoConnection(ctx, { userId: actor.id, tenantId: tenant.id });
-        if (connection && (!allowed || actor.connectionId !== connection.id)) {
-          throw new AppError(403, 'sso_required', 'warn', {
-            meta: { resource: 'tenant', connectionId: connection.id, entryPath: `/auth/sso/${connection.id}` },
-          });
-        }
+    // The tenant's sign-in policy (`refusingConnection`); system admins are exempt.
+    if (actor.kind === 'user' && !ctx.var.isSystemAdmin) {
+      const connection = await refusingConnection(ctx, actor, tenant);
+      if (connection) {
+        throw new AppError(403, 'sso_required', 'warn', {
+          meta: { resource: 'tenant', connectionId: connection.id, entryPath: `/auth/sso/${connection.id}` },
+        });
       }
     }
 

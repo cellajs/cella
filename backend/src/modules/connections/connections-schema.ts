@@ -82,7 +82,7 @@ export const createConnectionBodySchema = z.object({
     .describe("The institution's domains as the federation asserts them in the tenant claim; a sign-in must assert one of them"),
   idpEntityIds: z.array(idpEntityIdSchema).min(1).max(10).describe("The institution's IdP entity ids, all passed as login_hint"),
   status: z.enum(connectionStatuses).optional(),
-  jitProvisioning: z.boolean().optional(),
+  jitProvisioning: z.boolean().optional().describe("Admit the institution's members without an invitation; off unless set"),
   // The response keeps the field limit, and the frontend validates responses: a longer stored URL would fail every read.
   logoUrl: z.string().max(maxLength.field).pipe(validUrlSchema).optional(),
 });

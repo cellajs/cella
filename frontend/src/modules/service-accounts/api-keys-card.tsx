@@ -51,7 +51,7 @@ function CreateApiKeyForm({ path, onCreated }: { path: QueryOrgContext; onCreate
   const onSubmit = (values: FormValues) => {
     const name = values.name.trim();
     // Awaited on the promise, which settles even when the dialog closed mid-request: the plaintext always reaches the card.
-    create({ path, body: { name, role: keyRole, key: { name } } }).then(
+    create({ path, body: { name, role: keyRole, key: { name, scopes: 'all' } } }).then(
       ({ apiKey }) => {
         if (apiKey) onCreated(apiKey);
         closeDialog();

@@ -93,6 +93,7 @@ export const meRoutes = createXRoutes(['me', 'cella'], {
     method: 'get',
     path: '/upload-token',
     xGuard: [userGuard],
+    xEnabledBy: { feature: 'uploads' },
     xAnonymous: true,
     xRateLimiter: [uploadTokenLimiter],
     summary: 'Get upload token',
@@ -104,7 +105,7 @@ export const meRoutes = createXRoutes(['me', 'cella'], {
         'Upload token\n\nIts storage prefix names the organization, when given, and the user; a newsletter image goes under the system prefix.',
         uploadTokenSchema,
       ),
-      ...errors(403, 404),
+      ...errors(403),
     },
   }),
   listMyMemberships: xRoute({

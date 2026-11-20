@@ -149,8 +149,14 @@ export const passkeyChallengeLimiter = rateLimiter('limit', 'passkeyChallenge', 
   description: 'Challenges for each IP address.',
 });
 
+/** The hourly points a new tenant starts with, as the docs state it. */
+const startBudgetText = () => {
+  const budget = defaultRestrictions().rateLimits.apiPointsPerHour;
+  return budget === 'unlimited' ? 'the ceiling' : budget.toLocaleString('en');
+};
+
 /**
- * Tenant-scoped points limiter capped at the global hourly ceiling; missing and zero tenant budgets use that ceiling.
+ * Tenant-scoped points limiter capped at the global hourly ceiling; a missing or `unlimited` tenant budget uses that ceiling.
  * @param cost Static request cost, or zero to derive it from the request.
  * @public
  */
@@ -159,12 +165,12 @@ export const pointsLimiter = (cost = 1) =>
     limits: { points: 5000, duration: 60 * 60 },
     functionName: 'pointsLimiter',
     name: 'API points',
-    description: `Points for each user or service account in a tenant: 1 per request, 1 per item on a bulk route. A tenant starts at ${defaultRestrictions().rateLimits.apiPointsPerHour.toLocaleString('en')} an hour, which a system admin can raise up to the ceiling shown.`,
+    description: `Points for each user or service account in a tenant: 1 per request, 1 per item on a bulk route. A tenant starts at ${startBudgetText()} an hour, which a system admin can raise up to the ceiling shown.`,
     getConsumePoints: cost > 0 ? () => cost : bulkBodyLength,
     getPointsBudget: (ctx) => {
       const tenant = ctx.var.tenant;
-      const budget = tenant?.restrictions?.rateLimits?.apiPointsPerHour;
-      return budget ?? defaultRestrictions().rateLimits.apiPointsPerHour;
+      const budget = tenant?.restrictions?.rateLimits?.apiPointsPerHour ?? defaultRestrictions().rateLimits.apiPointsPerHour;
+      return budget === 'unlimited' ? null : budget;
     },
   });
 

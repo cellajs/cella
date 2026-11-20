@@ -1,6 +1,7 @@
-import { and, arrayOverlaps, eq, getColumns, inArray, ne, or, sql } from 'drizzle-orm';
+import { and, arrayOverlaps, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { UserId } from '#/db/utils/ids';
+import { servedColumns } from '#/db/utils/served-columns';
 import { updateStamps } from '#/db/utils/stamps';
 import {
   type ConnectionKind,
@@ -16,7 +17,7 @@ import { identitiesTable } from '#/modules/user/identities-db';
 import { pick } from '#/utils/pick';
 
 /** Every column an answer may carry: all but the private key. */
-const { privateJwk: _privateJwk, ...servedColumns } = getColumns(connectionsTable);
+const connectionColumns = servedColumns(connectionsTable);
 
 interface FindConnectionsByTenantOpts {
   tenantId: string;
@@ -27,7 +28,7 @@ interface FindConnectionsByTenantOpts {
 /** The tenant's connections, oldest first, without their private keys; an LTI one still registering is left out. */
 export const findConnectionsByTenant = async (ctx: DbContext, { tenantId, kind }: FindConnectionsByTenantOpts): Promise<ServedConnection[]> =>
   ctx.var.db
-    .select(servedColumns)
+    .select(connectionColumns)
     .from(connectionsTable)
     .where(
       and(
@@ -115,7 +116,7 @@ export const countLtiConnections = (ctx: DbContext, { tenantId }: { tenantId: st
 
 /** Inserts a connection; the unique indexes refuse a second SSO connection of a tenant and a second LTI registration of one client. */
 export const insertConnection = async (ctx: DbContext, { values }: { values: InsertConnectionModel }): Promise<ServedConnection> => {
-  const [row] = await ctx.var.db.insert(connectionsTable).values(values).returning(servedColumns);
+  const [row] = await ctx.var.db.insert(connectionsTable).values(values).returning(connectionColumns);
   return row;
 };
 
@@ -168,7 +169,7 @@ export const updateConnection = async (ctx: DbContext, { id, tenantId, values }:
     .update(connectionsTable)
     .set(values)
     .where(and(eq(connectionsTable.id, id), eq(connectionsTable.tenantId, tenantId)))
-    .returning(servedColumns);
+    .returning(connectionColumns);
   return row;
 };
 

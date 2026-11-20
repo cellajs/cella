@@ -1,10 +1,10 @@
-import { getColumns } from 'drizzle-orm';
 import { index, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { AccessScope } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { writerColumn } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { ActorId } from '#/db/utils/ids';
+import { servedColumns } from '#/db/utils/served-columns';
 import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -46,9 +46,8 @@ export const apiKeysTable = snakeCase.table(
   ],
 );
 
-const { hash: _hash, ...safeColumns } = getColumns(apiKeysTable);
 /** Every column but the hash: what any response may carry. */
-export const apiKeySafeColumns = safeColumns;
+export const apiKeySafeColumns = servedColumns(apiKeysTable);
 
 /** Includes the hash; use only in the guard. */
 type UnsafeApiKeyModel = typeof apiKeysTable.$inferSelect;

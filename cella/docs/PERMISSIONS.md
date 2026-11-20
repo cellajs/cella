@@ -68,7 +68,7 @@ The engine **never loads rows**. Callers hand in the row data a decision needs. 
 
 ## The access you present
 
-Every check takes an `Access`: the actor with its bindings and scopes, or anonymous. Handlers get it from `accessFrom(ctx)`, never by hand. A session is unmasked. An API key or access token narrows every decision to its scopes. One that carries scopes reads people only with `user:read`; an unscoped one reads them as its actor does. A membership change reaches every check within seconds.
+Every check takes an `Access`: the actor with its bindings and scopes, or anonymous. Handlers get it from `accessFrom(ctx)`, never by hand. A session is unmasked. An API key or access token narrows every decision to its scopes. One that carries scopes reads people only with `user:read`; a key issued with `all` reads them as its actor does. A membership change reaches every check within seconds.
 
 ## The policy consulted
 
@@ -219,7 +219,7 @@ Organization content runs behind `[userGuard, tenantGuard, orgGuard]`. Where an 
 | Guard | Admits | Refuses with |
 | --- | --- | --- |
 | `publicGuard` | Anyone, with no actor | Nothing |
-| `userGuard` | A session cookie: the signed-in user | 401 |
+| `userGuard` | A session cookie: the signed-in user. The actor's bindings leave out a tenant whose sign-in policy refuses the session | 401 |
 | `serviceGuard` | An API key or an access token other than an installed LTI tool's, masked by its scopes, never a system admin | 401; 403 from a browser origin |
 | `tokenGuard` | An access token other than an installed LTI tool's, for the MCP face | 401 |
 | `ltiToolGuard` | An installed LTI tool's access token alone, with the binding its tab that opens implies in exactly the channel in the path ([LTI](./LTI.md#serving-members)) | 401 |

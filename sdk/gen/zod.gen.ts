@@ -829,16 +829,16 @@ export const zTenant = z.object({
   expiresAt: z.string().nullable(),
   restrictions: z.object({
     quotas: z.object({
-      user: z.int().gte(0),
-      organization: z.int().gte(0),
-      attachment: z.int().gte(0),
-      serviceAccount: z.int().gte(0),
-      apiKey: z.int().gte(0),
-      ltiConnection: z.int().gte(0),
+      user: z.union([z.int().gte(0), z.enum(['unlimited'])]),
+      organization: z.union([z.int().gte(0), z.enum(['unlimited'])]),
+      attachment: z.union([z.int().gte(0), z.enum(['unlimited'])]),
+      serviceAccount: z.union([z.int().gte(0), z.enum(['unlimited'])]),
+      apiKey: z.union([z.int().gte(0), z.enum(['unlimited'])]),
+      ltiConnection: z.union([z.int().gte(0), z.enum(['unlimited'])]),
     }),
     rateLimits: z.object({
-      apiPointsPerHour: z.int().gte(0),
-      invitationEmailsPerDay: z.int().gte(0),
+      apiPointsPerHour: z.union([z.int().gte(0), z.enum(['unlimited'])]),
+      invitationEmailsPerDay: z.union([z.int().gte(0), z.enum(['unlimited'])]),
     }),
     allowUnregisteredClients: z.boolean(),
   }),
@@ -3310,11 +3310,13 @@ export const zCreateServiceAccountBody = z.object({
         .min(1)
         .max(255)
         .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
-      scopes: z
-        .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
-        .min(1)
-        .max(5)
-        .nullish(),
+      scopes: z.union([
+        z.enum(['all']),
+        z
+          .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
+          .min(1)
+          .max(5),
+      ]),
       expiresAt: z.iso.datetime().max(64).optional(),
     })
     .optional(),
@@ -3381,21 +3383,32 @@ export const zListApiKeysResponse = z.object({
   totalSize: z.int().gte(0),
 });
 
-export const zCreateApiKeyBody = z.object({
-  name: z
-    .string()
-    .min(1)
-    .max(255)
-    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
-  scopes: z
-    .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
-    .min(1)
-    .max(5)
-    .nullish(),
-  expiresAt: z.iso.datetime().max(64).optional(),
-  rollFrom: z.string().max(50).optional(),
-  rollOverlapDays: z.int().gte(0).lte(30).optional().default(7),
-});
+export const zCreateApiKeyBody = z.union([
+  z.object({
+    name: z
+      .string()
+      .min(1)
+      .max(255)
+      .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
+    rollFrom: z.string().max(50),
+    rollOverlapDays: z.int().gte(0).lte(30).optional().default(7),
+  }),
+  z.object({
+    name: z
+      .string()
+      .min(1)
+      .max(255)
+      .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
+    scopes: z.union([
+      z.enum(['all']),
+      z
+        .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
+        .min(1)
+        .max(5),
+    ]),
+    expiresAt: z.iso.datetime().max(64).optional(),
+  }),
+]);
 
 export const zCreateApiKeyPath = z.object({
   tenantId: z.string().max(50),
@@ -3586,18 +3599,18 @@ export const zUpdateTenantBody = z.object({
     .object({
       quotas: z
         .object({
-          user: z.int().gte(0).nullish(),
-          organization: z.int().gte(0).nullish(),
-          attachment: z.int().gte(0).nullish(),
-          serviceAccount: z.int().gte(0).nullish(),
-          apiKey: z.int().gte(0).nullish(),
-          ltiConnection: z.int().gte(0).nullish(),
+          user: z.union([z.int().gte(0), z.enum(['unlimited'])]).nullish(),
+          organization: z.union([z.int().gte(0), z.enum(['unlimited'])]).nullish(),
+          attachment: z.union([z.int().gte(0), z.enum(['unlimited'])]).nullish(),
+          serviceAccount: z.union([z.int().gte(0), z.enum(['unlimited'])]).nullish(),
+          apiKey: z.union([z.int().gte(0), z.enum(['unlimited'])]).nullish(),
+          ltiConnection: z.union([z.int().gte(0), z.enum(['unlimited'])]).nullish(),
         })
         .nullish(),
       rateLimits: z
         .object({
-          apiPointsPerHour: z.int().gte(0).nullish(),
-          invitationEmailsPerDay: z.int().gte(0).nullish(),
+          apiPointsPerHour: z.union([z.int().gte(0), z.enum(['unlimited'])]).nullish(),
+          invitationEmailsPerDay: z.union([z.int().gte(0), z.enum(['unlimited'])]).nullish(),
         })
         .nullish(),
       allowUnregisteredClients: z.boolean().nullish(),

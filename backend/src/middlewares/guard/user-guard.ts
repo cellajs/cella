@@ -1,6 +1,7 @@
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { loadMemberships } from '#/middlewares/guard/membership-cache';
+import { tenantsRefusingActor } from '#/middlewares/guard/sign-in-policy';
 import { updateLastSeenAt } from '#/middlewares/update-last-seen';
 import { getAuthCookie, resolveSession } from '#/modules/auth/core';
 import { isSystemAccessAllowed } from '#/utils/system-access';
@@ -8,7 +9,7 @@ import { isSystemAccessAllowed } from '#/utils/system-access';
 /**
  * Authenticates the session and sets user, session facts, memberships and base db context: the session comes from the
  * session cache or one read shared by the requests presenting it, the memberships from the cache at its bindings
- * version.
+ * version. The actor's bindings leave out the memberships of a tenant whose sign-in policy refuses the session.
  */
 export const userGuard = xMiddleware(
   {
@@ -31,15 +32,17 @@ export const userGuard = xMiddleware(
     ctx.set('db', baseDb);
 
     const memberships = await loadMemberships(user.id, bindingsVersion);
-    ctx.set('memberships', memberships);
-    ctx.set('actor', {
+    const actor = {
       kind: 'user',
       id: user.id,
       bindings: memberships,
       scopes: null,
       authStrategy: session.authStrategy,
       connectionId: session.connectionId,
-    });
+    } as const;
+    const refused = ctx.var.isSystemAdmin ? new Set<string>() : await tenantsRefusingActor(ctx, actor, memberships);
+    ctx.set('memberships', memberships);
+    ctx.set('actor', refused.size ? { ...actor, bindings: memberships.filter(({ tenantId }) => !refused.has(tenantId)) } : actor);
 
     if (ctx.req.method === 'GET') updateLastSeenAt(user.id);
 

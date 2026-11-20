@@ -86,7 +86,10 @@ export type Env = {
     organizationId: string;
     /** The organization's archived channel ids (`orgGuard`), which refuse a write in them (`assertNotArchived`). */
     archivedChannelIds?: ReadonlySet<string>;
-    /** User-only sugar for `actor.bindings`, with the join time and the inviter's id; a service actor has no memberships. */
+    /**
+     * A user's membership rows, with the join time and the inviter's id; a service actor has none. `actor.bindings` holds
+     * the same rows less those of a tenant whose sign-in policy refuses the session (`userGuard`).
+     */
     memberships: (MembershipBaseModel & { createdAt: string; createdBy: string | null })[];
     /** The authenticated session's facts (`userGuard` only). */
     session: SessionFacts;

@@ -240,11 +240,11 @@ describe('account-security routes need a step-up', async () => {
       createAccount: (session: TestSession) =>
         call(createServiceAccount, {
           path,
-          body: { name: 'CI bot', role: memberRole, key: { name: 'deploy', scopes: null } },
+          body: { name: 'CI bot', role: memberRole, key: { name: 'deploy', scopes: 'all' } },
           headers: session.headers,
         }),
       createKey: (session: TestSession, id: string) =>
-        call(createApiKey, { path: { ...path, serviceAccountId: id }, body: { name: 'second' }, headers: session.headers }),
+        call(createApiKey, { path: { ...path, serviceAccountId: id }, body: { name: 'second', scopes: 'all' }, headers: session.headers }),
       accounts: () => db.select().from(serviceAccountsTable).where(eq(serviceAccountsTable.tenantId, org.tenantId)),
       keys: () => db.select().from(apiKeysTable).where(eq(apiKeysTable.tenantId, org.tenantId)),
     };

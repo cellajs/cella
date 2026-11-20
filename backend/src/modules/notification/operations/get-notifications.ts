@@ -24,7 +24,7 @@ type GetNotificationsInput = Omit<FindNotificationsOpts, 'userId'>;
  * Both travel together so the badge can never disagree with the list the user is looking at; the
  * client treats this response as the source of truth and any realtime signal only as a hint to
  * refetch it. Rows of an organization the user left are gone from both, and a subject the user
- * may no longer read keeps its row with no channel and an empty subject name.
+ * may no longer read keeps its row with no actor, no channel and an empty subject name.
  */
 export async function getNotificationsOp(ctx: UserContext, input: GetNotificationsInput) {
   const userId = ctx.var.user.id;
@@ -47,7 +47,7 @@ export async function getNotificationsOp(ctx: UserContext, input: GetNotificatio
     const organization = channels.get(row.organizationId);
     return {
       ...row,
-      actor: (row.actorId && actors.get(row.actorId)) || null,
+      actor: (readable.has(row.subjectId) && row.actorId && actors.get(row.actorId)) || null,
       channel: (readable.has(row.subjectId) && channels.get(row.channelId)) || null,
       organization: organization ? toMinimalBase('organization', organization) : null,
       subjectName: contextNames.get(row.contextId) ?? '',

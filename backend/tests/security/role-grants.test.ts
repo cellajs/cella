@@ -62,7 +62,7 @@ describe('Role grants above the actor', async () => {
   const serviceAccount = async (org: Fixture['org'], admin: User, role: OrganizationRole) => {
     const { data, response } = await call(createServiceAccount, {
       path: { tenantId: org.tenantId, organizationId: org.id },
-      body: { name: `${role} bot`, role, key: { name: 'deploy' } },
+      body: { name: `${role} bot`, role, key: { name: 'deploy', scopes: 'all' } },
       headers: headers(admin),
     });
     expect(response.status).toBe(201);
@@ -178,7 +178,7 @@ describe('Role grants above the actor', async () => {
       {
         act: 'issue a key for a service account at the top role',
         attempt: (fixture, actor) =>
-          call(createApiKey, { path: accountPath(fixture, fixture.account), body: { name: 'mine' }, headers: headers(actor) }),
+          call(createApiKey, { path: accountPath(fixture, fixture.account), body: { name: 'mine', scopes: 'all' }, headers: headers(actor) }),
         unchanged: async ({ account }) => expect(await keysOf(account)).toHaveLength(1),
         okStatus: 201,
       },
@@ -216,7 +216,11 @@ describe('Role grants above the actor', async () => {
 
       const own = await fixture('account-floor');
       const { serviceAccount: account } = await serviceAccount(own.org, own.admin, memberRole);
-      const issued = await call(createApiKey, { path: accountPath(own, account.id), body: { name: 'mine' }, headers: headers(own.member) });
+      const issued = await call(createApiKey, {
+        path: accountPath(own, account.id),
+        body: { name: 'mine', scopes: 'all' },
+        headers: headers(own.member),
+      });
       expect(issued.response.status).toBe(201);
     });
   });

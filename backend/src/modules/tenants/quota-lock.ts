@@ -21,7 +21,7 @@ export async function lockTenantQuota(txCtx: DbContext, { tenantId, key }: { ten
  */
 export async function insertWithinTenantQuota<T>(txCtx: ActorContext, entityType: ProductEntityType, insert: () => Promise<T[]>): Promise<T[]> {
   const quota = txCtx.var.tenant.restrictions.quotas[entityType];
-  if (txCtx.var.isSystemAdmin || quota === 0) return insert();
+  if (txCtx.var.isSystemAdmin || quota === 'unlimited') return insert();
 
   await lockTenantQuota(txCtx, { tenantId: txCtx.var.tenantId, key: entityType });
   const rows = await insert();

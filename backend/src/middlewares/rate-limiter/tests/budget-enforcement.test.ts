@@ -14,7 +14,7 @@ const { getRetryAfter } = await import('#/middlewares/rate-limiter/helpers');
 const { clearPointsCache } = await import('#/middlewares/rate-limiter/points-cache');
 
 /** App mimicking pointsLimiter: static ceiling, dynamic per-tenant budget, a cost from the `x-cost` header (default 1). */
-function buildApp(key: string, tenantId: string, ceiling: number, budget: () => number) {
+function buildApp(key: string, tenantId: string, ceiling: number, budget: () => number | null) {
   const limiter = rateLimiter('limit', key, ['tenantId'], {
     limits: { points: ceiling, duration: 60 * 60 },
     getPointsBudget: budget,
@@ -151,14 +151,21 @@ describe('points budget enforcement (end to end)', () => {
     expect(allowed).toBe(100);
   });
 
-  it('treats budget 0 as "no tenant limit" bounded by the ceiling, not as lockout', async () => {
-    // Budget 0 documents "no tenant limit", so the ceiling is the only bound
-    const app = buildApp('zero', 't1', 50, () => 0);
+  it('bounds a tenant without a budget by the ceiling alone', async () => {
+    const app = buildApp('unlimited', 't1', 50, () => null);
 
     const { allowed, blocked } = await hammer(app, 60);
 
     expect(allowed).toBe(50);
     expect(blocked).toBe(10);
+  });
+
+  it('allows a tenant with a budget of 0 no request', async () => {
+    const app = buildApp('zero', 't1', 50, () => 0);
+
+    const { allowed } = await hammer(app, 5);
+
+    expect(allowed).toBe(0);
   });
 
   it('never mutates the shared limiter instance across tenants', async () => {

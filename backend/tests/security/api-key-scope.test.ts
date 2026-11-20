@@ -75,7 +75,7 @@ describe('API key scopes at the token endpoint', async () => {
   });
 
   it('lets an unscoped key mint any scope it asks for (positive control)', async () => {
-    const account = await adminAccountWithKey(null);
+    const account = await adminAccountWithKey('all');
     const jwt = await tokenFor(account, 'organization:write');
     expect((await verifyAccessToken(jwt, { tenantId: account.org.tenantId })).scopes).toEqual(['organization:write']);
 

@@ -3063,7 +3063,7 @@ export const deleteInvitation = <ThrowOnError extends boolean = true>(
  * **GET /public/metrics** ·· [getPublicCounts](https://www.cellajs.com/docs/operations?operationTag=metrics#tag/metrics/GET/public/metrics) ·· _metrics · cella_
  *
  * @param {getPublicCountsData} options
- * @returns Possible status codes: 200, 400, 429
+ * @returns Possible status codes: 200, 400, 404, 429
  */
 export const getPublicCounts = <ThrowOnError extends boolean = true>(
   options?: Options<GetPublicCountsData, ThrowOnError>,
@@ -3509,7 +3509,7 @@ export const listRequests = <ThrowOnError extends boolean = true>(
 /**
  * Create request
  *
- * Submits a request: a contact form message, an info request or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist entry or info request is dropped.
+ * Submits a request: a contact form message, an info request or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist entry or info request is dropped. A waitlist entry answers 404 while the app keeps no waitlist.
  *
  * **POST /requests** ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/POST/requests) ·· _requests · cella_
  *
@@ -3517,7 +3517,7 @@ export const listRequests = <ThrowOnError extends boolean = true>(
  * @param {string} options.body.email - `string`
  * @param {enum} options.body.kind - `enum`
  * @param {string | null} options.body.message - `string | null`
- * @returns Possible status codes: 204, 400, 413, 415, 429
+ * @returns Possible status codes: 204, 400, 404, 413, 415, 429
  */
 export const createRequest = <ThrowOnError extends boolean = true>(
   options: Options<CreateRequestData, ThrowOnError>,
@@ -3727,11 +3727,6 @@ export const listApiKeys = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.serviceAccountId - `string`
- * @param {string} options.body.name - `string`
- * @param {enum[] | null=} options.body.scopes - `enum[] | null` (optional)
- * @param {string=} options.body.expiresAt - `string` (optional)
- * @param {string=} options.body.rollFrom - `string` (optional)
- * @param {integer=} options.body.rollOverlapDays - `integer` (optional)
  * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 413, 415, 429
  */
 export const createApiKey = <ThrowOnError extends boolean = true>(

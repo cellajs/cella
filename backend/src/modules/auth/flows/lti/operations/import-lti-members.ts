@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
+import type { RestrictionCap } from 'shared';
 import type { DbContext } from '#/core/context';
 import { baseDb } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
@@ -53,7 +54,7 @@ interface ImportTarget {
   channel: MembershipEntity;
   organization: OrganizationModel;
   /** The tenant's member limit; 0 for none. */
-  memberQuota: number;
+  memberQuota: RestrictionCap;
   by: ServiceAccountId;
 }
 

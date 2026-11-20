@@ -9,6 +9,7 @@ export const metricRoutes = createXRoutes(['metrics', 'cella'], {
     method: 'get',
     path: '/',
     xGuard: [publicGuard],
+    xEnabledBy: { feature: 'publicCounts' },
     middleware: isNoBot,
     summary: 'Get public counts',
     description:

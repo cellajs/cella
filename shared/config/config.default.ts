@@ -98,11 +98,12 @@ export const config = {
       ltiConnection: 3,
     },
     rateLimits: { apiPointsPerHour: 1000, invitationEmailsPerDay: 250 },
+    allowUnregisteredClients: false,
   },
 
   /**
    * Tenants one user may create through onboarding (`selfCreateTenant`); a tenant reused while it holds no organization
-   * counts once, and system admins have no cap. `0` turns self-service creation off, where a quota's `0` means unlimited.
+   * counts once, and system admins have no cap. `0` turns self-service creation off.
    */
   selfServiceTenantsPerUser: 10,
 
@@ -239,6 +240,7 @@ export const config = {
     chatSupport: false,
     demos: false,
     ltiPlatform: false,
+    publicCounts: false,
   },
 
   shareTarget: undefined as ShareTargetConfig | undefined,
@@ -251,7 +253,7 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 53,
+  clientCacheVersion: 54,
 
   // Authentication
 
