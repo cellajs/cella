@@ -24,7 +24,7 @@ The registration asks for each person's name, and for their email address only w
 
 A platform whose configuration names Canvas as its product family makes the launch a course tab, hidden until a teacher enables it. Canvas shows it to whoever takes part in the course as a student or may read it as an admin, an account admin who is not enrolled included.
 
-Canvas sends what the registration asks for by its privacy level. The name alone is `name_only`, which also sends the person's and the course's SIS ids. Email makes it `public`, which adds the person's picture and, for an observer, the students they observe. The app keeps the name and email and drops the rest.
+Canvas sends what the registration asks for by its privacy level. The name alone is `name_only`, which also sends the person's and the course's SIS ids. Email makes it `public`, which adds the person's picture and, for an observer, the students they observe. The app keeps the name, and the email when it asked for one, and drops the rest.
 
 Each connection gets a key pair of its own, and the registration names that connection's key set on the API. The app stores the connection, waiting, before it calls the platform: a platform that reads the key set while it registers the app, as Brightspace does, finds it. No key rotation is built. Deleting the connection deletes its key, and its key set answers no more.
 
@@ -135,7 +135,9 @@ A launch without a context admits nobody new. It signs in a person this tenant a
 
 A person a context admits also becomes a member of the organization, at the organization role their role in the context's channel gives there. When that role may update the organization, they get the highest role below it that may not. A launch without a context lands a known person on the organization's embedded page. An app whose contexts sit below the organization decides what those roles see of people ([What members see](./PERMISSIONS.md#what-members-see)) and what that page shows.
 
-A person who arrives for the first time gets an account without a proven email address, and takes a seat of the tenant's member limit. An email the platform releases never links them to an existing account. An account named before the platform released a name takes the name a later launch or import brings, as long as nothing else signs it in.
+A person who arrives for the first time gets an account without a proven email address, and takes a seat of the tenant's member limit. An account named before the platform released a name takes the name a later launch or import brings, as long as nothing else signs it in.
+
+The app keeps an email only while it sets `ltiAsksEmail`, and one the platform releases never links them to an existing account. Without it, an email a platform sends anyway is dropped, and one kept before goes at the person's next launch or import.
 
 As a platform, your app says in [launch-context.ts](../../backend/src/modules/lti-platform/launch-context.ts) which channel types are LTI contexts and which LTI roles a person goes there with. The template sends every channel as a group, so its seeded pair works. Whoever may update the channel goes as Instructor, whoever may only read it as Learner.
 
@@ -171,7 +173,9 @@ A context past either number says its import waits, unless its last import was r
 
 Imports of one connection run one after the other, and those of different connections beside each other, each within a time budget: a platform that answers slowly holds up its own imports alone.
 
-It reads each member's id, their LTI roles in the context, and their name and email address where the platform's admin released them. A member the platform lists as Inactive is not added. A context role the platform names by its short name, as Sakai does, reads as its full URI, and any other short name is no LIS role. Institution and system roles reach the app's role mapping as they come, as at a launch.
+It reads each member's id, their LTI roles in the context, their name where the platform's admin released it, and their email address where the app asks for one too. A member the platform lists as Inactive is not added.
+
+Of their roles, a context role the platform names by its short name, as Sakai does, reads as its full URI, and any other short name is no LIS role. Institution and system roles reach the app's role mapping as they come, as at a launch.
 
 Before it signs or fetches anything, the app holds to these rules:
 

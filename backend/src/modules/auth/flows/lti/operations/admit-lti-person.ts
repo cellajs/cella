@@ -4,7 +4,7 @@ import type { ActorId, UserId } from '#/db/utils/ids';
 import type { MembershipEntity } from '#/lib/module';
 import { type LtiRoleFacts, ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
 import { type LtiAdmission, recordLtiContextMemberships } from '#/modules/auth/flows/lti/lti-contexts-queries';
-import { createLtiAccount, type LtiPerson, nameLtiAccount } from '#/modules/auth/flows/lti/operations/create-lti-account';
+import { createLtiAccount, type LtiPerson, ltiKeptEmail, nameLtiAccount } from '#/modules/auth/flows/lti/operations/create-lti-account';
 import type { LtiConnection } from '#/modules/connections/connections-db';
 import { resolveOrganizationMembershipRole } from '#/modules/memberships/helpers/membership-helpers';
 import type { MembershipModel } from '#/modules/memberships/memberships-db';
@@ -40,15 +40,15 @@ const lockLtiPerson = async (ctx: DbContext, { connection, organization, person 
 type LtiIdentity = NonNullable<Awaited<ReturnType<typeof lockLtiPerson>>['identity']>;
 
 /**
- * Keeps the email the platform released on the identity, records a launch's sign-in there, the proof that verifies it,
- * and names the account.
+ * Keeps the email the platform released on the identity while the app asks for one (`ltiKeptEmail`), else clears it,
+ * records a launch's sign-in there, the proof that verifies it, and names the account.
  */
 const updateLtiPerson = async (
   ctx: DbContext,
   identity: LtiIdentity,
   { connection, person, signedInAt, by }: { connection: LtiConnection; person: LtiPerson; signedInAt?: string; by: ActorId },
 ) => {
-  const email = person.email ?? null;
+  const email = ltiKeptEmail(person);
   const signIn = signedInAt ? { lastSignInAt: signedInAt, verifiedAt: identity.verifiedAt ?? signedInAt, connectionId: connection.id } : undefined;
   if (signIn || identity.email !== email) await updateIdentity(ctx, { id: identity.id, values: { ...signIn, email } });
   await nameLtiAccount(ctx, { userId: identity.userId, person, by });

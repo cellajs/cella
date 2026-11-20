@@ -788,14 +788,23 @@ describe('LTI launch at the app as an LTI tool', async () => {
 
   // D6: an address across institutions is no proof of the account behind it.
   it('creates a separate account for an email claim an account of another tenant holds', async () => {
+    onTestFinished(overrideConfig(appConfig, { ltiAsksEmail: true }));
     const connected = await connect(await fakePlatform('platform-a'));
     const elsewhere = await createTestOrganization();
     const holder = await createFactorOrgUser(call, elsewhere.tenantId, elsewhere.id, `lti-${nanoid(8)}`, adminRole);
     const launched = await launch(connected, { email: holder.email });
     expect(launched.response.status).toBe(303);
     const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.kind, 'lti'));
-    expect(identity.userId).not.toBe(holder.id);
+    expect([identity.userId === holder.id, identity.email]).toEqual([false, holder.email]);
     expect(await orgMembershipOf(holder.id, connected.org.id)).toBeUndefined();
+  });
+
+  // An app that asks for no addresses holds none: an email a platform sends unasked is dropped.
+  it('stores no email from a launch while the app does not ask for one', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    expect((await launch(connected, { email: 'ada@school.example.edu' })).response.status).toBe(303);
+    const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.kind, 'lti'));
+    expect(identity.email).toBeNull();
   });
 
   // The template's hierarchy has no channel below the organization: the plan is checked as an app with one meets it.
