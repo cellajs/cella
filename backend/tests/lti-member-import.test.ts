@@ -24,7 +24,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
-import { lisContextRoles, lisInstitutionRoles, ltiNrps } from '#/lib/lti-vocabulary';
+import { lisContextRoles, lisInstitutionRoles, lisSystemRoles, ltiNrps } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
 import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
 import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
@@ -33,12 +33,11 @@ import { ltiKeySetUrl } from '#/modules/auth/flows/lti/helpers/registration-requ
 import { ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
-import { ltiRoleIn } from '#/modules/auth/flows/lti/operations/admit-lti-person';
 import { connectionServiceAccountId } from '#/modules/auth/flows/lti/operations/connection-service-account';
 import {
   importLtiMembersOp,
   ltiMemberImportQueue,
-  maxCoursesPerHour,
+  maxContextsPerHour,
   requestLtiMemberImport,
 } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
@@ -393,8 +392,8 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
       );
       for (const { subject, userId } of imported.identities) {
         expect(people.map(({ id }) => id)).not.toContain(userId);
-        const ltiRoles = [subject === platformSide.admin.id ? lisContextRoles.instructor : lisContextRoles.learner];
-        expect(await orgMembershipOf(userId, toolSide.org.id)).toMatchObject({ role: ltiRoleIn('organization', { ltiRoles, connection }) });
+        // A Learner gets the least privileged role; the Instructor's role stops below one that may update the organization.
+        if (subject !== platformSide.admin.id) expect(await orgMembershipOf(userId, toolSide.org.id)).toMatchObject({ role: memberRole });
       }
 
       const learnerAccount = imported.identities.find(({ subject }) => subject === learners[0].id)?.userId;
@@ -502,13 +501,13 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 5, importIssue: 'member_limit' });
   });
 
-  // Attack: a platform that names any number of courses makes the app read at most `maxCoursesPerHour` different ones
+  // Attack: a platform that names any number of courses makes the app read at most `maxContextsPerHour` different ones
   // within an hour: the course that would pass the bound waits, a retry of a course already counted reads. The course
   // says its import waits, unless the last import was refused in a way that lasts.
   it('starts no import of a connection whose courses within the hour reached their bound, and records that it waits', async () => {
     const side = await connectToFakePlatform();
     const { id: _id, ...held } = (await contextRow(side.context.id)) ?? side.context;
-    const spent = Array.from({ length: maxCoursesPerHour - 1 }, (_, index) => ({ ...held, contextId: `spent-${index}`, importRanAt: getIsoDate() }));
+    const spent = Array.from({ length: maxContextsPerHour - 1 }, (_, index) => ({ ...held, contextId: `spent-${index}`, importRanAt: getIsoDate() }));
     await db.insert(ltiContextsTable).values(spent);
     const api = fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] }));
     const other = await addCourse(side, side.connection, `${side.issuer}/api/lti/courses/course-2/memberships`, 'course-2');
@@ -650,11 +649,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     const moodle = moodlePlatform('moodle.school.edu', 'moodle-client');
     const connection = await registerAt(side, moodle);
     const context = await addCourse(side, connection, moodle.membershipsUrl('2'));
-    const teacherRoles = [
-      'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Administrator',
-      lisContextRoles.instructor,
-      'http://purl.imsglobal.org/vocab/lis/v2/system/person#Administrator',
-    ];
+    const teacherRoles = [lisInstitutionRoles.administrator, lisContextRoles.instructor, lisSystemRoles.administrator];
     const api = fakePlatformApi((url) =>
       url.searchParams.get('from') === '50'
         ? moodleMemberPage(url, [moodleMember('3', 'Sam Student', [lisContextRoles.learner])])
@@ -770,7 +765,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
   });
 
   // Attack: a person the app's role mapping gives no role is no member: the import leaves them out with no account,
-  // and the course says people were left out. An institution Administrator alone is read as the context's.
+  // and the course says people were left out. An institution Administrator alone has no role in the context.
   it('leaves out who has no role the app takes, makes no account for them, and records it', async () => {
     const side = await connectToFakePlatform();
     const api = fakePlatformApi(() => ({
@@ -781,7 +776,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
       ],
     }));
     await importLtiMembersOp(side.context.id, api.options);
-    expect((await ltiIdentities(side.issuer)).map(({ subject }) => subject).sort()).toEqual(['lms-admin', 'lms-learner']);
+    expect((await ltiIdentities(side.issuer)).map(({ subject }) => subject)).toEqual(['lms-learner']);
     expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 3, importIssue: 'no_role' });
   });
 

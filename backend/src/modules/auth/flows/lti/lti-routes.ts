@@ -127,15 +127,15 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
       401: { description: 'Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected.' },
       403: {
         description:
-          'Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a role the app takes, a test user, a launch without a course by someone not known here yet, an archived course, or a new member when the organization has no seat left.',
+          'Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a role the app takes, a test user, a launch without a context by someone not known here yet, an archived channel, or a new member when the organization has no seat left.',
       },
       404: { description: "Organization gone\n\nA page: the connection's tenant holds no organization." },
-      409: { description: 'Not set up yet\n\nA page: someone who can change the course on the platform opens the app from it first.' },
+      409: { description: 'Not set up yet\n\nA page: someone who sets the context up opens the app from it first.' },
     },
   }),
 });
 
-/** The courses of an organization's LTI connections, for a user who may update the organization. */
+/** The LTI contexts of an organization's LTI connections, for a user who may update the organization. */
 export const ltiContextRoutes = createXRoutes(['connections', 'cella'], {
   listLtiContexts: xRoute({
     method: 'get',
@@ -144,7 +144,7 @@ export const ltiContextRoutes = createXRoutes(['connections', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get LTI contexts',
     description:
-      "The courses of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
+      "The contexts of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
     request: { params: tenantOrgParamSchema, query: listLtiContextsQuerySchema },
     responses: { 200: json('LTI contexts', paginationSchema(ltiContextSchema), { results: [mockLtiContextResponse()], totalSize: 1 }) },
   }),

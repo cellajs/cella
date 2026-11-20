@@ -3863,7 +3863,7 @@ export type FinishLtiLaunchErrors = {
   /**
    * Launch refused
    *
-   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a role the app takes, a test user, a launch without a course by someone not known here yet, an archived course, or a new member when the organization has no seat left.
+   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a role the app takes, a test user, a launch without a context by someone not known here yet, an archived channel, or a new member when the organization has no seat left.
    */
   403: unknown;
   /**
@@ -3875,7 +3875,7 @@ export type FinishLtiLaunchErrors = {
   /**
    * Not set up yet
    *
-   * A page: someone who can change the course on the platform opens the app from it first.
+   * A page: someone who sets the context up opens the app from it first.
    */
   409: unknown;
   /**
@@ -4168,7 +4168,7 @@ export type ListLtiContextsResponses = {
       title: string | null;
       channel: ChannelBase;
       /**
-       * Where the platform lists the course's members (NRPS), from the last launch that named it; null when none did
+       * Where the platform lists the context's members (NRPS), from the last launch that named it; null when none did
        */
       membershipsUrl: string | null;
       /**
@@ -4180,7 +4180,7 @@ export type ListLtiContextsResponses = {
        */
       importReadCount: number | null;
       /**
-       * Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.
+       * Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the context's channel is not active. Null when it read and wrote everyone.
        */
       importIssue:
         | 'waiting'

@@ -1938,7 +1938,7 @@ export const sendStepUpCode = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI contexts
  *
- * The courses of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.
+ * The contexts of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-contexts** ·· [listLtiContexts](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/GET/tenants/{tenantId}/organizations/{organizationId}/lti-contexts) ·· _connections · cella_
  *

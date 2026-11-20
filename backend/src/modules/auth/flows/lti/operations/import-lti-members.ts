@@ -4,7 +4,6 @@ import type { RestrictionCap } from 'shared';
 import type { DbContext } from '#/core/context';
 import { baseDb } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
-import { ltiRolesAsRead } from '#/lib/lti-vocabulary';
 import type { BackendQueue, MembershipEntity } from '#/lib/module';
 import { getPgBoss } from '#/lib/pg-boss';
 import { type LtiMember, type ReadLtiMembersOptions, readLtiMembers } from '#/modules/auth/flows/lti/helpers/platform-memberships';
@@ -25,7 +24,7 @@ import { TimeSpan } from '#/utils/time-span';
 
 const dbCtx = { var: { db: baseDb } };
 
-/** How long after an import of a context neither a teacher's launch nor a queued job starts another. */
+/** How long after an import of a context neither a launch that sets it up nor a queued job starts another. */
 const importPeriod = new TimeSpan(10, 'm');
 
 /** How often the job tries a failed import again, from a minute up to an hour apart. */
@@ -35,15 +34,15 @@ const importRetryLimit = 5;
 const importBudgetSeconds = 120;
 
 /**
- * The most courses of one connection whose import ran within the last hour, however many its platform names. A class
+ * The most contexts of one connection whose import ran within the last hour, however many its platform names. A class
  * whose 60 teams each switch on a tab of their own imports 61 contexts with its course: two such classes fit in an hour.
  * What an import adds is bounded by the tenant's seats, and what one read costs by the page and member limits.
  */
-export const maxCoursesPerHour = 150;
+export const maxContextsPerHour = 150;
 
-/** Whether the connection's imports within the last hour reached `maxCoursesPerHour`. */
+/** Whether the connection's imports within the last hour reached `maxContextsPerHour`. */
 const connectionImportsSpent = async (connectionId: string) =>
-  (await countLtiImportsSince(dbCtx, { connectionId, since: isoDateAgo(new TimeSpan(1, 'h')) })) >= maxCoursesPerHour;
+  (await countLtiImportsSince(dbCtx, { connectionId, since: isoDateAgo(new TimeSpan(1, 'h')) })) >= maxContextsPerHour;
 
 /** Whether an import of the context ran within `importPeriod`. */
 const importedLately = ({ importRanAt }: LtiContextModel) => !!importRanAt && importRanAt > isoDateAgo(importPeriod);
@@ -67,7 +66,7 @@ interface ImportTarget {
  */
 const importPerson = async (ctx: DbContext, { connection, channel, organization, memberQuota, by }: ImportTarget, person: LtiMember) => {
   if (!(await holdConnection(ctx, { id: connection.id }))) return 'connection_gone';
-  const role = ltiRoleIn(channel.entityType, { ltiRoles: ltiRolesAsRead(person.roles), connection });
+  const role = ltiRoleIn(channel.entityType, { ltiRoles: person.roles, connection });
   if (!role) return 'no_role';
   const { user_id: sub, name, given_name: givenName, family_name: familyName, email } = person;
   const admitted = await admitLtiPerson(ctx, { connection, organization, memberQuota, person: { sub, name, givenName, familyName, email }, by });
@@ -128,7 +127,7 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
       options.signal?.throwIfAborted();
       const outcome = await baseDb.transaction((tx) => importPerson({ var: { db: tx } }, target, person));
       if (outcome === 'connection_gone') return;
-      // The member limit, which an admin acts on, outranks a list too long, true of the course at every import, which
+      // The member limit, which an admin acts on, outranks a list too long, true of the context at every import, which
       // outranks people left without a role.
       if (outcome === 'member_limit') issue = outcome;
       else if (outcome === 'no_role' && !issue) issue = outcome;
@@ -172,9 +171,9 @@ export const ltiMemberImportQueue = {
 } satisfies BackendQueue;
 
 /**
- * Queues a member import of a context after a launch by its Instructor or Administrator `by`, when the context holds
- * a membership address and no import ran for it within `importPeriod`. While its connection's hour is spent
- * (`maxCoursesPerHour`) it queues nothing and records that the import waits. The launch never waits for it: a job
+ * Queues a member import of a context after a launch by `by`, who sets it up (`setsUpLtiContext`), when the context
+ * holds a membership address and no import ran for it within `importPeriod`. While its connection's hour is spent
+ * (`maxContextsPerHour`) it queues nothing and records that the import waits. The launch never waits for it: a job
  * store that refuses the job, or a failed write, is logged.
  */
 export const requestLtiMemberImport = async (context: LtiContextModel, by: UserId) => {

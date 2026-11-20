@@ -9712,13 +9712,13 @@
             "description": "Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected."
           },
           "403": {
-            "description": "Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a role the app takes, a test user, a launch without a course by someone not known here yet, an archived course, or a new member when the organization has no seat left."
+            "description": "Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a role the app takes, a test user, a launch without a context by someone not known here yet, an archived channel, or a new member when the organization has no seat left."
           },
           "404": {
             "description": "Organization gone\n\nA page: the connection's tenant holds no organization."
           },
           "409": {
-            "description": "Not set up yet\n\nA page: someone who can change the course on the platform opens the app from it first."
+            "description": "Not set up yet\n\nA page: someone who sets the context up opens the app from it first."
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
@@ -10017,7 +10017,7 @@
         "operationId": "listLtiContexts",
         "tags": ["connections", "cella"],
         "summary": "Get LTI contexts",
-        "description": "The courses of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
+        "description": "The contexts of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
         "x-enabled-by": {
           "strategy": "lti"
         },
@@ -10166,7 +10166,7 @@
                           },
                           "membershipsUrl": {
                             "type": ["string", "null"],
-                            "description": "Where the platform lists the course's members (NRPS), from the last launch that named it; null when none did"
+                            "description": "Where the platform lists the context's members (NRPS), from the last launch that named it; null when none did"
                           },
                           "importRanAt": {
                             "type": ["string", "null"],
@@ -10193,7 +10193,7 @@
                               "inactive",
                               null
                             ],
-                            "description": "Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone."
+                            "description": "Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the context's channel is not active. Null when it read and wrote everyone."
                           },
                           "createdAt": {
                             "type": "string",

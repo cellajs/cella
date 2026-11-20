@@ -16,15 +16,15 @@ export const ltiClaims = {
   toolPlatform: 'https://purl.imsglobal.org/spec/lti/claim/tool_platform',
   launchPresentation: 'https://purl.imsglobal.org/spec/lti/claim/launch_presentation',
   custom: 'https://purl.imsglobal.org/spec/lti/claim/custom',
-  /** Where the launch's course lists its members (Names and Role Provisioning Services 2.0, section 3.6.1.1). */
+  /** Where the launch's context lists its members (Names and Role Provisioning Services 2.0, section 3.6.1.1). */
   namesRoleService: 'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice',
 } as const;
 
-/** Names and Role Provisioning Services 2.0 (NRPS): the service an LTI tool reads a course's members through. */
+/** Names and Role Provisioning Services 2.0 (NRPS): the service an LTI tool reads a context's members through. */
 export const ltiNrps = {
-  /** The scope a token request asks for to read a course's members (section 3.6.1.2). */
+  /** The scope a token request asks for to read a context's members (section 3.6.1.2). */
   scope: 'https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly',
-  /** The media type of a page of a course's members (section 2.1). */
+  /** The media type of a page of a context's members (section 2.1). */
   mediaType: 'application/vnd.ims.lti-nrps.v2.membershipcontainer+json',
   /** The service version the claim names and the members' address answers. */
   version: '2.0',
@@ -49,13 +49,19 @@ export const lisContextTypeUri = (type: string) => lisContextTypeUris.find((uri)
 /** Whether a context type, as a full URI, is a LIS course or group type: Canvas's `Account` and `User` are not. */
 export const isLisContextType = (type: string) => lisContextTypeUris.includes(type);
 
-/** The core LIS context roles (LTI Core 1.3, appendix A.2.3), as full URIs: short names are deprecated. */
+/**
+ * The LIS context roles (LTI Core 1.3, appendix A.2.3), as full URIs: short names are deprecated. Administrator,
+ * ContentDeveloper, Instructor, Learner and Mentor are core roles; Manager, Member and Officer are not.
+ */
 export const lisContextRoles = {
   administrator: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Administrator',
   contentDeveloper: 'http://purl.imsglobal.org/vocab/lis/v2/membership#ContentDeveloper',
   instructor: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor',
   learner: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Learner',
   mentor: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Mentor',
+  manager: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Manager',
+  member: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Member',
+  officer: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Officer',
 } as const;
 
 /** The core LIS institution roles a launch may carry beside its context roles (LTI Core 1.3, appendix A.2.2), as full URIs. */
@@ -69,27 +75,40 @@ export const lisInstitutionRoles = {
   student: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student',
 } as const;
 
+/** The LIS system roles (LTI Core 1.3, appendix A.2.1), as full URIs. Administrator and None are core roles. */
+export const lisSystemRoles = {
+  administrator: 'http://purl.imsglobal.org/vocab/lis/v2/system/person#Administrator',
+  none: 'http://purl.imsglobal.org/vocab/lis/v2/system/person#None',
+  accountAdmin: 'http://purl.imsglobal.org/vocab/lis/v2/system/person#AccountAdmin',
+  creator: 'http://purl.imsglobal.org/vocab/lis/v2/system/person#Creator',
+  sysAdmin: 'http://purl.imsglobal.org/vocab/lis/v2/system/person#SysAdmin',
+  sysSupport: 'http://purl.imsglobal.org/vocab/lis/v2/system/person#SysSupport',
+  user: 'http://purl.imsglobal.org/vocab/lis/v2/system/person#User',
+} as const;
+
 /** Whether a role, as a full URI, is a LIS context role or one of its sub-roles, not an institution or system role. */
 export const isLisContextRole = (role: string) => role.startsWith('http://purl.imsglobal.org/vocab/lis/v2/membership');
 
-/**
- * A person's LTI roles as an LTI tool reads them, at a launch and in an import: the institution role Administrator with
- * no context role, as platforms send their admins outside the courses they are enrolled in, adds the context role
- * Administrator, for every app alike. A person the platform sends any context role keeps the roles it sent.
- */
-export const ltiRolesAsRead = (roles: string[]) =>
-  !roles.some(isLisContextRole) && roles.includes(lisInstitutionRoles.administrator) ? [...roles, lisContextRoles.administrator] : roles;
+/** Whether a role, as a full URI, is from a LIS role vocabulary: a system, institution or context role. */
+export const isLisRole = (role: string) =>
+  isLisContextRole(role) ||
+  role.startsWith('http://purl.imsglobal.org/vocab/lis/v2/institution/person#') ||
+  role.startsWith('http://purl.imsglobal.org/vocab/lis/v2/system/person#');
+
+/** The context role names of appendix A.2.3, the only roles a platform may still write by a short name. */
+const lisContextRoleNames: readonly string[] = Object.values(lisContextRoles).map((uri) => uri.slice(uri.indexOf('#') + 1));
 
 /**
- * A role as a full URI: a core context role by its short name (`Learner`, or `Instructor#TeachingAssistant` for a
- * sub-role), as NRPS lets a platform write it, is a LIS membership role. Any other role stays as it comes.
+ * A role as a full URI: a LIS context role by its short name (`Learner`, or `Instructor#TeachingAssistant` for a
+ * sub-role), as NRPS lets a platform write it, is a LIS membership role. Any other role stays as it comes, and a short
+ * name such as `Owner` is then no LIS role.
  */
 export const lisRoleUri = (role: string) => {
-  if (role.includes(':') || role.includes('/')) return role;
-  const [base, subRole] = role.split('#');
-  return subRole
-    ? `http://purl.imsglobal.org/vocab/lis/v2/membership/${base}#${subRole}`
-    : `http://purl.imsglobal.org/vocab/lis/v2/membership#${base}`;
+  const [base, subRole, ...rest] = role.split('#');
+  if (rest.length || subRole === '' || !lisContextRoleNames.includes(base)) return role;
+  return subRole === undefined
+    ? `http://purl.imsglobal.org/vocab/lis/v2/membership#${base}`
+    : `http://purl.imsglobal.org/vocab/lis/v2/membership/${base}#${subRole}`;
 };
 
 /** The LTI system role a platform adds for a user it made for testing, such as a student view (LTI Core 1.3, A.2.4). */

@@ -114,7 +114,7 @@ export const ltiKeySetSchema = z.object({
   ),
 });
 
-/** The LTI contexts of an organization, the courses launched most recently first by default. */
+/** The LTI contexts of an organization, those launched most recently first by default. */
 export const listLtiContextsQuerySchema = pageQuerySchema.extend({
   connectionId: validUuidSchema.optional().describe('Lists the contexts of this LTI connection only'),
   orderBy: orderByQuerySchema(['createdAt'], 'createdAt desc'),
@@ -130,14 +130,14 @@ export const ltiContextSchema = z.object({
   membershipsUrl: z
     .string()
     .nullable()
-    .describe("Where the platform lists the course's members (NRPS), from the last launch that named it; null when none did"),
+    .describe("Where the platform lists the context's members (NRPS), from the last launch that named it; null when none did"),
   importRanAt: z.string().nullable().describe('When the last member import ran; null before the first'),
   importReadCount: z.int().nullable().describe('How many people the last member import read from the platform'),
   importIssue: z
     .enum(ltiImportIssues)
     .nullable()
     .describe(
-      "Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.",
+      "Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the context's channel is not active. Null when it read and wrote everyone.",
     ),
   createdAt: z.string().describe('When the first launch recorded it'),
 });

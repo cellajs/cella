@@ -20,14 +20,15 @@ import { afterAll, afterEach, describe, expect, it, onTestFinished, vi } from 'v
 import { AppError, type ErrorKey, resourceErrorTexts } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
-import { lisContextRoles, lisInstitutionRoles, ltiClaims, ltiRolesAsRead, ltiTestUserRole } from '#/lib/lti-vocabulary';
+import { lisContextRoles, lisInstitutionRoles, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
 import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
 import { ltiLaunchUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
-import { planLtiContextChannel, storedLtiContextChannel } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
-import { importLtiMembersOp, ltiMemberImportQueue, maxCoursesPerHour } from '#/modules/auth/flows/lti/operations/import-lti-members';
+import { ltiRoleIn } from '#/modules/auth/flows/lti/operations/admit-lti-person';
+import { planLtiContextChannel, setsUpLtiContext, storedLtiContextChannel } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
+import { importLtiMembersOp, ltiMemberImportQueue, maxContextsPerHour } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
 import { ltiContextTypes } from '#/modules/lti-platform/launch-context';
@@ -335,25 +336,20 @@ describe('LTI launch at the app as an LTI tool', async () => {
     await expectRefusalPage(noStorage, 400, 'lti_storage_missing');
   });
 
-  // Contract: the template's role mapping as a platform's launch meets it. A context role admits, and so does the
-  // institution role Administrator alone, which platforms send their admins and this side reads as the context's
-  // Administrator; a context role decides whenever there is one. A launch with neither is refused and creates no account.
-  it('admits a context role or the institution role Administrator at the least privileged role, and refuses a launch with neither', async () => {
+  // Contract: the template's role mapping as a platform's launch meets it: a context role admits. Attack: an institution
+  // Administrator without a context role, as Canvas sends anyone who administers any of its accounts, is refused like
+  // anyone else without one, and creates no account.
+  it('admits a context role at the least privileged role, and refuses institution roles alone and no roles', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
     const roleOf = async (sub: string) => {
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.subject, sub));
       return identity && (await orgMembershipOf(identity.userId, connected.org.id))?.role;
     };
-    const leastPrivileged = hierarchy.getLeastPrivilegedRole('organization');
 
+    expect((await launch(connected, { sub: 'lms-learner', [ltiClaims.roles]: [lisContextRoles.learner] })).response.status).toBe(303);
+    expect(await roleOf('lms-learner')).toBe(hierarchy.getLeastPrivilegedRole('organization'));
     for (const [sub, roles] of [
-      ['lms-learner', [lisContextRoles.learner]],
       ['lms-admin', [lisInstitutionRoles.administrator]],
-    ] as const) {
-      expect((await launch(connected, { sub, [ltiClaims.roles]: roles })).response.status, sub).toBe(303);
-      expect(await roleOf(sub)).toBe(leastPrivileged);
-    }
-    for (const [sub, roles] of [
       ['lms-staff', [lisInstitutionRoles.staff]],
       ['lms-nobody', []],
     ] as const) {
@@ -705,7 +701,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
     const { id: _id, ...held } = course;
     await db
       .insert(ltiContextsTable)
-      .values(Array.from({ length: maxCoursesPerHour }, (_, index) => ({ ...held, contextId: `spent-${index}`, importRanAt: getIsoDate() })));
+      .values(Array.from({ length: maxContextsPerHour }, (_, index) => ({ ...held, contextId: `spent-${index}`, importRanAt: getIsoDate() })));
     expect((await launch(second, { ...elsewhere, ...teacher })).response.status).toBe(303);
     expect((await courses()).find(({ id }) => id === course.id)).toEqual(course);
 
@@ -734,20 +730,26 @@ describe('LTI launch at the app as an LTI tool', async () => {
   });
 
   // The template's hierarchy has no channel below the organization: the plan is checked as an app with one meets it.
-  it('lets an Instructor or Administrator set up a context below the organization, and tells anyone else it is not set up', async () => {
+  // Attack: an institution Administrator, alone or beside a Learner, sets no context up.
+  it('lets whoever the mapping gives a role that may update set up a context below the organization, and tells anyone else it is not set up', async () => {
     const { org, connection: ltiConnection } = await connect(await fakePlatform('platform-a'));
+    if (!isLtiConnection(ltiConnection)) throw new Error('the test stored no LTI connection');
     const ctx = { var: { db } };
     const context = { id: 'course-1', title: 'Course one', types: [] };
-    const plan = (ltiRoles: string[]) => () => planLtiContextChannel({ connection: ltiConnection, context, channelType: 'organization', ltiRoles });
+    const plan = (ltiRoles: string[]) => () => {
+      const role = ltiRoleIn('organization', { ltiRoles, connection: ltiConnection });
+      const setsUp = !!role && setsUpLtiContext(org.id, 'organization', role);
+      return planLtiContextChannel({ connection: ltiConnection, context, channelType: 'organization', setsUp });
+    };
 
-    expect(plan([lisContextRoles.learner])).toThrow(expect.objectContaining({ status: 409, type: 'lti_context_not_set_up' }));
     expect(plan([lisContextRoles.instructor])()).toEqual({ create: context, channelType: 'organization' });
     expect(plan([lisContextRoles.administrator])()).toEqual({ create: context, channelType: 'organization' });
-    // An institution Administrator with no context role sets a context up too; a context role decides when there is one.
-    expect(plan(ltiRolesAsRead([lisInstitutionRoles.administrator]))()).toEqual({ create: context, channelType: 'organization' });
-    expect(plan(ltiRolesAsRead([lisContextRoles.learner, lisInstitutionRoles.administrator]))).toThrow(
-      expect.objectContaining({ status: 409, type: 'lti_context_not_set_up' }),
-    );
+    for (const roles of [
+      [lisContextRoles.learner],
+      [lisInstitutionRoles.administrator],
+      [lisContextRoles.learner, lisInstitutionRoles.administrator],
+    ])
+      expect(plan(roles), roles.join(' ')).toThrow(expect.objectContaining({ status: 409, type: 'lti_context_not_set_up' }));
 
     // Once a launch recorded the channel it created, everyone of the context lands there, also through a new
     // registration of the platform in the tenant.
