@@ -42,6 +42,7 @@ No script: manual.
 6. Not caught. Run `pnpm generate`: the migration sets the `connections.jit_provisioning` default to false. An SSO connection created without `jitProvisioning` now admits invited addresses only.
 7. Not caught. Add `data.sql` to that migration: it turns every cap of `0` that `tenants.restrictions` stores into `'unlimited'`, the meaning it had. An entity type the config named no cap for was stored as `0` on every tenant, and refuses every create until then.
 8. Not caught. Where app code decides about other people or a tenant's content from `ctx.var.memberships` on a user-level route, read `accessFrom(ctx)` or `actor.bindings`.
+9. Not caught. The template's waitlist tests and its tests of unregistered OAuth clients pass only because its `config.development.ts`, which the test mode extends, turns on `has.waitlist` and `defaultRestrictions.allowUnregisteredClients`; an app that keeps either off sets both in its `config.test.ts`.
 
 ## Verify
 
