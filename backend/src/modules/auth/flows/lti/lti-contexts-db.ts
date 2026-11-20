@@ -84,11 +84,11 @@ export type LtiContextModel = typeof ltiContextsTable.$inferSelect;
 export type InsertLtiContextModel = typeof ltiContextsTable.$inferInsert;
 
 /**
- * The memberships an LTI context gave: one a launch or an import of the context made, with those added along with it,
- * and one another context gave that this one admits too. A membership given another way, such as by an invitation,
- * holds no row and no import ends it. A row goes with its context or its membership. `updatedAt`, or `createdAt`
- * before a second write, is when a launch or an import of the context last admitted the person: a complete read ends
- * only the rows not written since it began.
+ * The memberships an LTI context gave: the seat and the channel's membership a launch or an import of the context
+ * made, and one another context gave that this one admits too. A membership with no row, such as one given by an
+ * invitation or a parent's that came along, is never ended by a list. A row goes with its context or its membership.
+ * `updatedAt`, or `createdAt` before a second write, is when a launch or an import of the context last admitted the
+ * person: a complete read ends only the rows not written since it began.
  */
 export const ltiContextMembershipsTable = snakeCase.table(
   'lti_context_memberships',

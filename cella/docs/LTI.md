@@ -173,7 +173,7 @@ So members are read from any platform that registers the app by Dynamic Registra
 
 Each person listed gets the account their own launch finds later, and the role a launch would give them, by the same rules.
 
-A read of the whole list is the platform's word on who is in the context, and a list takes away only what a list once held. After one that names an active member, a person an earlier list of the context held loses what the context gave them once this list leaves them out or names them Inactive.
+A read of the whole list is the platform's word on who is in the context. The app records the memberships a context gives in its own page and the seat that comes with them, and which of them a list held. After a read that names an active member, a person an earlier list held loses such a recorded membership once this list leaves them out or names them Inactive.
 
 Their seat in the organization goes too, when LTI gave it, nothing else holds them there and its role may not update the organization. Their account stays, and a later launch or import admits them again.
 
@@ -183,7 +183,7 @@ The import removes nobody after a read cut short, a failed or refused read, a re
 
 One limit: a page without a link to the next is the end of the list. A platform that leaves that link off a page ends what the context gave everyone listed past it.
 
-A membership an import gave before the app recorded what a context gives holds no record, unless the upgrade recorded it: no import ends it.
+A membership with no record is never ended by a list: one an invitation gave, a parent page's membership that came along with the context's, and every membership given before the app kept records. An admin removes those. A person who keeps such a membership in the organization keeps their seat too.
 
 An account an import made for someone who never launched is deleted after a retention period, once it holds no membership and its connection is gone. An account that ever signed in stays.
 

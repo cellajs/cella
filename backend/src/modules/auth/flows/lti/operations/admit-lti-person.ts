@@ -8,7 +8,7 @@ import { createLtiAccount, type LtiPerson, nameLtiAccount } from '#/modules/auth
 import type { LtiConnection } from '#/modules/connections/connections-db';
 import { resolveOrganizationMembershipRole } from '#/modules/memberships/helpers/membership-helpers';
 import type { MembershipModel } from '#/modules/memberships/memberships-db';
-import { findMembershipsByUserIds, findMembershipsByUserIdsAndChannel, updateMembershipRole } from '#/modules/memberships/memberships-queries';
+import { findMembershipsByUserIdsAndChannel, updateMembershipRole } from '#/modules/memberships/memberships-queries';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { hasFreeSeats } from '#/modules/memberships/operations/organization-seats';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
@@ -141,12 +141,12 @@ interface ApplyLtiRoleOpts {
 }
 
 /**
- * Gives a person the role a launch or an import maps them to in the context's channel, and records the seat, the
- * channel's membership and those it brings along as the context's where it made them or a context recorded them. A
- * role in a channel below the organization follows the platform up and down. An organization role only goes up, and
- * never to one that may update the organization (`belowOrganizationUpdate`): a platform's administrator administers
- * the platform, not this organization. A person without a seat is seated first at such a role: the channel's
- * membership then brings along no organization membership above it.
+ * Gives a person the role a launch or an import maps them to in the context's channel, and records the seat and the
+ * channel's membership as the context's where it made them or a context recorded them. A parent membership the
+ * channel's brings along gets no record. A role in a channel below the organization follows the platform up and down.
+ * An organization role only goes up, and never to one that may update the organization (`belowOrganizationUpdate`): a
+ * platform's administrator administers the platform, not this organization. A person without a seat is seated first
+ * at such a role: the channel's membership then brings along no organization membership above it.
  */
 export const applyLtiRole = async (ctx: DbContext, { organization, contextId, listed, channel, userId, seat, role, by }: ApplyLtiRoleOpts) => {
   const organizationRole = belowOrganizationUpdate(
@@ -167,10 +167,8 @@ export const applyLtiRole = async (ctx: DbContext, { organization, contextId, li
   if (channel.entityType !== 'organization') {
     const [membership] = await findMembershipsByUserIdsAndChannel(ctx, { userIds: [userId], channelId: channel.id });
     if (!membership) {
-      const heldIds = async () => (await findMembershipsByUserIds(ctx, { userIds: [userId], organizationId: organization.id })).map(({ id }) => id);
-      const before = await heldIds();
-      await insertMemberships(ctx, { items: [{ userId, role, entity: channel, createdBy: by }] });
-      for (const id of await heldIds()) if (!before.includes(id)) admissions.push({ id, created: true });
+      const [made] = await insertMemberships(ctx, { items: [{ userId, role, entity: channel, createdBy: by }] });
+      admissions.push({ id: made.id, created: true });
     } else {
       if (membership.role !== role) await updateMembershipRole(ctx, { id: membership.id, role, by });
       admissions.push({ id: membership.id, created: false });

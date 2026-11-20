@@ -1,7 +1,0 @@
--- At the end of the generated migration, after the foreign keys of "lti_context_memberships": a membership an LTI
--- member import made before the upgrade is recorded as held by a list. Its writer is the service account of a
--- context's connection and its channel is that context's channel. It is recorded under every such context.
-INSERT INTO "lti_context_memberships" ("context_id", "membership_id", "listed", "created_by") SELECT "lti_contexts"."id", "memberships"."id", true, "memberships"."created_by" FROM "lti_contexts" JOIN "service_accounts" ON "service_accounts"."connection_id" = "lti_contexts"."connection_id" JOIN "memberships" ON "memberships"."created_by" = "service_accounts"."id" AND "memberships"."channel_id" = "lti_contexts"."channel_id" ON CONFLICT DO NOTHING;--> statement-breakpoint
-
--- Right after it: the seat the same import made beside a membership in a channel below the organization.
-INSERT INTO "lti_context_memberships" ("context_id", "membership_id", "listed", "created_by") SELECT "held"."context_id", "seat"."id", true, "seat"."created_by" FROM "lti_context_memberships" AS "held" JOIN "lti_contexts" ON "lti_contexts"."id" = "held"."context_id" AND "lti_contexts"."channel_type" <> 'organization' JOIN "memberships" ON "memberships"."id" = "held"."membership_id" JOIN "memberships" AS "seat" ON "seat"."user_id" = "memberships"."user_id" AND "seat"."channel_id" = "lti_contexts"."organization_id" AND "seat"."created_by" = "memberships"."created_by" ON CONFLICT DO NOTHING;
