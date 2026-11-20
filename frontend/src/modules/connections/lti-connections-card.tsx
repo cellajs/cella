@@ -1,5 +1,5 @@
 import { onlineManager, useSuspenseInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { GraduationCapIcon, LinkIcon, TrashIcon } from 'lucide-react';
+import { LinkIcon, PlugIcon, TrashIcon } from 'lucide-react';
 import { type MouseEvent, Suspense, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
@@ -128,7 +128,7 @@ function LtiConnectionTile({ connection, path }: { connection: Connection; path:
   return (
     <ExpandableTile
       value={connection.id}
-      icon={<GraduationCapIcon />}
+      icon={<PlugIcon />}
       title={connection.name}
       lead={<LtiContexts path={path} connectionId={connection.id} />}
       meta={
