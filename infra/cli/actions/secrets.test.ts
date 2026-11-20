@@ -3,9 +3,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { engineConfig as appConfig } from '../../config/engine-config';
 import { ESCAPED } from '../prompts/menu-select';
+import type { InfraContext } from '../shared';
 import { importEnvFile } from './env-import';
-import { secretsMenu } from './secrets';
+import { offerDeploy, secretsMenu } from './secrets';
 
 const prompts = { select: vi.fn(), password: vi.fn(), confirm: vi.fn(), input: vi.fn() };
 
@@ -32,6 +34,28 @@ vi.mock('../../lib/scaleway/scaleway-secret-manager', () => ({
 }));
 
 vi.mock('../../tasks/provision-managed-key', () => ({ provisionManagedKey: (...args: unknown[]) => provisionManagedKey(...args) }));
+
+const acquireStackLockOrExit = vi.fn();
+const confirmOrDefault = vi.fn();
+const recordRotation = vi.fn();
+const startBlockedTarget = vi.fn();
+const redeployAfterRotation = vi.fn();
+
+vi.mock('../shared', async (original) => ({
+  ...(await original<typeof import('../shared')>()),
+  acquireStackLockOrExit: (...args: unknown[]) => acquireStackLockOrExit(...args),
+  confirmOrDefault: (...args: unknown[]) => confirmOrDefault(...args),
+}));
+vi.mock('../../lib/stack/control-store', async (original) => ({
+  ...(await original<typeof import('../../lib/stack/control-store')>()),
+  makeControlClient: async () => ({}),
+  recordRotation: (...args: unknown[]) => recordRotation(...args),
+}));
+vi.mock('./start-deploy', async (original) => ({
+  ...(await original<typeof import('./start-deploy')>()),
+  startBlockedTarget: (...args: unknown[]) => startBlockedTarget(...args),
+  redeployAfterRotation: (...args: unknown[]) => redeployAfterRotation(...args),
+}));
 
 const listed = [
   { id: 'c-admin', name: 'admin-email', path: '/runtime', version_count: 0 },
@@ -226,5 +250,27 @@ describe('importEnvFile', () => {
     expect(writeKey).not.toHaveBeenCalled();
     expect(putSecretValue).not.toHaveBeenCalled();
     expect(log).toHaveBeenCalledWith(expect.stringContaining('Import cancelled'));
+  });
+});
+
+describe('offerDeploy', () => {
+  const context = { appConfig, environment: 'production', projectId: 'proj-1', hasCiKey: true } as InfraContext;
+  const operator = { accessKey: 'SCWOPERATOR', secretKey: 'operator-secret', organizationId: 'org-1' };
+
+  it('records a changed value as a rotation before it deploys the live release again, which alone would leave the machines on their env file', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const release = vi.fn();
+    acquireStackLockOrExit.mockResolvedValue({ release });
+    recordRotation.mockResolvedValue({ counter: 4, values: { at: '2026-11-20T10:00:00.000Z', by: 'operator:flip' } });
+    startBlockedTarget.mockResolvedValue(false);
+    confirmOrDefault.mockResolvedValue(true);
+    redeployAfterRotation.mockResolvedValue(undefined);
+
+    await offerDeploy(context, operator, true);
+
+    expect(recordRotation).toHaveBeenCalledWith(expect.objectContaining({ kind: 'values' }));
+    expect(release).toHaveBeenCalled();
+    expect(redeployAfterRotation).toHaveBeenCalledWith(context, operator);
+    expect(recordRotation.mock.invocationCallOrder[0]).toBeLessThan(redeployAfterRotation.mock.invocationCallOrder[0] ?? 0);
   });
 });

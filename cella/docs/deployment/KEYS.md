@@ -142,6 +142,8 @@ The token goes as a header with each fetch, in no URL and no file the build sees
 
 A rotation ends by deploying the live release again on new machines: until one succeeds, machines keep the old values. Then it starts the environment's target when that is another commit with no run yet. A rollback holds that way. A target that fails never leaves the machines on what the rotation replaced, since the live release deployed once already.
 
+A machine keeps the env file of its first boot, and a deploy of the release it runs changes nothing. Setting, deleting or importing an operator value in **Env vars & secrets** therefore counts as a rotation. It rotates no value of its own, and the deploy it offers replaces every machine like a rotation's. Declined, the next deploy does.
+
 ### Rotate secrets
 
 **Rotate secrets** (`pnpm infra rotate-secrets`, operator key) sets a fresh password on every database role. It also sets a fresh value for every generated secret marked `rotatable` in [runtime-secrets.config.ts](../../../infra/config/runtime-secrets.config.ts). The running machines keep the old values in their env files until the deploy replaces them. Meanwhile the database refuses the new connections they open.
