@@ -71,7 +71,7 @@ app.use('*', async (ctx, next) => {
 // request that carries an API key (the service guard rejects browser origins itself) or an access token skips it: a
 // page on another origin cannot add either header without that grant. So does a mail provider's one-click unsubscribe
 // (RFC 8058): a form post with no Origin, authorized by the token in its URL alone. So do an LTI platform's login
-// initiation and launch, cross-site form posts by design: a one-use nonce and the state in platform storage hold them.
+// initiation and launch, cross-site form posts by design: a one-use nonce and the value the frame keeps hold them.
 const csrfMiddleware = csrf({ origin: appConfig.frontendUrl });
 const isOneClickUnsubscribe = (ctx: Context<Env>) => ctx.req.method === 'POST' && ctx.req.path.endsWith('/notifications/unsubscribe');
 const ltiProtocolPosts = new Set(['/auth/lti/login', '/auth/lti/launch']);

@@ -92,12 +92,16 @@ Under LTI tools in organization settings, each LTI tool lists its tabs, each a l
 A person opens an LTI tool's tab on the platform. From that click to the page inside the frame:
 
 1. The platform checks that the person may read the channel now and is in the tab's audience, and records a launch that works once, and only in the browser session that started it.
-2. The frame posts a login to the LTI tool, which keeps its state in the platform's storage through the frame.
+2. The frame posts a login to the LTI tool, which keeps its launch state in the frame's own storage, or in the platform's storage.
 3. The platform checks again and signs a statement of who the person is, the tab's channel as the context, their roles and the released fields.
 4. The LTI tool checks the signature and its state, finds or creates the person, and sets their role in the channel the context maps to.
 5. The LTI tool starts an embedded session and shows that channel's embedded page in the frame.
 
-The platform's storage replaces a cookie for the launch state. Every launch checks the person's standing anew: someone who left the channel is refused at their next click.
+The LTI tool keeps the launch state in the frame's own browser storage first. Only where the browser keeps nothing there does it use the platform's storage, which a platform offers by naming a storage frame. No cookie holds it.
+
+So the app launches from a platform that names no storage frame, such as Moodle or Open edX, and in a window of its own as well as in a frame. Canvas's mobile apps, which answer no storage message, launch where their web view keeps the frame's storage. A browser that keeps nothing for the frame launches only in a frame of a platform that names one. No live Moodle, Open edX or Canvas app has launched the app.
+
+Every launch checks the person's standing anew: someone who left the channel is refused at their next click.
 
 A connection's login and launch pages may be framed by its own platform alone: the origin of its authorization endpoint, and the origin of its own pages when its configuration names one at registration. Their messages go to the authorization origin alone, and only its answers count.
 
@@ -234,13 +238,13 @@ Under LTI connections, each connection lists its LTI contexts, the channel each 
 
 A launch ends on a page under `/embed`: the app without its navigation, account menu or links out of the frame. Only the origins your mode lists may frame them, and no page of the app outside a registration or a launch may be framed at all.
 
-The embedded session lives in a cookie of its own, kept per platform site by the browser. It accepts a change only from the app's own pages, never from another frame on the platform's page. The embedded app keeps its own user, local data and realtime connection, apart from a tab of the app opened beside it.
+The embedded session lives in a cookie of its own, kept per platform site by the browser, and for a launch in a window of its own under the app's own site. It accepts a change only from the app's own pages, never from another frame on the platform's page. The embedded app keeps its own user, local data and realtime connection, apart from a tab of the app opened beside it.
 
 The template ships the organization's embedded page. An app that maps a context to a channel of its own adds an embedded route for that channel and names it in its pinned [routes-config.tsx](../../frontend/src/routes-config.tsx).
 
 ## When it fails
 
-- **A platform without platform storage:** the launch stops and asks the person to contact the platform's administrator.
+- **A launch state that does not come back:** the launch stops and asks the person to open the app again from the page they came from. It happens in a browser that keeps nothing for the frame, on a platform that names no storage frame, and to a launch that arrives in another window than its login.
 - **A browser that cannot keep the embedded session:** the page says so and names the browsers that can, such as Chrome, Edge and Firefox.
 - **A context not set up yet:** someone who arrives before anyone who sets it up is told that someone who manages the page on the platform must open it first.
 - **A launch without a context:** someone the organization does not know yet is told to open the app from a page they are a member of first.
@@ -269,7 +273,7 @@ The template ships the organization's embedded page. An app that maps a context 
 - The grade and deep linking services of LTI.
 - Of NRPS, a resource link's members (`rlid`, which the platform refuses) and the differences link.
 - Acting for a person on the platform: an installed LTI tool's token acts only as itself.
-- Launch state in a cookie: the platform's storage is the only place for it.
+- Launch state in a cookie.
 - Registrations that every tenant may install: each registration belongs to one tenant.
 - Binding an embedded page to the frame that launched it: a page on the platform's own origin can frame an embedded page under the person's session.
 - A launch from a live Canvas: none has been run, and what the app sends Canvas follows Canvas's code alone. Members are read only after a launch: nothing from Canvas is confirmed end to end.

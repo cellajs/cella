@@ -125,5 +125,5 @@
   "email.waitlist_request.text": "Thanks for joining the waitlist for {{appName}}. We'll notify you as soon as it's your turn.",
   "email.waitlist_request.title": "You're on the waitlist!",
   "lti.registered": "{{appName}} is registered with this platform. You can close this window.",
-  "lti.storage_unanswered": "The page you opened {{appName}} on did not answer. Open {{appName}} again from that page."
+  "lti.storage_unanswered": "This window could not keep track of the launch. Open {{appName}} again from the page you came from."
 }

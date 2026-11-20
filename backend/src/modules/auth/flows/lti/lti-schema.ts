@@ -91,7 +91,7 @@ export const ltiLaunchFormSchema = z.object({
   error_description: z.string().max(maxLength.url).optional(),
 });
 
-/** What the launch page posts to the finish route: the platform's launch, and the value platform storage held for this frame. */
+/** What the launch page posts to the finish route: the platform's launch, and the value the frame kept for it. */
 export const ltiFinishFormSchema = z.object({
   id_token: idTokenSchema,
   state: z.string().max(maxLength.url).optional(),

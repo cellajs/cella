@@ -2,10 +2,11 @@ import { z } from '@hono/zod-openapi';
 import { maxLength } from '#/db/utils/constraints';
 
 /**
- * What the login hands the launch page through the platform: the nonce it stored, the frame that holds its value and
- * the connection whose platform answers there. The page trusts none of it; the finish checks the launch itself.
+ * What the login hands the launch page through the platform: the nonce whose value it kept, the platform's storage
+ * frame when it named one, and the connection whose platform answers there. The page trusts none of it; the finish
+ * checks the launch itself.
  */
-const launchStateSchema = z.object({ nonce: z.uuid(), target: z.string().min(1).max(maxLength.field), connection: z.uuid() });
+const launchStateSchema = z.object({ nonce: z.uuid(), target: z.string().min(1).max(maxLength.field).optional(), connection: z.uuid() });
 
 export type LaunchState = z.infer<typeof launchStateSchema>;
 
@@ -22,5 +23,5 @@ export const decodeLaunchState = (value: string | undefined): LaunchState | unde
   }
 };
 
-/** The platform storage key the login puts the nonce's value under. */
+/** The key the login keeps the nonce's value under, in the frame's own storage or the platform's. */
 export const ltiStorageKey = (nonce: string) => `lti_nonce_${nonce}`;

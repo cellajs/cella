@@ -3636,7 +3636,7 @@ export type InitiateLtiLoginErrors = {
   /**
    * Login refused
    *
-   * A page naming why: the platform offers no platform storage.
+   * A field is longer than a login carries.
    */
   400: unknown;
   /**
@@ -3657,7 +3657,7 @@ export type InitiateLtiLoginResponses = {
   /**
    * Login page
    *
-   * A page that stores the launch value in platform storage and moves on to the platform.
+   * A page that keeps the launch value in the frame, or in platform storage, and moves on to the platform.
    */
   200: unknown;
 };
@@ -3707,7 +3707,7 @@ export type InitiateLtiLoginByPostErrors = {
   /**
    * Login refused
    *
-   * A page naming why: the platform offers no platform storage.
+   * A field is longer than a login carries.
    */
   400: unknown;
   /**
@@ -3736,7 +3736,7 @@ export type InitiateLtiLoginByPostResponses = {
   /**
    * Login page
    *
-   * A page that stores the launch value in platform storage and moves on to the platform.
+   * A page that keeps the launch value in the frame, or in platform storage, and moves on to the platform.
    */
   200: unknown;
 };
@@ -3795,7 +3795,7 @@ export type ReceiveLtiLaunchResponses = {
   /**
    * Launch page
    *
-   * A page that reads the launch value from platform storage and posts it on, same-origin.
+   * A page that reads the launch value back from the frame, or from platform storage, and posts it on, same-origin.
    */
   200: unknown;
 };

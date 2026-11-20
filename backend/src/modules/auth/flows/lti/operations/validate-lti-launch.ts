@@ -59,7 +59,7 @@ interface LaunchFacts {
   claims: JWTPayload;
   connection: LtiConnection;
   state: LaunchState;
-  /** The value platform storage held for the frame under the state's nonce. */
+  /** The value the frame kept under the state's nonce, in its own storage or the platform's. */
   storageValue: string;
   nowSeconds: number;
 }
@@ -105,7 +105,7 @@ const launchRules: LaunchRule[] = [
     rule: 'issued_at',
     holds: ({ claims, nowSeconds }) => typeof claims.iat === 'number' && Math.abs(nowSeconds - claims.iat) <= issuedAtWindowSeconds,
   },
-  // The nonce is the login's one-use token: spent here with the value platform storage held, so a replay finds nothing.
+  // The nonce is the login's one-use token: spent here with the value the frame kept, so a replay finds nothing.
   {
     rule: 'nonce',
     holds: async ({ claims, connection, state, storageValue }) => {

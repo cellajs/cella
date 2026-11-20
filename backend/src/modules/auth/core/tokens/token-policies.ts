@@ -44,8 +44,8 @@ export type TokenPolicy =
  * - `lti-launch` is a launch record: it names the person, the tenant, the resource link and the session that started
  *   it, and lives as long as a frame takes to load the LTI tool's login and come back to the launch endpoint.
  * - `lti-nonce` is a launch at the app as an LTI tool: its id goes out as the `nonce`, and its raw value is what the
- *   platform's storage holds for the frame, which the launch posts back. It names the connection, and lives as long as
- *   a platform takes from the login to the launch.
+ *   frame keeps, in its own storage or the platform's, which the launch posts back. It names the connection, and lives
+ *   as long as a platform takes from the login to the launch.
  */
 export const tokenPolicies = {
   invitation: { carrier: 'link', ttl: new TimeSpan(7, 'd'), singleUseWindow: new TimeSpan(30, 'm'), sameSite: 'lax' },

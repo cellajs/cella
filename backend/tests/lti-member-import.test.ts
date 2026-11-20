@@ -86,7 +86,7 @@ overrideConfig(appConfig.has, { ltiPlatform: true });
 
 const loopback = async () => [{ address: '127.0.0.1', family: 4 }];
 
-/** The platform storage exchange a login page carries in its body. */
+/** The storage exchange a login page carries in its body. */
 const pageExchange = (page: string): { key: string; value?: string; next?: string } =>
   JSON.parse(decodeHtml(/data-exchange="([^"]*)"/.exec(page)?.[1] ?? '{}'));
 

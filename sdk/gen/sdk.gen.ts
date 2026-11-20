@@ -1717,7 +1717,7 @@ export const registerLtiPlatform = <ThrowOnError extends boolean = true>(
 /**
  * Start an LTI launch
  *
- * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page.
+ * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that keeps the nonce's value in the frame's own storage, or in platform storage when the frame keeps nothing and the platform names a storage frame, then goes on to the platform's authorization endpoint. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page.
  *
  * **GET /auth/lti/login** ·· [initiateLtiLogin](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/lti/login) ·· _auth · cella_
  *
@@ -1743,7 +1743,7 @@ export const initiateLtiLogin = <ThrowOnError extends boolean = true>(
 /**
  * Start an LTI launch by form post
  *
- * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page. A cross-site form post by design: the CSRF check leaves it out.
+ * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that keeps the nonce's value in the frame's own storage, or in platform storage when the frame keeps nothing and the platform names a storage frame, then goes on to the platform's authorization endpoint. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page. A cross-site form post by design: the CSRF check leaves it out.
  *
  * **POST /auth/lti/login** ·· [initiateLtiLoginByPost](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/lti/login) ·· _auth · cella_
  *
@@ -1775,7 +1775,7 @@ export const initiateLtiLoginByPost = <ThrowOnError extends boolean = true>(
 /**
  * Receive an LTI launch
  *
- * The launch address a platform posts the ID token to, cross-site by design: the CSRF check leaves it out. Acts on nothing: answers a page that reads the login's value back from platform storage, accepting an answer from the platform's origin alone, and posts it with the ID token and the state to the finish route.
+ * The launch address a platform posts the ID token to, cross-site by design: the CSRF check leaves it out. Acts on nothing: answers a page that reads the login's value back from the frame's own storage, or else from platform storage, accepting an answer from the platform's origin alone, and posts it with the ID token and the state to the finish route.
  *
  * **POST /auth/lti/launch** ·· [receiveLtiLaunch](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/lti/launch) ·· _auth · cella_
  *
@@ -1824,7 +1824,7 @@ export const getLtiKeySet = <ThrowOnError extends boolean = true>(
 /**
  * Finish an LTI launch
  *
- * Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value platform storage held. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.
+ * Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value the frame kept. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.
  *
  * **POST /auth/lti/finish** ·· [finishLtiLaunch](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/lti/finish) ·· _auth · cella_
  *
