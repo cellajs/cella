@@ -125,8 +125,8 @@ describe('LTI platform', async () => {
     });
   });
 
-  // Contract: LTI Dynamic Registration 1.0 admits each of these registrations (sections 2.2.1 and 2.2.3), which the
-  // platform refused before. Each is accepted, and the registration answer says what the platform recorded.
+  // Contract: LTI Dynamic Registration 1.0 admits each of these registrations (sections 2.2.1 and 2.2.3). Each is
+  // accepted, and the registration answer says what the platform recorded, each member where the request had it.
   it('takes a registration without a resource link message, with more types, and with addresses off its domain', async () => {
     const admin = await orgWithUser();
     const request = ltiRegistrationRequest(generateId());
@@ -175,7 +175,9 @@ describe('LTI platform', async () => {
       tosUri: 'https://peer-review.example.com/terms',
       policyUri: null,
     });
+    expect(offDomain).toMatchObject({ client_uri: 'https://peer-review.example.com', tos_uri: 'https://peer-review.example.com/terms' });
     expect(offDomain).not.toHaveProperty('policy_uri');
+    expect(offDomain[ltiToolConfigurationMember]).not.toHaveProperty('client_uri');
   });
 
   it('refuses a registration token used before', async () => {

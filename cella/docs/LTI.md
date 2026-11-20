@@ -48,7 +48,7 @@ The platform takes any registration Dynamic Registration admits: it records the 
 
 An LTI tool asks for the personal fields it wants: name, email, picture. When approving, the admin chooses which of them a launch carries, and none is chosen by default. Whatever the admin releases, a launch always carries the person's id (the same for every LTI tool), their role, their language, the channel's name and short name, and the organization's tenant id.
 
-The approval dialog also shows every site launches go to and the site whose keys act as the LTI tool, on whatever domain the LTI tool names itself by. It links the LTI tool's home page, terms and privacy policy, when the LTI tool names them by HTTPS addresses.
+The approval dialog also shows every site launches go to and the site whose keys act as the LTI tool. The domain an LTI tool names itself by is a label its addresses need not match. The dialog links the home page, terms and privacy policy the LTI tool names by HTTPS addresses, each with the host it goes to.
 
 An LTI tool may also ask for the scope of an LTI service the app serves, today Names and Role Provisioning Services (NRPS), which lists a context's members. The app records it as the access scope it stands for, `user:read`. The approval dialog lists it under API access, none chosen by default.
 

@@ -30,7 +30,9 @@ const parseRegistrationRequest = (body: unknown) => {
   const config = request[ltiToolConfigurationMember];
 
   const messages = config.messages.filter(({ type }) => ltiMessageTypes.includes(type));
-  const recorded: LtiToolConfig = { ...config, messages, claims: config.claims.filter((claim) => ltiClaimsSupported.includes(claim)) };
+  const { client_uri, tos_uri, policy_uri } = request;
+  const claims = config.claims.filter((claim) => ltiClaimsSupported.includes(claim));
+  const recorded: LtiToolConfig = { ...config, messages, claims, client_uri, tos_uri, policy_uri };
   const asked = request.grant_types.includes('client_credentials') ? (request.scope?.split(' ') ?? []).map(accessScopeOfLtiService) : [];
   const requestedScopes = ltiToolScopes.filter((scope) => asked.includes(scope));
   return { request, recorded, requestedScopes };
@@ -45,26 +47,30 @@ interface RecordedRegistration {
 /**
  * The registration as the platform recorded it (section 3.6.1), with the installation as its LTI deployment. Beside the
  * launch it registers the token grant for the LTI service scopes it recorded, which an admin may grant the installation,
- * and the one response type a launch answers with.
+ * and the one response type a launch answers with. The pages the LTI tool names go back beside the LTI member, where
+ * the request had them.
  */
-const registrationResponse = ({ request, recorded, requestedScopes }: RecordedRegistration, clientId: string, deploymentId: string) => ({
-  client_id: clientId,
-  application_type: request.application_type,
-  grant_types: requestedScopes.length ? ['implicit', 'client_credentials'] : ['implicit'],
-  ...(requestedScopes.length > 0 && { scope: requestedScopes.flatMap((scope) => ltiServiceScope(scope) ?? []).join(' ') }),
-  response_types: ['id_token'],
-  redirect_uris: request.redirect_uris,
-  initiate_login_uri: request.initiate_login_uri,
-  client_name: request.client_name,
-  jwks_uri: request.jwks_uri,
-  ...(request.logo_uri && { logo_uri: request.logo_uri }),
-  ...(request.client_uri && { client_uri: request.client_uri }),
-  ...(request.tos_uri && { tos_uri: request.tos_uri }),
-  ...(request.policy_uri && { policy_uri: request.policy_uri }),
-  token_endpoint_auth_method: request.token_endpoint_auth_method,
-  id_token_signed_response_alg: 'RS256',
-  [ltiToolConfigurationMember]: { ...recorded, deployment_id: deploymentId },
-});
+const registrationResponse = ({ request, recorded, requestedScopes }: RecordedRegistration, clientId: string, deploymentId: string) => {
+  const { client_uri, tos_uri, policy_uri, ...ltiConfig } = recorded;
+  return {
+    client_id: clientId,
+    application_type: request.application_type,
+    grant_types: requestedScopes.length ? ['implicit', 'client_credentials'] : ['implicit'],
+    ...(requestedScopes.length > 0 && { scope: requestedScopes.flatMap((scope) => ltiServiceScope(scope) ?? []).join(' ') }),
+    response_types: ['id_token'],
+    redirect_uris: request.redirect_uris,
+    initiate_login_uri: request.initiate_login_uri,
+    client_name: request.client_name,
+    jwks_uri: request.jwks_uri,
+    ...(request.logo_uri && { logo_uri: request.logo_uri }),
+    ...(client_uri && { client_uri }),
+    ...(tos_uri && { tos_uri }),
+    ...(policy_uri && { policy_uri }),
+    token_endpoint_auth_method: request.token_endpoint_auth_method,
+    id_token_signed_response_alg: 'RS256',
+    [ltiToolConfigurationMember]: { ...ltiConfig, deployment_id: deploymentId },
+  };
+};
 
 /**
  * Registers an LTI tool by Dynamic Registration at the issuer. The registration token is spent, the request checked,
@@ -92,9 +98,6 @@ export async function registerLtiToolOp({ registrationToken, body }: { registrat
         name: request.client_name,
         redirectUris: request.redirect_uris,
         logoUri: request.logo_uri,
-        clientUri: request.client_uri,
-        tosUri: request.tos_uri,
-        policyUri: request.policy_uri,
         jwksUri: request.jwks_uri,
         initiateLoginUri: request.initiate_login_uri,
         ltiToolConfig: recorded,

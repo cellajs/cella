@@ -36,10 +36,6 @@ export const oauthClientsTable = snakeCase.table(
     ltiToolConfig: jsonb().$type<LtiToolConfig>(),
     /** The access scopes an LTI tool asked for in its registration, of those the platform knows: the most an admin grants. */
     requestedScopes: jsonb().$type<AccessScope[]>(),
-    /** The client's home page, terms of service and privacy policy, which an admin reads before approving; HTTPS only. */
-    clientUri: varchar({ length: maxLength.url }),
-    tosUri: varchar({ length: maxLength.url }),
-    policyUri: varchar({ length: maxLength.url }),
     ...auditColumns(),
   },
   (table) => [

@@ -66,7 +66,14 @@ const ltiToolConfigSchema = z.object({
   claims: z.array(z.string().max(maxLength.field)).max(50),
 });
 
-export type LtiToolConfig = z.infer<typeof ltiToolConfigSchema>;
+/** The pages an LTI tool names about itself (section 2.2.1): members of the registration beside its LTI configuration. */
+const ltiToolPagesSchema = z.object({ client_uri: ltiToolPageSchema, tos_uri: ltiToolPageSchema, policy_uri: ltiToolPageSchema });
+
+/**
+ * An LTI tool's configuration as the platform records it: its LTI configuration and the pages it names, each in the
+ * spec's member name. A registration answer gives each back where the request had it.
+ */
+export type LtiToolConfig = z.infer<typeof ltiToolConfigSchema> & z.infer<typeof ltiToolPagesSchema>;
 
 /** A list of values that includes `required` and may hold others (section 2.2.1). */
 const includingSchema = (required: string) =>
@@ -89,9 +96,7 @@ export const ltiToolRegistrationRequestSchema = z.object({
   client_name: validNameSchema,
   jwks_uri: ltiToolUrlSchema,
   logo_uri: ltiToolUrlSchema.optional(),
-  client_uri: ltiToolPageSchema,
-  tos_uri: ltiToolPageSchema,
-  policy_uri: ltiToolPageSchema,
+  ...ltiToolPagesSchema.shape,
   token_endpoint_auth_method: z.literal('private_key_jwt'),
   id_token_signed_response_alg: z.literal('RS256').optional(),
   scope: z.string().max(maxLength.url).optional(),

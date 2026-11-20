@@ -115,7 +115,7 @@ function FieldList({ fields }: { fields: PersonalField[] }) {
   return fields.map((field) => t(fieldLabels[field])).join(', ');
 }
 
-/** The pages the LTI tool names about itself, each a link that opens apart; empty when it names none. */
+/** The pages the LTI tool names, each a link that opens apart; empty when it names none. */
 const ltiToolPages = (t: TFunction, { clientUri, tosUri, policyUri }: LtiInstallation) =>
   [
     { href: clientUri, label: t('c:home_page') },
@@ -123,13 +123,17 @@ const ltiToolPages = (t: TFunction, { clientUri, tosUri, policyUri }: LtiInstall
     { href: policyUri, label: t('c:privacy_policy') },
   ].flatMap(({ href, label }) => (href ? [{ href, label }] : []));
 
+/** Each page with the host it goes to beside it: a lookalike shows before the click. */
 function LtiToolPageLinks({ pages }: { pages: ReturnType<typeof ltiToolPages> }) {
   return (
     <span className="flex flex-wrap gap-x-4 gap-y-1">
       {pages.map(({ href, label }) => (
-        <a key={label} href={href} target="_blank" rel="noreferrer" className="link-inline">
-          {label}
-        </a>
+        <span key={label} className="break-all">
+          <a href={href} target="_blank" rel="noreferrer" className="link-inline">
+            {label}
+          </a>{' '}
+          <span className="text-muted-foreground">{new URL(href).host}</span>
+        </span>
       ))}
     </span>
   );
@@ -624,7 +628,6 @@ export function LtiInstallationTile({ installation, organization, sharesName = f
           <ExpandableTileDetail label={t('c:key_set_origin')} wide>
             {installation.keySetOrigin}
           </ExpandableTileDetail>
-          <ExpandableTileDetail label={t('c:lti_tool_domain')}>{installation.domain}</ExpandableTileDetail>
           {pages.length > 0 && (
             <ExpandableTileDetail label={t('c:lti_tool_pages')}>
               <LtiToolPageLinks pages={pages} />
