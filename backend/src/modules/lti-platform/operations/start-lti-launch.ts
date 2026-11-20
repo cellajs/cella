@@ -9,7 +9,7 @@ import { launchOrigins, launchTargetLinkUri, loginInitiationUrl } from '#/module
 import { opensFor } from '#/modules/lti-platform/helpers/tab-audience';
 import { findLtiLaunchTarget, findLtiResourceLink } from '#/modules/lti-platform/lti-platform-queries';
 import type { LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
-import { ownActor } from '#/permissions/access';
+import { membershipActorVars } from '#/permissions/access';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 
@@ -29,7 +29,7 @@ export const readAsLauncher = async (personId: string, link: LaunchedLink) => {
       db: baseDb,
       tenantId: link.tenantId,
       organizationId: link.organizationId,
-      ...ownActor(personId, memberships),
+      ...membershipActorVars(personId, memberships),
     },
   };
   const { entity } = await getValidChannel(launcherCtx, link.channelId, link.channelType, 'read');
@@ -43,7 +43,7 @@ export const readAsLauncher = async (personId: string, link: LaunchedLink) => {
  * the person, the tenant and the resource link. The answer is the login initiation page that hands the record to the
  * LTI tool.
  * @throws AppError 404 `not_found` for no such link or a caller who may not launch it; for a tab that does not open
- *   (`ltiTabClosure`), 409 with why or 403 `channel_archived`.
+ *   (`ltiTabClosure`), 409 with why or 403 `lti_tab_channel_archived`.
  */
 export async function startLtiLaunchOp(ctx: UserContext, id: string) {
   const { tenantId, organizationId } = ctx.var;
@@ -54,7 +54,7 @@ export async function startLtiLaunchOp(ctx: UserContext, id: string) {
   if (!target) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiResourceLink' } });
   const closure = ltiTabClosure({ ...target, link, archivedChannelIds: ctx.var.archivedChannelIds ?? new Set<string>() });
   if (closure) {
-    throw new AppError(closure === 'channel_archived' ? 403 : 409, closure, 'warn', {
+    throw new AppError(closure === 'lti_tab_channel_archived' ? 403 : 409, closure, 'warn', {
       entityType: link.channelType,
       meta: { resourceLinkId: link.id },
     });

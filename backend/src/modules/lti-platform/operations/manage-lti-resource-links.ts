@@ -88,22 +88,31 @@ export async function getLtiResourceLinksOp(ctx: UserContext, { channelType, cha
 
 /**
  * A channel's tabs of LTI tools, for a caller who may update it: each approved LTI installation of the tenant that an
- * admin allowed in the channel's type, a disabled one or one not allowed there only where it has a tab, whether a tab
- * that is on lets it read who is in the channel, why the caller may not place it or switch it on, and its resource
- * link once placed. None in a channel type that holds no tabs.
+ * admin allowed in the channel's type, a disabled one, one not allowed there or any in an archived channel only where
+ * it has a tab, whether its tab here, on, lets it read who is in the channel, why the caller may not place it or switch
+ * it on, which is why its tab here does not open, and its resource link once placed. None in a channel type that holds
+ * no tabs.
  */
 export async function getLtiTabsOp(ctx: UserContext, { channelType, channelId, orderBy }: z.infer<typeof listLtiTabsQuerySchema>) {
   const { tenantId } = ctx.var;
   await getValidChannel(ctx, channelId, channelType, 'update');
   if (!holdsLtiTabs(channelType)) return [];
   const isContext = !!linkContext({ channelType, channelId });
+  const archived = !!ctx.var.archivedChannelIds?.has(channelId);
   const records = await findLtiInstallations(ctx, { tenantId, order: orderBy.order });
   const links = await findLtiResourceLinks(ctx, { tenantId, channelId, order: 'asc' });
   return records.flatMap(({ account, installation, client }) => {
     const link = links.find(({ installationId }) => installationId === account.id);
     const refusal: (typeof ltiTabRefusals)[number] | null =
-      account.status !== 'active' ? 'lti_installation_disabled' : ltiTabTypeRefusal(installation, channelType) && 'lti_channel_type_not_allowed';
+      account.status !== 'active'
+        ? 'lti_installation_disabled'
+        : ltiTabTypeRefusal(installation, channelType)
+          ? 'lti_channel_type_not_allowed'
+          : archived
+            ? 'lti_tab_channel_archived'
+            : null;
     if (!installation.approvedAt || (refusal && !link)) return [];
+    const readsMembers = isContext && !refusal && installation.grantedScopes.some((scope) => ltiServiceScope(scope) === ltiNrps.scope);
     return [
       {
         id: account.id,
@@ -111,7 +120,7 @@ export async function getLtiTabsOp(ctx: UserContext, { channelType, channelId, o
         launchOrigins: launchOrigins(client),
         createdAt: installation.createdAt,
         status: account.status,
-        readsMembers: isContext && installation.grantedScopes.some((scope) => ltiServiceScope(scope) === ltiNrps.scope),
+        readsMembers,
         refusal,
         resourceLink: link ? { id: link.id, title: link.title, enabled: link.enabled, audience: link.audience } : null,
       },
@@ -120,9 +129,9 @@ export async function getLtiTabsOp(ctx: UserContext, { channelType, channelId, o
 }
 
 /**
- * Every tab of an installation of the tenant in the organization, on or off, with its channel's name and whether the
- * caller may remove it, for a caller who may update the organization. The LTI tool reads the people of the channels of
- * its tabs that are on.
+ * Every tab of an installation of the tenant in the organization, on or off, with its channel's name, why it does not
+ * open (`ltiTabClosure`) and whether the caller may remove it, for a caller who may update the organization. The LTI
+ * tool reads the people of the channels of its tabs that open.
  * @throws AppError 404 `not_found` for no LTI installation of the tenant.
  */
 export async function getLtiInstallationTabsOp(
@@ -132,8 +141,9 @@ export async function getLtiInstallationTabsOp(
 ) {
   const { tenantId, organizationId } = ctx.var;
   await getValidChannel(ctx, organizationId, 'organization', 'update');
-  if (!(await findLtiInstallation(ctx, { id: installationId, tenantId })))
-    throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiInstallation' } });
+  const found = await findLtiInstallation(ctx, { id: installationId, tenantId });
+  if (!found) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiInstallation' } });
+  const archivedChannelIds = ctx.var.archivedChannelIds ?? new Set<string>();
 
   const links = await findLtiResourceLinks(ctx, { tenantId, installationId, organizationId, order: orderBy.order });
   const names = new Map<string, string>();
@@ -145,10 +155,14 @@ export async function getLtiInstallationTabsOp(
     for (const id of (await partitionByPermission(ctx, 'update', channelType, ids)).allowedIds) deletable.add(id);
   }
   // A link whose channel went between the two reads is left out: a channel takes its links along.
-  return links.flatMap(({ id, channelType, channelId, enabled, audience }) => {
+  return links.flatMap((link) => {
+    const { id, channelType, channelId, enabled, audience } = link;
     const channelName = names.get(channelId);
     if (channelName === undefined) return [];
-    return [{ id, channelType, channelId, channelName, enabled, audience, deletable: deletable.has(channelId) }];
+    const closure = ltiTabClosure({ link, account: found.account, installation: found.installation, archivedChannelIds });
+    const archived = archivedChannelIds.has(channelId);
+    const isLtiContext = !!linkContext(link);
+    return [{ id, channelType, channelId, channelName, enabled, audience, closure, archived, isLtiContext, deletable: deletable.has(channelId) }];
   });
 }
 

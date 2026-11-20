@@ -72,7 +72,7 @@ const courseRow = { id: ids.courseId, organizationId: ids.organizationId };
 
 describe('LTI roles and audiences on a nested hierarchy', () => {
   // Attack: an organization admin enrolled as a course's student goes there as a student on a tab for its members.
-  // Judged by all they hold, as before this rule, they would go as Instructor.
+  // Judged by all they hold, they would go as Instructor.
   it('sends a member the context roles of their own membership on a tab for its members, whatever power reaches them from above', () => {
     const person = { personId: 'p1', memberships: [organizationAdmin, courseStudent] };
     expect(opensFor('members', person, course, courseRow)).toBe(true);
@@ -95,7 +95,8 @@ describe('LTI roles and audiences on a nested hierarchy', () => {
     expect(opensFor('editors', { personId: 'p3', memberships: [courseStudent] }, course, courseRow)).toBe(false);
   });
 
-  // Attack: a channel type below an LTI context that is no context holds no LTI tabs, whatever an admin allowed.
+  // Contract: a channel type below an LTI context that is no context holds no LTI tabs, whatever an admin allowed. The
+  // template has no channel below the organization, so its integration tests never meet `lti_channel_type_holds_no_tabs`.
   it('holds no LTI tabs in a channel type that is no context below one that is', () => {
     expect(holdsLtiTabs(course)).toBe(true);
     expect(holdsLtiTabs(courseSection)).toBe(false);

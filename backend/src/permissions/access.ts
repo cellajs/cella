@@ -7,10 +7,10 @@ export interface AccessContext {
 }
 
 /**
- * The actor of a person judged by `memberships` alone, as an LTI launch carries them: no token mask and no system admin
- * power. `accessFrom` reads it like any other actor.
+ * The context vars of a person's actor judged by `memberships` alone, as an LTI launch carries them: no token mask and
+ * no system admin power. `accessFrom` reads them like a guard's.
  */
-export const ownActor = (personId: string, memberships: ActorBinding[]) => ({
+export const membershipActorVars = (personId: string, memberships: ActorBinding[]) => ({
   actor: { id: personId, bindings: memberships, scopes: null },
   isSystemAdmin: false,
 });

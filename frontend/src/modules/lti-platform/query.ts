@@ -157,14 +157,14 @@ export const useApproveLtiInstallationMutation = () =>
   });
 
 /**
- * Deletes an installation in any state, or with `status` only in that one, asking the step-up an approval asks; its tabs
- * leave every channel's bar and card. The caller says what happened: a delete or a rejection.
+ * Deletes an installation in any state, asking the step-up an approval asks; its tabs leave every channel's bar and
+ * card. The caller says what happened: a delete or a rejection.
  */
 export const useDeleteLtiInstallationMutation = () =>
   useMutation<void, ApiError, MutationData<DeleteLtiInstallationData>>({
     mutationKey: ltiPlatformKeys.delete,
-    mutationFn: async ({ path, query }) => {
-      await withStepUp(() => deleteLtiInstallation({ path, query }));
+    mutationFn: async ({ path }) => {
+      await withStepUp(() => deleteLtiInstallation({ path }));
     },
     onSuccess: (_, { path }) => {
       setCachedInstallation(path, path.ltiInstallationId, () => null);
@@ -182,6 +182,8 @@ export const useSetLtiInstallationStatusMutation = () =>
     onSuccess: ({ id, status, updatedAt }, { path }) => {
       setCachedInstallation(path, id, (installation) => ({ ...installation, status, updatedAt }));
       queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.tabs(path.tenantId) });
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.resourceLinks(path.tenantId) });
+      queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.installationTabs(path.tenantId, id) });
     },
   });
 
@@ -246,9 +248,8 @@ export const useStartLtiLaunchMutation = () =>
     mutationKey: ltiPlatformKeys.startLaunch,
     mutationFn: ({ path }) => startLtiLaunch({ path }),
     meta: { suppressGlobalErrorToast: true },
-    // A tab switched off or removed meanwhile: its channel's tabs are read again, which takes the page off it
+    // A tab removed or closed meanwhile (404, or 409 and 403 with why): the tab bars are read again, which takes it off
     onError: (error, { path }) => {
-      if (error.status === 404 || error.type === 'lti_tab_switched_off')
-        queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.resourceLinks(path.tenantId) });
+      if ([403, 404, 409].includes(error.status)) queryClient.invalidateQueries({ queryKey: ltiPlatformKeys.resourceLinks(path.tenantId) });
     },
   });

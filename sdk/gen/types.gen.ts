@@ -4829,13 +4829,31 @@ export type ListLtiInstallationTabsResponses = {
       channelId: string;
       channelName: string;
       /**
-       * Whether the tab is on: only a tab that is on lets the LTI tool read who is in its channel, one that is an LTI context
+       * Whether the tab is on
        */
       enabled: boolean;
       /**
        * Whom the tab opens for: `members`, the people holding a membership in its channel, whom the LTI tool reads there; `editors`, whoever may update the channel. It bounds who opens the tab, not whom the LTI tool reads
        */
       audience: 'members' | 'editors';
+      /**
+       * Why the tab does not open, null when it opens: only a tab that opens lets the LTI tool read who is in its channel, one that is an LTI context
+       */
+      closure:
+        | 'lti_tab_switched_off'
+        | 'lti_installation_not_active'
+        | 'lti_tab_type_holds_no_tabs'
+        | 'lti_tab_type_not_allowed'
+        | 'lti_tab_channel_archived'
+        | null;
+      /**
+       * Whether its channel is archived: then its tab does not open, whatever else allows it
+       */
+      archived: boolean;
+      /**
+       * Whether its channel is an LTI context: there a tab that opens lets the LTI tool read who is in it, with reading members granted
+       */
+      isLtiContext: boolean;
       /**
        * Whether the caller may remove it: they may update its channel
        */
@@ -4931,12 +4949,7 @@ export type DeleteLtiInstallationData = {
     organizationId: string;
     ltiInstallationId: string;
   };
-  query?: {
-    /**
-     * Deletes it only while it waits for a decision, as a rejection does: an LTI tool another admin approved meanwhile stays
-     */
-    status?: 'pending';
-  };
+  query?: never;
   url: '/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}';
 };
 
@@ -4957,10 +4970,6 @@ export type DeleteLtiInstallationErrors = {
    * Not found
    */
   404: NotFoundError;
-  /**
-   * Conflict
-   */
-  409: ConflictError;
   /**
    * Too many requests
    */
@@ -5122,13 +5131,13 @@ export type ListLtiTabsResponses = {
        */
       status: 'pending' | 'active' | 'disabled';
       /**
-       * Whether a tab that is on lets it read who is in the channel: an admin granted it reading members, and the channel is an LTI context
+       * Whether its tab here, on, lets it read who is in the channel: an admin granted it reading members, the channel is an LTI context, and nothing in `refusal` closes the tab
        */
       readsMembers: boolean;
       /**
-       * Why the caller may not place it in the channel or switch its tab on: a disabled LTI tool, else one an admin did not allow in its type; null when they may
+       * Why the caller may not place it in the channel or switch its tab on, and why its tab here does not open: a disabled LTI tool, else one an admin did not allow in its type, else an archived channel; null when they may
        */
-      refusal: 'lti_installation_disabled' | 'lti_channel_type_not_allowed' | null;
+      refusal: 'lti_installation_disabled' | 'lti_channel_type_not_allowed' | 'lti_tab_channel_archived' | null;
       /**
        * The tab once placed, on or off; null for an LTI tool never placed in the channel
        */

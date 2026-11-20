@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { createRemoteJWKSet, decodeJwt, jwtVerify } from 'jose';
 import { nanoid } from 'nanoid';
 import {
@@ -269,9 +269,10 @@ describe('LTI launch', async () => {
     expect(launch.fields).not.toHaveProperty('id_token');
   });
 
-  // Attack: a tab opens for its audience alone, and its list, its start and its launch decide alike. A tab for its
-  // members is not for a system admin who reads the channel without a membership, and a tab for its editors is not for a
-  // member who may only read it, also for a launch the member started before: each is refused as a tab that does not exist.
+  // Attack: a tab opens for its audience alone, and its list, its start and its launch decide alike. A system admin's
+  // power opens no tab: a launch judges the person's own memberships, and one without a membership is refused at the
+  // list and the start as for a tab that does not exist. A tab for its editors is not for a member who may only read it,
+  // also for a launch the member started before, and an audience the app does not know opens for nobody.
   it('lists, starts and launches a tab for its audience alone', async () => {
     const org = await orgWithAdmin();
     const tool = await installTool(org, 'peer-review.example.com');
@@ -284,11 +285,10 @@ describe('LTI launch', async () => {
       );
     };
 
-    // The list reads the channel as the caller: a system admin gets this far. A launch judges their own access and
-    // refuses them before the audience. The audience's own check is shown on a nested hierarchy (lti-nested-roles.test.ts).
     const systemAdmin = await createSystemAdminUser(`lti-${nanoid(8)}@test.com`);
     const asSystemAdmin = { ...defaultHeaders, Cookie: await createTestSession(systemAdmin) };
     expect(await listed(asSystemAdmin)).toEqual([]);
+    await expectRefusal(await call(startLtiLaunch, { path: linkPath, headers: asSystemAdmin }), 404, 'not_found');
 
     const member = await createFactorOrgUser(call, org.org.tenantId, org.org.id, `lti-${nanoid(8)}`, memberRole);
     const asMember = { ...defaultHeaders, Cookie: member.sessionCookie };
@@ -302,5 +302,8 @@ describe('LTI launch', async () => {
     await expectRefusal(await call(startLtiLaunch, { path: linkPath, headers: asMember }), 404, 'not_found');
     expect(await listed(org.headers)).toEqual([resourceLinkId]);
     expect((await authorize((await startLaunch(org, resourceLinkId)).login.fields, tool.redirectUri)).fields).toHaveProperty('id_token');
+
+    await db.execute(sql`UPDATE lti_resource_links SET audience = 'everyone' WHERE id = ${resourceLinkId}`);
+    expect(await listed(org.headers)).toEqual([]);
   });
 });

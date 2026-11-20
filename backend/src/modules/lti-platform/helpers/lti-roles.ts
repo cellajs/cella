@@ -3,14 +3,14 @@ import type { ActorBinding } from '#/core/context';
 import { linkContext } from '#/modules/lti-platform/helpers/context-channel';
 import { ltiInstitutionRolesFor, ltiRolesFor } from '#/modules/lti-platform/launch-context';
 import type { LtiResourceLinkModel } from '#/modules/lti-platform/lti-resource-links-db';
-import { accessFrom, ownActor } from '#/permissions/access';
+import { accessFrom, membershipActorVars } from '#/permissions/access';
 
 /** A channel as the permission engine reads it: its id and the id columns above it. */
 type ChannelRow = Parameters<typeof buildSubjectFromEntity>[1];
 
 /** What the permission engine lets a person do in a channel, judged by `memberships` alone. */
 const canIn = (personId: string, memberships: ActorBinding[], channelType: ChannelEntityType, channel: ChannelRow) => {
-  const access = accessFrom({ var: ownActor(personId, memberships) });
+  const access = accessFrom({ var: membershipActorVars(personId, memberships) });
   const subject = buildSubjectFromEntity(channelType, channel);
   return (action: EntityActionType) => checkAccess(access, action, subject).allowed;
 };

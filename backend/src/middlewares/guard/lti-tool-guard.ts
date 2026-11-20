@@ -73,7 +73,7 @@ export const ltiToolGuard = xMiddleware(
     limiters: [serviceBurstLimiter],
     name: 'LTI tool',
     description:
-      'Works only with an access token of an installed LTI tool. The request acts as its installation in the LTI contexts where it has a tab that is on, within the scopes an admin granted.',
+      'Works only with an access token of an installed LTI tool. The request acts as its installation in the LTI contexts where it has a tab that opens, within the scopes an admin granted.',
   },
   async (ctx, next) => {
     const target = routeTarget(ctx);

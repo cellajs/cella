@@ -41,6 +41,20 @@ interface LtiTabFacts {
   archivedChannelIds: ReadonlySet<string>;
 }
 
+/** Why a tab that exists does not open (`ltiTabClosure`), each an error type with a text of its own. */
+export const ltiTabClosures = [
+  'lti_tab_switched_off',
+  'lti_installation_not_active',
+  'lti_tab_type_holds_no_tabs',
+  'lti_tab_type_not_allowed',
+  'lti_tab_channel_archived',
+] as const;
+
+const typeClosures = {
+  lti_channel_type_holds_no_tabs: 'lti_tab_type_holds_no_tabs',
+  lti_channel_type_not_allowed: 'lti_tab_type_not_allowed',
+} as const satisfies Record<NonNullable<ReturnType<typeof ltiTabTypeRefusal>>, (typeof ltiTabClosures)[number]>;
+
 /**
  * Why a tab does not open now, null when it opens: it is switched off, its LTI tool waits for approval or is disabled,
  * its channel's type holds no tabs or is not allowed for it (`ltiTabTypeRefusal`), or its channel is archived. Read
@@ -48,8 +62,10 @@ interface LtiTabFacts {
  * with. Nothing is written when one of these changes: a tab closed by a disabled LTI tool, a withdrawn type or an
  * archive opens again once that is undone.
  */
-export const ltiTabClosure = ({ link, account, installation, archivedChannelIds }: LtiTabFacts) => {
-  if (!link.enabled) return 'lti_tab_switched_off' as const;
-  if (!installation.approvedAt || account.status !== 'active') return 'lti_installation_not_active' as const;
-  return ltiTabTypeRefusal(installation, link.channelType) ?? (archivedChannelIds.has(link.channelId) ? ('channel_archived' as const) : null);
+export const ltiTabClosure = ({ link, account, installation, archivedChannelIds }: LtiTabFacts): (typeof ltiTabClosures)[number] | null => {
+  if (!link.enabled) return 'lti_tab_switched_off';
+  if (!installation.approvedAt || account.status !== 'active') return 'lti_installation_not_active';
+  const typeRefusal = ltiTabTypeRefusal(installation, link.channelType);
+  if (typeRefusal) return typeClosures[typeRefusal];
+  return archivedChannelIds.has(link.channelId) ? 'lti_tab_channel_archived' : null;
 };

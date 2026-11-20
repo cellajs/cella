@@ -48,7 +48,7 @@ app.openapi(ltiPlatformRoutes.updateLtiInstallation, async (ctx) => {
 });
 
 app.openapi(ltiPlatformRoutes.deleteLtiInstallation, async (ctx) => {
-  await deleteLtiInstallationOp(ctx, ctx.req.valid('param').ltiInstallationId, ctx.req.valid('query').status);
+  await deleteLtiInstallationOp(ctx, ctx.req.valid('param').ltiInstallationId);
   return ctx.body(null, 204);
 });
 

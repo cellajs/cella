@@ -73,9 +73,9 @@ export const lisInstitutionRoles = {
 export const isLisContextRole = (role: string) => role.startsWith('http://purl.imsglobal.org/vocab/lis/v2/membership');
 
 /**
- * A person's LTI roles as an LTI tool reads them: the institution role Administrator with no context role, as platforms
- * send their admins outside the courses they are enrolled in, counts as the context role Administrator too. A context
- * role, whenever there is one, decides alone.
+ * A person's LTI roles as an LTI tool reads them, at a launch and in an import: the institution role Administrator with
+ * no context role, as platforms send their admins outside the courses they are enrolled in, adds the context role
+ * Administrator, for every app alike. A person the platform sends any context role keeps the roles it sent.
  */
 export const ltiRolesAsRead = (roles: string[]) =>
   !roles.some(isLisContextRole) && roles.includes(lisInstitutionRoles.administrator) ? [...roles, lisContextRoles.administrator] : roles;

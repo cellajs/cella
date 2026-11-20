@@ -5,7 +5,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { maxLength } from '#/db/utils/constraints';
 import { isFetchableUrl } from '#/lib/guarded-fetch';
 import { ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
-import { ltiTabChannelTypes } from '#/modules/lti-platform/helpers/context-channel';
+import { ltiTabChannelTypes, ltiTabClosures } from '#/modules/lti-platform/helpers/context-channel';
 import { ltiReleasableFields } from '#/modules/lti-platform/lti-installations-db';
 import { mockLtiInstallationResponse, mockLtiResourceLinkResponse } from '#/modules/lti-platform/lti-platform-mocks';
 import { ltiAudiences } from '#/modules/lti-platform/lti-resource-links-db';
@@ -130,13 +130,6 @@ export const updateLtiInstallationBodySchema = z.object({
 /** The path of one LTI installation in its organization. */
 export const ltiInstallationParamSchema = tenantOrgParamSchema.extend({ ltiInstallationId: validIdSchema });
 
-export const deleteLtiInstallationQuerySchema = z.object({
-  status: z
-    .enum(['pending'])
-    .optional()
-    .describe('Deletes it only while it waits for a decision, as a rejection does: an LTI tool another admin approved meanwhile stays'),
-});
-
 export const ltiInstallationSchema = z
   .object({
     id: z.string().describe('The installation: its service account, and the `deployment_id` the LTI tool knows it by'),
@@ -188,7 +181,7 @@ export const listLtiResourceLinksQuerySchema = pageQuerySchema.extend({
 });
 
 /** Why a caller may not place an LTI tool in a channel, or switch its tab on there: the error a write would answer. */
-export const ltiTabRefusals = ['lti_installation_disabled', 'lti_channel_type_not_allowed'] as const;
+export const ltiTabRefusals = ['lti_installation_disabled', 'lti_channel_type_not_allowed', 'lti_tab_channel_archived'] as const;
 
 const ltiAudienceSchema = z
   .enum(ltiAudiences)
@@ -217,12 +210,14 @@ export const ltiTabSchema = z.object({
   status: z.enum(serviceAccountStatuses).describe('`active`, or `disabled` while an admin has stopped it: its tabs refuse every launch then'),
   readsMembers: z
     .boolean()
-    .describe('Whether a tab that is on lets it read who is in the channel: an admin granted it reading members, and the channel is an LTI context'),
+    .describe(
+      'Whether its tab here, on, lets it read who is in the channel: an admin granted it reading members, the channel is an LTI context, and nothing in `refusal` closes the tab',
+    ),
   refusal: z
     .enum(ltiTabRefusals)
     .nullable()
     .describe(
-      'Why the caller may not place it in the channel or switch its tab on: a disabled LTI tool, else one an admin did not allow in its type; null when they may',
+      'Why the caller may not place it in the channel or switch its tab on, and why its tab here does not open: a disabled LTI tool, else one an admin did not allow in its type, else an archived channel; null when they may',
     ),
   resourceLink: z
     .object({ id: z.string(), title: z.string(), enabled: z.boolean(), audience: ltiAudienceSchema })
@@ -240,10 +235,18 @@ export const ltiInstallationTabSchema = z.object({
   channelType: channelEntityTypeSchema,
   channelId: z.string(),
   channelName: z.string(),
-  enabled: z
-    .boolean()
-    .describe('Whether the tab is on: only a tab that is on lets the LTI tool read who is in its channel, one that is an LTI context'),
+  enabled: z.boolean().describe('Whether the tab is on'),
   audience: ltiAudienceSchema,
+  closure: z
+    .enum(ltiTabClosures)
+    .nullable()
+    .describe(
+      'Why the tab does not open, null when it opens: only a tab that opens lets the LTI tool read who is in its channel, one that is an LTI context',
+    ),
+  archived: z.boolean().describe('Whether its channel is archived: then its tab does not open, whatever else allows it'),
+  isLtiContext: z
+    .boolean()
+    .describe('Whether its channel is an LTI context: there a tab that opens lets the LTI tool read who is in it, with reading members granted'),
   deletable: z.boolean().describe('Whether the caller may remove it: they may update its channel'),
 });
 

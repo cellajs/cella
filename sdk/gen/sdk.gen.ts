@@ -2189,7 +2189,7 @@ export const listLtiInstallations = <ThrowOnError extends boolean = true>(
 /**
  * Get tabs of LTI installation
  *
- * Every tab of an LTI tool in the organization, on or off: the channel it sits in, by name, and whether the caller may remove it. The LTI tool reads the people of the channels of its tabs that are on. Requires permission to update the organization.
+ * Every tab of an LTI tool in the organization, on or off: the channel it sits in, by name, why it does not open, and whether the caller may remove it. The LTI tool reads the people of the channels of its tabs that open. Requires permission to update the organization.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}/tabs** ·· [listLtiInstallationTabs](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}/tabs) ·· _lti-platform · cella_
  *
@@ -2246,7 +2246,7 @@ export const approveLtiInstallation = <ThrowOnError extends boolean = true>(
 /**
  * Delete LTI installation
  *
- * Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Rejecting a waiting LTI tool is this delete with `status=pending`. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.
+ * Deletes an LTI tool for good, waiting, approved or disabled: its registration, its service account, its tabs in every channel and their launches that have not reached the LTI tool. Rejecting a waiting LTI tool is this delete. Its tokens are refused at their next request. Adding it again takes a new registration. Requires permission to update the organization, and the step-up an approval asks.
  *
  * **DELETE /tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}** ·· [deleteLtiInstallation](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/DELETE/tenants/{tenantId}/organizations/{organizationId}/lti-installations/{ltiInstallationId}) ·· _lti-platform · cella_
  *
@@ -2254,8 +2254,7 @@ export const approveLtiInstallation = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.ltiInstallationId - `string`
- * @param {enum=} options.query.status - `enum` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const deleteLtiInstallation = <ThrowOnError extends boolean = true>(
   options: Options<DeleteLtiInstallationData, ThrowOnError>,
@@ -2299,7 +2298,7 @@ export const updateLtiInstallation = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI tabs
  *
- * A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, a disabled one only where it has a tab in the channel, whether a tab there lets it read who is in the channel, why the caller may not place it or switch it on, and its resource link once placed, on or off. None in a channel type that holds no tabs: one the app makes no LTI context, other than the organization. Requires permission to update the channel.
+ * A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, a disabled one, one not allowed in the channel's type or any in an archived channel only where it has a tab there, whether its tab there lets it read who is in the channel, why the caller may not place it or switch it on, which is also why its tab there does not open, and its resource link once placed, on or off. None in a channel type that holds no tabs: one the app makes no LTI context, other than the organization. Requires permission to update the channel.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-tabs** ·· [listLtiTabs](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-tabs) ·· _lti-platform · cella_
  *
@@ -2441,7 +2440,7 @@ export const updateLtiResourceLink = <ThrowOnError extends boolean = true>(
 /**
  * Start LTI launch
  *
- * Starts a launch of the resource link's LTI tool for the signed-in user: a one-use launch record, answered as the login initiation page a frame loads. The launch endpoint checks again, when the LTI tool comes back, that the user may read the channel and that the tab opens for them. Requires permission to read its channel, a place in the tab's audience, which a 404 refuses as a tab that does not exist, and an active installation.
+ * Starts a launch of the resource link's LTI tool for the signed-in user: a one-use launch record, answered as the login initiation page a frame loads. The launch endpoint checks again, when the LTI tool comes back, that the user may read the channel and that the tab opens for them. Requires permission to read its channel and a place in the tab's audience, which a 404 refuses as a tab that does not exist. A tab that does not open is refused with why: switched off, an LTI tool not active, a channel type that holds no tabs or is not allowed for it (409), or an archived channel (403).
  *
  * **POST /tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}:start-launch** ·· [startLtiLaunch](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/POST/tenants/{tenantId}/organizations/{organizationId}/lti-resource-links/{ltiResourceLinkId}:start-launch) ·· _lti-platform · cella_
  *
@@ -2464,7 +2463,7 @@ export const startLtiLaunch = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI members
  *
- * The members of a channel where an installed LTI tool has a tab that is on, as Names and Role Provisioning Services 2.0 (NRPS) lists them, for the LTI tool's own token. The channel is the LTI context a launch of that tab names, and a launch's NRPS claim carries this address. Each member is the id a launch sends as `sub`, their LTI roles there from their membership there, and the personal claims a launch would carry. It answers whom the installation's least privileged role there may see, ordered by id, and a `Link` header continues to the next page. `limit` is a hint, at least 25. A resource link's members (`rlid`) and the differences link are not served. A channel where it has no tab that is on, a channel above or below one, or a channel type the app does not have, answers 403, as for an installation placed nowhere
+ * The members of a channel where an installed LTI tool has a tab that opens, as Names and Role Provisioning Services 2.0 (NRPS) lists them, for the LTI tool's own token. The channel is the LTI context a launch of that tab names, and a launch's NRPS claim carries this address. Each member is the id a launch sends as `sub`, their LTI roles there from their membership there, and the personal claims a launch would carry. It answers whom the installation's least privileged role there may see, ordered by id, and a `Link` header continues to the next page. `limit` is a hint, at least 25. A resource link's members (`rlid`) and the differences link are not served. A channel where it has no tab that opens, a channel above or below one, or a channel type the app does not have, answers 403, as for an installation placed nowhere
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-members/{channelType}/{channelId}** ·· [listLtiMembers](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-members/{channelType}/{channelId}) ·· _lti-platform · cella_
  *

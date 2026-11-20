@@ -30,8 +30,8 @@ export interface LtiContextChannelFacts {
 export interface LtiRoleFacts {
   /**
    * The person's LTI roles as full URIs: context roles (`lisContextRoles`), and any institution or system roles the
-   * platform sends beside them; an institution Administrator with no context role also holds the context role
-   * Administrator (`ltiRolesAsRead`).
+   * platform sends beside them. A platform's admin who is not enrolled, an institution Administrator with no context
+   * role, also holds the context role Administrator (`ltiRolesAsRead`): no answer tells them from an enrolled one.
    */
   ltiRoles: string[];
   /** The type of the context's channel the role is for. */
@@ -62,11 +62,11 @@ export const createLtiContextChannel = async (_ctx: DbContext, { context }: LtiC
  * The role a launch or an import gives in a channel of `channelType`, or null for none: the launch is refused with a
  * page, and the import leaves the person out. An answer that is no role of that type gives its least privileged role.
  * Re-applied at every launch: a role in a channel below the organization follows the launch up and down, an
- * organization role only goes up. An LTI administrator never becomes an app admin. `ltiRoles` hold the context role
- * Administrator for an institution Administrator who arrives with no context role (`ltiRolesAsRead`), who may also set
- * a context up. The template's answer, by case:
+ * organization role only goes up. An LTI administrator never becomes an app admin. A platform's admin who is not
+ * enrolled arrives as the context role Administrator (`LtiRoleFacts.ltiRoles`) and may set a context up: mapping
+ * Administrator to a role with more rights gives it to them too. The template's answer, by case:
  * - a context role, Administrator included: the least privileged role;
- * - institution or system roles alone, other than Administrator: null;
+ * - institution or system roles alone: null;
  * - no roles at all: null.
  */
 export const ltiContextRole = ({ channelType, ltiRoles }: LtiRoleFacts): MembershipModel['role'] | null =>

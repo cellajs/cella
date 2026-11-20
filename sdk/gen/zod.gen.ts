@@ -2036,6 +2036,17 @@ export const zListLtiInstallationTabsResponse = z.object({
       channelName: z.string(),
       enabled: z.boolean(),
       audience: z.enum(['members', 'editors']),
+      closure: z
+        .enum([
+          'lti_tab_switched_off',
+          'lti_installation_not_active',
+          'lti_tab_type_holds_no_tabs',
+          'lti_tab_type_not_allowed',
+          'lti_tab_channel_archived',
+        ])
+        .nullable(),
+      archived: z.boolean(),
+      isLtiContext: z.boolean(),
       deletable: z.boolean(),
     }),
   ),
@@ -2070,10 +2081,6 @@ export const zDeleteLtiInstallationPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
   ltiInstallationId: z.string().max(50),
-});
-
-export const zDeleteLtiInstallationQuery = z.object({
-  status: z.enum(['pending']).optional(),
 });
 
 /**
@@ -2129,7 +2136,7 @@ export const zListLtiTabsResponse = z.object({
       createdAt: z.string(),
       status: z.enum(['pending', 'active', 'disabled']),
       readsMembers: z.boolean(),
-      refusal: z.enum(['lti_installation_disabled', 'lti_channel_type_not_allowed']).nullable(),
+      refusal: z.enum(['lti_installation_disabled', 'lti_channel_type_not_allowed', 'lti_tab_channel_archived']).nullable(),
       resourceLink: z
         .object({
           id: z.string(),

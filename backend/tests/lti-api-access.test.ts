@@ -50,11 +50,9 @@ import { clearSecurityTestData, createFactorOrgUser } from './security/helpers';
 import { insertStaleSession } from './security/session-helpers';
 import { createAppClient } from './test-client';
 
-// The template's answers in the files an app fills: an app's own answers leave these tests as they are.
 vi.mock('#/modules/auth/flows/lti/lti-context-channel', async (importOriginal) =>
   (await import('./lti-template-answers')).templateLtiContextChannel(await importOriginal()),
 );
-// `ltiContextTypes` answers as the template's until a test makes the organization no context.
 vi.mock('#/modules/lti-platform/launch-context', async (importOriginal) => {
   const template = (await import('./lti-template-answers')).templateLaunchContext(await importOriginal());
   return { ...template, ltiContextTypes: vi.fn(template.ltiContextTypes) };
@@ -344,7 +342,8 @@ describe('LTI installation API access', async () => {
   });
 
   // NRPS: a page with a `role` filter may hold fewer than `limit` and still link to the next. One page reads at most ten
-  // batches of people: a course where the role is rare answers short pages over all of it.
+  // batches of people, in order of id: a course where the role is rare answers short pages over all of it. Random ids
+  // put the one Instructor on either page: the test reads both.
   it('answers a page a role filter thins below its limit with a next link, until the course is read', async () => {
     const org = await orgWithAdmin();
     const ltiTool = await installLtiTool(org);
@@ -353,10 +352,12 @@ describe('LTI installation API access', async () => {
     const membershipsUrl = ltiMembershipsUrl(org.path, { channelType: 'organization', channelId: org.org.id });
 
     const first = await readMembersAt(`${membershipsUrl}?role=Instructor&limit=1`, accessToken);
-    expect(first.container.members.map(({ user_id }) => user_id)).toEqual([org.admin.id]);
+    expect(first.container.members.length).toBeLessThan(minLtiMembersPage);
     expect(first.next).toBeDefined();
     const second = await readMembersAt(first.next ?? '', accessToken);
-    expect(second).toEqual({ container: expect.objectContaining({ members: [] }), next: undefined });
+    expect(second.next).toBeUndefined();
+    const instructors = [...first.container.members, ...second.container.members].map(({ user_id }) => user_id);
+    expect(instructors).toEqual([org.admin.id]);
   });
 
   // NRPS section 3: one resource link's members carry a message per member, which the platform does not build. A reader
@@ -643,7 +644,7 @@ describe('LTI installation API access', async () => {
           ...tab,
           id: disabled.installationId,
           status: 'disabled',
-          readsMembers: true,
+          readsMembers: false,
           refusal: 'lti_installation_disabled',
           resourceLink: placed(disabled.resourceLinkId),
         },
@@ -654,7 +655,17 @@ describe('LTI installation API access', async () => {
       const path = { ...org.path, ltiInstallationId: reader.installationId };
       const installationTabs = await call(listLtiInstallationTabs, { path, headers: org.headers });
       expect((installationTabs.data as { results: unknown[] }).results).toEqual([
-        { id: reader.resourceLinkId, ...channel, channelName: org.org.name, enabled: true, audience: 'members', deletable: true },
+        {
+          id: reader.resourceLinkId,
+          ...channel,
+          channelName: org.org.name,
+          enabled: true,
+          audience: 'members',
+          closure: null,
+          archived: false,
+          isLtiContext: true,
+          deletable: true,
+        },
       ]);
 
       const again = { ...channel, installationId: reader.installationId, title: 'Peer review' };
@@ -691,7 +702,9 @@ describe('LTI installation API access', async () => {
       await db.update(ltiResourceLinksTable).set({ enabled: true }).where(eq(ltiResourceLinksTable.id, ltiTool.resourceLinkId));
       await expectRefusal(await readMembers(org, token), 403, 'forbidden');
       expect(await bar()).toEqual([]);
-      await expectRefusal(await call(startLtiLaunch, { path: linkPath, headers: org.headers }), 409, 'lti_channel_type_not_allowed');
+      await expectRefusal(await call(startLtiLaunch, { path: linkPath, headers: org.headers }), 409, 'lti_tab_type_not_allowed');
+      const installationTabs = await call(listLtiInstallationTabs, { path, headers: org.headers });
+      expect((installationTabs.data as { results: unknown[] }).results).toEqual([expect.objectContaining({ closure: 'lti_tab_type_not_allowed' })]);
       const launchToken = new URL((started.data as { url: string }).url).searchParams.get('token') ?? '';
       expect(await authorizeLaunch(launchToken)).toMatchObject({ error: 'access_denied' });
       expect(await tabs()).toEqual([
@@ -734,7 +747,7 @@ describe('LTI installation API access', async () => {
 
     // Attack: only an organization admin who stepped up deletes an LTI tool, and only one of their own tenant. A deleted
     // LTI tool keeps nothing: a token minted before is refused, its tabs are gone, and its old tab and a launch started
-    // there answer as a tab that does not exist. A rejection from a stale tile leaves one another admin approved.
+    // there answer as a tab that does not exist.
     it('deletes an LTI tool with its tabs, launches and tokens for an admin who stepped up, and refuses anyone else', async () => {
       const org = await orgWithAdmin();
       const ltiTool = await installLtiTool(org);
@@ -752,8 +765,6 @@ describe('LTI installation API access', async () => {
       const other = await orgWithAdmin();
       const elsewhere = { ...other.path, ltiInstallationId: ltiTool.installationId };
       await expectRefusal(await call(deleteLtiInstallation, { path: elsewhere, headers: other.headers }), 404, 'not_found');
-      const rejected = await call(deleteLtiInstallation, { path, query: { status: 'pending' }, headers: org.headers });
-      await expectRefusal(rejected, 409, 'lti_installation_not_pending');
       expect((await readMembers(org, token)).response.status).toBe(200);
 
       expect((await call(deleteLtiInstallation, { path, headers: org.headers })).response.status).toBe(204);
@@ -768,8 +779,7 @@ describe('LTI installation API access', async () => {
       // A waiting one too, which its tile rejects
       const waiting = await installLtiTool(org, { approval: null, placed: false });
       const waitingPath = { ...org.path, ltiInstallationId: waiting.installationId };
-      const reject = await call(deleteLtiInstallation, { path: waitingPath, query: { status: 'pending' }, headers: org.headers });
-      expect(reject.response.status).toBe(204);
+      expect((await call(deleteLtiInstallation, { path: waitingPath, headers: org.headers })).response.status).toBe(204);
       const listed = await call(listLtiInstallations, { path: org.path, headers: org.headers });
       expect((listed.data as { results: unknown[] }).results).toEqual([]);
     });

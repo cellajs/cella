@@ -50,8 +50,8 @@ interface LtiInstallationDecision {
 /**
  * Approves a pending installation: its service account becomes active, its launches may carry the released personal
  * fields, its own tokens the granted scopes, and channels of the allowed types switch its tab on. An approval only
- * narrows: it releases no field whose claims the LTI tool did not ask for, and grants no scope it did not ask for. Who may decide is who may manage the installation's
- * service account (`getManagedServiceAccount`).
+ * narrows: it releases no field whose claims the LTI tool did not ask for, and grants no scope it did not ask for. Who
+ * may decide is who may manage the installation's service account (`getManagedServiceAccount`).
  * @throws AppError 400 `lti_field_not_requested` or `lti_scope_not_grantable`, 403 when the tenant's service account
  *   quota is spent, and what `getManagedServiceAccount` and `lockPendingInstallation` throw.
  */
@@ -127,20 +127,19 @@ export async function updateLtiInstallationOp(ctx: UserContext, id: string, chan
 }
 
 /**
- * Deletes an installation in any state, or with `status` only while it waits (a rejection): its registration private
- * to the tenant, and with it the service account, its side row, its tabs and their live launch records. Its tokens rest
- * on the installation, which the guard reads at every request. Its account is not kept the way a connection's import
- * account is: its routes only read, and no row names it as its writer.
- * @throws AppError 404 `not_found` for no LTI installation of the tenant, 409 `lti_installation_not_pending` for one
- * decided while `status` asks a waiting one, and what `getManagedServiceAccount` throws.
+ * Deletes an installation in any state, a waiting one when an admin rejects it: its registration private to the
+ * tenant, and with it the service account, its side row, its tabs and their live launch records. Its tokens rest on the
+ * installation, which the guard reads at every request. Its account is not kept the way a connection's import account
+ * is: its routes only read, and no row names it as its writer.
+ * @throws AppError 404 `not_found` for no LTI installation of the tenant, and what `getManagedServiceAccount` throws.
  */
-export async function deleteLtiInstallationOp(ctx: UserContext, id: string, status?: 'pending') {
+export async function deleteLtiInstallationOp(ctx: UserContext, id: string) {
   const { tenantId } = ctx.var;
   await getManagedServiceAccount(ctx, id);
 
   const deleted = await ctx.var.db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
-    const found = status ? await lockPendingInstallation(txCtx, { id, tenantId }) : await lockLtiInstallation(txCtx, { id, tenantId });
+    const found = await lockLtiInstallation(txCtx, { id, tenantId });
     if (!found) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'ltiInstallation' } });
     await deleteTenantLtiRegistration(txCtx, { id: found.client.id, tenantId });
     return found;

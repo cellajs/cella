@@ -42,19 +42,21 @@ The approval dialog also shows where launches go and the site whose keys act as 
 
 An LTI tool may also ask for the scope of an LTI service the app serves, today Names and Role Provisioning Services (NRPS), which lists a course's members. The app records it as the access scope it stands for, `user:read`. The approval dialog lists it under API access, none chosen by default.
 
-What the admin grants, the LTI tool does on its own: it asks no person, and it reaches only the LTI contexts where it has a tab that is on.
+What the admin grants, the LTI tool does on its own: it asks no person, and it reaches only the LTI contexts where it has a tab that opens.
 
 The admin also chooses where the LTI tool may get a tab: the channel types, of those that hold LTI tabs, none chosen by default. The admin changes them later on the tile, with the second factor. Taking a type away leaves the LTI tool's tabs there as they are, and they stop opening until the type is allowed again.
 
+Allowing a type again, or enabling a disabled LTI tool, asks first when tabs that are on would open again, and says how many.
+
 The admin changes the grant later on the LTI tool's tile, which asks the second factor too. Withdrawing a scope or a channel type asks first, and the LTI tool loses it at its next request.
 
-Rejecting a waiting LTI tool deletes its registration, and leaves one another admin approved meanwhile. Disabling an approved one stops its launches and its tokens at once, and enabling it again asks for the second factor. An installed LTI tool is a service account without API keys: it shows in the LTI tools card, never among the API keys.
+Rejecting a waiting LTI tool deletes its registration. Disabling an approved one stops its launches and its tokens at once, and enabling it again asks for the second factor. An installed LTI tool is a service account without API keys: it shows in the LTI tools card, never among the API keys.
 
 An approved or disabled LTI tool is deleted on its tile, as a waiting one is rejected, and both ask for the second factor. Deleting asks first, naming its tabs: its registration, its tabs and its access go, and adding it again takes a new registration. Two LTI tools of one name, such as an LTI tool registered again, show when each was added, and in a channel's Tabs card where its launches go.
 
 ## Tabs
 
-A channel's Tabs card, in its settings, lists every approved LTI tool of the tenant that the admin allowed in the channel's type, among the channel's own tabs. An LTI tool disabled or no longer allowed there shows only where it has a tab, and cannot be switched on.
+A channel's Tabs card, in its settings, lists every approved LTI tool of the tenant that the admin allowed in the channel's type, among the channel's own tabs. An LTI tool disabled or no longer allowed there, or any in an archived channel, shows only where it has a tab, cannot be switched on, and says why its tab does not open.
 
 Whoever may update the channel switches an LTI tool's tab on or off and drags it among the others, and the tab bar follows that one order. A channel holds one tab of an LTI tool, named after it, and with it one audience.
 
@@ -69,7 +71,7 @@ Switching a tab on asks whom it opens for, its audience:
 
 The tab list, the start of a launch and the launch itself check the audience alike, and someone outside it is refused as for a tab that does not exist. The audience bounds who opens the tab, not whom the LTI tool reads: with members granted, it reads every member either way, and the question says so. The tab's row in the Tabs card changes its audience later.
 
-Under LTI tools in organization settings, each LTI tool lists its tabs, each a link to its channel with whom it opens for, the ones switched off marked off. An admin removes a tab there for good, after a confirmation: what the LTI tool keeps for the tab may be lost.
+Under LTI tools in organization settings, each LTI tool lists its tabs, each a link to its channel with whom it opens for, the ones switched off marked off, and why one that is on does not open. An admin removes a tab there for good, after a confirmation: what the LTI tool keeps for the tab may be lost.
 
 ## A launch
 
@@ -83,15 +85,17 @@ A person opens an LTI tool's tab on the platform. From that click to the page in
 
 The platform's storage replaces a cookie for the launch state. Every launch checks the person's standing anew: someone who left the channel is refused at their next click.
 
-## Serving course members
+## Serving members
 
-An installed LTI tool reads a course's members as itself, by [NRPS 2.0](https://www.imsglobal.org/spec/lti-nrps/v2p0), within the scopes the admin granted. It asks the OAuth worker for a token with the NRPS scope and an assertion signed by a key of the set it registered. Like any LTI tool, it names no resource: the token is for the tenant's API, carries `user:read` and acts as the installation.
+An installed LTI tool reads the members of an LTI context as itself, by [NRPS 2.0](https://www.imsglobal.org/spec/lti-nrps/v2p0), within the scopes the admin granted. It asks the OAuth worker for a token with the NRPS scope and an assertion signed by a key of the set it registered. Like any LTI tool, it names no resource: the token is for the tenant's API, carries `user:read` and acts as the installation.
 
-Its reach follows its tabs that are on, read at every request for the channel the address names. A tab gives the installation the least privileged role of its own channel, when that channel is an LTI context, and nothing in a channel above or below it. Switching off or removing the tab, or deleting the channel, takes that away. Nothing about a tab is stored on the installation.
+Its reach follows its tabs that open, read at every request for the channel the address names. A tab gives the installation the least privileged role of its own channel, when that channel is an LTI context, and nothing in a channel above or below it. Nothing about a tab is stored on the installation.
 
-A launch with a course carries the NRPS claim to an LTI tool granted `user:read`: the course's membership address and the service version, 2.0. A launch without a course, or of an LTI tool granted nothing, carries none.
+Whatever keeps the tab from opening takes that away: switching it off or removing it, a disabled LTI tool, a withdrawn channel type, an archive, or deleting the channel. An archive takes it away once each process reads the organization's archived channels again, shortly after.
 
-At that address, the token lists the course's members as far as its role sees them, in the NRPS membership container. Each member is the person's id, the same a launch sends, their context roles there, decided as a launch decides them, the status Active and the personal fields the admin released, by their NRPS names.
+A launch with a context carries the NRPS claim to an LTI tool granted `user:read`: the context's membership address and the service version, 2.0. A launch without a context, or of an LTI tool granted nothing, carries none.
+
+At that address, the token lists the context's members as far as its role sees them, in the NRPS membership container. Each member is the person's id, the same a launch sends, their context roles there, decided by their own membership as a launch on a tab for its members decides them, the status Active and the personal fields the admin released, by their NRPS names.
 
 A page holds about what `limit` asks, never fewer than 25, a `Link` header leads to the next, and `role` keeps one LTI role. A request for one tab's members (`rlid`) is refused.
 
@@ -105,11 +109,13 @@ An app whose course is a channel below the organization names that channel type 
 
 Every context mapped to a channel type gets a channel of its own: a platform's course section becomes one too, unless the app maps it to none.
 
+A platform's admin who is not enrolled arrives with the institution role Administrator and no context role. Every app takes them as the context's Administrator, at a launch and in an import: the mapping sees the context role Administrator beside their institution role, and cannot tell them from an enrolled one. They may set up a course nobody opened yet. An app that maps Administrator to a role with more rights gives it to them too.
+
 The role mapping may give no role, which refuses the launch with a page and leaves the person out of an import. The template's mapping has three cases:
 
-- **A context role:** the channel's least privileged role.
-- **No context role, but the institution role Administrator,** which platforms send their admins: the least privileged role too, and they may set up a course nobody opened yet.
-- **Neither:** no role, so the launch is refused.
+- **A context role, Administrator included:** the channel's least privileged role.
+- **Institution or system roles alone:** no role, so the launch is refused.
+- **No roles at all:** no role either.
 
 A launch without a context admits nobody new. It signs in a person this tenant already knows from the same platform as a member of the organization, from a launch in a course or an import, and changes no membership, role or seat. Anyone else gets a page that says the app opens from a course or group.
 
@@ -141,7 +147,7 @@ A course past either number says its import waits, unless its last import was re
 
 Imports of one connection run one after the other, and those of different connections beside each other, each within a time budget: a platform that answers slowly holds up its own imports alone.
 
-It reads each member's id, their LTI roles in the course, and their name and email address where the platform's admin released them. A member the platform lists as Inactive is not added. A context role the platform names by its short name, as Sakai does, reads as its full URI; institution and system roles reach the app's role mapping as they come.
+It reads each member's id, their LTI roles in the course, and their name and email address where the platform's admin released them. A member the platform lists as Inactive is not added. A context role the platform names by its short name, as Sakai does, reads as its full URI. Institution and system roles reach the app's role mapping as they come, beside the context role Administrator for a platform's admin who is not enrolled, as at a launch.
 
 Before it signs or fetches anything, the app holds to these rules:
 
@@ -167,6 +173,7 @@ Under LTI connections, each connection lists its courses and groups, the channel
 - A failed import, while it tries again and once it gave up.
 - A list longer than one import reads.
 - The member limit.
+- People the platform sent no role the app takes, who are left out.
 - A connection, organization or course that is not active.
 - A connection that read as many courses or people as it may in the hour's window: the import waits.
 
@@ -184,7 +191,7 @@ The template ships the organization's embedded page. An app that maps a course t
 - **A browser that cannot keep the embedded session:** the page says so and names the browsers that can, such as Chrome, Edge and Firefox.
 - **A course not set up yet:** a student who arrives before any instructor is told that someone who can change it on the platform must open it first.
 - **A launch without a course:** someone the organization does not know yet is told to open the app from a course or group first.
-- **No role the app takes:** a launch with neither a context role nor the institution role Administrator is refused with a page in the template, and nothing is written.
+- **No role the app takes:** a launch with no context role, and no institution role Administrator, is refused with a page in the template, and nothing is written.
 - **A full organization:** a person who would be a new member while the tenant's member limit leaves no seat is refused with a page. Someone who is a member already is never refused for it.
 - **An archived course:** a member gets in with the role they hold. Anyone the launch would add is refused with a page, as joining it is.
 - **A disabled LTI tool:** its tab on the platform says it cannot be opened until an admin enables it again, and its tokens stop at their next request.
