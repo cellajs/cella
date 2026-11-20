@@ -115,19 +115,19 @@ The mapping gets the roles as the platform sent them. Canvas sends the instituti
 
 The role mapping may give no role, which refuses the launch with a page and leaves the person out of an import. The template's mapping has three cases:
 
-- **Instructor or Administrator of the context:** the channel's most privileged role: they set it up. In the organization they get the highest role below one that may update it.
+- **Instructor or Administrator of the context:** the channel's most privileged role: they set it up. In the organization that is the highest role that may not update it.
 - **Any other context role:** the channel's least privileged role.
 - **Institution or system roles alone, or no roles at all:** no role, and the launch is refused.
 
 A launch without a context admits nobody new. It signs in a person this tenant already knows from the same platform as a member of the organization, from a launch in a context or an import, and changes no membership, role or seat. Anyone else gets a page that says the app opens from a page they are a member of.
 
-A person a context admits also becomes a member of the organization, at its least privileged role, and a launch without a context lands a known person on the organization's embedded page. An app whose contexts sit below the organization decides what that role sees of people ([What members see](./PERMISSIONS.md#what-members-see)) and what that page shows.
+A person a context admits also becomes a member of the organization, at the organization role their role in the context's channel gives there. When that role may update the organization, they get the highest role below it that may not. A launch without a context lands a known person on the organization's embedded page. An app whose contexts sit below the organization decides what those roles see of people ([What members see](./PERMISSIONS.md#what-members-see)) and what that page shows.
 
 A person who arrives for the first time gets an account without a proven email address, and takes a seat of the tenant's member limit. An email the platform releases never links them to an existing account. An account named before the platform released a name takes the name a later launch or import brings, as long as nothing else signs it in.
 
 As a platform, your app says in [launch-context.ts](../../backend/src/modules/lti-platform/launch-context.ts) which channel types are LTI contexts and which LTI roles a person goes there with. The template sends every channel as a group, so its seeded pair works. Whoever may update the channel goes as Instructor, whoever may only read it as Learner.
 
-A list of roles the app sends that is not empty holds a LIS role, as LTI requires: the backend does not start while an answer in that file would send one without.
+A list of roles the app sends that is not empty holds at least one LIS role, as LTI requires: the backend does not start while an answer in that file would send one without.
 
 The audience that lets a person in is what their roles are judged by. On a tab for its members, their one membership in the channel decides alone: power from a channel above, such as an organization admin's, adds nothing. On a tab for its editors, all they may do there decides, a membership or not. The function also gets the person's role in the channel, or none: an app tells roles with the same rights apart by it.
 
@@ -143,7 +143,7 @@ LTI comes from education: its places are courses and groups, and its roles Instr
 
 Outside a school, an Instructor is whoever runs a place, a Learner whoever takes part in it, and a Group any place with members. The template sends every channel as a Group, which fits a project or a team as well as a class.
 
-`roles` holds LIS roles only: an app picks its own from the whole LIS vocabulary, which holds Manager, Member and Officer beside the teaching roles. An LTI tool not on the template may read the teaching roles alone, as Moodle's takes a Manager as a learner: an app sends its own choice beside Instructor or Learner.
+A list of roles that goes out holds at least one LIS role, and the template's answers send LIS roles only. An app picks its own from the whole LIS vocabulary, which holds Manager, Member and Officer beside the teaching roles. An LTI tool not on the template may read the teaching roles alone, as Moodle's takes a Manager as a learner: an app sends its own choice beside Instructor or Learner.
 
 The template's texts call the place a page, and keep the word LTI for admins. An education app puts its own words, such as course and teacher, back through `app.json`.
 
@@ -203,7 +203,7 @@ The template ships the organization's embedded page. An app that maps a context 
 - **A browser that cannot keep the embedded session:** the page says so and names the browsers that can, such as Chrome, Edge and Firefox.
 - **A context not set up yet:** someone who arrives before anyone who sets it up is told that someone who manages the page on the platform must open it first.
 - **A launch without a context:** someone the organization does not know yet is told to open the app from a page they are a member of first.
-- **No role the app takes:** a launch with no context role is refused with a page in the template, and nothing is written.
+- **No role the app takes:** a launch with no context role is refused with a page in the template, and nothing is written. A platform's admin who is not enrolled in the context enrols there first.
 - **A full organization:** a person who would be a new member while the tenant's member limit leaves no seat is refused with a page. Someone who is a member already is never refused for it.
 - **An archived context:** a member gets in with the role they hold. Anyone the launch would add is refused with a page, as joining it is.
 - **A disabled LTI tool:** its tab on the platform says it cannot be opened until an admin enables it again, and its tokens stop at their next request.
@@ -229,7 +229,7 @@ The template ships the organization's embedded page. An app that maps a context 
 - Registrations that every tenant may install: each registration belongs to one tenant.
 - Binding an embedded page to the frame that launched it: a page on the platform's own origin can frame an embedded page under the person's session.
 - Launches from Canvas: its sign-in host is not the host that frames the page.
-- Roles named by the app itself, in the `custom` claim as Canvas sends its own: `roles` holds LIS roles only.
+- Roles named by the app itself, in the `custom` claim as Canvas sends its own.
 
 ## Try it locally
 

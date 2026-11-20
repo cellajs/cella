@@ -539,7 +539,7 @@
   "lti_deployment_none": "None yet. The first launch records it.",
   "lti_import.address_refused": "The app refuses an address the platform names.",
   "lti_import.failed": "The import failed, and the next launch by someone who sets this context up tries again.",
-  "lti_import.inactive": "Not imported: the connection or the organization is not active, or its page here was archived.",
+  "lti_import.inactive": "Not imported: the connection or the organization is not active, or the page this context opens in the app is archived. Once that page is unarchived, the next launch by someone who sets the context up imports it.",
   "lti_import.member_limit": "The organization's member limit left people out.",
   "lti_import.members_refused": "The platform refused to list the members of this context.",
   "lti_import.no_memberships": "The platform named no member list for this context: it offers none, or an admin there has not granted it.",

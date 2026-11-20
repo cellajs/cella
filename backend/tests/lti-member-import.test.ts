@@ -212,6 +212,12 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
       .set({ restrictions: { ...tenant.restrictions, quotas: { ...tenant.restrictions.quotas, user } } })
       .where(eq(tenantsTable.id, tenant.id));
   };
+  /** Whether the organization role `userId` holds in `org` may update it, as the permission engine decides. */
+  const mayUpdateOrganization = async (userId: string, org: Awaited<ReturnType<typeof createTestOrganization>>) => {
+    const { role } = await orgMembershipOf(userId, org.id);
+    const memberships = [{ channelType: 'organization' as const, channelId: org.id, role }];
+    return checkAccess({ actorId: userId, scopes: null, memberships }, 'update', buildSubjectFromEntity('organization', org)).allowed;
+  };
   const ltiIdentities = (issuer: string) =>
     db
       .select()
@@ -390,10 +396,10 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
           .map(({ id, name }) => ({ subject: id, userId: expect.any(String), email: null, name }))
           .sort((a, b) => a.subject.localeCompare(b.subject)),
       );
-      for (const { subject, userId } of imported.identities) {
+      for (const { userId } of imported.identities) {
         expect(people.map(({ id }) => id)).not.toContain(userId);
-        // A Learner gets the least privileged role; the Instructor's role stops below one that may update the organization.
-        if (subject !== platformSide.admin.id) expect(await orgMembershipOf(userId, toolSide.org.id)).toMatchObject({ role: memberRole });
+        // The Instructor's mapped role may update the organization; the role anyone imported holds there may not.
+        expect(await mayUpdateOrganization(userId, toolSide.org)).toBe(false);
       }
 
       const learnerAccount = imported.identities.find(({ subject }) => subject === learners[0].id)?.userId;
@@ -437,13 +443,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
       await importLtiMembersOp(side.context.id, api.options);
 
       const [identity] = await ltiIdentities(side.issuer);
-      const { role } = await orgMembershipOf(identity.userId, side.org.id);
-      const access = {
-        actorId: identity.userId,
-        scopes: null,
-        memberships: [{ channelType: 'organization' as const, channelId: side.org.id, role }],
-      };
-      expect(checkAccess(access, 'update', buildSubjectFromEntity('organization', side.org)).allowed).toBe(false);
+      expect(await mayUpdateOrganization(identity.userId, side.org)).toBe(false);
     } finally {
       vi.mocked(ltiContextRole).mockReset();
     }

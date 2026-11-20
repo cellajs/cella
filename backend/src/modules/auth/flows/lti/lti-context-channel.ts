@@ -68,7 +68,7 @@ const setUpRoles: readonly string[] = [lisContextRoles.instructor, lisContextRol
  * organization role only goes up. An LTI administrator never becomes an app admin. Whoever this gives a role that may
  * update a channel of that type, as the permission engine judges the role alone, sets the context up: their launch
  * creates its channel and starts its member import. The template's answer, by case:
- * - Instructor or Administrator of the context: the most privileged role, so they set it up;
+ * - Instructor or Administrator of the context: the most privileged role: they set it up;
  * - any other context role: the least privileged role;
  * - institution or system roles alone, or no roles at all: null.
  */

@@ -64,7 +64,10 @@ export const lisContextRoles = {
   officer: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Officer',
 } as const;
 
-/** The core LIS institution roles a launch may carry beside its context roles (LTI Core 1.3, appendix A.2.2), as full URIs. */
+/**
+ * The LIS institution roles a launch may carry beside its context roles (LTI Core 1.3, appendix A.2.2), as full URIs.
+ * Administrator, Faculty, Guest, None, Other, Staff and Student are core roles; the others are not.
+ */
 export const lisInstitutionRoles = {
   administrator: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Administrator',
   faculty: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Faculty',
@@ -73,6 +76,13 @@ export const lisInstitutionRoles = {
   other: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Other',
   staff: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Staff',
   student: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student',
+  alumni: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Alumni',
+  instructor: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Instructor',
+  learner: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Learner',
+  member: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Member',
+  mentor: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Mentor',
+  observer: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Observer',
+  prospectiveStudent: 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#ProspectiveStudent',
 } as const;
 
 /** The LIS system roles (LTI Core 1.3, appendix A.2.1), as full URIs. Administrator and None are core roles. */
@@ -86,17 +96,26 @@ export const lisSystemRoles = {
   user: 'http://purl.imsglobal.org/vocab/lis/v2/system/person#User',
 } as const;
 
-/** Whether a role, as a full URI, is a LIS context role or one of its sub-roles, not an institution or system role. */
-export const isLisContextRole = (role: string) => role.startsWith('http://purl.imsglobal.org/vocab/lis/v2/membership');
-
-/** Whether a role, as a full URI, is from a LIS role vocabulary: a system, institution or context role. */
-export const isLisRole = (role: string) =>
-  isLisContextRole(role) ||
-  role.startsWith('http://purl.imsglobal.org/vocab/lis/v2/institution/person#') ||
-  role.startsWith('http://purl.imsglobal.org/vocab/lis/v2/system/person#');
+const lisMembership = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
 
 /** The context role names of appendix A.2.3, the only roles a platform may still write by a short name. */
-const lisContextRoleNames: readonly string[] = Object.values(lisContextRoles).map((uri) => uri.slice(uri.indexOf('#') + 1));
+const lisContextRoleNames: readonly string[] = Object.values(lisContextRoles).map((uri) => uri.slice(lisMembership.length + 1));
+
+/**
+ * Whether a role, as a full URI, is a context role of appendix A.2.3 (`lisContextRoles`) or a sub-role of one, such as
+ * `membership/Instructor#TeachingAssistant` (A.2.3.1). Any other name in the LIS membership vocabulary is none.
+ */
+export const isLisContextRole = (role: string) => {
+  const [path, name, ...rest] = role.split('#');
+  if (rest.length || !name) return false;
+  if (path === lisMembership) return lisContextRoleNames.includes(name);
+  return path.startsWith(`${lisMembership}/`) && lisContextRoleNames.includes(path.slice(lisMembership.length + 1));
+};
+
+const lisPersonRoles: readonly string[] = [...Object.values(lisInstitutionRoles), ...Object.values(lisSystemRoles)];
+
+/** Whether a role, as a full URI, is a role of appendix A.2: a system, institution or context role, or a context sub-role. */
+export const isLisRole = (role: string) => isLisContextRole(role) || lisPersonRoles.includes(role);
 
 /**
  * A role as a full URI: a LIS context role by its short name (`Learner`, or `Instructor#TeachingAssistant` for a
@@ -106,9 +125,7 @@ const lisContextRoleNames: readonly string[] = Object.values(lisContextRoles).ma
 export const lisRoleUri = (role: string) => {
   const [base, subRole, ...rest] = role.split('#');
   if (rest.length || subRole === '' || !lisContextRoleNames.includes(base)) return role;
-  return subRole === undefined
-    ? `http://purl.imsglobal.org/vocab/lis/v2/membership#${base}`
-    : `http://purl.imsglobal.org/vocab/lis/v2/membership/${base}#${subRole}`;
+  return subRole === undefined ? `${lisMembership}#${base}` : `${lisMembership}/${base}#${subRole}`;
 };
 
 /** The LTI system role a platform adds for a user it made for testing, such as a student view (LTI Core 1.3, A.2.4). */
