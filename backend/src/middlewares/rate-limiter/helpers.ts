@@ -17,8 +17,6 @@ type RateLimiterOptions = {
   points: number;
   duration: number;
   blockDuration?: number;
-  /** True for a budget whose work waits out a database outage: no in-memory insurance, and a failed statement throws. */
-  failClosed?: boolean;
 };
 
 /** Limiter instances by key prefix, so limiters that share a prefix share one store and its in-memory state. */
@@ -27,11 +25,8 @@ const limiterRegistry = new Map<string, LimiterStore>();
 /** Each database store's in-memory insurance, for the statements this module runs on the store's table itself. */
 const insurances = new WeakMap<RateLimiterDrizzle, RateLimiterMemory>();
 
-/**
- * The database store for a key prefix, created once; an in-memory insurance limiter covers database outages unless
- * `failClosed`.
- */
-export const getRateLimiterInstance = ({ failClosed, ...options }: RateLimiterOptions): LimiterStore => {
+/** The database store for a key prefix, created once; an in-memory insurance limiter covers database outages. */
+export const getRateLimiterInstance = (options: RateLimiterOptions): LimiterStore => {
   const keyPrefix = options.keyPrefix ?? '';
   const existing = limiterRegistry.get(keyPrefix);
   if (existing) return existing;
@@ -43,7 +38,7 @@ export const getRateLimiterInstance = ({ failClosed, ...options }: RateLimiterOp
   } else {
     // Fail-open: an unreachable DB falls back to the in-memory limiter so the request survives without a 500.
     // The retention sweep deletes aged rows (`sweepRules`), so the store's own timer per instance stays off.
-    const insurance = failClosed ? undefined : new RateLimiterMemory(options);
+    const insurance = new RateLimiterMemory(options);
     instance = new RateLimiterDrizzle({
       ...options,
       storeClient: db,
@@ -51,7 +46,7 @@ export const getRateLimiterInstance = ({ failClosed, ...options }: RateLimiterOp
       insuranceLimiter: insurance,
       clearExpiredByTimeout: false,
     });
-    if (insurance) insurances.set(instance, insurance);
+    insurances.set(instance, insurance);
   }
 
   limiterRegistry.set(keyPrefix, instance);

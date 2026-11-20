@@ -1,4 +1,4 @@
-import { and, count, eq, getColumns, inArray, isNull, notInArray, or, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, gt, inArray, isNull, notInArray, or, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId, UserId } from '#/db/utils/ids';
@@ -64,6 +64,10 @@ export const upsertLtiContext = async (ctx: DbContext, { values, by }: { values:
     .returning();
   return row;
 };
+
+/** How many courses of a connection a member import read since `since`. */
+export const countLtiImportsSince = (ctx: DbContext, { connectionId, since }: { connectionId: string; since: string }) =>
+  ctx.var.db.$count(ltiContextsTable, and(eq(ltiContextsTable.connectionId, connectionId), gt(ltiContextsTable.importRanAt, since)));
 
 interface RecordLtiImportOpts {
   id: string;

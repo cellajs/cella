@@ -64,8 +64,8 @@ export function LtiTabReads({ row, channel }: { row: LtiTabRow; channel: Enriche
 }
 
 /**
- * Why the row's tab cannot be switched on, and for a tab placed here why it does not open: a disabled LTI tool, one an
- * admin did not allow in the channel's type, or an archived channel.
+ * Why the row's tab cannot be switched on, and for a tab placed here why it does not open: a disabled LTI tool, or one
+ * an admin did not allow in the channel's type.
  */
 export function LtiTabRefusal({ row, channel }: { row: LtiTabRow; channel: EnrichedChannel }) {
   const { t } = useTranslation();
@@ -75,11 +75,9 @@ export function LtiTabRefusal({ row, channel }: { row: LtiTabRow; channel: Enric
   const text =
     refusal === 'lti_installation_disabled'
       ? t('c:lti_tab_tool_disabled.text')
-      : refusal === 'lti_tab_channel_archived'
-        ? t('error:lti_tab_channel_archived.text')
-        : resourceLink
-          ? t('error:lti_tab_type_not_allowed.text', { resource })
-          : t('error:lti_channel_type_not_allowed.text', { resource });
+      : resourceLink
+        ? t('error:lti_tab_type_not_allowed.text', { resource })
+        : t('error:lti_channel_type_not_allowed.text', { resource });
   return <span className="text-muted-foreground text-xs leading-tight">{text}</span>;
 }
 
@@ -155,7 +153,7 @@ interface LtiTabSwitchProps {
 /**
  * Switches an LTI tool's tab on and off, keeping its resource link. Switching on asks whom it opens for and names whose
  * people the LTI tool then reads where it may. A person without a membership in the channel learns that a tab for its
- * members does not open for them, and a system admin without one in its organization that none opens for them.
+ * members does not open for them, and a system admin that a tab opens for them only by their own memberships.
  */
 export function LtiTabSwitch({ channel, row, tabIndex, onToggle }: LtiTabSwitchProps) {
   const { t } = useTranslation();
@@ -167,10 +165,7 @@ export function LtiTabSwitch({ channel, row, tabIndex, onToggle }: LtiTabSwitchP
   const link = tab.resourceLink;
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
   const isSystemAdmin = useUserStore((state) => state.isSystemAdmin);
-  const memberships = myMemberships?.results ?? [];
-  const isMember = memberships.some((membership) => membership.channelId === channel.id);
-  // A launch ignores system admin power: without a membership in the organization nothing lets them in
-  const opensForNone = isSystemAdmin && !memberships.some((membership) => membership.organizationId === channelOrganizationId(channel));
+  const isMember = !!myMemberships?.results.some((membership) => membership.channelId === channel.id);
 
   const switchOff = () => {
     onToggle();
@@ -195,7 +190,7 @@ export function LtiTabSwitch({ channel, row, tabIndex, onToggle }: LtiTabSwitchP
           />
           {!isMember && (
             <span className="text-muted-foreground mt-1 block">
-              <NamedText i18nKey={opensForNone ? 'c:lti_tab_system_admin.text' : 'c:lti_tab_not_member.text'} name={channel.name} />
+              <NamedText i18nKey={isSystemAdmin ? 'c:lti_tab_system_admin.text' : 'c:lti_tab_not_member.text'} name={channel.name} />
             </span>
           )}
         </>

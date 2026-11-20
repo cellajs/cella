@@ -87,30 +87,23 @@ export async function getLtiResourceLinksOp(ctx: UserContext, { channelType, cha
 }
 
 /**
- * A channel's tabs of LTI tools, for a caller who may update it: each approved LTI installation of the tenant that an
- * admin allowed in the channel's type, a disabled one, one not allowed there or any in an archived channel only where
- * it has a tab, whether its tab here, on, lets it read who is in the channel, why the caller may not place it or switch
- * it on, which is why its tab here does not open, and its resource link once placed. None in a channel type that holds
- * no tabs.
+ * A channel's tabs of LTI tools, for a caller who may update it, which an archived channel refuses: each approved LTI
+ * installation of the tenant that an admin allowed in the channel's type, a disabled one or one not allowed there only
+ * where it has a tab, whether its tab here, on, lets it read who is in the channel, why the caller may not place it or
+ * switch it on, which is why its tab here does not open, and its resource link once placed. None in a channel type that
+ * holds no tabs.
  */
 export async function getLtiTabsOp(ctx: UserContext, { channelType, channelId, orderBy }: z.infer<typeof listLtiTabsQuerySchema>) {
   const { tenantId } = ctx.var;
   await getValidChannel(ctx, channelId, channelType, 'update');
   if (!holdsLtiTabs(channelType)) return [];
   const isContext = !!linkContext({ channelType, channelId });
-  const archived = !!ctx.var.archivedChannelIds?.has(channelId);
   const records = await findLtiInstallations(ctx, { tenantId, order: orderBy.order });
   const links = await findLtiResourceLinks(ctx, { tenantId, channelId, order: 'asc' });
   return records.flatMap(({ account, installation, client }) => {
     const link = links.find(({ installationId }) => installationId === account.id);
     const refusal: (typeof ltiTabRefusals)[number] | null =
-      account.status !== 'active'
-        ? 'lti_installation_disabled'
-        : ltiTabTypeRefusal(installation, channelType)
-          ? 'lti_channel_type_not_allowed'
-          : archived
-            ? 'lti_tab_channel_archived'
-            : null;
+      account.status !== 'active' ? 'lti_installation_disabled' : ltiTabTypeRefusal(installation, channelType) && 'lti_channel_type_not_allowed';
     if (!installation.approvedAt || (refusal && !link)) return [];
     const readsMembers = isContext && !refusal && installation.grantedScopes.some((scope) => ltiServiceScope(scope) === ltiNrps.scope);
     return [

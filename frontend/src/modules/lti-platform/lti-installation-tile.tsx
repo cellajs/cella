@@ -84,11 +84,7 @@ interface ReopenConfirmOptions {
 }
 
 /** Asks before a change opens tabs of the LTI tool again, saying how many, and that it reads who is in them where it does. */
-const openReopenConfirm = (
-  t: TFunction,
-  trigger: HTMLElement,
-  { id, installation, tabs, i18nKey, resource, label, onConfirm }: ReopenConfirmOptions,
-) => {
+const openReopenConfirm = (trigger: HTMLElement, { id, installation, tabs, i18nKey, resource, label, onConfirm }: ReopenConfirmOptions) => {
   const reads = installation.grantedScopes.includes('user:read') && tabs.some((tab) => tab.isLtiContext);
   openConfirm(trigger, {
     id,
@@ -99,7 +95,11 @@ const openReopenConfirm = (
           name={installation.name}
           values={{ ...(resource && { resource }), count: tabs.length }}
         />
-        {reads && <span className="text-muted-foreground mt-1 block">{t('c:lti_tabs_reopen_reads.text')}</span>}
+        {reads && (
+          <span className="text-muted-foreground mt-1 block">
+            <NamedText i18nKey={tabs.length > 1 ? 'c:lti_tabs_reopen_reads.tab_counted' : 'c:lti_tabs_reopen_reads.tab'} name={installation.name} />
+          </span>
+        )}
       </>
     ),
     label,
@@ -400,7 +400,7 @@ function InstallationChannelTypes({ installation, path }: { installation: LtiIns
     const allowed = [...installation.channelTypes, channelType];
     const reopened = reopening(tabs, 'lti_tab_type_not_allowed', [channelType]);
     if (!reopened.length) return update(allowed);
-    openReopenConfirm(t, event.currentTarget, {
+    openReopenConfirm(event.currentTarget, {
       id: `allow-lti-channel-type-${installation.id}-${channelType}`,
       installation,
       tabs: reopened,
@@ -531,9 +531,20 @@ export function LtiInstallationTile({ installation, organization, sharesName = f
   const toggleStatus = (event: MouseEvent<HTMLButtonElement>) => {
     const status = installation.status === 'active' ? 'disabled' : 'active';
     const setTo = () => setStatus({ path: { ...path, serviceAccountId: installation.id }, body: { status } });
-    const reopened = status === 'active' ? reopening(tabs?.results ?? [], 'lti_installation_not_active', installation.channelTypes) : [];
+    if (status === 'disabled') return setTo();
+    // While its tabs are not read yet, or could not be, enabling asks without a count
+    if (!tabs) {
+      return openConfirm(event.currentTarget, {
+        id: `enable-lti-tool-${installation.id}`,
+        title: <NamedText i18nKey="c:confirm.enable_lti_tool" name={installation.name} />,
+        label: 'c:enable',
+        icon: CheckIcon,
+        onConfirm: setTo,
+      });
+    }
+    const reopened = reopening(tabs.results, 'lti_installation_not_active', installation.channelTypes);
     if (!reopened.length) return setTo();
-    openReopenConfirm(t, event.currentTarget, {
+    openReopenConfirm(event.currentTarget, {
       id: `enable-lti-tool-${installation.id}`,
       installation,
       tabs: reopened,

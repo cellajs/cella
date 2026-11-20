@@ -47,12 +47,12 @@ const contextBindings = async (installationId: string, tenantId: string, ctx: Co
   const [channelId, organizationId] = [ctx.req.param('channelId')?.toLowerCase(), ctx.req.param('organizationId')?.toLowerCase()];
   if (!channelType || !channelId || !organizationId || !isUuid(channelId) || !isUuid(organizationId)) return [];
   const tabs = await findLtiChannelTabs(dbCtx, { tenantId, channelId, order: 'asc' });
-  const own = tabs.find(
+  const tab = tabs.find(
     ({ resourceLink: link }) => link.installationId === installationId && link.organizationId === organizationId && link.channelType === channelType,
   );
-  if (!own || !linkContext(own.resourceLink)) return [];
+  if (!tab || !linkContext(tab.resourceLink)) return [];
   const archivedChannelIds = await loadArchivedChannelIds(dbCtx, { tenantId, organizationId });
-  if (ltiTabClosure({ link: own.resourceLink, account: own.account, installation: own.installation, archivedChannelIds })) return [];
+  if (ltiTabClosure({ link: tab.resourceLink, account: tab.account, installation: tab.installation, archivedChannelIds })) return [];
   return [{ channelType, channelId, organizationId, role: hierarchy.getLeastPrivilegedRole(channelType) }];
 };
 

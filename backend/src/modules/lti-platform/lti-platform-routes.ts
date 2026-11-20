@@ -144,7 +144,7 @@ export const ltiTabRoutes = createXRoutes(['lti-platform', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get LTI tabs',
     description:
-      "A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, a disabled one, one not allowed in the channel's type or any in an archived channel only where it has a tab there, whether its tab there lets it read who is in the channel, why the caller may not place it or switch it on, which is also why its tab there does not open, and its resource link once placed, on or off. None in a channel type that holds no tabs: one the app makes no LTI context, other than the organization. Requires permission to update the channel.",
+      "A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, a disabled one or one not allowed in the channel's type only where it has a tab there, whether its tab there lets it read who is in the channel, why the caller may not place it or switch it on, which is also why its tab there does not open, and its resource link once placed, on or off. None in a channel type that holds no tabs: one the app makes no LTI context, other than the organization. Requires permission to update the channel, which an archived channel refuses.",
     request: { params: tenantOrgParamSchema, query: listLtiTabsQuerySchema },
     responses: {
       200: json('LTI tabs', paginationSchema(ltiTabSchema), {

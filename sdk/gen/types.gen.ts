@@ -5135,9 +5135,9 @@ export type ListLtiTabsResponses = {
        */
       readsMembers: boolean;
       /**
-       * Why the caller may not place it in the channel or switch its tab on, and why its tab here does not open: a disabled LTI tool, else one an admin did not allow in its type, else an archived channel; null when they may
+       * Why the caller may not place it in the channel or switch its tab on, and why its tab here does not open: a disabled LTI tool, else one an admin did not allow in its type; null when they may
        */
-      refusal: 'lti_installation_disabled' | 'lti_channel_type_not_allowed' | 'lti_tab_channel_archived' | null;
+      refusal: 'lti_installation_disabled' | 'lti_channel_type_not_allowed' | null;
       /**
        * The tab once placed, on or off; null for an LTI tool never placed in the channel
        */

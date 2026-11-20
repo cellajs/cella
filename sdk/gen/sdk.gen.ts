@@ -2298,7 +2298,7 @@ export const updateLtiInstallation = <ThrowOnError extends boolean = true>(
 /**
  * Get LTI tabs
  *
- * A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, a disabled one, one not allowed in the channel's type or any in an archived channel only where it has a tab there, whether its tab there lets it read who is in the channel, why the caller may not place it or switch it on, which is also why its tab there does not open, and its resource link once placed, on or off. None in a channel type that holds no tabs: one the app makes no LTI context, other than the organization. Requires permission to update the channel.
+ * A channel's tabs of LTI tools: each approved LTI tool of the organization's tenant, a disabled one or one not allowed in the channel's type only where it has a tab there, whether its tab there lets it read who is in the channel, why the caller may not place it or switch it on, which is also why its tab there does not open, and its resource link once placed, on or off. None in a channel type that holds no tabs: one the app makes no LTI context, other than the organization. Requires permission to update the channel, which an archived channel refuses.
  *
  * **GET /tenants/{tenantId}/organizations/{organizationId}/lti-tabs** ·· [listLtiTabs](https://www.cellajs.com/docs/operations?operationTag=lti-platform#tag/lti-platform/GET/tenants/{tenantId}/organizations/{organizationId}/lti-tabs) ·· _lti-platform · cella_
  *

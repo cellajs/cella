@@ -50,13 +50,13 @@ Allowing a type again, or enabling a disabled LTI tool, asks first when tabs tha
 
 The admin changes the grant later on the LTI tool's tile, which asks the second factor too. Withdrawing a scope or a channel type asks first, and the LTI tool loses it at its next request.
 
-Rejecting a waiting LTI tool deletes its registration. Disabling an approved one stops its launches and its tokens at once, and enabling it again asks for the second factor. An installed LTI tool is a service account without API keys: it shows in the LTI tools card, never among the API keys.
+Rejecting a waiting LTI tool deletes it in whatever state it is by then, also when another admin approved it a moment before. Disabling an approved one stops its launches and its tokens at once, and enabling it again asks for the second factor. An installed LTI tool is a service account without API keys: it shows in the LTI tools card, never among the API keys.
 
 An approved or disabled LTI tool is deleted on its tile, as a waiting one is rejected, and both ask for the second factor. Deleting asks first, naming its tabs: its registration, its tabs and its access go, and adding it again takes a new registration. Two LTI tools of one name, such as an LTI tool registered again, show when each was added, and in a channel's Tabs card where its launches go.
 
 ## Tabs
 
-A channel's Tabs card, in its settings, lists every approved LTI tool of the tenant that the admin allowed in the channel's type, among the channel's own tabs. An LTI tool disabled or no longer allowed there, or any in an archived channel, shows only where it has a tab, cannot be switched on, and says why its tab does not open.
+A channel's Tabs card, in its settings, lists every approved LTI tool of the tenant that the admin allowed in the channel's type, among the channel's own tabs. An LTI tool disabled or no longer allowed there shows only where it has a tab, cannot be switched on, and says why its tab does not open. An archived channel's settings list no tabs: the start of a launch, the launch and the LTI tool's tile say that it is archived.
 
 Whoever may update the channel switches an LTI tool's tab on or off and drags it among the others, and the tab bar follows that one order. A channel holds one tab of an LTI tool, named after it, and with it one audience.
 
@@ -139,9 +139,7 @@ As an LTI tool, your app also reads who is in a course by NRPS, before any of th
 
 The import starts when an Instructor or Administrator of the course launches, once a launch carried the NRPS claim. A launch without the claim keeps the member list an earlier one named, as Moodle names it on some launch paths only. A platform that refuses the scope or the member list makes the app forget it until a launch names it again.
 
-The import runs on the [jobs worker](./JOBS.md), at most once in a short while per course, and the launch never waits for it. A connection imports a limited number of courses and of people in each hour's window: a class whose teams each have a tab fits, and one platform's reach stays bounded.
-
-A page is read only while the window has room, and every page read counts, a retry's too. The count passes the bound by one page at most, and nothing gives a count back. When the count cannot be read or written, the import waits.
+The import runs on the [jobs worker](./JOBS.md), at most once in a short while per course, and the launch never waits for it. A connection imports at most 150 different courses in any hour: a class whose teams each have a tab fits. Each read stops at a limit of pages and of people, and what an import adds is bounded by the tenant's seats.
 
 A course past either number says its import waits, unless its last import was refused in a way only the platform or a new registration changes. No button starts one: the next such launch after that while does.
 
@@ -175,7 +173,7 @@ Under LTI connections, each connection lists its courses and groups, the channel
 - The member limit.
 - People the platform sent no role the app takes, who are left out.
 - A connection, organization or course that is not active.
-- A connection that read as many courses or people as it may in the hour's window: the import waits.
+- A connection that imported as many courses as it may within the last hour: the import waits.
 
 ## Embedded pages
 
@@ -189,7 +187,7 @@ The template ships the organization's embedded page. An app that maps a course t
 
 - **A platform without platform storage:** the launch stops and asks the person to contact the platform's administrator.
 - **A browser that cannot keep the embedded session:** the page says so and names the browsers that can, such as Chrome, Edge and Firefox.
-- **A course not set up yet:** a student who arrives before any instructor is told that someone who can change it on the platform must open it first.
+- **A course not set up yet:** a student who arrives before any instructor is told that someone the platform sends as its instructor or administrator must open it first.
 - **A launch without a course:** someone the organization does not know yet is told to open the app from a course or group first.
 - **No role the app takes:** a launch with no context role, and no institution role Administrator, is refused with a page in the template, and nothing is written.
 - **A full organization:** a person who would be a new member while the tenant's member limit leaves no seat is refused with a page. Someone who is a member already is never refused for it.

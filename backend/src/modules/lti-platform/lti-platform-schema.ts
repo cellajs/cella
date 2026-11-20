@@ -181,7 +181,7 @@ export const listLtiResourceLinksQuerySchema = pageQuerySchema.extend({
 });
 
 /** Why a caller may not place an LTI tool in a channel, or switch its tab on there: the error a write would answer. */
-export const ltiTabRefusals = ['lti_installation_disabled', 'lti_channel_type_not_allowed', 'lti_tab_channel_archived'] as const;
+export const ltiTabRefusals = ['lti_installation_disabled', 'lti_channel_type_not_allowed'] as const;
 
 const ltiAudienceSchema = z
   .enum(ltiAudiences)
@@ -217,7 +217,7 @@ export const ltiTabSchema = z.object({
     .enum(ltiTabRefusals)
     .nullable()
     .describe(
-      'Why the caller may not place it in the channel or switch its tab on, and why its tab here does not open: a disabled LTI tool, else one an admin did not allow in its type, else an archived channel; null when they may',
+      'Why the caller may not place it in the channel or switch its tab on, and why its tab here does not open: a disabled LTI tool, else one an admin did not allow in its type; null when they may',
     ),
   resourceLink: z
     .object({ id: z.string(), title: z.string(), enabled: z.boolean(), audience: ltiAudienceSchema })

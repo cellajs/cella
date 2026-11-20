@@ -27,12 +27,7 @@ import { ltiLaunchUrl } from '#/modules/auth/flows/lti/helpers/registration-requ
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
 import { planLtiContextChannel, storedLtiContextChannel } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
-import {
-  importLtiMembersOp,
-  ltiMemberImportQueue,
-  maxCoursesPerHour,
-  takeFromImportBudget,
-} from '#/modules/auth/flows/lti/operations/import-lti-members';
+import { importLtiMembersOp, ltiMemberImportQueue, maxCoursesPerHour } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
 import { ltiContextTypes } from '#/modules/lti-platform/launch-context';
@@ -42,6 +37,7 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { lockTenantQuota } from '#/modules/tenants/quota-lock';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
+import { getIsoDate } from '#/utils/iso-date';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization, createTestUser } from './helpers';
 import { decodeHtml, parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
@@ -706,7 +702,10 @@ describe('LTI launch at the app as an LTI tool', async () => {
     }
     expect(send).not.toHaveBeenCalled();
 
-    expect(await takeFromImportBudget('courses', first.connection.id, maxCoursesPerHour)).toBe(true);
+    const { id: _id, ...held } = course;
+    await db
+      .insert(ltiContextsTable)
+      .values(Array.from({ length: maxCoursesPerHour }, (_, index) => ({ ...held, contextId: `spent-${index}`, importRanAt: getIsoDate() })));
     expect((await launch(second, { ...elsewhere, ...teacher })).response.status).toBe(303);
     expect((await courses()).find(({ id }) => id === course.id)).toEqual(course);
 

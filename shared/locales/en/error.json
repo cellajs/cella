@@ -157,7 +157,7 @@
   "lti_installation_not_approved": "LTI tool not approved",
   "lti_installation_not_approved.text": "This LTI tool waits for an administrator's approval. Approve it before you place it.",
   "lti_installation_not_pending": "LTI tool already decided",
-  "lti_installation_not_pending.text": "This LTI tool was approved or rejected before. Refresh the list to see where it stands.",
+  "lti_installation_not_pending.text": "This LTI tool is approved already, and may be disabled since. Refresh the list to see where it stands.",
   "lti_launch_anonymous": "Anonymous launch",
   "lti_launch_anonymous.text": "The platform launched without saying who you are. The app opens only for a known person.",
   "lti_launch_cross_site": "Launch refused",

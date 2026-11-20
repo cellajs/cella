@@ -2136,7 +2136,7 @@ export const zListLtiTabsResponse = z.object({
       createdAt: z.string(),
       status: z.enum(['pending', 'active', 'disabled']),
       readsMembers: z.boolean(),
-      refusal: z.enum(['lti_installation_disabled', 'lti_channel_type_not_allowed', 'lti_tab_channel_archived']).nullable(),
+      refusal: z.enum(['lti_installation_disabled', 'lti_channel_type_not_allowed']).nullable(),
       resourceLink: z
         .object({
           id: z.string(),
