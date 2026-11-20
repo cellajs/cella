@@ -197,8 +197,8 @@ const recordLtiDeployment = async (
 };
 
 /**
- * Finishes a launch at the app as an LTI tool, posted same-origin by the launch page with the value platform storage
- * held. Checks the launch (`validateLtiLaunch`) and maps its context to a channel type (`ltiContextChannelType`). A
+ * Finishes a launch at the app as an LTI tool, posted same-origin by the launch page with the value the frame kept.
+ * Checks the launch (`validateLtiLaunch`) and maps its context to a channel type (`ltiContextChannelType`). A
  * launch with a context maps the person to a role there (`ltiContextRole`) and enters it (`enterLtiContext`). A launch
  * without one admits nobody new: it signs in only a member the tenant knows from an earlier launch or an import
  * (`signInKnownLtiMember`) and writes no membership, role or seat. Either records an LTI deployment the connection does

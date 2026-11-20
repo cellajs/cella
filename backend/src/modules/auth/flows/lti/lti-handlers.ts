@@ -2,7 +2,12 @@ import type { z } from '@hono/zod-openapi';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import type { Env } from '#/core/context';
-import { launchStepRefusalPage, type StorageExchange, storagePage } from '#/modules/auth/flows/lti/helpers/platform-storage-pages';
+import {
+  assertFrameNavigation,
+  launchStepRefusalPage,
+  type StorageExchange,
+  storagePage,
+} from '#/modules/auth/flows/lti/helpers/platform-storage-pages';
 import { registeredPage, registrationRefusalPage } from '#/modules/auth/flows/lti/helpers/registration-page';
 import { authLtiRoutes, ltiContextRoutes } from '#/modules/auth/flows/lti/lti-routes';
 import type { ltiLoginParamsSchema } from '#/modules/auth/flows/lti/lti-schema';
@@ -26,9 +31,10 @@ app.openapi(authLtiRoutes.registerLtiPlatform, async (ctx) => {
   }
 });
 
-/** Answers a launch step's storage page, or its refusal as a page the platform's frame shows. */
+/** Answers a launch step's storage page, or its refusal as a page the platform's frame shows: a step outside a frame is refused first. */
 const answerStoragePage = async (ctx: Context<Env>, step: () => Promise<StorageExchange>) => {
   try {
+    assertFrameNavigation(ctx);
     return storagePage(ctx, await step());
   } catch (err) {
     return launchStepRefusalPage(ctx, err);

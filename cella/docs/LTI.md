@@ -99,7 +99,9 @@ A person opens an LTI tool's tab on the platform. From that click to the page in
 
 The LTI tool keeps the launch state in the frame's own browser storage first. Only where the browser keeps nothing there does it use the platform's storage, which a platform offers by naming a storage frame. No cookie holds it.
 
-So the app launches from a platform that names no storage frame, such as Moodle or Open edX, and in a window of its own as well as in a frame. Canvas's mobile apps, which answer no storage message, launch where their web view keeps the frame's storage. A browser that keeps nothing for the frame launches only in a frame of a platform that names one. No live Moodle, Open edX or Canvas app has launched the app.
+A platform that names no storage frame launches the app inside its page. A browser that keeps nothing for the frame launches it only from a platform that names one.
+
+A launch in a window of its own is refused with a page that asks the person to open the app inside the platform's page. That leaves out Canvas's mobile apps and a platform set to open its LTI tools in a new window.
 
 Every launch checks the person's standing anew: someone who left the channel is refused at their next click.
 
@@ -238,13 +240,14 @@ Under LTI connections, each connection lists its LTI contexts, the channel each 
 
 A launch ends on a page under `/embed`: the app without its navigation, account menu or links out of the frame. Only the origins your mode lists may frame them, and no page of the app outside a registration or a launch may be framed at all.
 
-The embedded session lives in a cookie of its own, kept per platform site by the browser, and for a launch in a window of its own under the app's own site. It accepts a change only from the app's own pages, never from another frame on the platform's page. The embedded app keeps its own user, local data and realtime connection, apart from a tab of the app opened beside it.
+The embedded session lives in a cookie of its own, kept per platform site by the browser. It accepts a change only from the app's own pages, never from another frame on the platform's page. The embedded app keeps its own user, local data and realtime connection, apart from a tab of the app opened beside it.
 
 The template ships the organization's embedded page. An app that maps a context to a channel of its own adds an embedded route for that channel and names it in its pinned [routes-config.tsx](../../frontend/src/routes-config.tsx).
 
 ## When it fails
 
-- **A launch state that does not come back:** the launch stops and asks the person to open the app again from the page they came from. It happens in a browser that keeps nothing for the frame, on a platform that names no storage frame, and to a launch that arrives in another window than its login.
+- **A launch state the frame did not keep:** the launch stops and asks the person to open the app again from the page they came from.
+- **A launch in a window of its own:** the page asks the person to open the app inside the platform's page.
 - **A browser that cannot keep the embedded session:** the page says so and names the browsers that can, such as Chrome, Edge and Firefox.
 - **A context not set up yet:** someone who arrives before anyone who sets it up is told that someone who manages the page on the platform must open it first.
 - **A launch without a context:** someone the organization does not know yet is told to open the app from a page they are a member of first.

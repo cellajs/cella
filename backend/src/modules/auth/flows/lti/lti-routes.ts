@@ -18,12 +18,13 @@ import { locationSchema, paginationSchema, tenantOrgParamSchema } from '#/schema
 const formBody = <T>(schema: T) => ({ content: { 'application/x-www-form-urlencoded': { schema } }, required: true });
 
 const loginDescription =
-  "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that keeps the nonce's value in the frame's own storage, or in platform storage when the frame keeps nothing and the platform names a storage frame, then goes on to the platform's authorization endpoint. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page.";
+  "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post into a frame of the platform's page. A request the browser marks as no frame navigation is refused, and the page refuses outside a frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that keeps the nonce's value in the frame's own storage, or in platform storage when the frame keeps nothing and the platform names a storage frame, then goes on to the platform's authorization endpoint. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page.";
 
 const loginResponses = {
   200: { description: 'Login page\n\nA page that keeps the launch value in the frame, or in platform storage, and moves on to the platform.' },
   400: { description: 'Login refused\n\nA field is longer than a login carries.' },
   401: { description: 'Platform unknown\n\nA page: no active LTI connection matches the issuer and client id, or the login hint is missing.' },
+  403: { description: 'Not in a frame\n\nA page: the browser marks the request as no frame navigation, such as one in a window of its own.' },
 };
 
 export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
@@ -84,7 +85,7 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [ltiLaunchLimiter],
     summary: 'Receive an LTI launch',
     description:
-      "The launch address a platform posts the ID token to, cross-site by design: the CSRF check leaves it out. Acts on nothing: answers a page that reads the login's value back from the frame's own storage, or else from platform storage, accepting an answer from the platform's origin alone, and posts it with the ID token and the state to the finish route.",
+      "The launch address a platform posts the ID token to, cross-site by design: the CSRF check leaves it out. Acts on nothing: answers a page that reads the login's value back from the frame's own storage, or else from platform storage, accepting an answer from the platform's origin alone, and posts it with the ID token and the state to the finish route. A post the browser marks as no frame navigation is refused, and the page refuses outside a frame.",
     request: { body: formBody(ltiLaunchFormSchema) },
     responses: {
       200: {
@@ -92,6 +93,7 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
       },
       400: { description: 'Launch refused\n\nA field is longer than a launch carries.' },
       401: { description: 'Launch refused\n\nA page: the state names no active LTI connection, or the platform posted an error.' },
+      403: { description: 'Not in a frame\n\nA page: the browser marks the post as no frame navigation, such as one in a window of its own.' },
     },
   }),
   getLtiKeySet: xRoute({

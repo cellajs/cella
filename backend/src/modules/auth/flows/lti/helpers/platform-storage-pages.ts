@@ -2,6 +2,7 @@ import type { Context } from 'hono';
 import { html } from 'hono/html';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
 import { i18n } from '#/lib/i18n';
 import { anyFrameAncestor, protocolPage, refusalPage } from '#/lib/protocol-page';
 
@@ -32,10 +33,11 @@ export interface StorageExchange {
 }
 
 /**
- * Keeps or reads the value in the frame's own `sessionStorage` first: a put holds once it reads back, and a get takes
- * the value out. Where that keeps nothing, it sends the platform storage message and waits for its `.response` from
- * the platform's origin with the same `message_id`. A put then moves on to `next`; a get posts the form with the value.
- * No frame to ask, an error answer, a wrong key or no answer within ten seconds shows the refusal text.
+ * Outside a frame it shows the unframed text and does nothing else. In a frame it keeps or reads the value in the
+ * frame's own `sessionStorage` first: a put holds once it reads back, and a get takes the value out. Where that keeps
+ * nothing, it sends the platform storage message and waits for its `.response` from the platform's origin with the
+ * same `message_id`. A put then moves on to `next`; a get posts the form with the value. No frame to ask, an error
+ * answer, a wrong key or no answer within ten seconds shows the refusal text.
  */
 const storageScript = `const output = document.getElementById('status');
 const data = JSON.parse(output.dataset.exchange);
@@ -59,8 +61,15 @@ const ownStorage = () => {
     return null;
   }
 };
+const targetFrame = () => {
+  try {
+    return data.target === '_parent' ? window.parent : data.target && window.parent.frames[data.target];
+  } catch {
+    return undefined;
+  }
+};
 const platformStorage = () => {
-  const frame = data.target === '_parent' ? window.parent : data.target && window.parent.frames[data.target];
+  const frame = targetFrame();
   if (!frame || frame === window) return refuse();
   const messageId = crypto.randomUUID();
   const timer = setTimeout(refuse, 10000);
@@ -75,9 +84,12 @@ const platformStorage = () => {
   if (put) message.value = data.value;
   frame.postMessage(message, data.origin);
 };
-const held = ownStorage();
-if (held) proceed(held);
-else platformStorage();`;
+if (window.parent === window) output.textContent = data.unframed;
+else {
+  const held = ownStorage();
+  if (held) proceed(held);
+  else platformStorage();
+}`;
 
 /**
  * The login page, which keeps the nonce's value, or the launch page, which reads it back (`storageScript`). Only the
@@ -85,7 +97,13 @@ else platformStorage();`;
  * connection's platform frames from could otherwise run this platform's launch inside itself.
  */
 export const storagePage = (ctx: Context<Env>, exchange: StorageExchange) => {
-  const data = JSON.stringify({ ...exchange, fields: undefined, pageOrigin: undefined, refusal: i18n.t('backend:lti.storage_unanswered') });
+  const data = JSON.stringify({
+    ...exchange,
+    fields: undefined,
+    pageOrigin: undefined,
+    refusal: i18n.t('backend:lti.state_not_kept'),
+    unframed: i18n.t('error:lti_launch_not_framed.text'),
+  });
   const form = exchange.fields
     ? html`<form method="post" action="${ltiFinishUrl()}">
       ${Object.entries(exchange.fields).map(([name, value]) => html`<input type="hidden" name="${name}" value="${value}" />`)}
@@ -96,6 +114,20 @@ export const storagePage = (ctx: Context<Env>, exchange: StorageExchange) => {
     ${form}`;
   const frameAncestors = exchange.pageOrigin ? `${exchange.origin} ${exchange.pageOrigin}` : exchange.origin;
   return protocolPage(ctx, { body, script: storageScript, frameAncestors, formAction: "'self'" });
+};
+
+/** The fetch destinations of a frame's navigation (Fetch Metadata): `iframe`, and `frame` for a frameset. */
+const frameDestinations = new Set(['iframe', 'frame']);
+
+/**
+ * Refuses a login or launch the browser marks as no frame navigation, such as one in a window of its own. At top level
+ * any page could start it, and the finish would post with the app's own first-party cookies. A request without
+ * `Sec-Fetch-Dest` is left to the page, which refuses outside a frame.
+ * @throws AppError 403 `lti_launch_not_framed`.
+ */
+export const assertFrameNavigation = (ctx: Context<Env>) => {
+  const destination = ctx.req.header('Sec-Fetch-Dest');
+  if (destination !== undefined && !frameDestinations.has(destination)) throw new AppError(403, 'lti_launch_not_framed', 'warn');
 };
 
 /**

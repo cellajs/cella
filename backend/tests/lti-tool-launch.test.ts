@@ -1,6 +1,5 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { runInNewContext } from 'node:vm';
 import { and, eq, sql } from 'drizzle-orm';
 import { decodeJwt, exportJWK, generateKeyPair, type JWTPayload, SignJWT } from 'jose';
 import { nanoid } from 'nanoid';
@@ -21,7 +20,6 @@ import { afterAll, afterEach, describe, expect, it, onTestFinished, vi } from 'v
 import { AppError, type ErrorKey, resourceErrorTexts } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
-import { i18n } from '#/lib/i18n';
 import { lisContextRoles, lisInstitutionRoles, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
 import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
@@ -67,35 +65,10 @@ const embeddedHeader = { [embeddedSessionHeader]: '1' };
 
 /** The storage exchange a login or launch page carries in its body. */
 const pageExchange = (page: string) => {
-  const exchange: { subject: string; key: string; value?: string; next?: string; origin: string } = JSON.parse(
+  const exchange: { subject: string; key: string; value?: string; next?: string; origin: string; target?: string } = JSON.parse(
     decodeHtml(/data-exchange="([^"]*)"/.exec(page)?.[1] ?? '{}'),
   );
   return exchange;
-};
-
-/**
- * Runs a login or launch page's script in a window of its own, `storage` standing for its `sessionStorage`: with no
- * parent, no platform storage answers it. Says where the page went, what its form posted and what it showed.
- */
-const runStoragePage = (page: string, storage: Map<string, string>) => {
-  const ran: { next?: string; posted?: string } = {};
-  const status = { dataset: { exchange: decodeHtml(/data-exchange="([^"]*)"/.exec(page)?.[1] ?? '{}') }, textContent: '' };
-  const field = { value: '' };
-  const form = { elements: { storage_value: field }, submit: () => Object.assign(ran, { posted: field.value }) };
-  const window: Record<string, unknown> = {
-    location: { replace: (next: string) => Object.assign(ran, { next }) },
-    addEventListener: () => {},
-    frames: {},
-  };
-  window.parent = window;
-  const sessionStorage = {
-    getItem: (key: string) => storage.get(key) ?? null,
-    setItem: (key: string, value: string) => storage.set(key, value),
-    removeItem: (key: string) => storage.delete(key),
-  };
-  const script = /<script>([\s\S]*?)<\/script>/.exec(page)?.[1] ?? '';
-  runInNewContext(script, { document: { getElementById: () => status, forms: [form] }, window, sessionStorage, crypto, setTimeout, clearTimeout });
-  return { ...ran, shown: status.textContent };
 };
 
 /** The embedded session cookie a response sets, and the `name=value` pair a browser sends back. */
@@ -168,9 +141,14 @@ describe('LTI launch at the app as an LTI tool', async () => {
 
   type Connected = Awaited<ReturnType<typeof connect>>;
 
-  /** Starts a login as the platform's frame does, and reads what its page stores and where it goes next. */
-  async function login(connected: Connected) {
-    const query = new URLSearchParams({ iss: connected.issuer, client_id: connected.clientId, login_hint: 'hint', lti_storage_target: '_parent' });
+  /** Starts a login as the platform's frame does, naming its storage frame unless told not to, and reads what its page stores and where it goes next. */
+  async function login(connected: Connected, { storageFrame = true } = {}) {
+    const query = new URLSearchParams({
+      iss: connected.issuer,
+      client_id: connected.clientId,
+      login_hint: 'hint',
+      ...(storageFrame && { lti_storage_target: '_parent' }),
+    });
     const page = await fetchApp(`/auth/lti/login?${query}`);
     const exchange = pageExchange(await page.text());
     const next = new URL(exchange.next ?? '');
@@ -255,7 +233,8 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect([frameAncestorsOf(launchPage), read.subject, read.origin]).toEqual([framing, 'lti.get_data', authorization]);
   });
 
-  // An attacker holds a platform registration of their own, a launch of someone else, or a frame beside the app's.
+  // An attacker holds a platform registration of their own, a launch of someone else, a frame beside the app's, or a page
+  // that opens the login or launch at top level, where the finish would post with the app's first-party cookies.
   it('refuses forged, replayed, misdirected and incomplete launches, and creates no account for them', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
     const other = await connect(await fakePlatform('platform-b'));
@@ -375,6 +354,28 @@ describe('LTI launch at the app as an LTI tool', async () => {
         type: 'lti_launch_invalid',
       },
       {
+        name: 'a login the browser opens outside a frame',
+        run: async () =>
+          fetchApp(`/auth/lti/login?${new URLSearchParams({ iss: connected.issuer, client_id: connected.clientId, login_hint: 'hint' })}`, {
+            headers: { 'Sec-Fetch-Dest': 'document' },
+          }),
+        status: 403,
+        type: 'lti_launch_not_framed',
+      },
+      {
+        name: 'a launch the browser posts outside a frame',
+        run: async () => {
+          const started = await login(connected);
+          return fetchApp('/auth/lti/launch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: connected.issuer, 'Sec-Fetch-Dest': 'document' },
+            body: new URLSearchParams({ id_token: await sign(launchClaims(connected, started.nonce), connected.platform), state: started.state }),
+          });
+        },
+        status: 403,
+        type: 'lti_launch_not_framed',
+      },
+      {
         name: 'a finish the browser marks cross-site',
         run: async () => {
           const started = await login(connected);
@@ -396,38 +397,20 @@ describe('LTI launch at the app as an LTI tool', async () => {
     await expectRefusalPage(replay, 401, 'lti-nonce_not_found');
   });
 
-  // Contract: a platform that names no storage frame, as Moodle and Open edX name none, launches through the frame's own
-  // storage. Attack: a launch posted into a window that never kept its value, or lost it, posts nothing and is refused.
-  it("keeps the launch value in the frame's own storage without a storage frame, and refuses a launch whose value did not come back", async () => {
-    const connected = await connect(await fakePlatform('platform-own'));
-    const storage = new Map<string, string>();
-    const runLogin = async () => {
-      const page = await fetchApp(
-        `/auth/lti/login?${new URLSearchParams({ iss: connected.issuer, client_id: connected.clientId, login_hint: 'hint' })}`,
-      );
-      expect(page.status).toBe(200);
-      const next = new URL(runStoragePage(await page.text(), storage).next ?? '');
-      return { nonce: next.searchParams.get('nonce') ?? '', state: next.searchParams.get('state') ?? '' };
-    };
-    const runLaunch = async ({ nonce, state }: { nonce: string; state: string }) => {
-      const page = await fetchApp('/auth/lti/launch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: connected.issuer },
-        body: new URLSearchParams({ id_token: await sign(launchClaims(connected, nonce), connected.platform), state }),
-      });
-      const html = await page.text();
-      return { fields: parseForm(html).fields, ...runStoragePage(html, storage) };
-    };
-
-    const launched = await runLaunch(await runLogin());
-    expect(storage.size).toBe(0);
-    const response = await finish({ id_token: launched.fields.id_token, state: launched.fields.state, storage_value: launched.posted ?? '' });
-    expect(response.status).toBe(303);
-
-    const started = await runLogin();
-    storage.clear();
-    const refused = await runLaunch(started);
-    expect([refused.posted, refused.shown]).toEqual([undefined, i18n.t('backend:lti.storage_unanswered')]);
+  // Contract: a platform that names no storage frame launches the app inside its page, the frame keeping the value.
+  it('answers a login that names no storage frame and finishes its launch', async () => {
+    const connected = await connect(await fakePlatform('platform-frameless'));
+    const started = await login(connected, { storageFrame: false });
+    expect([started.page.status, started.exchange.target]).toEqual([200, undefined]);
+    const idToken = await sign(launchClaims(connected, started.nonce), connected.platform);
+    const launchPage = await fetchApp('/auth/lti/launch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: connected.issuer },
+      body: new URLSearchParams({ id_token: idToken, state: started.state }),
+    });
+    const read = pageExchange(await launchPage.text());
+    expect([read.subject, read.key, read.target]).toEqual(['lti.get_data', started.exchange.key, undefined]);
+    expect((await finish({ id_token: idToken, state: started.state, storage_value: started.value })).status).toBe(303);
   });
 
   // Contract: the template's role mapping as a platform's launch meets it: a context role admits. Attack: an institution

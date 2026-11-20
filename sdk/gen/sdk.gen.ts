@@ -1717,7 +1717,7 @@ export const registerLtiPlatform = <ThrowOnError extends boolean = true>(
 /**
  * Start an LTI launch
  *
- * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that keeps the nonce's value in the frame's own storage, or in platform storage when the frame keeps nothing and the platform names a storage frame, then goes on to the platform's authorization endpoint. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page.
+ * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post into a frame of the platform's page. A request the browser marks as no frame navigation is refused, and the page refuses outside a frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that keeps the nonce's value in the frame's own storage, or in platform storage when the frame keeps nothing and the platform names a storage frame, then goes on to the platform's authorization endpoint. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page.
  *
  * **GET /auth/lti/login** ·· [initiateLtiLogin](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/lti/login) ·· _auth · cella_
  *
@@ -1729,7 +1729,7 @@ export const registerLtiPlatform = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.lti_deployment_id - `string` (optional)
  * @param {string=} options.query.client_id - `string` (optional)
  * @param {string=} options.query.lti_storage_target - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 429
  */
 export const initiateLtiLogin = <ThrowOnError extends boolean = true>(
   options?: Options<InitiateLtiLoginData, ThrowOnError>,
@@ -1743,7 +1743,7 @@ export const initiateLtiLogin = <ThrowOnError extends boolean = true>(
 /**
  * Start an LTI launch by form post
  *
- * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that keeps the nonce's value in the frame's own storage, or in platform storage when the frame keeps nothing and the platform names a storage frame, then goes on to the platform's authorization endpoint. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page. A cross-site form post by design: the CSRF check leaves it out.
+ * A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post into a frame of the platform's page. A request the browser marks as no frame navigation is refused, and the page refuses outside a frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that keeps the nonce's value in the frame's own storage, or in platform storage when the frame keeps nothing and the platform names a storage frame, then goes on to the platform's authorization endpoint. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page. A cross-site form post by design: the CSRF check leaves it out.
  *
  * **POST /auth/lti/login** ·· [initiateLtiLoginByPost](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/lti/login) ·· _auth · cella_
  *
@@ -1756,7 +1756,7 @@ export const initiateLtiLogin = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.lti_deployment_id - `string` (optional)
  * @param {string=} options.body.client_id - `string` (optional)
  * @param {string=} options.body.lti_storage_target - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 413, 415, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 415, 429
  */
 export const initiateLtiLoginByPost = <ThrowOnError extends boolean = true>(
   options: Options<InitiateLtiLoginByPostData, ThrowOnError>,
@@ -1775,7 +1775,7 @@ export const initiateLtiLoginByPost = <ThrowOnError extends boolean = true>(
 /**
  * Receive an LTI launch
  *
- * The launch address a platform posts the ID token to, cross-site by design: the CSRF check leaves it out. Acts on nothing: answers a page that reads the login's value back from the frame's own storage, or else from platform storage, accepting an answer from the platform's origin alone, and posts it with the ID token and the state to the finish route.
+ * The launch address a platform posts the ID token to, cross-site by design: the CSRF check leaves it out. Acts on nothing: answers a page that reads the login's value back from the frame's own storage, or else from platform storage, accepting an answer from the platform's origin alone, and posts it with the ID token and the state to the finish route. A post the browser marks as no frame navigation is refused, and the page refuses outside a frame.
  *
  * **POST /auth/lti/launch** ·· [receiveLtiLaunch](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/lti/launch) ·· _auth · cella_
  *
@@ -1784,7 +1784,7 @@ export const initiateLtiLoginByPost = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.state - `string` (optional)
  * @param {string=} options.body.error - `string` (optional)
  * @param {string=} options.body.error_description - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 413, 415, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 415, 429
  */
 export const receiveLtiLaunch = <ThrowOnError extends boolean = true>(
   options: Options<ReceiveLtiLaunchData, ThrowOnError>,
