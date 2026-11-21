@@ -11,7 +11,7 @@ import type { LtiImportIssue } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { ltiIdSchema, profileClaim } from '#/modules/auth/flows/lti/lti-schema';
 import type { LtiConnection } from '#/modules/connections/connections-db';
 
-/** How a member read reaches the platform, and the signal that ends it before its next page. */
+/** How a member read reaches the platform, and the signal that ends it, within a page too. */
 export type ReadLtiMembersOptions = PlatformFetchOptions & { signal?: AbortSignal };
 
 /** The members one page asks for (`limit`): a page of long rows stays under the guarded fetch's size cap. */
@@ -200,6 +200,7 @@ const readMemberPages = async (
     const response = await guardedFetch(page.href, {
       ...options,
       headers: { Accept: ltiNrps.mediaType, Authorization: `Bearer ${token.accessToken}` },
+      signal,
     });
 
     if (response.status === 401 && !renewed) {
