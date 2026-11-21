@@ -1855,13 +1855,13 @@ export const finishLtiLaunch = <ThrowOnError extends boolean = true>(
 /**
  * Redeem an LTI handoff
  *
- * Posted by the embedded page a finished launch opened, with the code from its address fragment. Spends the hand-over and only then starts the embedded session, answering its token, which the page keeps in memory alone and sends with every request. The code works once, for two minutes, only beside the browser key cookie the launch set and while its LTI connection is active: a second redemption, another browser, another platform's site and a deleted or disabled connection get a 401.
+ * Posted by the embedded page a finished launch opened, with the code from its address fragment. Spends the hand-over and only then starts the embedded session, answering its token, which the page keeps in memory alone and sends with every request. The code works once, for two minutes, only beside the browser key cookie the launch set and while its LTI connection is active: a second redemption, another browser, another platform's site and a deleted or disabled connection get a 401. A system admin outside the addresses allowed for system access gets a 403, as at any sign-in.
  *
  * **POST /auth/lti:redeem-handoff** ·· [redeemLtiHandoff](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/lti:redeem-handoff) ·· _auth · cella_
  *
  * @param {redeemLtiHandoffData} options
  * @param {string} options.body.code - `string`
- * @returns Possible status codes: 200, 400, 401, 413, 415, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 415, 429
  */
 export const redeemLtiHandoff = <ThrowOnError extends boolean = true>(
   options: Options<RedeemLtiHandoffData, ThrowOnError>,

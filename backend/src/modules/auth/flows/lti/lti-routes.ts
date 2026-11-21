@@ -149,11 +149,11 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [ltiLaunchLimiter],
     summary: 'Redeem an LTI handoff',
     description:
-      "Posted by the embedded page a finished launch opened, with the code from its address fragment. Spends the hand-over and only then starts the embedded session, answering its token, which the page keeps in memory alone and sends with every request. The code works once, for two minutes, only beside the browser key cookie the launch set and while its LTI connection is active: a second redemption, another browser, another platform's site and a deleted or disabled connection get a 401.",
+      "Posted by the embedded page a finished launch opened, with the code from its address fragment. Spends the hand-over and only then starts the embedded session, answering its token, which the page keeps in memory alone and sends with every request. The code works once, for two minutes, only beside the browser key cookie the launch set and while its LTI connection is active: a second redemption, another browser, another platform's site and a deleted or disabled connection get a 401. A system admin outside the addresses allowed for system access gets a 403, as at any sign-in.",
     request: { body: jsonBody(ltiHandoffBodySchema, { code: 'example-handoff-code' }) },
     responses: {
       200: json('Session token', ltiHandoffResponseSchema, { token: 'example-session-token' }),
-      ...errors(401),
+      ...errors(401, 403),
     },
   }),
 });

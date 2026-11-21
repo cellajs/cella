@@ -42,7 +42,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
-import { authCookie, createTestOrganization, createTestUser, sessionRow } from './helpers';
+import { authCookie, cookieChange, createTestOrganization, createTestUser, sentMails, sessionRow } from './helpers';
 import {
   browserKeyCookieOf,
   decodeHtml,
@@ -495,6 +495,31 @@ describe('LTI launch at the app as an LTI tool', async () => {
     await stream.body?.cancel();
   });
 
+  // Attack: a page on the platform's site sends the browser key cookie with any request it makes to the app, and may
+  // hold a token that left the frame. A cross-site form post or DELETE with the query token, a bodyless post with the
+  // cookie alone and a post to the redeem route each change nothing, and the session answers afterwards.
+  it('refuses cross-site writes on the embedded session', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const embedded = await embeddedSessionOf(fetchApp, (await launch(connected)).response);
+    const unredeemed = (await launch(connected, {}, connected.platform, { Cookie: embedded.cookie })).response;
+    const crossSite = { Cookie: embedded.cookie, Origin: connected.issuer, 'Sec-Fetch-Site': 'cross-site' };
+    const inQuery = (path: string) => `${path}?${new URLSearchParams({ [embeddedSessionParam]: embedded.token })}`;
+    const form = { ...crossSite, 'Content-Type': 'application/x-www-form-urlencoded' };
+    const rows: { name: string; path: string; init: RequestInit }[] = [
+      { name: 'a form post with the query token', path: inQuery('/auth/sign-out'), init: { method: 'POST', headers: form, body: '' } },
+      { name: 'a bodyless post with the cookie alone', path: '/auth/sign-out', init: { method: 'POST', headers: crossSite } },
+      { name: 'a DELETE with the query token', path: inQuery('/me'), init: { method: 'DELETE', headers: crossSite } },
+      {
+        name: 'a post to the redeem route',
+        path: '/auth/lti:redeem-handoff',
+        init: { method: 'POST', headers: { ...crossSite, 'Content-Type': 'text/plain' }, body: JSON.stringify({ code: handoffCodeOf(unredeemed) }) },
+      },
+    ];
+    // The app's origin check refuses each before it reads a session.
+    for (const row of rows) expect([row.name, (await fetchApp(row.path, row.init)).status]).toEqual([row.name, 403]);
+    expect((await fetchApp('/me', { headers: embeddedHeaders(embedded) })).status).toBe(200);
+  });
+
   // Attack: a hand-over code from another browser's launch, planted in this frame, or one carried off, redeems nothing
   // beside the wrong browser key or none; a spent one redeems nothing; an unredeemed one is no session; and none
   // redeems once its connection is gone.
@@ -546,6 +571,24 @@ describe('LTI launch at the app as an LTI tool', async () => {
     await createSession({ id: identity.userId }, context, 'passkey');
     expect((await sessionRow(ordinary.sessionId)).revocationReason).toBe('replaced');
     expect((await fetchApp('/me', { headers: embeddedHeaders(embedded) })).status).toBe(200);
+  });
+
+  // Bug: every launch counted as a new device, as a frame keeps no device cookie. An account with an address that
+  // signed in before got a new sign-in mail per launch.
+  it('records no device for a launch and sends no new sign-in mail', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const sub = `lms-${nanoid(6)}`;
+    await launch(connected, { sub });
+    const person = await createTestUser(`lti-${nanoid(6)}@example.com`);
+    await db.update(identitiesTable).set({ userId: person.id }).where(eq(identitiesTable.subject, sub));
+
+    for (let open = 0; open < 2; open++) {
+      const finished = (await launch(connected, { sub })).response;
+      const redeemed = await redeemHandoff(fetchApp, handoffCodeOf(finished), browserKeyCookieOf(finished)?.pair ?? '');
+      expect([redeemed.status, cookieChange(redeemed, 'device-id')]).toEqual([200, undefined]);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(sentMails().filter(({ statics, recipient }) => statics.type === 'new-sign-in' && recipient.email === person.email)).toEqual([]);
   });
 
   it('signs out of the session a request asks for and leaves the other', async () => {

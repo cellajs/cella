@@ -114,7 +114,7 @@ export const createSession = async (
     ipSubnetHash: subnet ? hashSubnet(subnet) : null,
     ipRegionCode: regionCode,
     ipAsn: asn,
-    deviceIdHash: hashDeviceIdForUser(deviceId, user.id),
+    deviceIdHash: deviceId ? hashDeviceIdForUser(deviceId, user.id) : null,
     browserKeyHash,
     createdAt: now,
     expiresAt,
@@ -124,9 +124,9 @@ export const createSession = async (
     connectionId,
   };
 
-  // Repeated sign-ins do not stack up: a browser holds at most one live ordinary session. A launch replaces none, as
-  // its token lives in one frame's memory and every other frame of the person on the device keeps its own.
-  if (!browserKeyHash) {
+  // Repeated sign-ins do not stack up: a browser holds at most one live ordinary session. A launch records no device
+  // and replaces none: every frame of the person keeps its own session.
+  if (session.deviceIdHash) {
     const replaced = await findLiveSessionsHeldByUser(dbCtx, { userId: user.id, embedded: false, deviceIdHash: session.deviceIdHash });
     await revokeSessions(dbCtx, { userId: user.id, sessionIds: replaced.map(({ id }) => id), reason: 'replaced', by: null });
   }
@@ -134,7 +134,7 @@ export const createSession = async (
 
   await insertSession(dbCtx, { values: session });
 
-  const newDevice = await enrollNewDevice(user.id, deviceId);
+  const newDevice = deviceId ? await enrollNewDevice(user.id, deviceId) : null;
 
   await updateLastSignInAt(dbCtx, { userId: user.id, lastSignInAt: getIsoDate() });
 
@@ -153,7 +153,7 @@ const startSession = async (ctx: Context<Env>, user: UserModel, { strategy, kind
 
   if (isSystemAdmin && !isSystemAccessAllowed(ctx)) throw new AppError(403, 'system_access_forbidden', 'warn');
 
-  const context = await collectSignInContext(ctx);
+  const context = await collectSignInContext(ctx, { embedded: !!extras.browserKey });
   const created = await createSession(user, context, strategy, kind, extras);
 
   notifySignIn({ user, isSystemAdmin, context, strategy, newDevice: created.newDevice });
