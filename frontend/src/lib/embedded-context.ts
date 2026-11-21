@@ -15,7 +15,10 @@ export const isEmbedded = typeof location !== 'undefined' && location.pathname.s
  */
 export const sharedNamePrefix = isEmbedded ? `embedded-${appConfig.slug}` : appConfig.slug;
 
-/** Takes the handoff code out of the address at load: no history entry, reload or telemetry sees it. */
+/**
+ * Takes the handoff code out of the address at load: no history entry or reload holds it. The navigation timing entry
+ * keeps the first address, which telemetry redacts (`scrubUrl`).
+ */
 const takeHandoffCode = () => {
   const code = new URLSearchParams(location.hash.slice(1)).get(embeddedHandoffKey);
   if (code) history.replaceState(history.state, '', `${location.pathname}${location.search}`);
@@ -33,12 +36,14 @@ let sessionToken: string | null = null;
 /** The token every request of an embedded document sends, empty while it holds none. */
 export const embeddedSessionToken = () => sessionToken ?? '';
 
-/**
- * Redeems the handoff code a launch handed this document, once, through `redeem`, and keeps the token it answers: the
- * only way a token gets here.
- */
-export async function redeemEmbeddedHandoff(redeem: (code: string) => Promise<string>): Promise<void> {
+/** The handoff code a launch handed this document, once: a later call finds none. */
+export const takeEmbeddedHandoffCode = () => {
   const code = handoffCode;
   handoffCode = null;
-  if (code) sessionToken = await redeem(code);
-}
+  return code;
+};
+
+/** Keeps the token a redeemed handoff answered. */
+export const keepEmbeddedSessionToken = (token: string) => {
+  sessionToken = token;
+};

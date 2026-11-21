@@ -1,5 +1,4 @@
 import { persistQueryClientRestore } from '@tanstack/react-query-persist-client';
-import { isEmbedded } from '~/lib/embedded-context';
 import { settleOrReport } from '~/lib/tracing';
 import { offlineFilesStore } from '~/modules/attachment/offline/offline-files-store';
 import { endSession, sweepForgottenUserDbs } from '~/modules/auth/end-session';
@@ -108,9 +107,8 @@ if (stored.user?.isAnonymous && stored.session && Date.parse(stored.session.expi
 userStore.subscribe(reconcileLocalUser);
 reconcileLocalUser();
 
-// A delete that a sign-out could not finish, as while another tab held the database open, is made here. An embedded
-// document stores no user to keep, and another frame may hold its database open.
-if (!isEmbedded) void sweepForgottenUserDbs();
+// A delete that a sign-out could not finish, as while another tab held the database open, is made here.
+void sweepForgottenUserDbs();
 
 // Another tab stored another signed-in user, or none: this tab boots again as whoever it names.
 window.addEventListener('storage', (event) => {

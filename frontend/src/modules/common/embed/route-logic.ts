@@ -2,7 +2,7 @@ import { redirect } from '@tanstack/react-router';
 import { redeemLtiHandoff } from 'sdk';
 import type { NotificationLinkSearch } from 'shared/utils/notification-link';
 import { ApiError } from '~/lib/api';
-import { redeemEmbeddedHandoff } from '~/lib/embedded-context';
+import { keepEmbeddedSessionToken, takeEmbeddedHandoffCode } from '~/lib/embedded-context';
 import { startSignedInApp } from '~/modules/common/app/route-logic';
 import { readMe } from '~/modules/me/query';
 import { userStore } from '~/modules/user/user-store';
@@ -20,7 +20,8 @@ type RouteCause = 'preload' | 'enter' | 'stay';
 export async function embedLayoutBeforeLoad(cause: RouteCause): Promise<void> {
   if (!userStore.getState().user) {
     try {
-      await redeemEmbeddedHandoff(async (code) => (await redeemLtiHandoff({ body: { code } })).token);
+      const code = takeEmbeddedHandoffCode();
+      if (code) keepEmbeddedSessionToken((await redeemLtiHandoff({ body: { code } })).token);
       await readMe();
     } catch (error) {
       if (!(error instanceof ApiError) || error.status !== 401) throw error;
