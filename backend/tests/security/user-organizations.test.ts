@@ -4,11 +4,14 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { defaultHeaders, memberRole } from '../fixtures';
 import { createSystemAdminUser, createTestOrganization, createTestSession, expectRefusal, getUserByEmail, insertOrgMembership } from '../helpers';
+import { assumeMembersReadPeople } from '../members-read-people';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
+
+assumeMembersReadPeople();
 
 // Member previews list the organization's top role: the viewer holds it to appear in one.
 const [previewedRole] = hierarchy.getRoles('organization');
