@@ -147,7 +147,7 @@ The role mapping may give no role, which refuses the launch with a page and leav
 - **Any other context role:** the channel's least privileged role.
 - **Institution or system roles alone, or no roles at all:** no role.
 
-A launch without a context admits nobody new. It signs in a person this tenant already knows from the same platform as a member of the organization, from a launch in a context or an import, and changes no membership, role or seat. Anyone else gets a page that says the app opens from a page they are a member of.
+A launch without a context admits nobody new. It signs in a person this tenant already knows from the same platform as a member of the organization, from a launch in a context or an import, and changes no membership, role or seat. Anyone else gets a page that asks them to open the app once from another page that shows it.
 
 A person a context admits also becomes a member of the organization, at the organization role their role in the context's channel gives there. When that role may update the organization, as the permission engine decides, they get the highest role below it that may not.
 
@@ -261,7 +261,7 @@ The template ships the organization's embedded page. An app that maps a context 
 - **A browser that cannot keep the embedded session:** that page also names the browsers that can, such as Chrome, Edge and Firefox.
 - **Two first launches at once:** when two launches run at the same moment in a browser that never launched the app on that site before, one of the two frames asks to be opened again.
 - **A context not set up yet:** someone who arrives before anyone who sets it up is told that someone who manages the page on the platform must open it first.
-- **A launch without a context:** someone the organization does not know yet is told to open the app from a page they are a member of first.
+- **A launch without a context:** someone the organization does not know yet is told to open the app once from another page on the platform that shows it, then this one again.
 - **No role the app takes:** a launch with no context role is refused with a page in the template, and nothing is written. A platform's admin who is not enrolled in the context enrols there first.
 - **A full organization:** a person who would be a new member while the tenant's member limit leaves no seat is refused with a page. Someone who is a member already is never refused for it.
 - **An archived context:** a member gets in with the role they hold. Anyone the launch would add is refused with a page, as joining it is.
