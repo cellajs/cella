@@ -4,7 +4,7 @@ import { userGuard } from '#/middlewares/guard';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
 import { mockMemberUserResponse, mockPaginatedUsersResponse } from '#/modules/user/user-mocks';
 import { memberUserSchema, userListQuerySchema } from '#/modules/user/user-schema';
-import { paginationSchema, slugIncludeQuerySchema, userIdParamSchema } from '#/schemas';
+import { paginationSchema, slugIncludeQuerySchema, validIdOrSlugSchema } from '#/schemas';
 
 export const userRoutes = createXRoutes(['users', 'cella'], {
   listUsers: xRoute({
@@ -37,7 +37,7 @@ export const userRoutes = createXRoutes(['users', 'cella'], {
     summary: 'Get user',
     description:
       "Retrieves a user by ID. The requesting user's roles must let it see the user, through one of the user's memberships. Pass ?slug=true to resolve by slug instead. Pass ?include=mfa for `mfaRequired`, which only the user themselves, system admins and admins of an organization the user is a member of receive.",
-    request: { params: userIdParamSchema, query: slugIncludeQuerySchema },
+    request: { params: z.object({ userId: validIdOrSlugSchema }), query: slugIncludeQuerySchema },
     responses: {
       200: json('User', memberUserSchema.extend({ mfaRequired: z.boolean().optional() }), mockMemberUserResponse()),
       ...errors(403),

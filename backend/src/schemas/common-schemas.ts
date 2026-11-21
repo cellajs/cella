@@ -35,6 +35,9 @@ const lengthError = (name: string, min: number) => translatedError('error:invali
 
 export const validIdSchema = z.string().max(maxLength.id);
 
+/** A path parameter of a route that takes `?slug=true`: an id, or a slug as long as the slug column holds. */
+export const validIdOrSlugSchema = z.string().max(maxLength.field);
+
 export const validTempIdSchema = z
   .string()
   .max(maxLength.id)
