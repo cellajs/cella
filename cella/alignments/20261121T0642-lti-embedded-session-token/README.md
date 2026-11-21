@@ -1,8 +1,8 @@
 ---
 breaking: true
 clientCacheBump: false
-caughtBy: tests
-grep: embedded-session, embeddedSessionHeader, embeddedSessionParam, sessionCookieOf, SessionCookieName, readBrowserSession, findLiveSessionsHeldByUser, tokenKinds, maxEmbeddedSessionsPerUser, EventSource
+caughtBy: compiler
+grep: embedded-session, embedded_session_cross_site, lti_launch_not_framed, embeddedSessionHeader, embeddedSessionParam, sessionCookieOf, SessionCookieName, readBrowserSession, findLiveSessionsHeldByUser, tokenKinds, maxEmbeddedSessionsPerUser, EventSource
 generate: true
 ---
 
@@ -34,7 +34,8 @@ No script: manual.
 
 1. Run `pnpm generate`: it adds `browser_key_hash` to `sessions`, and nothing else is needed. Embedded sessions started before the deploy stop at their next request, and their frames ask to be opened again.
 2. Caught by the compiler: add `'lti-handoff'` to `tokenKinds` and `maxEmbeddedSessionsPerUser: 50` beside `maxSessionsPerUser` in the app's `shared/config/config.default.ts`. `sessionCookieOf`, `SessionCookieName` and `readBrowserSession` are gone, `findSession` takes `{ embedded }` where it took a cookie name, and `findLiveSessionsHeldByUser` takes `embedded`: use `resolveSession(ctx, { embedded })`.
-3. Caught by tests: an app test that sends `X-Embedded-Session: 1` or reads the `-embedded-session-` cookie uses `embeddedSessionOf`, `embeddedHeaders` and `browserKeyCookieOf` from `backend/tests/oauth-helpers.ts`.
+3. Where an app test sends `X-Embedded-Session: 1` or reads the `-embedded-session-` cookie, it uses `embeddedSessionOf`, `embeddedHeaders` and `browserKeyCookieOf` from `backend/tests/oauth-helpers.ts`.
+4. Where the app's `appError.json` overrides `embedded_session_cross_site` or `lti_launch_not_framed`, drop them: the first error is gone, and the second's text is `backend:lti.not_framed`, which has no override file: edit the app's `backend.json`.
 
 ## Verify
 
