@@ -2,9 +2,10 @@
   "type": "diff",
   "version": "9",
   "dialect": "postgres",
-  "id": "ca35fdb3-bae0-4d19-ad55-4878089dedc2",
+  "id": "684c7e3b-9265-4a32-b31e-a4ef88452e4b",
   "prevIds": [
-    "7fd2dcfd-ef4f-4ec2-b8f6-428d9bd0b8ba"
+    "7fd2dcfd-ef4f-4ec2-b8f6-428d9bd0b8ba",
+    "5fec5e17-5303-4337-a590-9d1988075227"
   ],
   "footprints": [
     {
