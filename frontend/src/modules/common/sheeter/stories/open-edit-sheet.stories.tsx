@@ -105,9 +105,13 @@ export const DismissAnimatesOut: Story = {
     await userEvent.click(within(canvasElement).getByRole('button', { name: 'Edit' }));
     const sheet = await within(document.body).findByRole('dialog');
 
+    // An Escape during the slide-in reverses a transition barely begun: the sheet leaves within a frame.
+    await Promise.all(sheet.getAnimations().map((animation) => animation.finished));
     await userEvent.keyboard('{Escape}');
-    await expect(sheet.isConnected).toBe(true);
-    await expect(sheet).toHaveAttribute('data-closed');
+    await waitFor(() => {
+      expect(sheet.isConnected).toBe(true);
+      expect(sheet).toHaveAttribute('data-closed');
+    });
     await waitFor(() => expect(sheet.isConnected).toBe(false));
   },
 };
