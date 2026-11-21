@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { embeddedSessionHeader, embeddedSessionParam } from 'shared/utils/embedded-session';
+import { safeEqual } from 'shared/utils/safe-equal';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { loadCachedSession } from '#/middlewares/guard/session-cache';
@@ -87,7 +88,7 @@ const readEmbeddedSession = async (ctx: Context): Promise<ResolvedSession> => {
   const browserKey = getAuthCookie(ctx, 'embedded-browser-key');
   if (!token || !browserKey) throw new AppError(401, 'unauthorized', 'warn');
   const resolved = await readSession(token);
-  if (!resolved.browserKeyHash || resolved.browserKeyHash !== hashToken(browserKey)) throw new AppError(401, 'no_session', 'warn');
+  if (!resolved.browserKeyHash || !safeEqual(resolved.browserKeyHash, hashToken(browserKey))) throw new AppError(401, 'no_session', 'warn');
   return resolved;
 };
 
