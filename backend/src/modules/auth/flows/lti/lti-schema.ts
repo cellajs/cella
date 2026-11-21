@@ -98,6 +98,12 @@ export const ltiFinishFormSchema = z.object({
   storage_value: z.string().max(maxLength.field).optional(),
 });
 
+/** The one-use code a finished launch hands the embedded page, which it redeems for its session token. */
+export const ltiHandoffBodySchema = z.object({ code: z.string().max(maxLength.field) });
+
+/** The embedded session's token, which the page keeps in memory and sends as `X-Embedded-Session`. */
+export const ltiHandoffResponseSchema = z.object({ token: z.string() });
+
 /** The path of one LTI connection's key set. */
 export const ltiKeySetParamSchema = z.object({ connectionId: validUuidSchema });
 

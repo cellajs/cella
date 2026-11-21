@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { actorsTable } from '#/modules/actors/actors-db';
@@ -24,18 +24,27 @@ export const liveSession = (now: string) => and(isNull(sessionsTable.revokedAt),
 
 interface FindLiveSessionsHeldByUserOpts {
   userId: string;
+  /** Embedded sessions only (an LTI launch's, with a browser key), or ordinary ones only. */
+  embedded: boolean;
   /** Only the sessions of this browser. */
   deviceIdHash?: string;
   /** Skip this many of the newest. */
   offset?: number;
 }
 
-/** The live sessions the user holds, newest first. */
-export const findLiveSessionsHeldByUser = async (ctx: DbContext, { userId, deviceIdHash, offset = 0 }: FindLiveSessionsHeldByUserOpts) =>
+/** The live sessions of one kind that the user holds, newest first. */
+export const findLiveSessionsHeldByUser = async (ctx: DbContext, { userId, embedded, deviceIdHash, offset = 0 }: FindLiveSessionsHeldByUserOpts) =>
   ctx.var.db
     .select({ id: sessionsTable.id })
     .from(sessionsTable)
-    .where(and(eq(sessionsTable.userId, userId), liveSession(getIsoDate()), deviceIdHash ? eq(sessionsTable.deviceIdHash, deviceIdHash) : undefined))
+    .where(
+      and(
+        eq(sessionsTable.userId, userId),
+        liveSession(getIsoDate()),
+        embedded ? isNotNull(sessionsTable.browserKeyHash) : isNull(sessionsTable.browserKeyHash),
+        deviceIdHash ? eq(sessionsTable.deviceIdHash, deviceIdHash) : undefined,
+      ),
+    )
     .orderBy(desc(sessionsTable.createdAt))
     .offset(offset);
 
@@ -56,6 +65,7 @@ export const findSessionBySecret = async (ctx: DbContext, { secretHash }: FindSe
   const [result] = await ctx.var.db
     .select({
       session: sessionFactColumns,
+      browserKeyHash: sessionsTable.browserKeyHash,
       revokedAt: sessionsTable.revokedAt,
       user: userSelect,
       systemRole: systemRolesTable.role,
@@ -85,6 +95,32 @@ export const findLiveSession = async (ctx: DbContext, { id }: { id: string }) =>
     .where(and(eq(sessionsTable.id, id), liveSession(getIsoDate())))
     .limit(1);
   return live;
+};
+
+interface UpdateSessionHandoffOpts {
+  /** What the session's `secretHash` holds until the handoff is redeemed. */
+  handoffSecretHash: string;
+  browserKeyHash: string;
+  /** The hash of the session token the redemption hands out. */
+  secretHash: string;
+  expiresAt: string;
+}
+
+/**
+ * Redeems a live session's handoff: one update swaps its secret for the session token's hash and sets its expiry. A
+ * second redemption finds nothing.
+ * @returns The session's id, or undefined when no live session holds that handoff for that browser key.
+ */
+export const updateSessionHandoff = async (
+  ctx: DbContext,
+  { handoffSecretHash, browserKeyHash, secretHash, expiresAt }: UpdateSessionHandoffOpts,
+) => {
+  const [redeemed] = await ctx.var.db
+    .update(sessionsTable)
+    .set({ secretHash, expiresAt })
+    .where(and(eq(sessionsTable.secretHash, handoffSecretHash), eq(sessionsTable.browserKeyHash, browserKeyHash), liveSession(getIsoDate())))
+    .returning({ id: sessionsTable.id });
+  return redeemed;
 };
 
 /** Stores a session; its `secretHash` is the hash of the session token, never the token. */

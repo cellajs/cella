@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "ca35fdb3-bae0-4d19-ad55-4878089dedc2",
+  "prevIds": [
+    "7fd2dcfd-ef4f-4ec2-b8f6-428d9bd0b8ba"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sessions",
+        "browser_key_hash"
+      ],
+      "writes": [
+        "s|col|public.sessions.browser_key_hash",
+        "n|col|public.sessions.browser_key_hash",
+        "e|col|public.sessions.browser_key_hash"
+      ],
+      "reads": [
+        "n|tbl|public.sessions",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "sessions",
+        "name": "browser_key_hash",
+        "type": "varchar(64)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

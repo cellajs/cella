@@ -3,15 +3,21 @@ import type { Me, User } from 'sdk';
 import { appConfig } from 'shared';
 import { isRecord } from 'shared/utils/as-record';
 import { create } from 'zustand';
-import { createJSONStorage, devtools, persist } from 'zustand/middleware';
+import { createJSONStorage, devtools, persist, type StateStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
-import { sharedNamePrefix } from '~/lib/embedded-context';
+import { isEmbedded, sharedNamePrefix } from '~/lib/embedded-context';
 import type { MeUser } from '~/modules/me/types';
 import { uiStore } from '~/modules/ui/ui-store';
 
-/** The `localStorage` key the store persists to, which every tab of the browser shares; an embedded document has its own. */
+/** The `localStorage` key the store persists to, which every tab of the browser shares. */
 export const userStorageKey = `${sharedNamePrefix}-user`;
+
+/**
+ * Where an embedded document keeps the store: nowhere but memory. Every frame of the app on the platform's page shares
+ * its `localStorage`, and the user is whoever the API names for this frame's session.
+ */
+const memoryOnly: StateStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 
 /**
  * Who a persisted value of the store names, each `null` when absent or unreadable. The default is what `localStorage`
@@ -89,7 +95,7 @@ export const useUserStore = create<UserStoreState>()(
         migrate: () => ({}),
         name: userStorageKey,
         partialize: ({ user, isSystemAdmin, lastUser, session }) => ({ user, isSystemAdmin, lastUser, session }),
-        storage: createJSONStorage(() => localStorage),
+        storage: createJSONStorage(() => (isEmbedded ? memoryOnly : localStorage)),
       },
     ),
     { enabled: isDebugMode, name: 'user store' },

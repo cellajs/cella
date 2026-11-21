@@ -4,7 +4,7 @@ import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { embeddedSessionHeader } from 'shared/utils/embedded-session';
 import { ApiError, type ApiErrorInit, gatewayStatuses } from '~/lib/api';
-import { isEmbedded } from '~/lib/embedded-context';
+import { embeddedSessionToken, isEmbedded } from '~/lib/embedded-context';
 import { recordReportedBudgets } from '~/lib/reported-budgets';
 import { alertStore } from '~/modules/common/alerter/alert-store';
 import { reportNetworkFailure, reportReachable } from '~/query/offline/connectivity';
@@ -57,8 +57,9 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit) => 
   // OTel FetchInstrumentation drops the init argument when the input is a Request, so credentials go on the Request.
   const request = new Request(input, { ...init, credentials: 'include' });
   request.headers.set('x-client-version', String(currentSchemaVersion));
-  // An embedded page's session lives in a cookie of its own, which the API reads only for a request that asks for it.
-  if (isEmbedded) request.headers.set(embeddedSessionHeader, '1');
+  // An embedded page names its session by the token in its memory, empty before the handoff: the API then reads that
+  // session alone, bound to the browser key cookie, and never the app's own.
+  if (isEmbedded) request.headers.set(embeddedSessionHeader, embeddedSessionToken());
   const unreachable = new AbortController();
   const slowResponse = onlineManager.isOnline()
     ? setTimeout(() => (onlineManager.isOnline() ? void reportNetworkFailure() : abortUnreachable(unreachable)), responseWaitMs)

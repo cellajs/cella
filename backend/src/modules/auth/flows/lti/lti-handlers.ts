@@ -2,6 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import type { Env } from '#/core/context';
+import { redeemEmbeddedHandoff } from '#/modules/auth/core/sessions/operations/create-session';
 import {
   assertFrameNavigation,
   launchStepRefusalPage,
@@ -63,6 +64,10 @@ app.openapi(authLtiRoutes.finishLtiLaunch, async (ctx) => {
     return launchStepRefusalPage(ctx, err);
   }
 });
+
+app.openapi(authLtiRoutes.redeemLtiHandoff, async (ctx) =>
+  ctx.json({ token: await redeemEmbeddedHandoff(ctx, ctx.req.valid('json').code) }, 200, { 'Cache-Control': 'no-store' }),
+);
 
 export const authLtiHandlers = app;
 

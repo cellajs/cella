@@ -2,6 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig, buildSubject, type ChannelEntityType, checkAccess, hierarchy, type RestrictionCap } from 'shared';
+import { embeddedHandoffKey } from 'shared/utils/embedded-session';
 import { generateId } from 'shared/utils/entity-id';
 import { buildNotificationPath } from 'shared/utils/notification-link';
 import type { DbContext, Env } from '#/core/context';
@@ -205,7 +206,7 @@ const recordLtiDeployment = async (
  * not hold yet, in the same transaction, and starts the embedded session: no MFA challenge, the launch is the proof. A
  * launch by someone who sets the context up (`setsUpLtiContext`), through the connection that holds it, asks for a
  * member import (`requestLtiMemberImport`) without waiting for it.
- * @returns The embedded page of the channel to redirect to.
+ * @returns The embedded page of the channel to redirect to, with the embedded session's handoff code in its fragment.
  * @throws AppError 403 `lti_launch_cross_site` for a request the browser does not mark same-origin, 403
  *   `lti_launch_no_context` for a launch without a context by a person the tenant does not know as a member, 403
  *   `lti_launch_no_roles` for a person `ltiContextRole` maps to no role, 403 `channel_archived` for a person the launch
@@ -267,8 +268,9 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
 
   const user = await findUserById(dbCtx, { id: userId });
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
-  await setEmbeddedSession(ctx, user, { connectionId: connection.id });
+  const handoffCode = await setEmbeddedSession(ctx, user, { connectionId: connection.id });
 
   log.info('LTI launch', { connectionId: connection.id, channelType: channel.entityType, channelId: channel.id, context: !!entry });
-  return embeddedPageUrl(channel);
+  // The fragment never reaches a server or a Referer, and the page takes it out of its address before anything reads it.
+  return `${embeddedPageUrl(channel)}#${new URLSearchParams({ [embeddedHandoffKey]: handoffCode })}`;
 }

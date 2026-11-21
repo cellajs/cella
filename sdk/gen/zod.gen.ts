@@ -1729,6 +1729,17 @@ export const zFinishLtiLaunchBody = z.object({
   storage_value: z.string().max(255).optional(),
 });
 
+export const zRedeemLtiHandoffBody = z.object({
+  code: z.string().max(255),
+});
+
+/**
+ * Session token
+ */
+export const zRedeemLtiHandoffResponse = z.object({
+  token: z.string(),
+});
+
 export const zGetStepUpQuery = z.object({
   tier: z.enum(['factor', 'account', 'enroll']).optional().default('account'),
 });

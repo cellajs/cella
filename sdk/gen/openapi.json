@@ -7090,7 +7090,7 @@
         "operationId": "signOut",
         "tags": ["auth", "cella"],
         "summary": "Sign out",
-        "description": "Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. A request with the embedded-session marker ends the embedded session and leaves the normal one, and the other way round. An anonymous session takes its account along, with an organization only that account manages.",
+        "description": "Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. A request that names the embedded session ends it and leaves the normal one, and the other way round. An anonymous session takes its account along, with an organization only that account manages.",
         "x-guard": ["publicGuard"],
         "responses": {
           "204": {
@@ -9703,7 +9703,7 @@
         "operationId": "finishLtiLaunch",
         "tags": ["auth", "cella"],
         "summary": "Finish an LTI launch",
-        "description": "Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value the frame kept. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.",
+        "description": "Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value the frame kept. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it starts an embedded session bound to the browser key in a partitioned cookie, set at the first launch on the platform's site and kept by later ones, and redirects to the channel's embedded page with a one-use code in the address fragment. Refusals answer a page naming why.",
         "x-enabled-by": {
           "strategy": "lti"
         },
@@ -9735,7 +9735,7 @@
         },
         "responses": {
           "303": {
-            "description": "Launched\n\nTo the embedded page of the channel, with the embedded session set.",
+            "description": "Launched\n\nTo the embedded page of the channel, with the code that redeems the session in the fragment.",
             "headers": {
               "Location": {
                 "schema": {
@@ -9759,6 +9759,76 @@
           },
           "409": {
             "description": "Not set up yet\n\nA page: someone who sets the context up opens the app from it first."
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/lti:redeem-handoff": {
+      "post": {
+        "security": [],
+        "operationId": "redeemLtiHandoff",
+        "tags": ["auth", "cella"],
+        "summary": "Redeem an LTI handoff",
+        "description": "Posted by the embedded page a finished launch opened, with the code from its address fragment. Answers the embedded session's token, which the page keeps in memory alone and sends with every request. The code works once, for two minutes, and only beside the browser key cookie the launch set: a second redemption, another browser and another platform's site get a 401.",
+        "x-enabled-by": {
+          "strategy": "lti"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["ltiLaunchLimiter"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "code": "example-handoff-code"
+              },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "maxLength": 255
+                  }
+                },
+                "required": ["code"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "token": "example-session-token"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["token"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"

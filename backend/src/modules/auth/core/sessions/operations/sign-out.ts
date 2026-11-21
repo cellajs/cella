@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { type CookieName, deleteAuthCookie, getAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
-import { readBrowserSession, type SessionCookieName, sessionCookieOf } from '#/modules/auth/core/sessions/operations/resolve-session';
+import { asksForEmbeddedSession, resolveSession } from '#/modules/auth/core/sessions/operations/resolve-session';
 import { revokeSessions } from '#/modules/auth/core/sessions/operations/revoke-sessions';
 import { dropHeldLink, spendCookieToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import { linkTokenKinds } from '#/modules/auth/core/tokens/token-policies';
@@ -21,24 +21,28 @@ const signedOutCookies: CookieName[] = [
   ...linkTokenKinds.map((kind) => `${kind}-pending` as const),
 ];
 
-/** Deletes the session cookie, and beside the normal session what this browser holds of it. */
-const deleteSignedOutCookies = (ctx: Context<Env>, cookie: SessionCookieName) => {
-  deleteAuthCookie(ctx, cookie);
-  if (cookie === 'session') for (const name of signedOutCookies) if (getAuthCookie(ctx, name)) deleteAuthCookie(ctx, name);
+/**
+ * Deletes the session cookie and what this browser holds of the normal session. An embedded session leaves its browser
+ * key: the other frames of the partition count with it.
+ */
+const deleteSignedOutCookies = (ctx: Context<Env>, embedded: boolean) => {
+  if (embedded) return;
+  deleteAuthCookie(ctx, 'session');
+  for (const name of signedOutCookies) if (getAuthCookie(ctx, name)) deleteAuthCookie(ctx, name);
 };
 
 /**
- * Signs this browser out of the session the request asks for (`sessionCookieOf`): the embedded one leaves the normal
- * one as it is, and the other way round. Before the normal session it ends what this browser holds of a sign-in in
- * progress (a link held for confirmation, a second-factor challenge). An anonymous session is all its account has: the
- * account goes with it, and so does an organization it alone manages, as a demo's. Every write runs before any cookie
- * goes: a failure leaves this browser all its cookies, and a retry finishes the job. A spend added here defers its
- * cookie delete as well.
+ * Signs this browser out of the session the request asks for (`asksForEmbeddedSession`): the embedded one leaves the
+ * normal one as it is, and the other way round. Before the normal session it ends what this browser holds of a sign-in
+ * in progress (a link held for confirmation, a second-factor challenge). An anonymous session is all its account has:
+ * the account goes with it, and so does an organization it alone manages, as a demo's. Every write runs before any
+ * cookie goes: a failure leaves this browser all its cookies, and a retry finishes the job. A spend added here defers
+ * its cookie delete as well.
  * @throws AppError 401 when the browser holds no such session and no second-factor challenge.
  */
 export const signOutOp = async (ctx: Context<Env>) => {
-  const cookie = sessionCookieOf(ctx);
-  if (cookie === 'session') {
+  const embedded = asksForEmbeddedSession(ctx);
+  if (!embedded) {
     // A magic link held here for confirmation, never confirmed, goes. A provider connect started here dies with the
     // session below: its pin serves only the session that started it.
     await dropHeldLink(ctx, 'magic');
@@ -50,21 +54,21 @@ export const signOutOp = async (ctx: Context<Env>) => {
 
       // Canceling from the MFA page carries no session cookie: ending the challenge is then the whole sign-out.
       if (!getAuthCookie(ctx, 'session')) {
-        deleteSignedOutCookies(ctx, cookie);
+        deleteSignedOutCookies(ctx, embedded);
         return;
       }
     }
   }
 
   try {
-    const { session } = await readBrowserSession(getAuthCookie(ctx, cookie));
+    const { session } = await resolveSession(ctx, { embedded });
     if (session.authStrategy === 'anonymous') await deleteAccounts(ctx, { userIds: [session.userId], by: session.userId });
     else await revokeSessions(ctx, { userId: session.userId, sessionIds: [session.id], reason: 'sign_out', by: session.userId });
     log.info('User signed out', { userId: session.userId, anonymous: session.authStrategy === 'anonymous' });
   } catch (err) {
     // A refusal means no live session is left to end, so the cookies go all the same; a failed read or write keeps them.
-    if (err instanceof AppError && err.status === 401) deleteSignedOutCookies(ctx, cookie);
+    if (err instanceof AppError && err.status === 401) deleteSignedOutCookies(ctx, embedded);
     throw err;
   }
-  deleteSignedOutCookies(ctx, cookie);
+  deleteSignedOutCookies(ctx, embedded);
 };

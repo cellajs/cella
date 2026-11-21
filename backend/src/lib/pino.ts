@@ -9,7 +9,7 @@ const isProduction = appConfig.mode === 'production' || env.NODE_ENV === 'produc
 const isTest = appConfig.mode === 'test';
 
 /** Censored in every backend log line: secret columns and transport keys, plus the auth headers of a logged request. */
-export const backendRedactPaths = [...redactPaths, 'req.headers.authorization', 'req.headers.cookie'];
+export const backendRedactPaths = [...redactPaths, 'req.headers.authorization', 'req.headers.cookie', 'req.headers["x-embedded-session"]'];
 
 /** What both loggers share: a level, sink or redaction list set here reaches each. */
 const loggerOptions = {

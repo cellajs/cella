@@ -1,4 +1,4 @@
-import { createXRoutes, errors, json, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { orgGuard, publicGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { ltiKeySetLimiter, ltiLaunchLimiter, ltiLoginLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockLtiContextResponse } from '#/modules/auth/auth-mocks';
@@ -6,6 +6,8 @@ import {
   listLtiContextsQuerySchema,
   ltiContextSchema,
   ltiFinishFormSchema,
+  ltiHandoffBodySchema,
+  ltiHandoffResponseSchema,
   ltiKeySetParamSchema,
   ltiKeySetSchema,
   ltiLaunchFormSchema,
@@ -124,10 +126,13 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [ltiLaunchLimiter],
     summary: 'Finish an LTI launch',
     description:
-      "Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value the frame kept. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.",
+      "Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value the frame kept. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it starts an embedded session bound to the browser key in a partitioned cookie, set at the first launch on the platform's site and kept by later ones, and redirects to the channel's embedded page with a one-use code in the address fragment. Refusals answer a page naming why.",
     request: { body: formBody(ltiFinishFormSchema) },
     responses: {
-      303: { description: 'Launched\n\nTo the embedded page of the channel, with the embedded session set.', headers: locationSchema },
+      303: {
+        description: 'Launched\n\nTo the embedded page of the channel, with the code that redeems the session in the fragment.',
+        headers: locationSchema,
+      },
       400: { description: "Launch refused\n\nThe platform's key set could not be read, or a field is longer than a launch carries." },
       401: { description: 'Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected.' },
       403: {
@@ -136,6 +141,21 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
       },
       404: { description: "Organization gone\n\nA page: the connection's tenant holds no organization." },
       409: { description: 'Not set up yet\n\nA page: someone who sets the context up opens the app from it first.' },
+    },
+  }),
+  redeemLtiHandoff: xRoute({
+    method: 'post',
+    path: '/lti/~redeem-handoff',
+    xEnabledBy: { strategy: 'lti' },
+    xGuard: [publicGuard],
+    xRateLimiter: [ltiLaunchLimiter],
+    summary: 'Redeem an LTI handoff',
+    description:
+      "Posted by the embedded page a finished launch opened, with the code from its address fragment. Answers the embedded session's token, which the page keeps in memory alone and sends with every request. The code works once, for two minutes, and only beside the browser key cookie the launch set: a second redemption, another browser and another platform's site get a 401.",
+    request: { body: jsonBody(ltiHandoffBodySchema, { code: 'example-handoff-code' }) },
+    responses: {
+      200: json('Session token', ltiHandoffResponseSchema, { token: 'example-session-token' }),
+      ...errors(401),
     },
   }),
 });

@@ -335,6 +335,9 @@ import type {
   RedeemLinkTokenData,
   RedeemLinkTokenErrors,
   RedeemLinkTokenResponses,
+  RedeemLtiHandoffData,
+  RedeemLtiHandoffErrors,
+  RedeemLtiHandoffResponses,
   RegisterLtiPlatformData,
   RegisterLtiPlatformErrors,
   RegisterLtiPlatformResponses,
@@ -546,6 +549,7 @@ import {
   zPullYjsDocumentResponse,
   zPushYjsUpdateResponse,
   zRedeemLinkTokenResponse,
+  zRedeemLtiHandoffResponse,
   zRemovePushSubscriptionResponse,
   zRemoveUserFactorResponse,
   zResendInvitationResponse,
@@ -1041,7 +1045,7 @@ export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(
 /**
  * Sign out
  *
- * Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. A request with the embedded-session marker ends the embedded session and leaves the normal one, and the other way round. An anonymous session takes its account along, with an organization only that account manages.
+ * Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. A request that names the embedded session ends it and leaves the normal one, and the other way round. An anonymous session takes its account along, with an organization only that account manages.
  *
  * **POST /auth/sign-out** ·· [signOut](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sign-out) ·· _auth · cella_
  *
@@ -1824,7 +1828,7 @@ export const getLtiKeySet = <ThrowOnError extends boolean = true>(
 /**
  * Finish an LTI launch
  *
- * Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value the frame kept. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.
+ * Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value the frame kept. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it starts an embedded session bound to the browser key in a partitioned cookie, set at the first launch on the platform's site and kept by later ones, and redirects to the channel's embedded page with a one-use code in the address fragment. Refusals answer a page naming why.
  *
  * **POST /auth/lti/finish** ·· [finishLtiLaunch](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/lti/finish) ·· _auth · cella_
  *
@@ -1844,6 +1848,31 @@ export const finishLtiLaunch = <ThrowOnError extends boolean = true>(
     ...options,
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Redeem an LTI handoff
+ *
+ * Posted by the embedded page a finished launch opened, with the code from its address fragment. Answers the embedded session's token, which the page keeps in memory alone and sends with every request. The code works once, for two minutes, and only beside the browser key cookie the launch set: a second redemption, another browser and another platform's site get a 401.
+ *
+ * **POST /auth/lti:redeem-handoff** ·· [redeemLtiHandoff](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/lti:redeem-handoff) ·· _auth · cella_
+ *
+ * @param {redeemLtiHandoffData} options
+ * @param {string} options.body.code - `string`
+ * @returns Possible status codes: 200, 400, 401, 413, 415, 429
+ */
+export const redeemLtiHandoff = <ThrowOnError extends boolean = true>(
+  options: Options<RedeemLtiHandoffData, ThrowOnError>,
+): RequestResult<RedeemLtiHandoffResponses, RedeemLtiHandoffErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<RedeemLtiHandoffResponses, RedeemLtiHandoffErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zRedeemLtiHandoffResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/lti:redeem-handoff',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
       ...options.headers,
     },
   });

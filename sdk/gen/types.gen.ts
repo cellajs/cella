@@ -3929,6 +3929,51 @@ export type FinishLtiLaunchErrors = {
 
 export type FinishLtiLaunchError = FinishLtiLaunchErrors[keyof FinishLtiLaunchErrors];
 
+export type RedeemLtiHandoffData = {
+  body: {
+    code: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/lti:redeem-handoff';
+};
+
+export type RedeemLtiHandoffErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RedeemLtiHandoffError = RedeemLtiHandoffErrors[keyof RedeemLtiHandoffErrors];
+
+export type RedeemLtiHandoffResponses = {
+  /**
+   * Session token
+   */
+  200: {
+    token: string;
+  };
+};
+
+export type RedeemLtiHandoffResponse = RedeemLtiHandoffResponses[keyof RedeemLtiHandoffResponses];
+
 export type GetStepUpData = {
   body?: never;
   path?: never;

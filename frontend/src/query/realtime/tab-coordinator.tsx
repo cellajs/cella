@@ -3,13 +3,14 @@ import type { CatchUpMyStreamResponse, StreamChange, StreamSignal } from 'sdk';
 import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { createStore } from 'zustand/vanilla';
-import { sharedNamePrefix } from '~/lib/embedded-context';
+import { isEmbedded, sharedNamePrefix } from '~/lib/embedded-context';
 import { markBundleStale } from '~/query/schema-version-guard';
 
 const channelName = `${sharedNamePrefix}-tab-sync`;
 const leaderLockName = `${sharedNamePrefix}-tab-leader`;
-const hasWebLocks = typeof navigator !== 'undefined' && 'locks' in navigator;
-const hasBroadcastChannel = typeof BroadcastChannel !== 'undefined';
+// An embedded document leads itself with a stream of its own: another frame in its partition may hold another person's session.
+const hasWebLocks = !isEmbedded && typeof navigator !== 'undefined' && 'locks' in navigator;
+const hasBroadcastChannel = !isEmbedded && typeof BroadcastChannel !== 'undefined';
 
 /** What the leader's stream says of live delivery: whether the stream itself works, and whether the server's CDC worker reads. */
 export interface SyncHealth {

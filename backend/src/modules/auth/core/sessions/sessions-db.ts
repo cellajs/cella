@@ -58,6 +58,11 @@ export const sessionsTable = snakeCase.table(
     ipRegionCode: varchar({ length: 2 }),
     ipAsn: integer(),
     deviceIdHash: varchar({ length: 64 }),
+    /**
+     * The hash of the browser key an LTI launch keeps in the partitioned cookie of the platform's site; null for an
+     * ordinary session. The embedded session's token counts only beside that cookie.
+     */
+    browserKeyHash: varchar({ length: 64 }),
     createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,
     revokedAt: isoTimestamp(),
@@ -88,7 +93,7 @@ const { id, userId, kind, authStrategy, connectionId, createdAt, expiresAt } = s
 export const sessionFactColumns = { id, userId, kind, authStrategy, connectionId, createdAt, expiresAt };
 
 /** A session row without its secrets. */
-export type SessionModel = Omit<typeof sessionsTable.$inferSelect, 'secretHash' | 'steppedUpSecretHash'>;
+export type SessionModel = Omit<typeof sessionsTable.$inferSelect, 'secretHash' | 'steppedUpSecretHash' | 'browserKeyHash'>;
 
 /** What the guards know about a session: fixed when it was created, so the auth cache may hold them until it ends. */
 export type SessionFacts = Pick<SessionModel, keyof typeof sessionFactColumns>;

@@ -1,5 +1,6 @@
 import '~/lib/zod-config'; // Must run before shared and sdk build their schemas: zod reads jitless as a schema is built
 import '~/lib/history-bind'; // Must run before otel/maple/router: they all patch history
+import '~/lib/embedded-context'; // Must run before otel/maple/router: it takes a launch's handoff code out of the address
 import { LucideProvider } from 'lucide-react';
 import { MotionConfig } from 'motion/react';
 import { StrictMode } from 'react';

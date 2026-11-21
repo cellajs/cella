@@ -5,11 +5,14 @@ const redacted = '[REDACTED]';
 
 /**
  * Query keys whose value is a secret, matched case-insensitively: the app's own tokens (magic link, unsubscribe, Yjs,
- * an LTI registration link), the push endpoint a browser sends to turn push off, OAuth, OIDC and LTI parameters, and the
- * keys OpenTelemetry's HTTP instrumentation redacts by default (signed storage URLs).
+ * an LTI registration link, the embedded session on the stream and its handoff code), the push endpoint a browser
+ * sends to turn push off, OAuth, OIDC and LTI parameters, and the keys OpenTelemetry's HTTP instrumentation redacts by
+ * default (signed storage URLs).
  */
 const sensitiveQueryKeys = [
   'token',
+  'embeddedSession',
+  'handoff',
   'link',
   'registration_token',
   'endpoint',
