@@ -7,7 +7,7 @@ import { baseDb } from '#/db/db';
 import { deviceColumns } from '#/lib/device-info';
 import { enrollDevice } from '#/modules/auth/core/devices/operations/enroll-device';
 import { type NewDevice, notifySignIn } from '#/modules/auth/core/devices/operations/notify-sign-in';
-import { getAuthCookie, setAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
+import { getBrowserKeys, setAuthCookie, setBrowserKey } from '#/modules/auth/core/general/helpers/cookie';
 import { collectSignInContext, type SignInContext } from '#/modules/auth/core/sessions/helpers/sign-in-context';
 import { findSession } from '#/modules/auth/core/sessions/operations/resolve-session';
 import { revokeSessions } from '#/modules/auth/core/sessions/operations/revoke-sessions';
@@ -193,28 +193,29 @@ export const setUserSession = async (
 
 /**
  * Starts an embedded session for the user after an LTI launch, with the connection recorded, and returns its one-use
- * handoff code. The browser key of this partition is kept, or set at its first launch, and outlives each session it
- * binds. It starts stepped up for nothing and no MFA challenge: the launch is the proof. No other session ends.
+ * handoff code. A browser key this partition presents is kept and refreshed to outlive the session; a launch that
+ * finds none sets one. It starts stepped up for nothing and no MFA challenge: the launch is the proof. No other
+ * session ends.
  */
 export const setEmbeddedSession = async (ctx: Context<Env>, user: UserModel, { connectionId }: { connectionId: string }) => {
-  const browserKey = getAuthCookie(ctx, 'embedded-browser-key') ?? newHashedToken().raw;
+  const [browserKey = newHashedToken().raw] = getBrowserKeys(ctx);
   const { sessionToken: handoffCode } = await startSession(ctx, user, { strategy: 'lti', kind: 'regular', extras: { connectionId, browserKey } });
-  setAuthCookie(ctx, 'embedded-browser-key', browserKey, sessionLifetime);
+  setBrowserKey(ctx, browserKey, sessionLifetime);
   return handoffCode;
 };
 
 /**
  * Redeems the handoff code of an embedded session for its token, which the frame keeps in memory: the code works once,
  * within `handoffWindow`, and only beside the browser key the launch recorded.
- * @throws AppError 401 `no_session` without the browser key, or for a code no live session holds for it.
+ * @throws AppError 401 `no_session` without a browser key, or for a code no live session holds for one presented.
  */
 export const redeemEmbeddedHandoff = async (ctx: Context<Env>, handoffCode: string) => {
-  const browserKey = getAuthCookie(ctx, 'embedded-browser-key');
-  if (!browserKey) throw new AppError(401, 'no_session', 'warn');
+  const browserKeys = getBrowserKeys(ctx);
+  if (!browserKeys.length) throw new AppError(401, 'no_session', 'warn');
   const { raw: sessionToken, hash: secretHash } = newHashedToken();
   const redeemed = await updateSessionHandoff(dbCtx, {
     handoffSecretHash: handoffSecretHash(handoffCode),
-    browserKeyHash: hashToken(browserKey),
+    browserKeyHashes: browserKeys.map(hashToken),
     secretHash,
     expiresAt: isoDateIn(sessionLifetime),
   });

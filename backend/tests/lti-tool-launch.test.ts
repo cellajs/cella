@@ -42,8 +42,9 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
-import { authCookie, cookieChange, createTestOrganization, createTestUser, sessionRow, setCookieOf, setCookiePair } from './helpers';
+import { authCookie, createTestOrganization, createTestUser, sessionRow } from './helpers';
 import {
+  browserKeyCookieOf,
   decodeHtml,
   embeddedHeaders,
   embeddedSessionOf,
@@ -79,9 +80,6 @@ const pageExchange = (page: string) => {
   );
   return exchange;
 };
-
-/** A browser key cookie of another browser, or of another platform's site. */
-const foreignBrowserKey = () => authCookie('embedded-browser-key', nanoid(40));
 
 describe('LTI launch at the app as an LTI tool', async () => {
   const call = await createAppClient();
@@ -213,7 +211,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(response.status).toBe(status);
     const text = resourceErrorTexts(type, entityType)?.text ?? new AppError(400, type, 'info').message;
     expect(decodeHtml(await response.text())).toContain(text);
-    expect(cookieChange(response, 'embedded-browser-key')).toBeUndefined();
+    expect(browserKeyCookieOf(response)).toBeUndefined();
   };
 
   // Attack: a page on an origin the deploy lists for embedded pages, or one another connection's platform frames from,
@@ -489,19 +487,21 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect((await me(embeddedHeaders({ token: '', cookie: both }))).status).toBe(401);
     expect((await me({ Cookie: embedded.cookie })).status).toBe(401);
     expect((await me(embeddedHeaders({ token: embedded.token, cookie: member.sessionCookie }))).status).toBe(401);
-    expect((await me(embeddedHeaders({ token: embedded.token, cookie: foreignBrowserKey() }))).status).toBe(401);
     expect((await fetchApp(`/me?${new URLSearchParams({ [embeddedSessionParam]: embedded.token })}`, { headers: { Cookie: both } })).status).toBe(
       200,
     );
 
+    // Another browser's launch: its key does not take this token, and its code redeems nothing here or without a key.
+    const elsewhere = await launch(connected);
+    const elsewhereKey = browserKeyCookieOf(elsewhere.response)?.pair ?? '';
+    expect((await me(embeddedHeaders({ token: embedded.token, cookie: elsewhereKey }))).status).toBe(401);
     expect((await redeemHandoff(fetchApp, handoffCodeOf(launched.response), embedded.cookie)).status).toBe(401);
-    const carriedOff = await launch(connected);
-    expect((await redeemHandoff(fetchApp, handoffCodeOf(carriedOff.response), foreignBrowserKey())).status).toBe(401);
-    expect((await redeemHandoff(fetchApp, handoffCodeOf(carriedOff.response), '')).status).toBe(401);
+    expect((await redeemHandoff(fetchApp, handoffCodeOf(elsewhere.response), embedded.cookie)).status).toBe(401);
+    expect((await redeemHandoff(fetchApp, handoffCodeOf(elsewhere.response), '')).status).toBe(401);
 
     // Another account's launch in the same partition keeps the browser key, and both frames keep their own session.
     const later = await launch(connected, {}, connected.platform, { Cookie: embedded.cookie });
-    expect(setCookiePair(later.response, 'embedded-browser-key')).toBe(embedded.cookie);
+    expect(browserKeyCookieOf(later.response)?.name).toBe(browserKeyCookieOf(launched.response)?.name);
     const laterUser = await userOf(embeddedHeaders(await embeddedSessionOf(fetchApp, later.response)));
     expect(laterUser.id).not.toBe(embeddedUser.id);
     expect((await userOf(embeddedHeaders(embedded))).id).toBe(embeddedUser.id);
@@ -579,7 +579,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
 
     const signedOut = await signOut(asEmbedded);
     expect(signedOut.status).toBe(204);
-    expect(cookieChange(signedOut, 'embedded-browser-key')).toBeUndefined();
+    expect(browserKeyCookieOf(signedOut)).toBeUndefined();
     expect(await meStatus(asEmbedded)).toBe(401);
   });
 
@@ -1059,8 +1059,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
       expect(finished.headers.get('Location')?.split('#')[0]).toBe(
         `${appConfig.frontendUrl}/embed/n?${new URLSearchParams({ tenantId: toolSide.org.tenantId, organizationId: toolSide.org.id, channelId: toolSide.org.id, channelType: 'organization' })}`,
       );
-      const { line } = setCookieOf(finished, 'embedded-browser-key');
-      for (const attribute of ['Secure', 'HttpOnly', 'SameSite=None', 'Partitioned']) expect(line).toContain(attribute);
+      for (const attribute of ['Secure', 'HttpOnly', 'SameSite=None', 'Partitioned']) expect(browserKeyCookieOf(finished)?.line).toContain(attribute);
 
       const [identity] = await db
         .select()

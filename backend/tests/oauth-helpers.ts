@@ -7,13 +7,14 @@ import { type CreateServiceAccountData, createServiceAccount } from 'sdk';
 import { embeddedHandoffKey, embeddedSessionHeader } from 'shared/utils/embedded-session';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { authCookieName } from '#/modules/auth/core';
 import { ensureSigningKeys } from '#/modules/oauth-server/keystore';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { createProvider } from '#/modules/oauth-server/provider';
 import { createOauthListener } from '#/modules/oauth-server/server';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { adminRole, defaultHeaders, memberRole } from './fixtures';
-import { CookieJar, setCookiePair } from './helpers';
+import { CookieJar } from './helpers';
 import { createAppClient } from './test-client';
 
 type ServiceAccountBody = NonNullable<CreateServiceAccountData['body']>;
@@ -106,6 +107,12 @@ export const handoffCodeOf = (response: Response) =>
 /** What an embedded page sends: its token, and the cookies beside it, the browser key among them. */
 export const embeddedHeaders = ({ token, cookie }: { token: string; cookie: string }) => ({ Cookie: cookie, [embeddedSessionHeader]: token });
 
+/** The browser key cookie a response set, as its Set-Cookie line, its name and the `Cookie` pair; undefined for none. */
+export const browserKeyCookieOf = (response: Response) => {
+  const line = response.headers.getSetCookie().find((set) => set.startsWith(`${authCookieName('embedded-browser-key')}-`));
+  return line ? { line, name: line.slice(0, line.indexOf('=')), pair: line.split(';')[0] } : undefined;
+};
+
 /** The embedded page redeeming a handoff code beside a browser key cookie, as it does on its first load. */
 export const redeemHandoff = (fetchApp: AppFetch, code: string, cookie: string) =>
   fetchApp('/auth/lti:redeem-handoff', {
@@ -116,7 +123,7 @@ export const redeemHandoff = (fetchApp: AppFetch, code: string, cookie: string) 
 
 /** What the embedded page of a finished launch holds: the browser key cookie and the token its handoff redeems. */
 export async function embeddedSessionOf(fetchApp: AppFetch, finished: Response) {
-  const cookie = setCookiePair(finished, 'embedded-browser-key');
+  const cookie = browserKeyCookieOf(finished)?.pair ?? '';
   const redeemed = await redeemHandoff(fetchApp, handoffCodeOf(finished), cookie);
   expect(redeemed.status).toBe(200);
   const { token }: { token: string } = await redeemed.json();

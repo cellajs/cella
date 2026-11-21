@@ -9,7 +9,7 @@ generate: true
 # LTI tool: an embedded session per frame
 
 An embedded page now names its session by a token in its memory, sent as the value of `X-Embedded-Session` (the
-stream's `embeddedSession` query), and the partitioned cookie `embedded-browser-key` holds the browser key the
+stream's `embeddedSession` query), and a partitioned cookie `embedded-browser-key-<id>` holds the browser key the
 session row records in the new column `sessions.browser_key_hash`. Run `pnpm generate`. App code that reads the
 `embedded-session` cookie, calls `sessionCookieOf`, `readBrowserSession` or `findSession(ctx, 'session')`, or makes a
 request from an embedded page outside the SDK client and the stream manager follows.
@@ -33,10 +33,10 @@ No script: manual.
 ## Manual steps
 
 1. Run `pnpm generate`: it adds `browser_key_hash` to `sessions`, and nothing else is needed. Embedded sessions started before the deploy stop at their next request, and their frames ask to be opened again.
-2. Caught by the compiler: `sessionCookieOf`, `SessionCookieName` and `readBrowserSession` are gone, `findSession` takes `{ embedded }` where it took a cookie name, `findLiveSessionsHeldByUser` takes `embedded`, and the `embedded-session` cookie is `embedded-browser-key`. Use `presentedSessionToken` or `resolveSession(ctx, { embedded })`.
+2. Caught by the compiler: `sessionCookieOf`, `SessionCookieName` and `readBrowserSession` are gone, `findSession` takes `{ embedded }` where it took a cookie name, `findLiveSessionsHeldByUser` takes `embedded`, and the `embedded-session` cookie is gone: browser keys live in cookies named `embedded-browser-key-<id>`. Use `presentedSessionToken` or `resolveSession(ctx, { embedded })`.
 3. Not caught by the compiler. In the app's own embedded pages, send every request through the SDK client or `apiFetch`, which add the token: a raw `fetch`, an `EventSource` of its own or an image address on the API carries no session there.
 4. Not caught by the compiler. Code that reads the stored user (`storedUserIds`, `localStorage`) in an embedded document finds nobody: read `userStore` or `/me`.
-5. Caught by tests: an app test that sends `X-Embedded-Session: 1` or reads the `-embedded-session-` cookie uses `embeddedSessionOf` and `embeddedHeaders` from `backend/tests/oauth-helpers.ts`.
+5. Caught by tests: an app test that sends `X-Embedded-Session: 1` or reads the `-embedded-session-` cookie uses `embeddedSessionOf`, `embeddedHeaders` and `browserKeyCookieOf` from `backend/tests/oauth-helpers.ts`.
 
 ## Verify
 

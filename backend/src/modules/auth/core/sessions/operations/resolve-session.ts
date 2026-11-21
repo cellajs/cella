@@ -4,7 +4,7 @@ import { safeEqual } from 'shared/utils/safe-equal';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { loadCachedSession } from '#/middlewares/guard/session-cache';
-import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
+import { deleteAuthCookie, getAuthCookie, getBrowserKeys } from '#/modules/auth/core/general/helpers/cookie';
 import type { SessionFacts, SessionModel } from '#/modules/auth/core/sessions/sessions-db';
 import { findSessionBySecret } from '#/modules/auth/core/sessions/sessions-queries';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
@@ -74,17 +74,18 @@ const embeddedSessionToken = (ctx: Context) => ctx.req.header(embeddedSessionHea
 export const asksForEmbeddedSession = (ctx: Context) => embeddedSessionToken(ctx) !== undefined;
 
 /**
- * The embedded session a request presents. Its token names the session, and the browser key in the partitioned cookie
+ * The embedded session a request presents. Its token names the session, and a browser key in the partitioned cookies
  * must be the one the session recorded at its launch: the token alone, sent from another browser or another platform's
- * site, and the cookie alone, which every frame of the app on the platform's page sends, both read as nothing.
+ * site, and the cookies alone, which every frame of the app on the platform's page sends, both read as nothing.
  * @throws AppError 401 without the token or the cookie, for a key the session did not record, and as `readSession`.
  */
 const readEmbeddedSession = async (ctx: Context): Promise<ResolvedSession> => {
   const token = embeddedSessionToken(ctx);
-  const browserKey = getAuthCookie(ctx, 'embedded-browser-key');
-  if (!token || !browserKey) throw new AppError(401, 'unauthorized', 'warn');
+  const browserKeys = getBrowserKeys(ctx);
+  if (!token || !browserKeys.length) throw new AppError(401, 'unauthorized', 'warn');
   const resolved = await readSession(token);
-  if (!resolved.browserKeyHash || !safeEqual(resolved.browserKeyHash, hashToken(browserKey))) throw new AppError(401, 'no_session', 'warn');
+  const recorded = resolved.browserKeyHash;
+  if (!recorded || !browserKeys.some((browserKey) => safeEqual(recorded, hashToken(browserKey)))) throw new AppError(401, 'no_session', 'warn');
   return resolved;
 };
 
