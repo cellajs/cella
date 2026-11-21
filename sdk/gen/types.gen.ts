@@ -9127,7 +9127,7 @@ export type UpdateTenantData = {
     status?: 'active' | 'suspended' | 'deleted';
     authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'anonymous' | 'lti' | 'surfconext'>;
     /**
-     * A merge patch of the tenant's restrictions: a member left out keeps its value, and `null` gives it its default again.
+     * A merge patch of the restrictions the tenant stores over the app's defaults: a member set is stored, a member left out stays as it is, and `null` makes a member follow the defaults again.
      */
     restrictions?: {
       /**

@@ -7,7 +7,7 @@ import { withActorRef } from '#/modules/actors/actor-refs';
 import { applyTenantStatusChange } from '#/modules/tenants/operations/apply-tenant-status-change';
 import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
-import { findTenant, updateTenant } from '#/modules/tenants/tenants-queries';
+import { findStoredRestrictions, findTenant, updateTenant } from '#/modules/tenants/tenants-queries';
 import type { updateTenantBodySchema } from '#/modules/tenants/tenants-schema';
 import { log } from '#/utils/logger';
 import { applyMergePatch } from '#/utils/merge-patch';
@@ -16,7 +16,7 @@ type UpdateTenantInput = z.infer<typeof updateTenantBodySchema>;
 
 /**
  * Updates a tenant's name, kind, status, sign-in policy or restrictions; a restrictions update is a
- * merge patch of the stored ones. A status change also moves the members' bindings and ends their streams. The kind
+ * merge patch of the patch the row stores. A status change also moves the members' bindings and ends their streams. The kind
  * moves between `live` and `test` only: a demo is made by `createDemo` alone and stays one.
  * @throws AppError 403 `restrict_by_tenant_kind` for a kind change to or from `demo`.
  * @throws AppError 404 `not_found` for an unknown tenant.
@@ -36,11 +36,9 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
     }
 
     const statusChanged = otherUpdates.status !== undefined && otherUpdates.status !== existing.status;
-    const values = {
-      ...otherUpdates,
-      // `existing` holds every field, so the stored shape is whole but for the keys a `null` removed.
-      ...(restrictionsUpdate ? { restrictions: applyMergePatch(existing.restrictions, restrictionsUpdate) } : {}),
-    };
+    // Merged onto the stored patch: a member the update leaves out stays absent and keeps following the config.
+    const restrictions = restrictionsUpdate && applyMergePatch(await findStoredRestrictions(txCtx, { id: tenantId }), restrictionsUpdate);
+    const values = { ...otherUpdates, ...(restrictions && { restrictions }) };
     return { existing, updated: await updateTenant(txCtx, { id: tenantId, values, by: ctx.var.actor.id }), statusChanged };
   });
 

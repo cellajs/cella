@@ -103,6 +103,12 @@ export const findTenant = async (ctx: DbContext, { where, forUpdate = false }: F
   return row ? toTenant(row) : undefined;
 };
 
+/** The restrictions patch a tenant's row stores, without the config under it; `{}` for an unknown id, which stores none. */
+export const findStoredRestrictions = async (ctx: DbContext, { id }: { id: string }) => {
+  const [row] = await ctx.var.db.select({ restrictions: tenantsTable.restrictions }).from(tenantsTable).where(eq(tenantsTable.id, id));
+  return row?.restrictions ?? {};
+};
+
 interface TenantCreatorOpts {
   createdBy: string;
 }
@@ -166,10 +172,10 @@ export const countTenantsCreatedSince = async (ctx: DbContext, { kind, since }: 
   return total;
 };
 
-/** Inserts a tenant; kind, status and restrictions take their column defaults. */
+/** Inserts a tenant; kind, status and restrictions take their column defaults, and the answer lays its restrictions over the config. */
 export const insertTenant = async (ctx: DbContext, { values }: { values: InsertTenantModel }): Promise<TenantModel> => {
   const [tenant] = await ctx.var.db.insert(tenantsTable).values(values).returning();
-  return tenant;
+  return { ...tenant, restrictions: normalizeRestrictions(tenant.restrictions) };
 };
 
 interface UpdateTenantOpts {

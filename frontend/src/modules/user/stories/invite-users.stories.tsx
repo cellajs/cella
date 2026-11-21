@@ -207,7 +207,7 @@ export const ShouldSendMembershipInvite: Story = {
     await expect(requests).toEqual([
       {
         path: expect.stringMatching(/\/tenants\/tenant-1\/organizations\/org-1\/members:invite$/),
-        search: '?entityId=org-1&entityType=organization',
+        search: '?channelId=org-1&channelType=organization',
         body: { emails: ['a@x.com', 'b@x.com'], role: hierarchy.getLeastPrivilegedRole('organization') },
       },
     ]);

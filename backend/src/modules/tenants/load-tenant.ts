@@ -7,8 +7,6 @@ import type { TenantModel } from '#/modules/tenants/tenants-db';
 export function loadTenant(tenantId: string): Promise<TenantModel | undefined> {
   return loadCachedTenant(tenantId, async () => {
     const [row] = await findTenantById.execute({ id: tenantId });
-    if (!row) return undefined;
-    row.restrictions = normalizeRestrictions(row.restrictions);
-    return row;
+    return row && { ...row, restrictions: normalizeRestrictions(row.restrictions) };
   });
 }

@@ -35,7 +35,7 @@ const restrictionsSchema = z.object({
     .describe('Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)'),
 });
 
-/** What a tenant may hold and spend, stored on its row (`tenants.restrictions`). */
+/** What a tenant may hold and spend: the config's defaults with the patch its row stores (`tenants.restrictions`) laid over them. */
 export type Restrictions = z.infer<typeof restrictionsSchema>;
 
 export const tenantSchema = z
@@ -69,7 +69,9 @@ export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
   .extend({
     restrictions: mergePatchSchema(restrictionsSchema)
       .optional()
-      .describe("A merge patch of the tenant's restrictions: a member left out keeps its value, and `null` gives it its default again."),
+      .describe(
+        "A merge patch of the restrictions the tenant stores over the app's defaults: a member set is stored, a member left out stays as it is, and `null` makes a member follow the defaults again.",
+      ),
   });
 
 /** The kind filter of an admin list: absent lists the kinds `appConfig.tenantKinds` marks `listed`. */

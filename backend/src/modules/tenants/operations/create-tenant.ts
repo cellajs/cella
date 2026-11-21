@@ -1,6 +1,7 @@
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { sendSecurityInboxEmail } from '#/modules/auth/core';
+import { kindRestrictionsPatch } from '#/modules/tenants/tenant-restrictions';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
 import { insertTenant } from '#/modules/tenants/tenants-queries';
 import { log } from '#/utils/logger';
@@ -13,7 +14,7 @@ export async function createTenant(
   ctx: DbContext,
   { name, createdBy, userEmail }: { name: string; createdBy: string; userEmail: string },
 ): Promise<TenantModel> {
-  const tenant = await insertTenant(ctx, { values: { name, createdBy } });
+  const tenant = await insertTenant(ctx, { values: { name, createdBy, kind: 'live', restrictions: kindRestrictionsPatch('live') } });
 
   log.info('Tenant auto-created', { tenantId: tenant.id, name, createdBy });
 

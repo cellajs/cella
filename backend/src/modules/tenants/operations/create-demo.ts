@@ -12,7 +12,7 @@ import { withActorRef } from '#/modules/actors/actor-refs';
 import { findSession, insertAnonymousUser, startAnonymousSession } from '#/modules/auth/core';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { insertOrganizations } from '#/modules/organization/organization-queries';
-import { kindRestrictions } from '#/modules/tenants/tenant-restrictions';
+import { kindRestrictionsPatch } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { countTenantsCreatedSince, findDemoTenant, findTenant, insertTenant, lockDemoCreation } from '#/modules/tenants/tenants-queries';
 import { isoDateAgo, isoDateIn } from '#/utils/iso-date';
@@ -50,7 +50,7 @@ async function buildDemo() {
 
     const user = await insertAnonymousUser(txCtx, { id: userId, name: 'Guest', slug: `demo-${handle}` });
     const tenant = await insertTenant(txCtx, {
-      values: { id: tenantId, name, kind: 'demo', createdBy: userId, expiresAt, restrictions: kindRestrictions('demo') },
+      values: { id: tenantId, name, kind: 'demo', createdBy: userId, expiresAt, restrictions: kindRestrictionsPatch('demo') },
     });
     const [organization] = await insertOrganizations(txCtx, {
       orgs: [{ name, shortName: 'Demo', slug: `demo-${handle}`, tenantId, welcomeText: defaultWelcomeText, createdBy: userId }],

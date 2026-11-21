@@ -6,8 +6,8 @@ import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { isoTimestamp } from '#/db/utils/timestamp-columns';
 import type { AuthStrategy } from '#/modules/auth/core';
-import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import type { Restrictions } from '#/modules/tenants/tenants-schema';
+import type { MergePatch } from '#/utils/merge-patch';
 
 export const tenantStatusValues = ['active', 'suspended', 'deleted'] as const;
 
@@ -24,7 +24,11 @@ export const tenantsTable = snakeCase.table(
     statusChangedAt: isoTimestamp().defaultNow().notNull(),
     /** When the tenant goes with everything in it, whatever its status; a demo carries one, another kind may. */
     expiresAt: isoTimestamp(),
-    restrictions: jsonb().$type<Restrictions>().notNull().default(defaultRestrictions()),
+    /**
+     * A merge patch every read lays over the running `appConfig.defaultRestrictions` (`normalizeRestrictions`). The
+     * default holds no config value, which a migration would freeze in the mode `pnpm generate` ran in.
+     */
+    restrictions: jsonb().$type<MergePatch<Restrictions>>().notNull().default({}),
     /** Sign-in methods the tenant's members may use (empty = every enabled method); `tenantGuard` enforces them. */
     authStrategies: jsonb().$type<AuthStrategy[]>().notNull().default([]),
     ...auditColumns(),
@@ -39,5 +43,6 @@ export const tenantsTable = snakeCase.table(
   ],
 );
 
-export type TenantModel = typeof tenantsTable.$inferSelect;
+/** A tenant as read, its stored restrictions laid over the config (`normalizeRestrictions`). */
+export type TenantModel = Omit<typeof tenantsTable.$inferSelect, 'restrictions'> & { restrictions: Restrictions };
 export type InsertTenantModel = typeof tenantsTable.$inferInsert;

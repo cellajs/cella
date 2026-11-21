@@ -33,10 +33,7 @@ describe('tenant responses with stored restrictions that lack a field', async ()
     const headers = { ...defaultHeaders, Cookie: await createTestSession(admin) };
     const { quotas, rateLimits } = defaultRestrictions();
     const name = `Stale tenant ${nanoid(8)}`;
-    const [tenant] = await db
-      .insert(tenantsTable)
-      .values({ name, restrictions: { quotas, rateLimits } as Restrictions })
-      .returning();
+    const [tenant] = await db.insert(tenantsTable).values({ name, restrictions: { quotas, rateLimits } }).returning();
     return { tenant, headers };
   };
 
@@ -64,9 +61,9 @@ describe('tenant responses with stored restrictions that lack a field', async ()
     expect(requoted.error).toBeUndefined();
     expect((renamed.data as { restrictions: Restrictions }).restrictions).toEqual(defaultRestrictions());
     expect((requoted.data as { restrictions: Restrictions }).restrictions).toEqual({ ...defaultRestrictions(), quotas });
-    // A restrictions update stores the full shape.
+    // The update merges onto what the row stores, which names no permission: the config keeps deciding it.
     const [stored] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, tenant.id));
-    expect(stored.restrictions).toEqual({ ...defaultRestrictions(), quotas });
+    expect(stored.restrictions).toEqual({ quotas, rateLimits: defaultRestrictions().rateLimits });
   });
 });
 
@@ -110,6 +107,57 @@ describe('tenant responses with the organization the tenant holds', async () => 
     expect((created.data as Tenant).organization).toBeNull();
     expect((retried.data as Tenant).id).toBe((created.data as Tenant).id);
     expect((retried.data as Tenant).organization).toBeNull();
+  });
+});
+
+/**
+ * A column default is frozen into a migration in the mode `pnpm generate` ran in. A new tenant follows the config of the
+ * mode the app runs in.
+ */
+describe('restrictions of a new tenant', async () => {
+  const call = await createAppClient();
+
+  it.each([false, true])(
+    'must not take restrictions other than the running config states: unregistered clients %s',
+    async (allowUnregisteredClients) => {
+      const { quotas } = appConfig.defaultRestrictions;
+      onTestFinished(overrideConfig(appConfig.defaultRestrictions, { allowUnregisteredClients, quotas: { ...quotas, serviceAccount: 7 } }));
+      const user = await createTestUser(`new-tenant-${nanoid(8)}@test.com`);
+      const headers = { ...defaultHeaders, Cookie: await createTestSession(user) };
+
+      const created = await call(createTenant, { body: { name: `New tenant ${nanoid(8)}` }, headers });
+
+      expect(created.error).toBeUndefined();
+      const { restrictions } = created.data as Tenant;
+      expect(restrictions.allowUnregisteredClients).toBe(allowUnregisteredClients);
+      expect(restrictions.quotas.serviceAccount).toBe(7);
+    },
+  );
+
+  it('must not freeze the config into a tenant through an update of one restriction', async () => {
+    const admin = await createSystemAdminUser(`tenants-${nanoid(8)}@test.com`);
+    const headers = { ...defaultHeaders, Cookie: await createTestSession(admin) };
+    const { tenantId } = await createTestOrganization();
+    const name = `Requoted tenant ${nanoid(8)}`;
+
+    const updated = await call(updateTenant, { path: { tenantId }, body: { name, restrictions: { quotas: { apiKey: 9 } } }, headers });
+
+    expect(updated.error).toBeUndefined();
+    const [stored] = await db.select({ restrictions: tenantsTable.restrictions }).from(tenantsTable).where(eq(tenantsTable.id, tenantId));
+    expect(stored.restrictions).toEqual({ quotas: { apiKey: 9 } });
+
+    const { quotas, allowUnregisteredClients } = appConfig.defaultRestrictions;
+    onTestFinished(
+      overrideConfig(appConfig.defaultRestrictions, {
+        allowUnregisteredClients: !allowUnregisteredClients,
+        quotas: { ...quotas, serviceAccount: 7 },
+      }),
+    );
+    const listed = await call(listTenants, { query: { q: name }, headers });
+
+    const [{ restrictions }] = (listed.data as { results: Tenant[] }).results;
+    expect(restrictions.quotas).toMatchObject({ apiKey: 9, serviceAccount: 7 });
+    expect(restrictions.allowUnregisteredClients).toBe(!allowUnregisteredClients);
   });
 });
 

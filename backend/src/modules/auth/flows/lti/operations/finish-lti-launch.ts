@@ -103,7 +103,6 @@ interface ContextEntry {
 }
 
 interface EnterLtiContextOpts extends LaunchFacts {
-  /** The tenant's member limit; 0 for none. */
   memberQuota: RestrictionCap;
   /** The membership address the launch names, when the app trusts it (`launchMembershipsUrl`). */
   membershipsUrl: string | undefined;

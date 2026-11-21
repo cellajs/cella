@@ -1,0 +1,38 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "5fec5e17-5303-4337-a590-9d1988075227",
+  "prevIds": [
+    "334ffa7c-0125-4da6-8801-9fbfc9880088"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tenants",
+        "restrictions"
+      ],
+      "writes": [
+        "s|colprop|public.tenants.restrictions.default"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.tenants.restrictions"
+      ],
+      "sqlHash": "4af95aed2354beab"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"tenants\",\"restrictions\"]",
+      "set": {
+        "default": "'{}'"
+      }
+    }
+  ]
+}
