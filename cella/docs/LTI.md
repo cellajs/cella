@@ -147,11 +147,13 @@ The role mapping may give no role, which refuses the launch with a page and leav
 - **Any other context role:** the channel's least privileged role.
 - **Institution or system roles alone, or no roles at all:** no role.
 
-A launch without a context admits nobody new. It signs in a person this tenant already knows from the same platform as a member of the organization, from a launch in a context or an import, and changes no membership, role or seat. Anyone else gets a page that says the app opens from a page they are a member of.
+A launch without a context admits nobody new. It signs in a person this tenant already knows from the same platform as a member of the organization, from a launch in a context or an import, and changes no membership, role or seat. Anyone else gets a page that asks them to open the app once from another page that shows it.
 
 A person a context admits also becomes a member of the organization, at the organization role their role in the context's channel gives there. When that role may update the organization, as the permission engine decides, they get the highest role below it that may not.
 
-A launch without a context lands a known person on the organization's embedded page. An app whose contexts sit below the organization decides what those roles see of people ([What members see](./PERMISSIONS.md#what-members-see)) and what that page shows.
+A launch in a context below the organization opens that context's channel, and no other channel or person of the organization. The backend does not start with the `lti` sign-in method on while the organization role such a channel's roles bring along is elevated or grants anything on people or on the channels below ([What members see](./PERMISSIONS.md#what-members-see)).
+
+A launch without a context lands a known person on the organization's embedded page. An app whose contexts sit below the organization decides what that page shows.
 
 A person who arrives for the first time gets an account without a proven email address, and takes a seat of the tenant's member limit. An account named before the platform released a name takes the name a later launch or import brings, as long as nothing else signs it in.
 
@@ -246,7 +248,7 @@ The embedded session belongs to the one frame its launch opened. The launch hand
 
 The browser keeps a key for the platform's site in a cookie no script reads, set at the first launch there and kept by later ones. A request counts only when its token and that key belong to one session. A token taken out of the browser is worth nothing, and so is the cookie alone, which every frame of the app on the platform's page sends.
 
-Every frame on a platform's site keeps its own session, in one tab or several, for one person or several. Each open of an LTI tab is a launch and a session, and beyond a cap per person the oldest of them end. A frame of the app that the platform's page adds without a launch has no session: it shows the page that asks the person to open the app again, and no data.
+Every frame on a platform's site keeps its own session, in one tab or several, for one person or several. Each open of an LTI tab is a launch and a session, and beyond a cap per person the oldest of them end. A frame of the app that the platform's page adds without a launch has no session: it shows the page that asks the person to reload the platform's page, and no data.
 
 A change counts only from the app's own pages, never from another frame on the platform's page. The embedded app keeps its user in memory and its own realtime connection. Its local data stays apart from a tab of the app beside it, frames of one person share one local database, and a session that ends in one frame deletes none.
 
@@ -256,12 +258,12 @@ The template ships the organization's embedded page. An app that maps a context 
 
 - **A launch state the frame did not keep:** the launch stops and asks the person to open the app again from the page they came from.
 - **A launch in a window of its own:** the page asks the person to open the app inside the platform's page. That leaves out Canvas's mobile apps and a platform set to open its LTI tools in a new window.
-- **A reloaded frame or an ended embedded session:** the frame shows one page that asks the person to open the app again from the page they came from. After a reload the frame holds no token, and its session lasts until it expires or the cap ends it.
+- **A reloaded frame or an ended embedded session:** the frame shows one page that asks the person to reload the page they opened the app on, which launches again. After a reload of the frame alone it holds no token, and its session lasts until it expires or the cap ends it.
 - **An app update:** nothing reloads an embedded page. The update applies at the next open.
 - **A browser that cannot keep the embedded session:** that page also names the browsers that can, such as Chrome, Edge and Firefox.
 - **Two first launches at once:** when two launches run at the same moment in a browser that never launched the app on that site before, one of the two frames asks to be opened again.
 - **A context not set up yet:** someone who arrives before anyone who sets it up is told that someone who manages the page on the platform must open it first.
-- **A launch without a context:** someone the organization does not know yet is told to open the app from a page they are a member of first.
+- **A launch without a context:** someone the organization does not know yet is told to open the app once from another page on the platform that shows it, then this one again.
 - **No role the app takes:** a launch with no context role is refused with a page in the template, and nothing is written. A platform's admin who is not enrolled in the context enrols there first.
 - **A full organization:** a person who would be a new member while the tenant's member limit leaves no seat is refused with a page. Someone who is a member already is never refused for it.
 - **An archived context:** a member gets in with the role they hold. Anyone the launch would add is refused with a page, as joining it is.

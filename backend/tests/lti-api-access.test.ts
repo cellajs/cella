@@ -35,6 +35,7 @@ import { mockUser } from '#/modules/user/user-mocks';
 import { insertUsers } from '#/modules/user/user-queries';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization, expectRefusal } from './helpers';
+import { assumeMembersReadPeople } from './members-read-people';
 import {
   authorizationCodeToken,
   bearerHeaders,
@@ -60,6 +61,8 @@ vi.mock('#/modules/lti-platform/launch-context', async (importOriginal) => {
 });
 
 overrideConfig(appConfig.has, { ltiPlatform: true });
+
+assumeMembersReadPeople();
 
 const ltiToolHost = 'peer-review.example.com';
 const launchUri = `https://${ltiToolHost}/launch`;

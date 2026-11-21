@@ -29,6 +29,7 @@ export const ltiRegistrationRequest = (connectionId: string, productFamilyCode: 
     response_types: ['id_token'],
     token_endpoint_auth_method: 'private_key_jwt',
     client_name: appConfig.name,
+    client_uri: appConfig.frontendUrl,
     logo_uri: `${appConfig.frontendUrl}/favicon.svg`,
     initiate_login_uri: ltiLoginUrl(),
     redirect_uris: [ltiLaunchUrl()],

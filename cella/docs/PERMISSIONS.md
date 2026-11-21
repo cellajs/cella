@@ -266,6 +266,8 @@ The members an answer names beside its type, such as `resource`, are top-level m
 
 A role's `read` on `user` decides whom its holders see. You see a person when your roles let you read one of their memberships. Every member holds a membership of the organization: an organization role that reads people sees the whole directory. A role on a channel below sees that channel's members, and an elevated role the members of its subtree. You always see yourself, and a system admin sees everyone.
 
+Someone who is in the organization only through a channel holds the organization role that channel's membership brings along (`organizationRoles`), and that role decides what they see there. An app that gives it no grant on people or on the channels below keeps such a person to their own channels. A role for people invited to the organization itself can see more.
+
 The people you see show their `UserBase` fields, email address included: in member lists, on their profile and in the user search, which matches name and address. They also show `lastSeenAt`, when the user was last active in any of their tenants. The user's own GET requests stamp it.
 
 A channel's member list and its invitations need the read of people at that channel. The invitations show the addresses invited, never the account behind one. Resending an invitation takes `update` on that channel.

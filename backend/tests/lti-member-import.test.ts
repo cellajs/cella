@@ -64,6 +64,7 @@ import {
   moodlePlatform,
   type PlatformFixture,
 } from './lti-platform-fixtures';
+import { assumeMembersReadPeople } from './members-read-people';
 import {
   decodeHtml,
   embeddedHeaders,
@@ -90,6 +91,8 @@ vi.mock('#/modules/lti-platform/launch-context', async (importOriginal) =>
 // The app takes both LTI roles: the round trip imports the people of one tenant into another.
 setTestConfig({ enabledAuthStrategies: ['passkey', 'lti'] });
 overrideConfig(appConfig.has, { ltiPlatform: true });
+
+assumeMembersReadPeople();
 
 const loopback = async () => [{ address: '127.0.0.1', family: 4 }];
 

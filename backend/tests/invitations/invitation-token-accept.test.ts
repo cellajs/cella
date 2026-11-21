@@ -21,6 +21,7 @@ import {
   openHeldLink,
   sentMails,
 } from '../helpers';
+import { assumeMembersReadPeople } from '../members-read-people';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 import { createInvitation, readMembersAs } from './helpers';
@@ -28,6 +29,8 @@ import { createInvitation, readMembersAs } from './helpers';
 const invitedEmail = 'invited-address@example.com';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'magic'], selfRegistration: true });
+
+assumeMembersReadPeople();
 
 afterEach(async () => await clearDatabase());
 

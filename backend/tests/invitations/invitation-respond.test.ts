@@ -8,11 +8,14 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, createTestSession, createTestUser, expectRefusal, rawJsonRequest } from '../helpers';
+import { assumeMembersReadPeople } from '../members-read-people';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 import { createInvitation, readMembersAs } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
+
+assumeMembersReadPeople();
 
 afterEach(async () => await clearDatabase());
 

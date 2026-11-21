@@ -3060,7 +3060,7 @@ export const zGetOrganizationHeaders = z.object({
 
 export const zGetOrganizationPath = z.object({
   tenantId: z.string().max(50),
-  organizationId: z.string().max(50),
+  organizationId: z.string().max(255),
 });
 
 export const zGetOrganizationQuery = z.object({
@@ -3492,7 +3492,7 @@ export const zBatchDeleteUsersResponse = z.object({
 });
 
 export const zGetUserPath = z.object({
-  userId: z.string().max(50),
+  userId: z.string().max(255),
 });
 
 export const zGetUserQuery = z.object({

@@ -2,7 +2,7 @@ import { ChevronDownIcon, InfoIcon, PlusIcon, Settings2Icon } from 'lucide-react
 import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ChannelEntityType, isChannelHideable } from 'shared';
+import { type ChannelEntityType, hierarchy, isChannelHideable } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
@@ -10,6 +10,7 @@ import { CountBadge } from '~/modules/common/count-badge';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { collapseMotion } from '~/modules/common/motion-presets';
 import { TooltipButton } from '~/modules/common/tooltip-button';
+import { useCan } from '~/modules/entities/use-can';
 import type { UserMenuItem } from '~/modules/me/types';
 import { FoldingChevron } from '~/modules/navigation/menu-sheet/folding-chevron';
 import { menuListMotion } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
@@ -175,12 +176,20 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
   const archivedItems = items.filter((item) => menuGroup(item) === 'archived');
   const activeChannelIds = activeUnseenChannelIds(items);
 
-  const handleCreate = options.createAction
-    ? (ref: RefObject<HTMLButtonElement | null>) => {
-        if (isMobile) closeNavSheet();
-        options.createAction?.(ref, organizationId);
-      }
-    : undefined;
+  const can = useCan();
+  // Only a channel whose parent is the organization has a home known here: the grants there decide.
+  const mayCreate =
+    !organizationId ||
+    hierarchy.getParent(options.entityType) !== 'organization' ||
+    can('create', options.entityType, { id: organizationId, entityType: 'organization' });
+
+  const handleCreate =
+    options.createAction && mayCreate
+      ? (ref: RefObject<HTMLButtonElement | null>) => {
+          if (isMobile) closeNavSheet();
+          options.createAction?.(ref, organizationId);
+        }
+      : undefined;
 
   const handleToggleEditing = () => setIsEditing(!isEditing);
 

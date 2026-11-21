@@ -40,6 +40,8 @@ export interface GuardedFetchInit {
   method?: 'GET' | 'POST';
   headers?: Record<string, string>;
   body?: string;
+  /** Ends the request before its own time limit does. */
+  signal?: AbortSignal;
   /** Tests answer from a fake host; production resolves through the system resolver. */
   resolve?: HostResolver;
   /** Tests answer from a fake host; production connects through `node:https`, or `node:http` where allowed. */
@@ -157,12 +159,14 @@ export const vetAddress = async (url: string, resolve: HostResolver = systemReso
  * loopback.
  * @throws AppError 400 `outbound_request_refused` for a scheme, an address or a redirect it refuses, 400
  *   `outbound_request_failed` for a host that does not resolve, answer in time or within the size cap.
+ * @throws the reason of `init.signal` once it aborts the request.
  */
 export const guardedFetch = async (url: string, init: GuardedFetchInit = {}): Promise<GuardedResponse> => {
   const { method = 'GET', headers = {}, body, resolve = systemResolver, transport = nodeTransport } = init;
   const { parsed, target } = await vetAddress(url, resolve);
 
-  const signal = AbortSignal.timeout(timeoutMs);
+  const timeout = AbortSignal.timeout(timeoutMs);
+  const signal = init.signal ? AbortSignal.any([init.signal, timeout]) : timeout;
   try {
     const response = await transport({ url: parsed, target, method, headers, body, signal });
     if (response.status >= 300 && response.status < 400) {
@@ -172,6 +176,7 @@ export const guardedFetch = async (url: string, init: GuardedFetchInit = {}): Pr
     return { status: response.status, headers: response.headers, text: await readCapped(response) };
   } catch (err) {
     if (err instanceof AppError) throw err;
-    throw failed(signal.aborted ? 'timeout' : 'network');
+    init.signal?.throwIfAborted();
+    throw failed(timeout.aborted ? 'timeout' : 'network');
   }
 };

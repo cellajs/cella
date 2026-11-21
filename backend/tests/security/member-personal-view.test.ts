@@ -4,11 +4,14 @@ import { baseDb as db } from '#/db/db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { adminRole, memberRole } from '../fixtures';
 import { createTestOrganization, rawJsonRequest } from '../helpers';
+import { assumeMembersReadPeople } from '../members-read-people';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
+
+assumeMembersReadPeople();
 
 type MemberRow = { id: string; email: string; membership: Record<string, unknown> };
 

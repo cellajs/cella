@@ -10,8 +10,11 @@ import { serviceAccountsTable } from '#/modules/service-accounts/service-account
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createSystemAdminUser, createTestOrganization, createTestSession, type ErrorResponse, expectRefusal } from '../helpers';
 import { createInvitation, inviteToOrganization } from '../invitations/helpers';
+import { assumeMembersReadPeople } from '../members-read-people';
 import { createAppClient, type TestResult } from '../test-client';
 import { clearSecurityTestData, createFactorOrgUser, orgMembershipOf } from './helpers';
+
+assumeMembersReadPeople();
 
 type User = { id: string; email: string; sessionCookie: string };
 
