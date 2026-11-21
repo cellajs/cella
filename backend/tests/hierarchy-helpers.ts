@@ -1,7 +1,8 @@
 import { sql } from 'drizzle-orm';
 import type { BatchCreateAttachmentsData } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan, toStrictHomePlan } from 'shared/testing/entity-hierarchy';
+import { memberRoleIn } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { getAdminDb } from '#/db/db';
@@ -65,17 +66,19 @@ export async function seedAttachmentHome(org: { id: string; tenantId: string }, 
   return plan;
 }
 
+/** The role a member joins a seeded channel at when the caller names none. */
+const joinRole = (plan: TestEntityHierarchyPlan, channelType: ChannelEntityType) => {
+  const role = memberRoleIn(channelType, plan.entityType);
+  if (!role) throw new Error(`joinAttachmentHome: no ${channelType} role reads the channel and creates ${plan.entityType} where it may home`);
+  return role;
+};
+
 /**
- * Makes `userId` a `role` member of every channel the plan seeded, on the admin connection: an organization role that
- * is not elevated reaches no row homed below the organization, so a member acts there through these memberships.
- * None in the template, whose plans seed no channel.
+ * Makes `userId` a member of every channel the plan seeded, at `role` or else at `memberRoleIn` each, on the admin
+ * connection. A member acts below the organization through these memberships: an organization role that is not
+ * elevated reaches no row homed there. None in the template, whose plans seed no channel.
  */
-export async function joinAttachmentHome(
-  org: { id: string; tenantId: string },
-  plan: TestEntityHierarchyPlan,
-  userId: string,
-  role: string = hierarchy.getLeastPrivilegedRole('organization'),
-) {
+export async function joinAttachmentHome(org: { id: string; tenantId: string }, plan: TestEntityHierarchyPlan, userId: string, role?: string) {
   if (plan.seedChannelRows.length === 0) return;
   const rows = plan.seedChannelRows.map((row) => ({
     ...Object.fromEntries([
@@ -88,7 +91,7 @@ export async function joinAttachmentHome(
     channelType: row.channelType,
     channelId: row.id,
     userId,
-    role,
+    role: role ?? joinRole(plan, row.channelType),
     displayOrder: 1,
     createdBy: userId,
   }));
