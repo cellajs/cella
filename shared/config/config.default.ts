@@ -299,6 +299,7 @@ export const config = {
     'lti-tool-registration',
     'lti-launch',
     'lti-nonce',
+    'lti-handoff',
   ] as const,
 
   /**
@@ -308,6 +309,11 @@ export const config = {
    * feature. Regular and `mfa` sessions count together.
    */
   maxSessionsPerUser: 10,
+  /**
+   * Maximum embedded sessions per user, counted apart from the others: each open of an LTI tab is a launch and a
+   * session, and the oldest beyond the cap end.
+   */
+  maxEmbeddedSessionsPerUser: 50,
   /** Known devices kept per user; the nightly retention run removes the least recently seen beyond it. */
   maxDevicesPerUser: 50,
   /** Push subscriptions kept per user, a notification fan-out loads them all; the nightly retention run removes the least recently seen beyond it. */

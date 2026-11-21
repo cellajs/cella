@@ -1,7 +1,7 @@
 import { xMiddleware } from '#/core/x-middleware';
 import { serviceGuard } from '#/middlewares/guard/service-guard';
 import { userGuard } from '#/middlewares/guard/user-guard';
-import { getAuthCookie, sessionCookieOf } from '#/modules/auth/core';
+import { asksForEmbeddedSession, getAuthCookie } from '#/modules/auth/core';
 import { bearerChallenge } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
 import { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';
@@ -25,8 +25,8 @@ export const actorGuard = xMiddleware(
   (ctx, next) => {
     if (hasApiKeyHeader(ctx) || bearerJwtFrom(ctx)) return serviceGuard(ctx, next);
     // No proof at all, which the session guard refuses: the challenge tells a machine caller where to get a token
-    // (RFC 9728 §5.1). A request with a session cookie keeps the session's own refusal: no scheme names a cookie.
-    if (!getAuthCookie(ctx, sessionCookieOf(ctx))) {
+    // (RFC 9728 §5.1). A request that presents a session keeps the session's own refusal: no challenge scheme names one.
+    if (!asksForEmbeddedSession(ctx) && !getAuthCookie(ctx, 'session')) {
       const tenantId = ctx.req.param('tenantId')?.toLowerCase();
       ctx.header('WWW-Authenticate', bearerChallenge(tenantId ? { face: 'api', tenantId } : null));
     }

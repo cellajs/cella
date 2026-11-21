@@ -32,6 +32,8 @@ export type PageTab = TabLabel & {
 /** What a surface's tabs resolve with: the placement inputs, and the tabs data adds, arranged with the declared ones. */
 export interface NavTabOptions extends ResolvePlacementOptions {
   dataTabs?: readonly DataTab[];
+  /** Ends the page bar: a control that adds a data tab, on a layout that can open one ({@link hostsDataTabs}). */
+  addTabControl?: ReactNode;
 }
 
 // Cast: generated FileRoutesById is a closed interface without index signature
@@ -264,6 +266,7 @@ export function PageTabNav({
   activeId,
   centerKey,
   className,
+  addTabControl,
   ...placementOptions
 }: PageTabNavProps) {
   const isMobile = useBreakpointBelow('sm', false);
@@ -296,7 +299,13 @@ export function PageTabNav({
   if (!explicitTabs && slot && showsTabsInMenu(slot)) return null;
 
   return (
-    <TabNavShell title={title} avatar={avatar} className={className} indicator={indicator}>
+    <TabNavShell
+      title={title}
+      avatar={avatar}
+      className={className}
+      indicator={indicator}
+      end={parentRouteId && hostsDataTabs(parentRouteId) ? addTabControl : undefined}
+    >
       {tabs.map(({ id, path, icon, search = {}, params = true, activeOptions = { exact: true, includeSearch: false }, ...caption }, index) => {
         const isMarked = activeId === undefined ? fallbackToFirst && index === 0 : activeId === id;
 

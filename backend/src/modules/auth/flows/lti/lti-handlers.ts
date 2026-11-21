@@ -6,7 +6,7 @@ import { launchStepRefusalPage, type StorageExchange, storagePage } from '#/modu
 import { registeredPage, registrationRefusalPage } from '#/modules/auth/flows/lti/helpers/registration-page';
 import { authLtiRoutes, ltiContextRoutes } from '#/modules/auth/flows/lti/lti-routes';
 import type { ltiLoginParamsSchema } from '#/modules/auth/flows/lti/lti-schema';
-import { finishLtiLaunchOp } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
+import { finishLtiLaunchOp, redeemLtiHandoffOp } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
 import { getLtiContextsOp } from '#/modules/auth/flows/lti/operations/get-lti-contexts';
 import { getLtiKeySetOp } from '#/modules/auth/flows/lti/operations/get-lti-key-set';
 import { initiateLtiLoginOp } from '#/modules/auth/flows/lti/operations/initiate-lti-login';
@@ -26,7 +26,7 @@ app.openapi(authLtiRoutes.registerLtiPlatform, async (ctx) => {
   }
 });
 
-/** Answers a launch step's storage page, or its refusal as a page the platform's frame shows. */
+/** Answers a launch step's storage page, which refuses outside a frame, or its refusal as a page the platform's frame shows. */
 const answerStoragePage = async (ctx: Context<Env>, step: () => Promise<StorageExchange>) => {
   try {
     return storagePage(ctx, await step());
@@ -57,6 +57,10 @@ app.openapi(authLtiRoutes.finishLtiLaunch, async (ctx) => {
     return launchStepRefusalPage(ctx, err);
   }
 });
+
+app.openapi(authLtiRoutes.redeemLtiHandoff, async (ctx) =>
+  ctx.json({ token: await redeemLtiHandoffOp(ctx, ctx.req.valid('json').code) }, 200, { 'Cache-Control': 'no-store' }),
+);
 
 export const authLtiHandlers = app;
 

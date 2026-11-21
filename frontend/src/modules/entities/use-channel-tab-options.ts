@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { createElement } from 'react';
 import type { ActorRef } from 'sdk';
 import type { EntityActionType, EntityType } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
@@ -7,6 +8,7 @@ import type { NavTabOptions } from '~/modules/common/page/tab-nav';
 import { heldContextRoles } from '~/modules/entities/context-roles';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { type CanRow, canAccess, currentAccess, useCan } from '~/modules/entities/use-can';
+import { AddLtiTab } from '~/modules/lti-platform/add-lti-tab';
 import { useLtiTabs } from '~/modules/lti-platform/lti-tabs';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 
@@ -33,7 +35,7 @@ type TabsChannel = EnrichedChannel & { createdBy?: ActorRef | null; toolsConfig?
 
 /**
  * What a channel's page tabs resolve with, on its page bar and in the menu alike: its grants, the context roles held over
- * it, its stored arrangement and the tabs of the LTI tools placed in it.
+ * it, its stored arrangement and the tabs of the LTI tools placed in it. The page bar also ends in the control that adds one.
  */
 export function useChannelTabOptions(channel: TabsChannel): NavTabOptions {
   const can = useCan({ ignoreArchive: true });
@@ -45,5 +47,6 @@ export function useChannelTabOptions(channel: TabsChannel): NavTabOptions {
     pairs: heldContextRoles(channel, myMemberships?.results ?? []),
     slotConfig: channel.toolsConfig?.[`${channel.entityType}.tabs`],
     dataTabs: tabs,
+    addTabControl: createElement(AddLtiTab, { channel }),
   };
 }

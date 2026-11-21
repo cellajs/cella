@@ -4,8 +4,10 @@ import type { AddressInfo } from 'node:net';
 import { and, eq } from 'drizzle-orm';
 import type Provider from 'oidc-provider';
 import { type CreateServiceAccountData, createServiceAccount } from 'sdk';
+import { embeddedHandoffKey, embeddedSessionHeader } from 'shared/utils/embedded-session';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { authCookieName } from '#/modules/auth/core';
 import { ensureSigningKeys } from '#/modules/oauth-server/keystore';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { createProvider } from '#/modules/oauth-server/provider';
@@ -94,6 +96,38 @@ export async function sendLtiAuthenticationRequest(issuer: string, query: URLSea
     body: new URLSearchParams(page.fields),
   });
   return { response, ...parseForm(await response.text()) };
+}
+
+type AppFetch = (path: string, init?: RequestInit) => Response | Promise<Response>;
+
+/** The handoff code a finished launch's redirect carries in its fragment. */
+export const handoffCodeOf = (response: Response) =>
+  new URLSearchParams(new URL(response.headers.get('Location') ?? '').hash.slice(1)).get(embeddedHandoffKey) ?? '';
+
+/** What an embedded page sends: its token, and the cookies beside it, the browser key among them. */
+export const embeddedHeaders = ({ token, cookie }: { token: string; cookie: string }) => ({ Cookie: cookie, [embeddedSessionHeader]: token });
+
+/** The browser key cookie a response set, as its Set-Cookie line and the `Cookie` pair; undefined for none. */
+export const browserKeyCookieOf = (response: Response) => {
+  const line = response.headers.getSetCookie().find((set) => set.startsWith(`${authCookieName('embedded-browser-key')}=`));
+  return line ? { line, pair: line.split(';')[0] } : undefined;
+};
+
+/** The embedded page redeeming a handoff code beside a browser key cookie, as it does on its first load. */
+export const redeemHandoff = (fetchApp: AppFetch, code: string, cookie: string) =>
+  fetchApp('/auth/lti:redeem-handoff', {
+    method: 'POST',
+    headers: { ...embeddedHeaders({ token: '', cookie }), 'Sec-Fetch-Site': 'same-origin', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  });
+
+/** What the embedded page of a finished launch holds: the browser key cookie and the token its handoff redeems. */
+export async function embeddedSessionOf(fetchApp: AppFetch, finished: Response) {
+  const cookie = browserKeyCookieOf(finished)?.pair ?? '';
+  const redeemed = await redeemHandoff(fetchApp, handoffCodeOf(finished), cookie);
+  expect(redeemed.status).toBe(200);
+  const { token }: { token: string } = await redeemed.json();
+  return { cookie, token };
 }
 
 export interface TestOauthServer {

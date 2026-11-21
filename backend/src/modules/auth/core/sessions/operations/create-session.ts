@@ -7,9 +7,9 @@ import { baseDb } from '#/db/db';
 import { deviceColumns } from '#/lib/device-info';
 import { enrollDevice } from '#/modules/auth/core/devices/operations/enroll-device';
 import { type NewDevice, notifySignIn } from '#/modules/auth/core/devices/operations/notify-sign-in';
-import { setAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
+import { getAuthCookie, setAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
 import { collectSignInContext, type SignInContext } from '#/modules/auth/core/sessions/helpers/sign-in-context';
-import { findSession, type SessionCookieName } from '#/modules/auth/core/sessions/operations/resolve-session';
+import { findSession } from '#/modules/auth/core/sessions/operations/resolve-session';
 import { revokeSessions } from '#/modules/auth/core/sessions/operations/revoke-sessions';
 import type { SessionKind } from '#/modules/auth/core/sessions/sessions-db';
 import { findLiveSessionsHeldByUser, insertSession } from '#/modules/auth/core/sessions/sessions-queries';
@@ -19,7 +19,7 @@ import { findSystemRole } from '#/modules/system/system-queries';
 import type { UserModel } from '#/modules/user/user-db';
 import { findLastSignInAt, updateLastSignInAt } from '#/modules/user/user-queries';
 import { hashDeviceIdForUser, hashIpForUser, hashSubnet } from '#/utils/hash-pii';
-import { newHashedToken } from '#/utils/hash-token';
+import { hashToken, newHashedToken } from '#/utils/hash-token';
 import { toSubnet } from '#/utils/ip-subnet';
 import { getIsoDate, isoDateIn } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
@@ -33,12 +33,14 @@ const dbCtx = { var: { db: baseDb } };
 export const sessionLifetime = new TimeSpan(1, 'w');
 
 /**
- * Revokes the user's oldest live sessions beyond the cap before a sign-in inserts one. Regular and mfa sessions count
+ * Revokes the user's oldest live sessions of one kind beyond its cap before a sign-in inserts one: embedded sessions
+ * count against `maxEmbeddedSessionsPerUser` and never push out an ordinary one. Regular and mfa sessions count
  * together, since an mfa session is the full session of a user with MFA on. Concurrent sign-ins may exceed the cap by
  * one.
  */
-export const revokeExcessSessions = async (userId: string): Promise<void> => {
-  const excess = await findLiveSessionsHeldByUser(dbCtx, { userId, offset: appConfig.maxSessionsPerUser - 1 });
+export const revokeExcessSessions = async (userId: string, { embedded = false }: { embedded?: boolean } = {}): Promise<void> => {
+  const cap = embedded ? appConfig.maxEmbeddedSessionsPerUser : appConfig.maxSessionsPerUser;
+  const excess = await findLiveSessionsHeldByUser(dbCtx, { userId, embedded, offset: cap - 1 });
   if (excess.length === 0) return;
 
   await revokeSessions(dbCtx, { userId, sessionIds: excess.map(({ id }) => id), reason: 'session_cap', by: null });
@@ -71,6 +73,8 @@ export interface SessionExtras {
   connectionId?: string | null;
   /** When the session ends, within `sessionLifetime`: a demo session ends with its tenant. */
   expiresAt?: string;
+  /** The browser key of the partition an embedded session lives in, which the session then counts only beside. */
+  browserKey?: string;
 }
 
 /**
@@ -83,7 +87,7 @@ export const createSession = async (
   context: SignInContext,
   strategy: AuthStrategy,
   kind: SessionKind = 'regular',
-  { steppedUpVia = null, steppedUpAt, connectionId = null, expiresAt: endsAt }: SessionExtras = {},
+  { steppedUpVia = null, steppedUpAt, connectionId = null, expiresAt: endsAt, browserKey }: SessionExtras = {},
 ) => {
   const { rawIp, regionCode, asn, device, deviceId } = context;
 
@@ -98,6 +102,7 @@ export const createSession = async (
   const lifetimeEnd = isoDateIn(sessionLifetime);
   const expiresAt = endsAt && endsAt < lifetimeEnd ? endsAt : lifetimeEnd;
   const timeSpan = new TimeSpan(Date.parse(expiresAt) - Date.now(), 'ms');
+  const browserKeyHash = browserKey ? hashToken(browserKey) : null;
   const session = {
     id: sessionId,
     secretHash,
@@ -109,7 +114,8 @@ export const createSession = async (
     ipSubnetHash: subnet ? hashSubnet(subnet) : null,
     ipRegionCode: regionCode,
     ipAsn: asn,
-    deviceIdHash: hashDeviceIdForUser(deviceId, user.id),
+    deviceIdHash: deviceId ? hashDeviceIdForUser(deviceId, user.id) : null,
+    browserKeyHash,
     createdAt: now,
     expiresAt,
     steppedUpAt: steppedUpVia ? (steppedUpAt ?? now) : null,
@@ -118,14 +124,17 @@ export const createSession = async (
     connectionId,
   };
 
-  // A browser holds at most one live session, so repeated sign-ins do not stack up.
-  const replaced = await findLiveSessionsHeldByUser(dbCtx, { userId: user.id, deviceIdHash: session.deviceIdHash });
-  await revokeSessions(dbCtx, { userId: user.id, sessionIds: replaced.map(({ id }) => id), reason: 'replaced', by: null });
-  await revokeExcessSessions(user.id);
+  // Repeated sign-ins do not stack up: a browser holds at most one live ordinary session. A launch records no device
+  // and replaces none: every frame of the person keeps its own session.
+  if (session.deviceIdHash) {
+    const replaced = await findLiveSessionsHeldByUser(dbCtx, { userId: user.id, embedded: false, deviceIdHash: session.deviceIdHash });
+    await revokeSessions(dbCtx, { userId: user.id, sessionIds: replaced.map(({ id }) => id), reason: 'replaced', by: null });
+  }
+  await revokeExcessSessions(user.id, { embedded: !!browserKeyHash });
 
   await insertSession(dbCtx, { values: session });
 
-  const newDevice = await enrollNewDevice(user.id, deviceId);
+  const newDevice = deviceId ? await enrollNewDevice(user.id, deviceId) : null;
 
   await updateLastSignInAt(dbCtx, { userId: user.id, lastSignInAt: getIsoDate() });
 
@@ -136,49 +145,62 @@ interface StartSessionOpts {
   strategy: AuthStrategy;
   kind: SessionKind;
   extras: SessionExtras;
-  cookie: SessionCookieName;
 }
 
-/**
- * Stores a session, sets it in `cookie` and sends the sign-in notices. The session the request presents in that
- * cookie ends, another account's too; the other session cookie stays as it is.
- */
-const startSession = async (ctx: Context<Env>, user: UserModel, { strategy, kind, extras, cookie }: StartSessionOpts) => {
+/** Stores a session after the system admin's address check and sends the sign-in notices; returns what `createSession` returns. */
+const startSession = async (ctx: Context<Env>, user: UserModel, { strategy, kind, extras }: StartSessionOpts) => {
   const isSystemAdmin = !!(await findSystemRole(dbCtx, { userId: user.id, role: 'admin' }));
 
   if (isSystemAdmin && !isSystemAccessAllowed(ctx)) throw new AppError(403, 'system_access_forbidden', 'warn');
 
-  const context = await collectSignInContext(ctx);
-  const presented = await findSession(ctx, cookie);
-  const { sessionToken, stepUpCookie, timeSpan, newDevice } = await createSession(user, context, strategy, kind, extras);
-  if (presented) {
-    await revokeSessions(dbCtx, { userId: presented.session.userId, sessionIds: [presented.session.id], reason: 'replaced', by: null });
-  }
+  const context = await collectSignInContext(ctx, { embedded: !!extras.browserKey });
+  const created = await createSession(user, context, strategy, kind, extras);
 
-  setAuthCookie(ctx, cookie, sessionToken, timeSpan);
-  if (stepUpCookie) setAuthCookie(ctx, 'session-step-up', stepUpCookie, stepUpWindow);
-
-  notifySignIn({ user, isSystemAdmin, context, strategy, newDevice });
+  notifySignIn({ user, isSystemAdmin, context, strategy, newDevice: created.newDevice });
 
   log.info('User signed in', { strategy });
+  return created;
 };
 
 /**
  * Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices. The session the
- * request presents ends, another account's too; a provider callback arrives cross-site without the Strict cookie.
+ * request presents in that cookie ends, another account's too; a provider callback arrives cross-site without the
+ * Strict cookie. An embedded session stays as it is.
  */
-export const setUserSession = (
+export const setUserSession = async (
   ctx: Context<Env>,
   user: UserModel,
   strategy: AuthStrategy,
   kind: SessionKind = 'regular',
   extras: SessionExtras = {},
-) => startSession(ctx, user, { strategy, kind, extras, cookie: 'session' });
+) => {
+  const presented = await findSession(ctx, { embedded: false });
+  const { sessionToken, stepUpCookie, timeSpan } = await startSession(ctx, user, { strategy, kind, extras });
+  if (presented) {
+    await revokeSessions(dbCtx, { userId: presented.session.userId, sessionIds: [presented.session.id], reason: 'replaced', by: null });
+  }
+
+  setAuthCookie(ctx, 'session', sessionToken, timeSpan);
+  if (stepUpCookie) setAuthCookie(ctx, 'session-step-up', stepUpCookie, stepUpWindow);
+};
 
 /**
- * Signs the user in on the embedded session of this frame after an LTI launch, with the connection recorded. It starts
- * stepped up for nothing and no MFA challenge: the launch is the proof, and a request reads the session only when it
- * asks for it (`sessionCookieOf`).
+ * Starts an embedded session for the user after an LTI launch, with the connection and the browser key recorded, and
+ * returns its token for the frame's memory. It starts stepped up for nothing and no MFA challenge: the launch is the
+ * proof. No ordinary session ends.
  */
-export const setEmbeddedSession = (ctx: Context<Env>, user: UserModel, { connectionId }: { connectionId: string }) =>
-  startSession(ctx, user, { strategy: 'lti', kind: 'regular', extras: { connectionId }, cookie: 'embedded-session' });
+export const setEmbeddedSession = async (
+  ctx: Context<Env>,
+  user: UserModel,
+  { connectionId, browserKey }: { connectionId: string; browserKey: string },
+) => (await startSession(ctx, user, { strategy: 'lti', kind: 'regular', extras: { connectionId, browserKey } })).sessionToken;
+
+/**
+ * The browser key of this partition, kept from its cookie or set there at a first launch, and refreshed to outlive
+ * the session a launch starts. Two first launches at the same moment each set one, and the earlier frame's is lost.
+ */
+export const keepBrowserKey = (ctx: Context<Env>) => {
+  const browserKey = getAuthCookie(ctx, 'embedded-browser-key') ?? newHashedToken().raw;
+  setAuthCookie(ctx, 'embedded-browser-key', browserKey, sessionLifetime);
+  return browserKey;
+};

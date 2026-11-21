@@ -26,7 +26,7 @@ const prefix = secure ? ('host' as const) : undefined;
 export type CookieName =
   | TokenKind
   | 'session'
-  | 'embedded-session'
+  | 'embedded-browser-key'
   | 'session-step-up'
   | 'device-id'
   | 'totp-challenge'
@@ -85,12 +85,12 @@ const openAuthCookie = (name: CookieName, sealed: string): string | undefined =>
 };
 
 /**
- * The attributes a cookie is set and deleted with. The embedded session lives in another site's frame. SameSite None
- * lets the frame send it; Partitioned (CHIPS) keeps it per top-level site, only where a launch set it. Both need
- * Secure, which a browser also grants plain `http://localhost` in development.
+ * The attributes a cookie is set and deleted with. The browser key of embedded sessions lives in another site's frame.
+ * SameSite None lets the frame send it; Partitioned (CHIPS) keeps it per top-level site, only where a launch set it.
+ * Both need Secure, which a browser also grants plain `http://localhost` in development.
  */
 const cookieAttributes = (name: CookieName) => {
-  if (name === 'embedded-session') return { secure: true, sameSite: 'none', partitioned: true } as const;
+  if (name === 'embedded-browser-key') return { secure: true, sameSite: 'none', partitioned: true } as const;
   return { secure, sameSite: isLaxCookie(name) ? 'lax' : 'strict' } as const;
 };
 

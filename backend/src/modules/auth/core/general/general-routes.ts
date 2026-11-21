@@ -140,7 +140,7 @@ export const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     xGuard: [publicGuard],
     summary: 'Sign out',
     description:
-      'Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. A request with the embedded-session marker ends the embedded session and leaves the normal one, and the other way round. An anonymous session takes its account along, with an organization only that account manages.',
+      'Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. A request that names the embedded session ends it and leaves the normal one, and the other way round. An anonymous session takes its account along, with an organization only that account manages.',
     responses: { 204: { description: 'User signed out' }, ...errors(401) },
   }),
 });

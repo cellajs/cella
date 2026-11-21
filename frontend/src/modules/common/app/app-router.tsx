@@ -1,10 +1,11 @@
 import { RouterProvider } from '@tanstack/react-router';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import { isEmbedded } from '~/lib/embedded-context';
 import { PullToRefresh } from '~/modules/common/pull-to-refresh';
 import { queryClient } from '~/query/query-client';
 import { router } from '~/routes/router';
 
-/** The router, with pull-to-refresh while online. */
+/** The router, with pull-to-refresh while online, outside an embedded page, which holds no token after a reload. */
 export function AppRouter() {
   // Subscribed, so pull-to-refresh comes back when the connection does
   const isOnline = useOnlineManager();
@@ -16,7 +17,7 @@ export function AppRouter() {
 
   return (
     <>
-      <PullToRefresh onRefresh={handleRefresh} isDisabled={!isOnline} />
+      {!isEmbedded && <PullToRefresh onRefresh={handleRefresh} isDisabled={!isOnline} />}
       <RouterProvider router={router} />
     </>
   );

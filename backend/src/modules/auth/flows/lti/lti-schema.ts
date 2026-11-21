@@ -91,12 +91,18 @@ export const ltiLaunchFormSchema = z.object({
   error_description: z.string().max(maxLength.url).optional(),
 });
 
-/** What the launch page posts to the finish route: the platform's launch, and the value platform storage held for this frame. */
+/** What the launch page posts to the finish route: the platform's launch, and the value the frame kept for it. */
 export const ltiFinishFormSchema = z.object({
   id_token: idTokenSchema,
   state: z.string().max(maxLength.url).optional(),
   storage_value: z.string().max(maxLength.field).optional(),
 });
+
+/** The one-use code a finished launch hands the embedded page, which it redeems for its session token. */
+export const ltiHandoffBodySchema = z.object({ code: z.string().max(maxLength.field) });
+
+/** The embedded session's token, which the page keeps in memory and sends as `X-Embedded-Session`. */
+export const ltiHandoffResponseSchema = z.object({ token: z.string() });
 
 /** The path of one LTI connection's key set. */
 export const ltiKeySetParamSchema = z.object({ connectionId: validUuidSchema });

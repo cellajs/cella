@@ -22,8 +22,8 @@ export type SessionKind = (typeof sessionKinds)[number];
  * from another of their sessions, `mfa_enabled` because enabling MFA drops every other regular session. An
  * administrator's act: `admin_revoke`, by a system administrator for a person locked out or compromised, or by an
  * organization admin deleting the LTI connection a session came through. The server's housekeeping during a
- * sign-in: `session_cap` beyond `maxSessionsPerUser`. `replaced` by a newer session in the same browser: a sign-in, or
- * the mfa session that enabling MFA mints.
+ * sign-in: `session_cap` beyond `maxSessionsPerUser`, or beyond `maxEmbeddedSessionsPerUser` for an embedded session.
+ * `replaced` by a newer session in the same browser: a sign-in, or the mfa session that enabling MFA mints.
  */
 const sessionRevocationReasons = ['sign_out', 'other_session', 'mfa_enabled', 'admin_revoke', 'session_cap', 'replaced'] as const;
 export type SessionRevocationReason = (typeof sessionRevocationReasons)[number];
@@ -58,6 +58,11 @@ export const sessionsTable = snakeCase.table(
     ipRegionCode: varchar({ length: 2 }),
     ipAsn: integer(),
     deviceIdHash: varchar({ length: 64 }),
+    /**
+     * The hash of the browser key an LTI launch keeps in the partitioned cookie of the platform's site; null for an
+     * ordinary session. The embedded session's token counts only beside that cookie.
+     */
+    browserKeyHash: varchar({ length: 64 }),
     createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,
     revokedAt: isoTimestamp(),
@@ -88,7 +93,7 @@ const { id, userId, kind, authStrategy, connectionId, createdAt, expiresAt } = s
 export const sessionFactColumns = { id, userId, kind, authStrategy, connectionId, createdAt, expiresAt };
 
 /** A session row without its secrets. */
-export type SessionModel = Omit<typeof sessionsTable.$inferSelect, 'secretHash' | 'steppedUpSecretHash'>;
+export type SessionModel = Omit<typeof sessionsTable.$inferSelect, 'secretHash' | 'steppedUpSecretHash' | 'browserKeyHash'>;
 
 /** What the guards know about a session: fixed when it was created, so the auth cache may hold them until it ends. */
 export type SessionFacts = Pick<SessionModel, keyof typeof sessionFactColumns>;

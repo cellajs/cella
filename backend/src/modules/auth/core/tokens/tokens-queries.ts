@@ -278,6 +278,7 @@ const handoffColumns = {
   kind: tokensTable.kind,
   tenantId: tokensTable.tenantId,
   createdBy: tokensTable.createdBy,
+  userId: tokensTable.userId,
   ltiResourceLinkId: tokensTable.ltiResourceLinkId,
   connectionId: tokensTable.connectionId,
   expiresAt: tokensTable.expiresAt,
@@ -292,15 +293,19 @@ const handedOff = <T extends { id: string; tenantId: string | null }>(row: T) =>
   return { ...row, tenantId: row.tenantId };
 };
 
-type HandoffRef = { kind: HandoffTokenKind; rawToken: string; id?: string; sessionId?: string };
+type HandoffRef = { kind: HandoffTokenKind; rawToken: string; id?: string; sessionId?: string; browserKeyHash?: string };
 
-/** The handoff token of `kind` a raw value names, and when `id` or `sessionId` is given only the row of that id or session. */
-const handoffNamedBy = ({ kind, rawToken, id, sessionId }: HandoffRef) =>
+/**
+ * The handoff token of `kind` a raw value names, and when `id`, `sessionId` or `browserKeyHash` is given only the row of
+ * that id, session or browser key.
+ */
+const handoffNamedBy = ({ kind, rawToken, id, sessionId, browserKeyHash }: HandoffRef) =>
   and(
     eq(tokensTable.secretHash, hashToken(rawToken)),
     eq(tokensTable.kind, kind),
     id === undefined ? undefined : eq(tokensTable.id, id),
     sessionId === undefined ? undefined : eq(tokensTable.sessionId, sessionId),
+    browserKeyHash === undefined ? undefined : eq(tokensTable.singleUseToken, browserKeyHash),
   );
 
 /** Reads the handoff token a raw value names, expired or not, and leaves it in place; undefined when none matches. */

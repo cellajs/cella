@@ -9,7 +9,7 @@ import type { z } from 'zod';
 import { devtools } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
 import { isDebugMode } from '~/env';
-import { isEmbedded } from '~/lib/embedded-context';
+import { embeddedSessionToken, isEmbedded } from '~/lib/embedded-context';
 import { reportCriticalError } from '~/lib/tracing';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { setSyncStreamHealthy, setSyncWorkerAway } from '~/query/basic/sync-stale-state';
@@ -33,8 +33,12 @@ import { declareViewsFromMemberships } from '~/query/realtime/view-declaration';
 import { settleWithin } from '~/utils/wait-for';
 
 const streamName = 'Stream';
-/** An EventSource sets no header: an embedded page asks for its session by the query marker. */
-const streamUrl = `${appConfig.backendUrl}/me/stream${isEmbedded ? `?${embeddedSessionParam}=1` : ''}`;
+/**
+ * An EventSource sets no header: an embedded page sends its session token in the query. The address stays out of
+ * history and logs, and the token counts only beside the browser key cookie.
+ */
+const streamUrl = () =>
+  `${appConfig.backendUrl}/me/stream${isEmbedded ? `?${new URLSearchParams({ [embeddedSessionParam]: embeddedSessionToken() })}` : ''}`;
 const maxFailures = 3;
 const circuitCooldownMs = 60_000;
 const initialBackoffMs = 5_000;
@@ -319,7 +323,7 @@ class StreamManager {
     this.bufferOverflowed = false;
     this.pendingChanges = [];
     let catchupStarted = false;
-    const eventSource = new EventSource(streamUrl, { withCredentials: true });
+    const eventSource = new EventSource(streamUrl(), { withCredentials: true });
     const noteActivity = () => {
       this.lastEventAt = Date.now();
       reportReachable();

@@ -60,7 +60,7 @@ export function createLtiIssuerApp(provider: Provider): Hono<Env> {
   app.on(['GET', 'POST'], `${servicePaths.oauth}${ltiIssuerPaths.authorization}`, ltiLaunchLimiter, async (ctx) => {
     try {
       // The app's own session, never the embedded one: a launch starts on the app's pages.
-      const session = await findSession(ctx, 'session');
+      const session = await findSession(ctx, { embedded: false });
       return autoPostPage(ctx, await authorizeLtiLaunchOp(await authenticationParams(ctx), session?.session.id ?? null));
     } catch (err) {
       if (!(err instanceof AppError) || err.type !== 'lti_launch_refused') throw err;

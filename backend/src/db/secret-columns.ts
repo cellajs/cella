@@ -14,7 +14,7 @@ export const secretColumns = {
   passkey_challenges: ['challengeHash'],
   // The Web Push auth secret, which the pattern below cannot tell by name.
   push_subscriptions: ['auth'],
-  sessions: ['secretHash', 'steppedUpSecretHash'],
+  sessions: ['secretHash', 'steppedUpSecretHash', 'browserKeyHash'],
   signing_keys: ['privateJwk'],
   tokens: ['secretHash', 'singleUseToken'],
   totps: ['secret'],

@@ -7090,7 +7090,7 @@
         "operationId": "signOut",
         "tags": ["auth", "cella"],
         "summary": "Sign out",
-        "description": "Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. A request with the embedded-session marker ends the embedded session and leaves the normal one, and the other way round. An anonymous session takes its account along, with an organization only that account manages.",
+        "description": "Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared. A request that names the embedded session ends it and leaves the normal one, and the other way round. An anonymous session takes its account along, with an organization only that account manages.",
         "x-guard": ["publicGuard"],
         "responses": {
           "204": {
@@ -9328,7 +9328,7 @@
         "operationId": "initiateLtiLogin",
         "tags": ["auth", "cella"],
         "summary": "Start an LTI launch",
-        "description": "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page.",
+        "description": "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post into a frame of the platform's page; the page refuses outside a frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that keeps the nonce's value in the frame's own storage, or in platform storage when the frame keeps nothing and the platform names a storage frame, then goes on to the platform's authorization endpoint. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page.",
         "x-enabled-by": {
           "strategy": "lti"
         },
@@ -9415,10 +9415,10 @@
         ],
         "responses": {
           "200": {
-            "description": "Login page\n\nA page that stores the launch value in platform storage and moves on to the platform."
+            "description": "Login page\n\nA page that keeps the launch value in the frame, or in platform storage, and moves on to the platform."
           },
           "400": {
-            "description": "Login refused\n\nA page naming why: the platform offers no platform storage."
+            "description": "Login refused\n\nA field is longer than a login carries."
           },
           "401": {
             "description": "Platform unknown\n\nA page: no active LTI connection matches the issuer and client id, or the login hint is missing."
@@ -9433,7 +9433,7 @@
         "operationId": "initiateLtiLoginByPost",
         "tags": ["auth", "cella"],
         "summary": "Start an LTI launch by form post",
-        "description": "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page. A cross-site form post by design: the CSRF check leaves it out.",
+        "description": "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post into a frame of the platform's page; the page refuses outside a frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that keeps the nonce's value in the frame's own storage, or in platform storage when the frame keeps nothing and the platform names a storage frame, then goes on to the platform's authorization endpoint. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page. A cross-site form post by design: the CSRF check leaves it out.",
         "x-enabled-by": {
           "strategy": "lti"
         },
@@ -9501,10 +9501,10 @@
         },
         "responses": {
           "200": {
-            "description": "Login page\n\nA page that stores the launch value in platform storage and moves on to the platform."
+            "description": "Login page\n\nA page that keeps the launch value in the frame, or in platform storage, and moves on to the platform."
           },
           "400": {
-            "description": "Login refused\n\nA page naming why: the platform offers no platform storage."
+            "description": "Login refused\n\nA field is longer than a login carries."
           },
           "401": {
             "description": "Platform unknown\n\nA page: no active LTI connection matches the issuer and client id, or the login hint is missing."
@@ -9527,7 +9527,7 @@
         "operationId": "receiveLtiLaunch",
         "tags": ["auth", "cella"],
         "summary": "Receive an LTI launch",
-        "description": "The launch address a platform posts the ID token to, cross-site by design: the CSRF check leaves it out. Acts on nothing: answers a page that reads the login's value back from platform storage, accepting an answer from the platform's origin alone, and posts it with the ID token and the state to the finish route.",
+        "description": "The launch address a platform posts the ID token to, cross-site by design: the CSRF check leaves it out. Acts on nothing: answers a page that reads the login's value back from the frame's own storage, or else from platform storage, accepting an answer from the platform's origin alone, and posts it with the ID token and the state to the finish route. The page refuses outside a frame.",
         "x-enabled-by": {
           "strategy": "lti"
         },
@@ -9566,7 +9566,7 @@
         },
         "responses": {
           "200": {
-            "description": "Launch page\n\nA page that reads the launch value from platform storage and posts it on, same-origin."
+            "description": "Launch page\n\nA page that reads the launch value back from the frame, or from platform storage, and posts it on, same-origin."
           },
           "400": {
             "description": "Launch refused\n\nA field is longer than a launch carries."
@@ -9694,7 +9694,7 @@
         "operationId": "finishLtiLaunch",
         "tags": ["auth", "cella"],
         "summary": "Finish an LTI launch",
-        "description": "Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value platform storage held. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.",
+        "description": "Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value the frame kept. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it keeps the browser key in a partitioned cookie, set at the first launch on the platform's site and kept by later ones, and redirects to the channel's embedded page with a one-use code for the embedded session in the address fragment. Refusals answer a page naming why.",
         "x-enabled-by": {
           "strategy": "lti"
         },
@@ -9726,7 +9726,7 @@
         },
         "responses": {
           "303": {
-            "description": "Launched\n\nTo the embedded page of the channel, with the embedded session set.",
+            "description": "Launched\n\nTo the embedded page of the channel, with the code that redeems the session in the fragment.",
             "headers": {
               "Location": {
                 "schema": {
@@ -9750,6 +9750,79 @@
           },
           "409": {
             "description": "Not set up yet\n\nA page: someone who sets the context up opens the app from it first."
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaTypeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/lti:redeem-handoff": {
+      "post": {
+        "security": [],
+        "operationId": "redeemLtiHandoff",
+        "tags": ["auth", "cella"],
+        "summary": "Redeem an LTI handoff",
+        "description": "Posted by the embedded page a finished launch opened, with the code from its address fragment. Spends the hand-over and only then starts the embedded session, answering its token, which the page keeps in memory alone and sends with every request. The code works once, for two minutes, only beside the browser key cookie the launch set and while its LTI connection is active: a second redemption, another browser, another platform's site and a deleted or disabled connection get a 401. A system admin outside the addresses allowed for system access gets a 403, as at any sign-in.",
+        "x-enabled-by": {
+          "strategy": "lti"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["ltiLaunchLimiter"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "code": "example-handoff-code"
+              },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "maxLength": 255
+                  }
+                },
+                "required": ["code"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "token": "example-session-token"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["token"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
@@ -11844,6 +11917,7 @@
                     {
                       "id": "9b9d0dbd-b448-4c18-9d94-f8a4860f7b4b",
                       "name": "Peer review",
+                      "description": "Students review the drafts of their peers.",
                       "launchOrigins": ["https://peer-review.example.com", "https://launch.peer-review.example.com"],
                       "createdAt": "2024-09-19T11:48:50.276Z",
                       "status": "active",
@@ -11873,6 +11947,10 @@
                           },
                           "name": {
                             "type": "string"
+                          },
+                          "description": {
+                            "type": ["string", "null"],
+                            "description": "What the LTI tool says it does, from its registration; null when it says nothing"
                           },
                           "launchOrigins": {
                             "type": "array",
@@ -11921,7 +11999,7 @@
                             "description": "The tab once placed, on or off; null for an LTI tool never placed in the channel"
                           }
                         },
-                        "required": ["id", "name", "launchOrigins", "createdAt", "status", "readsMembers", "refusal", "resourceLink"]
+                        "required": ["id", "name", "description", "launchOrigins", "createdAt", "status", "readsMembers", "refusal", "resourceLink"]
                       }
                     },
                     "nextPageToken": {

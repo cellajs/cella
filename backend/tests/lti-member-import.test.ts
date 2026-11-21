@@ -19,7 +19,6 @@ import {
   updateServiceAccount,
 } from 'sdk';
 import { type AccessScope, appConfig, buildSubjectFromEntity, checkAccess, hierarchy } from 'shared';
-import { embeddedSessionHeader } from 'shared/utils/embedded-session';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -65,7 +64,15 @@ import {
   moodlePlatform,
   type PlatformFixture,
 } from './lti-platform-fixtures';
-import { decodeHtml, parseForm, sendLtiAuthenticationRequest, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
+import {
+  decodeHtml,
+  embeddedHeaders,
+  embeddedSessionOf,
+  parseForm,
+  sendLtiAuthenticationRequest,
+  startTestOauthServer,
+  type TestOauthServer,
+} from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser, orgMembershipOf } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
@@ -86,7 +93,7 @@ overrideConfig(appConfig.has, { ltiPlatform: true });
 
 const loopback = async () => [{ address: '127.0.0.1', family: 4 }];
 
-/** The platform storage exchange a login page carries in its body. */
+/** The storage exchange a login page carries in its body. */
 const pageExchange = (page: string): { key: string; value?: string; next?: string } =>
   JSON.parse(decodeHtml(/data-exchange="([^"]*)"/.exec(page)?.[1] ?? '{}'));
 
@@ -340,12 +347,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
         body: new URLSearchParams({ id_token: posted.fields.id_token, state: posted.fields.state, storage_value: stored.value ?? '' }),
       });
       expect(finished.status).toBe(303);
-      const embedded =
-        finished.headers
-          .getSetCookie()
-          .find((cookie) => cookie.includes('-embedded-session-'))
-          ?.split(';')[0] ?? '';
-      const me = await call(getMe, { headers: { Cookie: embedded, [embeddedSessionHeader]: '1' } });
+      const me = await call(getMe, { headers: embeddedHeaders(await embeddedSessionOf(fetchApp, finished)) });
       return (me.data as { user: { id: string } }).user.id;
     }
 

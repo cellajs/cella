@@ -16,7 +16,6 @@ export {
   findSession,
   type ResolvedSession,
   resolveSession,
-  sessionCookieOf,
   sessionRefusal,
 } from '#/modules/auth/core/sessions/operations/resolve-session';
 export { closeSessions, revokeConnectionSessions } from '#/modules/auth/core/sessions/operations/revoke-sessions';

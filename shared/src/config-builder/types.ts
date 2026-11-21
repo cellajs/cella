@@ -445,6 +445,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   federations: Record<string, FederationConfig>;
   totp: TotpConfig;
   maxSessionsPerUser: number;
+  maxEmbeddedSessionsPerUser: number;
   maxDevicesPerUser: number;
   maxPushSubscriptionsPerUser: number;
 

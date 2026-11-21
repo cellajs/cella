@@ -22,6 +22,7 @@ import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
 import { lisContextRoles, lisInstitutionRoles, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
+import { createSession } from '#/modules/auth/core/sessions/operations/create-session';
 import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
 import { ltiLaunchUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
@@ -41,8 +42,19 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
-import { createTestOrganization, createTestUser } from './helpers';
-import { decodeHtml, parseForm, sendLtiAuthenticationRequest, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
+import { authCookie, cookieChange, createTestOrganization, createTestUser, sentMails, sessionRow } from './helpers';
+import {
+  browserKeyCookieOf,
+  decodeHtml,
+  embeddedHeaders,
+  embeddedSessionOf,
+  handoffCodeOf,
+  parseForm,
+  redeemHandoff,
+  sendLtiAuthenticationRequest,
+  startTestOauthServer,
+  type TestOauthServer,
+} from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser, orgMembershipOf } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
@@ -61,20 +73,12 @@ vi.mock('#/modules/lti-platform/launch-context', async (importOriginal) => {
 setTestConfig({ enabledAuthStrategies: ['passkey', 'lti'] });
 overrideConfig(appConfig.has, { ltiPlatform: true });
 
-const embeddedHeader = { [embeddedSessionHeader]: '1' };
-
-/** The platform storage exchange a login or launch page carries in its body. */
+/** The storage exchange a login or launch page carries in its body. */
 const pageExchange = (page: string) => {
-  const exchange: { subject: string; key: string; value?: string; next?: string; origin: string } = JSON.parse(
+  const exchange: { subject: string; key: string; value?: string; next?: string; origin: string; target?: string } = JSON.parse(
     decodeHtml(/data-exchange="([^"]*)"/.exec(page)?.[1] ?? '{}'),
   );
   return exchange;
-};
-
-/** The embedded session cookie a response sets, and the `name=value` pair a browser sends back. */
-const embeddedCookieOf = (response: Response) => {
-  const cookie = response.headers.getSetCookie().find((set) => set.includes('-embedded-session-'));
-  return { cookie, pair: cookie?.split(';')[0] ?? '' };
 };
 
 describe('LTI launch at the app as an LTI tool', async () => {
@@ -141,9 +145,14 @@ describe('LTI launch at the app as an LTI tool', async () => {
 
   type Connected = Awaited<ReturnType<typeof connect>>;
 
-  /** Starts a login as the platform's frame does, and reads what its page stores and where it goes next. */
+  /** Starts a login as the platform's frame does, naming its storage frame, and reads what its page stores and where it goes next. */
   async function login(connected: Connected) {
-    const query = new URLSearchParams({ iss: connected.issuer, client_id: connected.clientId, login_hint: 'hint', lti_storage_target: '_parent' });
+    const query = new URLSearchParams({
+      iss: connected.issuer,
+      client_id: connected.clientId,
+      login_hint: 'hint',
+      lti_storage_target: '_parent',
+    });
     const page = await fetchApp(`/auth/lti/login?${query}`);
     const exchange = pageExchange(await page.text());
     const next = new URL(exchange.next ?? '');
@@ -171,7 +180,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
   const sign = (claims: JWTPayload, platform: Pick<Platform, 'privateKey' | 'kid'>) =>
     new SignJWT(claims).setProtectedHeader({ alg: 'RS256', kid: platform.kid }).sign(platform.privateKey);
 
-  /** The launch page's same-origin post to the finish route, with the value platform storage held. */
+  /** The launch page's same-origin post to the finish route, with the value the frame kept. */
   const finish = (fields: { id_token: string; state: string; storage_value: string }, headers: Record<string, string> = {}) =>
     fetchApp('/auth/lti/finish', {
       method: 'POST',
@@ -179,18 +188,22 @@ describe('LTI launch at the app as an LTI tool', async () => {
       body: new URLSearchParams(fields),
     });
 
-  /** A launch through login and finish; `changes` replace claims of the valid launch, an undefined one drops it. */
+  /**
+   * A launch through login and finish; `changes` replace claims of the valid launch, an undefined one drops it. `headers`
+   * go with the finish post, as the frame's cookies.
+   */
   async function launch(
     connected: Connected,
     changes: Partial<Record<string, unknown>> = {},
     signer: Pick<Platform, 'privateKey' | 'kid'> = connected.platform,
+    headers: Record<string, string> = {},
   ) {
     const started = await login(connected);
     const claims = Object.fromEntries(
       Object.entries({ ...launchClaims(connected, started.nonce), ...changes }).filter(([, value]) => value !== undefined),
     );
     const idToken = await sign(claims, signer);
-    return { started, idToken, response: await finish({ id_token: idToken, state: started.state, storage_value: started.value }) };
+    return { started, idToken, response: await finish({ id_token: idToken, state: started.state, storage_value: started.value }, headers) };
   }
 
   /** A refusal page naming the error's translated text, for the entity type it is about where it names one, with no session set. */
@@ -198,7 +211,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(response.status).toBe(status);
     const text = resourceErrorTexts(type, entityType)?.text ?? new AppError(400, type, 'info').message;
     expect(decodeHtml(await response.text())).toContain(text);
-    expect(embeddedCookieOf(response).cookie).toBeUndefined();
+    expect(browserKeyCookieOf(response)).toBeUndefined();
   };
 
   // Attack: a page on an origin the deploy lists for embedded pages, or one another connection's platform frames from,
@@ -367,12 +380,6 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(valid.response.status).toBe(303);
     const replay = await finish({ id_token: valid.idToken, state: valid.started.state, storage_value: valid.started.value });
     await expectRefusalPage(replay, 401, 'lti-nonce_not_found');
-
-    // A platform that offers no platform storage is refused at the login.
-    const noStorage = await fetchApp(
-      `/auth/lti/login?${new URLSearchParams({ iss: connected.issuer, client_id: connected.clientId, login_hint: 'hint' })}`,
-    );
-    await expectRefusalPage(noStorage, 400, 'lti_storage_missing');
   });
 
   // Contract: the template's role mapping as a platform's launch meets it: a context role admits. Attack: an institution
@@ -422,39 +429,41 @@ describe('LTI launch at the app as an LTI tool', async () => {
     await expectRefusalPage(refused.response, 403, 'lti_deployment_unknown');
   });
 
-  // The embedded cookie is partitioned per parent site; a sibling frame there holds it too.
-  it('reads the embedded session only for a marked request, never the normal one for it, refuses its cross-site writes and what a guest may not do, and ends it with its connection', async () => {
+  // Attack: every frame of the app on the platform's page sends the partitioned browser key cookie, and a token can
+  // leave the browser. Neither half alone, nor a token beside another browser's key, reads a session. Bug: a later
+  // launch in the same partition replaced the session an open frame sent.
+  it('reads the embedded session only with its token beside the browser key it recorded, never the normal one for it, and ends it with its connection', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
-    const launched = await launch(connected);
-    const embedded = embeddedCookieOf(launched.response).pair;
+    const embedded = await embeddedSessionOf(fetchApp, (await launch(connected)).response);
     const member = await createFactorOrgUser(call, connected.org.tenantId, connected.org.id, `lti-${nanoid(8)}`, adminRole);
-    const both = `${embedded}; ${member.sessionCookie}`;
+    const both = `${embedded.cookie}; ${member.sessionCookie}`;
 
-    const me = async (cookie: string, headers: Record<string, string> = {}) =>
-      (await (await fetchApp('/me', { headers: { Cookie: cookie, ...headers } })).json()).user;
-    const embeddedUser = await me(both, embeddedHeader);
+    const me = (headers: Record<string, string>) => fetchApp('/me', { headers });
+    const userOf = async (headers: Record<string, string>) => (await (await me(headers)).json()).user;
+    const embeddedUser = await userOf(embeddedHeaders({ token: embedded.token, cookie: both }));
     expect(embeddedUser.id).not.toBe(member.id);
-    expect((await me(both)).id).toBe(member.id);
-    expect((await fetchApp('/me', { headers: { Cookie: embedded } })).status).toBe(401);
-    expect((await fetchApp('/me', { headers: { Cookie: member.sessionCookie, ...embeddedHeader } })).status).toBe(401);
+    expect((await userOf({ Cookie: both })).id).toBe(member.id);
 
-    // A frame beside the app's can send a body-less form post with the query marker; the browser marks it cross-site.
-    const crossSite = await fetchApp(`/me?${embeddedSessionParam}=1`, {
-      method: 'DELETE',
-      headers: { Cookie: embedded, 'Sec-Fetch-Site': 'cross-site' },
-    });
-    expect(crossSite.status).toBe(403);
-    expect((await crossSite.json()).type).toBe('embedded_session_cross_site');
+    expect((await me(embeddedHeaders({ token: '', cookie: both }))).status).toBe(401);
+    expect((await me({ Cookie: embedded.cookie })).status).toBe(401);
+    expect((await me(embeddedHeaders({ token: embedded.token, cookie: member.sessionCookie }))).status).toBe(401);
+    const elsewhereKey = browserKeyCookieOf((await launch(connected)).response)?.pair ?? '';
+    expect((await me(embeddedHeaders({ token: embedded.token, cookie: elsewhereKey }))).status).toBe(401);
+
+    // Another account's launch in the same partition, and both frames keep their own session.
+    const later = await launch(connected, {}, connected.platform, { Cookie: embedded.cookie });
+    const laterUser = await userOf(embeddedHeaders(await embeddedSessionOf(fetchApp, later.response)));
+    expect(laterUser.id).not.toBe(embeddedUser.id);
+    expect((await userOf(embeddedHeaders(embedded))).id).toBe(embeddedUser.id);
 
     // An account a launch made has no proven address: the gate refuses it what it refuses a guest, such as a tenant of its own.
     const tenant = await fetchApp('/tenants', {
       method: 'POST',
-      headers: { Cookie: embedded, ...embeddedHeader, 'Sec-Fetch-Site': 'same-origin', 'Content-Type': 'application/json' },
+      headers: { ...embeddedHeaders(embedded), 'Sec-Fetch-Site': 'same-origin', 'Content-Type': 'application/json' },
       body: '{}',
     });
     expect(tenant.status).toBe(403);
     expect((await tenant.json()).type).toBe('anonymous_session_restricted');
-    expect((await me(embedded, embeddedHeader)).id).toBe(embeddedUser.id);
 
     // Deleting the connection ends the sessions its launches started.
     const deleted = await call(deleteLtiConnection, {
@@ -462,14 +471,131 @@ describe('LTI launch at the app as an LTI tool', async () => {
       headers: { ...defaultHeaders, Cookie: member.sessionCookie },
     });
     expect(deleted.response.status).toBe(204);
-    expect((await fetchApp('/me', { headers: { Cookie: embedded, ...embeddedHeader } })).status).toBe(401);
+    expect((await me(embeddedHeaders(embedded))).status).toBe(401);
+  });
+
+  // Attack: a token in a query is easier to carry off than a header. Only the event stream, which an EventSource opens
+  // without a header, reads it there: a write or another read with it presents no embedded session.
+  it('reads the embedded token from a query on the event stream alone', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const embedded = await embeddedSessionOf(fetchApp, (await launch(connected)).response);
+    const inQuery = (path: string) => `${path}?${new URLSearchParams({ [embeddedSessionParam]: embedded.token })}`;
+
+    const signOut = await fetchApp(inQuery('/auth/sign-out'), {
+      method: 'POST',
+      headers: { Cookie: embedded.cookie, Origin: appConfig.frontendUrl, 'Sec-Fetch-Site': 'same-origin' },
+    });
+    expect(signOut.status).toBe(401);
+    expect((await fetchApp(inQuery('/me'), { headers: { Cookie: embedded.cookie } })).status).toBe(401);
+    expect((await fetchApp('/me', { headers: embeddedHeaders(embedded) })).status).toBe(200);
+
+    const stream = await fetchApp(inQuery('/me/stream'), { headers: { Cookie: embedded.cookie } });
+    expect(stream.status).toBe(200);
+    await stream.body?.cancel();
+  });
+
+  // Attack: a page on the platform's site sends the browser key cookie with any request it makes to the app, and may
+  // hold a token that left the frame. A cross-site form post or DELETE with the query token, a bodyless post with the
+  // cookie alone and a post to the redeem route each change nothing, and the session answers afterwards.
+  it('refuses cross-site writes on the embedded session', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const embedded = await embeddedSessionOf(fetchApp, (await launch(connected)).response);
+    const unredeemed = (await launch(connected, {}, connected.platform, { Cookie: embedded.cookie })).response;
+    const crossSite = { Cookie: embedded.cookie, Origin: connected.issuer, 'Sec-Fetch-Site': 'cross-site' };
+    const inQuery = (path: string) => `${path}?${new URLSearchParams({ [embeddedSessionParam]: embedded.token })}`;
+    const form = { ...crossSite, 'Content-Type': 'application/x-www-form-urlencoded' };
+    const rows: { name: string; path: string; init: RequestInit }[] = [
+      { name: 'a form post with the query token', path: inQuery('/auth/sign-out'), init: { method: 'POST', headers: form, body: '' } },
+      { name: 'a bodyless post with the cookie alone', path: '/auth/sign-out', init: { method: 'POST', headers: crossSite } },
+      { name: 'a DELETE with the query token', path: inQuery('/me'), init: { method: 'DELETE', headers: crossSite } },
+      {
+        name: 'a post to the redeem route',
+        path: '/auth/lti:redeem-handoff',
+        init: { method: 'POST', headers: { ...crossSite, 'Content-Type': 'text/plain' }, body: JSON.stringify({ code: handoffCodeOf(unredeemed) }) },
+      },
+    ];
+    // The app's origin check refuses each before it reads a session.
+    for (const row of rows) expect([row.name, (await fetchApp(row.path, row.init)).status]).toEqual([row.name, 403]);
+    expect((await fetchApp('/me', { headers: embeddedHeaders(embedded) })).status).toBe(200);
+  });
+
+  // Attack: a hand-over code from another browser's launch, planted in this frame, or one carried off, redeems nothing
+  // beside the wrong browser key or none; a spent one redeems nothing; an unredeemed one is no session; and none
+  // redeems once its connection is gone.
+  it('redeems a hand-over once, beside the browser key its launch kept, while its connection lasts', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const here = (await launch(connected)).response;
+    const hereKey = browserKeyCookieOf(here)?.pair ?? '';
+    const planted = (await launch(connected)).response;
+
+    expect((await redeemHandoff(fetchApp, handoffCodeOf(planted), hereKey)).status).toBe(401);
+    expect((await redeemHandoff(fetchApp, handoffCodeOf(here), '')).status).toBe(401);
+    expect((await fetchApp('/me', { headers: embeddedHeaders({ token: handoffCodeOf(here), cookie: hereKey }) })).status).toBe(401);
+    expect((await redeemHandoff(fetchApp, handoffCodeOf(here), hereKey)).status).toBe(200);
+    expect((await redeemHandoff(fetchApp, handoffCodeOf(here), hereKey)).status).toBe(401);
+
+    const unredeemed = (await launch(connected, {}, connected.platform, { Cookie: hereKey })).response;
+    const admin = await createFactorOrgUser(call, connected.org.tenantId, connected.org.id, `lti-${nanoid(8)}`, adminRole);
+    const deleted = await call(deleteLtiConnection, {
+      path: { tenantId: connected.org.tenantId, organizationId: connected.org.id, connectionId: connected.connection.id },
+      headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
+    });
+    expect(deleted.response.status).toBe(204);
+    expect((await redeemHandoff(fetchApp, handoffCodeOf(unredeemed), hereKey)).status).toBe(401);
+  });
+
+  // Bug: a launch on the app's own site, where the frame sends the device id of the app's tab, revoked the person's
+  // ordinary session there, and a sign-in there revoked the embedded one.
+  it('ends no ordinary session on the device with a launch, and no embedded session with a sign-in', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const sub = `lms-${nanoid(6)}`;
+    await launch(connected, { sub });
+    const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.subject, sub));
+    const deviceId = nanoid(24);
+    const context = {
+      rawIp: null,
+      regionCode: null,
+      asn: null,
+      device: { name: null, type: 'desktop', os: 'macOS', browser: 'Firefox' },
+      deviceId,
+    } as const;
+    const ordinary = await createSession({ id: identity.userId }, context, 'passkey');
+
+    const embedded = await embeddedSessionOf(
+      fetchApp,
+      (await launch(connected, { sub }, connected.platform, { Cookie: authCookie('device-id', deviceId) })).response,
+    );
+    expect((await sessionRow(ordinary.sessionId)).revokedAt).toBeNull();
+
+    await createSession({ id: identity.userId }, context, 'passkey');
+    expect((await sessionRow(ordinary.sessionId)).revocationReason).toBe('replaced');
+    expect((await fetchApp('/me', { headers: embeddedHeaders(embedded) })).status).toBe(200);
+  });
+
+  // Bug: every launch counted as a new device, as a frame keeps no device cookie. An account with an address that
+  // signed in before got a new sign-in mail per launch.
+  it('records no device for a launch and sends no new sign-in mail', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const sub = `lms-${nanoid(6)}`;
+    await launch(connected, { sub });
+    const person = await createTestUser(`lti-${nanoid(6)}@example.com`);
+    await db.update(identitiesTable).set({ userId: person.id }).where(eq(identitiesTable.subject, sub));
+
+    for (let open = 0; open < 2; open++) {
+      const finished = (await launch(connected, { sub })).response;
+      const redeemed = await redeemHandoff(fetchApp, handoffCodeOf(finished), browserKeyCookieOf(finished)?.pair ?? '');
+      expect([redeemed.status, cookieChange(redeemed, 'device-id')]).toEqual([200, undefined]);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(sentMails().filter(({ statics, recipient }) => statics.type === 'new-sign-in' && recipient.email === person.email)).toEqual([]);
   });
 
   it('signs out of the session a request asks for and leaves the other', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
-    const embedded = embeddedCookieOf((await launch(connected)).response).pair;
+    const embedded = await embeddedSessionOf(fetchApp, (await launch(connected)).response);
     const member = await createFactorOrgUser(call, connected.org.tenantId, connected.org.id, `lti-${nanoid(8)}`, adminRole);
-    const both = `${embedded}; ${member.sessionCookie}`;
+    const both = `${embedded.cookie}; ${member.sessionCookie}`;
+    const asEmbedded = { [embeddedSessionHeader]: embedded.token };
     const meStatus = async (headers: Record<string, string> = {}) => (await fetchApp('/me', { headers: { Cookie: both, ...headers } })).status;
     const signOut = (headers: Record<string, string> = {}) =>
       fetchApp('/auth/sign-out', {
@@ -479,10 +605,10 @@ describe('LTI launch at the app as an LTI tool', async () => {
 
     expect((await signOut()).status).toBe(204);
     expect(await meStatus()).toBe(401);
-    expect(await meStatus(embeddedHeader)).toBe(200);
+    expect(await meStatus(asEmbedded)).toBe(200);
 
-    expect((await signOut(embeddedHeader)).status).toBe(204);
-    expect(await meStatus(embeddedHeader)).toBe(401);
+    expect((await signOut(asEmbedded)).status).toBe(204);
+    expect(await meStatus(asEmbedded)).toBe(401);
   });
 
   // The platform names where its course's members are, and the connection's token goes there: an address the guarded
@@ -958,11 +1084,10 @@ describe('LTI launch at the app as an LTI tool', async () => {
       const { toolSide, platformSide, connection, finished } = await launchItself(oauth);
 
       expect(finished.status).toBe(303);
-      expect(finished.headers.get('Location')).toBe(
+      expect(finished.headers.get('Location')?.split('#')[0]).toBe(
         `${appConfig.frontendUrl}/embed/n?${new URLSearchParams({ tenantId: toolSide.org.tenantId, organizationId: toolSide.org.id, channelId: toolSide.org.id, channelType: 'organization' })}`,
       );
-      const { cookie, pair } = embeddedCookieOf(finished);
-      for (const attribute of ['Secure', 'HttpOnly', 'SameSite=None', 'Partitioned']) expect(cookie).toContain(attribute);
+      for (const attribute of ['Secure', 'HttpOnly', 'SameSite=None', 'Partitioned']) expect(browserKeyCookieOf(finished)?.line).toContain(attribute);
 
       const [identity] = await db
         .select()
@@ -977,7 +1102,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
         { contextId: platformSide.org.id, channelType: 'organization', channelId: toolSide.org.id },
       ]);
 
-      const me = await call(getMe, { headers: { Cookie: pair, ...embeddedHeader } });
+      const me = await call(getMe, { headers: embeddedHeaders(await embeddedSessionOf(fetchApp, finished)) });
       expect(me.data).toMatchObject({ user: { id: identity.userId, isAnonymous: true } });
       expect(await db.select().from(membershipsTable).where(eq(membershipsTable.userId, identity.userId))).toHaveLength(1);
     } finally {

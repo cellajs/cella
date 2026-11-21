@@ -36,6 +36,10 @@ export const tokensTable = snakeCase.table(
   {
     id: uuid().primaryKey().$defaultFn(generateId),
     secretHash: varchar({ length: maxLength.field }).notNull(),
+    /**
+     * The hash of a cookie that binds the token to one browser: a redeemed link's single-use value, or for an
+     * `lti-handoff` the browser key the launch kept.
+     */
     singleUseToken: varchar({ length: maxLength.field }),
     kind: varchar({ enum: appConfig.tokenKinds }).notNull(),
     /** The address the token was issued to; null on a handoff token, which goes to another system. */

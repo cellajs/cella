@@ -1,5 +1,6 @@
 import { MapleBrowser } from '@maple-dev/browser';
 import { appConfig } from 'shared';
+import { scrubUrl } from 'shared/utils/scrub-url';
 import { mapleEnabled } from '~/lib/otel';
 
 // Errors, traces and web vitals only: no session replay, no cookies or lasting visitor id, and no user id.
@@ -10,7 +11,7 @@ if (mapleEnabled) {
     environment: appConfig.mode,
     serviceVersion: __APP_VERSION__,
     replay: { enabled: false },
-    privacy: { maskAllInputs: true, maskAllText: true, persistVisitorId: false, crossSubdomainCookie: false },
+    privacy: { maskAllInputs: true, maskAllText: true, persistVisitorId: false, crossSubdomainCookie: false, sanitizeUrl: scrubUrl },
   });
 }
 

@@ -629,7 +629,7 @@ describe('LTI installation API access', async () => {
       const channel = { channelType: 'organization' as const, channelId: org.org.id };
 
       const tabs = await call(listLtiTabs, { path: org.path, query: channel, headers: org.headers });
-      const tab = { name: 'Peer review', launchOrigins: [`https://${ltiToolHost}`], createdAt: expect.any(String) };
+      const tab = { name: 'Peer review', description: null, launchOrigins: [`https://${ltiToolHost}`], createdAt: expect.any(String) };
       const placed = (resourceLinkId: string) => ({ id: resourceLinkId, title: 'Peer review', enabled: true, audience: 'members' });
       expect((tabs.data as { results: unknown[] }).results).toEqual([
         { ...tab, id: reader.installationId, status: 'active', readsMembers: true, refusal: null, resourceLink: placed(reader.resourceLinkId) },

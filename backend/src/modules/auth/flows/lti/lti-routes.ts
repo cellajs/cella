@@ -1,4 +1,4 @@
-import { createXRoutes, errors, json, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { orgGuard, publicGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { ltiKeySetLimiter, ltiLaunchLimiter, ltiLoginLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockLtiContextResponse } from '#/modules/auth/auth-mocks';
@@ -6,6 +6,8 @@ import {
   listLtiContextsQuerySchema,
   ltiContextSchema,
   ltiFinishFormSchema,
+  ltiHandoffBodySchema,
+  ltiHandoffResponseSchema,
   ltiKeySetParamSchema,
   ltiKeySetSchema,
   ltiLaunchFormSchema,
@@ -18,11 +20,11 @@ import { locationSchema, paginationSchema, tenantOrgParamSchema } from '#/schema
 const formBody = <T>(schema: T) => ({ content: { 'application/x-www-form-urlencoded': { schema } }, required: true });
 
 const loginDescription =
-  "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page.";
+  "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post into a frame of the platform's page; the page refuses outside a frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that keeps the nonce's value in the frame's own storage, or in platform storage when the frame keeps nothing and the platform names a storage frame, then goes on to the platform's authorization endpoint. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page.";
 
 const loginResponses = {
-  200: { description: 'Login page\n\nA page that stores the launch value in platform storage and moves on to the platform.' },
-  400: { description: 'Login refused\n\nA page naming why: the platform offers no platform storage.' },
+  200: { description: 'Login page\n\nA page that keeps the launch value in the frame, or in platform storage, and moves on to the platform.' },
+  400: { description: 'Login refused\n\nA field is longer than a login carries.' },
   401: { description: 'Platform unknown\n\nA page: no active LTI connection matches the issuer and client id, or the login hint is missing.' },
 };
 
@@ -84,10 +86,12 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [ltiLaunchLimiter],
     summary: 'Receive an LTI launch',
     description:
-      "The launch address a platform posts the ID token to, cross-site by design: the CSRF check leaves it out. Acts on nothing: answers a page that reads the login's value back from platform storage, accepting an answer from the platform's origin alone, and posts it with the ID token and the state to the finish route.",
+      "The launch address a platform posts the ID token to, cross-site by design: the CSRF check leaves it out. Acts on nothing: answers a page that reads the login's value back from the frame's own storage, or else from platform storage, accepting an answer from the platform's origin alone, and posts it with the ID token and the state to the finish route. The page refuses outside a frame.",
     request: { body: formBody(ltiLaunchFormSchema) },
     responses: {
-      200: { description: 'Launch page\n\nA page that reads the launch value from platform storage and posts it on, same-origin.' },
+      200: {
+        description: 'Launch page\n\nA page that reads the launch value back from the frame, or from platform storage, and posts it on, same-origin.',
+      },
       400: { description: 'Launch refused\n\nA field is longer than a launch carries.' },
       401: { description: 'Launch refused\n\nA page: the state names no active LTI connection, or the platform posted an error.' },
     },
@@ -120,10 +124,13 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [ltiLaunchLimiter],
     summary: 'Finish an LTI launch',
     description:
-      "Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value platform storage held. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it starts the embedded session in a partitioned cookie and redirects to the channel's embedded page. Refusals answer a page naming why.",
+      "Posted same-origin by the launch page; a request the browser does not mark same-origin is refused. Checks the ID token in the order of the 1EdTech Security Framework and spends the login's nonce with the value the frame kept. Maps the launch's context to a channel, finds or creates the person by the platform's issuer and user id and applies the mapped role there. A launch without a context, or with one the app maps to no channel (by default one whose types name no course or group, such as a Canvas account), signs in only a person known here as a member of the organization, and adds no membership, role or seat. Then it keeps the browser key in a partitioned cookie, set at the first launch on the platform's site and kept by later ones, and redirects to the channel's embedded page with a one-use code for the embedded session in the address fragment. Refusals answer a page naming why.",
     request: { body: formBody(ltiFinishFormSchema) },
     responses: {
-      303: { description: 'Launched\n\nTo the embedded page of the channel, with the embedded session set.', headers: locationSchema },
+      303: {
+        description: 'Launched\n\nTo the embedded page of the channel, with the code that redeems the session in the fragment.',
+        headers: locationSchema,
+      },
       400: { description: "Launch refused\n\nThe platform's key set could not be read, or a field is longer than a launch carries." },
       401: { description: 'Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected.' },
       403: {
@@ -132,6 +139,21 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
       },
       404: { description: "Organization gone\n\nA page: the connection's tenant holds no organization." },
       409: { description: 'Not set up yet\n\nA page: someone who sets the context up opens the app from it first.' },
+    },
+  }),
+  redeemLtiHandoff: xRoute({
+    method: 'post',
+    path: '/lti/~redeem-handoff',
+    xEnabledBy: { strategy: 'lti' },
+    xGuard: [publicGuard],
+    xRateLimiter: [ltiLaunchLimiter],
+    summary: 'Redeem an LTI handoff',
+    description:
+      "Posted by the embedded page a finished launch opened, with the code from its address fragment. Spends the hand-over and only then starts the embedded session, answering its token, which the page keeps in memory alone and sends with every request. The code works once, for two minutes, only beside the browser key cookie the launch set and while its LTI connection is active: a second redemption, another browser, another platform's site and a deleted or disabled connection get a 401. A system admin outside the addresses allowed for system access gets a 403, as at any sign-in.",
+    request: { body: jsonBody(ltiHandoffBodySchema, { code: 'example-handoff-code' }) },
+    responses: {
+      200: json('Session token', ltiHandoffResponseSchema, { token: 'example-session-token' }),
+      ...errors(401, 403),
     },
   }),
 });

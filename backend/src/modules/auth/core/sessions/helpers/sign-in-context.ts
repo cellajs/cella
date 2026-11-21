@@ -24,13 +24,17 @@ export type SignInContext = {
   regionCode: string | null;
   asn: number | null;
   device: DeviceInfo;
-  deviceId: string;
+  /** Null for an embedded session, which records no device. */
+  deviceId: string | null;
 };
 
-/** The only part of session creation that reads the request. Mints or refreshes the device id cookie as a side effect. */
-export const collectSignInContext = async (ctx: Context<Env>): Promise<SignInContext> => {
+/**
+ * The only part of session creation that reads the request. Mints or refreshes the device id cookie as a side effect,
+ * except for an embedded session: the platform vouched for its launch, and a frame keeps no device cookie to compare.
+ */
+export const collectSignInContext = async (ctx: Context<Env>, { embedded = false } = {}): Promise<SignInContext> => {
   const rawIp = getIp(ctx);
   const { regionCode, asn } = await lookupIp(rawIp);
 
-  return { rawIp, regionCode, asn, device: deviceInfo(ctx), deviceId: ensureDeviceId(ctx) };
+  return { rawIp, regionCode, asn, device: deviceInfo(ctx), deviceId: embedded ? null : ensureDeviceId(ctx) };
 };

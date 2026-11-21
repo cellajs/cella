@@ -98,8 +98,14 @@ interface LtiAudienceChoiceProps {
 function LtiAudienceChoice({ current, onChoose }: LtiAudienceChoiceProps) {
   const { t } = useTranslation();
   return zLtiResourceLink.shape.audience.options.map((audience) => (
-    <DropdownActionItem key={audience} icon={audienceIcons[audience]} selected={audience === current} onSelect={() => onChoose(audience)}>
-      <span className="min-w-0 grow text-left">{t(`c:lti_audience.${audience}`)}</span>
+    <DropdownActionItem
+      key={audience}
+      icon={audienceIcons[audience]}
+      selected={audience === current}
+      className="h-auto min-h-11"
+      onSelect={() => onChoose(audience)}
+    >
+      <span className="min-w-0 grow text-left whitespace-normal">{t(`c:lti_audience.${audience}`)}</span>
       <CheckIcon className={cn('text-success size-4 shrink-0', audience !== current && 'invisible')} />
     </DropdownActionItem>
   ));
@@ -142,68 +148,80 @@ export function LtiTabAudience({ channel, row, tabIndex }: { channel: EnrichedCh
   );
 }
 
+/**
+ * Switching an LTI tool's tab on, from the Tabs card and the tab bar alike. Its confirmation asks whom the tab opens for
+ * and names whose people the LTI tool then reads where it may. A person without a membership in the channel learns that
+ * a tab for its members does not open for them, and a system admin that a tab opens for them only by their own
+ * memberships. The first switch on places the tab; a later one switches its resource link on.
+ */
+export function useLtiTabOn(channel: EnrichedChannel) {
+  const { mutateAsync: create, isPending: placing } = useCreateLtiResourceLinkMutation();
+  const { mutateAsync: update, isPending: switching } = useUpdateLtiResourceLinkMutation();
+  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
+  const isSystemAdmin = useUserStore((state) => state.isSystemAdmin);
+  const isMember = !!myMemberships?.results.some((membership) => membership.channelId === channel.id);
+  const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) };
+
+  const switchOn = ({ tab }: LtiTabRow, audience: LtiAudience, onOn?: (link: LtiResourceLink) => void) => {
+    const link = tab.resourceLink;
+    const write = link
+      ? update({ path: { ...path, ltiResourceLinkId: link.id }, body: { enabled: true, audience } })
+      : create({ path, body: { channelType: channel.entityType, channelId: channel.id, installationId: tab.id, title: tab.name, audience } });
+    // The promise settles after the menu that asked has closed. The mutation reports its own failures.
+    write.then(onOn, () => {});
+  };
+
+  /** The confirmation that switches `row`'s tab on; `onOn` runs once it is on. */
+  const confirmTabOn = (row: LtiTabRow, onOn?: (link: LtiResourceLink) => void) => ({
+    title: (
+      <>
+        <NamedText
+          i18nKey={row.tab.readsMembers ? 'c:confirm.add_lti_tab_reads' : 'c:confirm.add_lti_tab'}
+          name={row.name}
+          values={{ channel: channel.name }}
+        />
+        {!isMember && (
+          <span className="text-muted-foreground mt-1 block">
+            <NamedText i18nKey={isSystemAdmin ? 'c:lti_tab_system_admin.text' : 'c:lti_tab_not_member.text'} name={channel.name} />
+          </span>
+        )}
+      </>
+    ),
+    content: <LtiAudienceChoice current={row.tab.resourceLink?.audience} onChoose={(audience) => switchOn(row, audience, onOn)} />,
+  });
+
+  return { confirmTabOn, pending: placing || switching };
+}
+
 interface LtiTabSwitchProps {
   channel: EnrichedChannel;
   row: LtiTabRow;
   tabIndex: number;
-  /** Right before the tab is placed or switched. */
-  onToggle: () => void;
 }
 
-/**
- * Switches an LTI tool's tab on and off, keeping its resource link. Switching on asks whom it opens for and names whose
- * people the LTI tool then reads where it may. A person without a membership in the channel learns that a tab for its
- * members does not open for them, and a system admin that a tab opens for them only by their own memberships.
- */
-export function LtiTabSwitch({ channel, row, tabIndex, onToggle }: LtiTabSwitchProps) {
+/** Switches an LTI tool's tab on and off, keeping its resource link. */
+export function LtiTabSwitch({ channel, row, tabIndex }: LtiTabSwitchProps) {
   const { t } = useTranslation();
   const switchRef = useRef<HTMLElement>(null);
-  const { mutate: create, isPending: placing } = useCreateLtiResourceLinkMutation();
-  const { mutate: update, isPending: switching, variables } = useUpdateLtiResourceLinkMutation();
-  const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) };
+  const { confirmTabOn, pending: switchingOn } = useLtiTabOn(channel);
+  const { mutate: update, isPending: switchingOff } = useUpdateLtiResourceLinkMutation();
   const { tab } = row;
   const link = tab.resourceLink;
-  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
-  const isSystemAdmin = useUserStore((state) => state.isSystemAdmin);
-  const isMember = !!myMemberships?.results.some((membership) => membership.channelId === channel.id);
 
   const switchOff = () => {
-    onToggle();
-    if (link) update({ path: { ...path, ltiResourceLinkId: link.id }, body: { enabled: false } });
-  };
-
-  const switchOn = (audience: LtiAudience) => {
-    onToggle();
-    if (link) return update({ path: { ...path, ltiResourceLinkId: link.id }, body: { enabled: true, audience } });
-    create({ path, body: { channelType: channel.entityType, channelId: channel.id, installationId: tab.id, title: tab.name, audience } });
-  };
-
-  const confirmOn = (trigger: HTMLElement) =>
-    openConfirm(trigger, {
-      id: `switch-on-lti-tab-${tab.id}`,
-      title: (
-        <>
-          <NamedText
-            i18nKey={tab.readsMembers ? 'c:confirm.add_lti_tab_reads' : 'c:confirm.add_lti_tab'}
-            name={row.name}
-            values={{ channel: channel.name }}
-          />
-          {!isMember && (
-            <span className="text-muted-foreground mt-1 block">
-              <NamedText i18nKey={isSystemAdmin ? 'c:lti_tab_system_admin.text' : 'c:lti_tab_not_member.text'} name={channel.name} />
-            </span>
-          )}
-        </>
-      ),
-      content: <LtiAudienceChoice current={link?.audience} onChoose={switchOn} />,
+    if (!link) return;
+    update({
+      path: { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel), ltiResourceLinkId: link.id },
+      body: { enabled: false },
     });
+  };
 
   const onCheckedChange = (checked: boolean) => {
     if (!checked) return switchOff();
-    if (switchRef.current) confirmOn(switchRef.current);
+    if (switchRef.current) openConfirm(switchRef.current, { id: `switch-on-lti-tab-${tab.id}`, ...confirmTabOn(row) });
   };
 
-  const on = switching ? !!variables?.body.enabled : placing || !!link?.enabled;
+  const on = !switchingOff && (switchingOn || !!link?.enabled);
   const refused = !on && !!tab.refusal;
 
   return (
@@ -212,7 +230,7 @@ export function LtiTabSwitch({ channel, row, tabIndex, onToggle }: LtiTabSwitchP
       aria-label={`${row.name}: ${t('c:visible')}`}
       tabIndex={tabIndex}
       checked={on}
-      disabled={placing || switching || refused}
+      disabled={switchingOn || switchingOff || refused}
       onCheckedChange={onCheckedChange}
     />
   );

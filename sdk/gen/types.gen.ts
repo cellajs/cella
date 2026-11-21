@@ -3636,7 +3636,7 @@ export type InitiateLtiLoginErrors = {
   /**
    * Login refused
    *
-   * A page naming why: the platform offers no platform storage.
+   * A field is longer than a login carries.
    */
   400: unknown;
   /**
@@ -3657,7 +3657,7 @@ export type InitiateLtiLoginResponses = {
   /**
    * Login page
    *
-   * A page that stores the launch value in platform storage and moves on to the platform.
+   * A page that keeps the launch value in the frame, or in platform storage, and moves on to the platform.
    */
   200: unknown;
 };
@@ -3707,7 +3707,7 @@ export type InitiateLtiLoginByPostErrors = {
   /**
    * Login refused
    *
-   * A page naming why: the platform offers no platform storage.
+   * A field is longer than a login carries.
    */
   400: unknown;
   /**
@@ -3736,7 +3736,7 @@ export type InitiateLtiLoginByPostResponses = {
   /**
    * Login page
    *
-   * A page that stores the launch value in platform storage and moves on to the platform.
+   * A page that keeps the launch value in the frame, or in platform storage, and moves on to the platform.
    */
   200: unknown;
 };
@@ -3795,7 +3795,7 @@ export type ReceiveLtiLaunchResponses = {
   /**
    * Launch page
    *
-   * A page that reads the launch value from platform storage and posts it on, same-origin.
+   * A page that reads the launch value back from the frame, or from platform storage, and posts it on, same-origin.
    */
   200: unknown;
 };
@@ -3910,6 +3910,55 @@ export type FinishLtiLaunchErrors = {
 };
 
 export type FinishLtiLaunchError = FinishLtiLaunchErrors[keyof FinishLtiLaunchErrors];
+
+export type RedeemLtiHandoffData = {
+  body: {
+    code: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/lti:redeem-handoff';
+};
+
+export type RedeemLtiHandoffErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Unsupported media type
+   */
+  415: UnsupportedMediaTypeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RedeemLtiHandoffError = RedeemLtiHandoffErrors[keyof RedeemLtiHandoffErrors];
+
+export type RedeemLtiHandoffResponses = {
+  /**
+   * Session token
+   */
+  200: {
+    token: string;
+  };
+};
+
+export type RedeemLtiHandoffResponse = RedeemLtiHandoffResponses[keyof RedeemLtiHandoffResponses];
 
 export type GetStepUpData = {
   body?: never;
@@ -5136,6 +5185,10 @@ export type ListLtiTabsResponses = {
        */
       id: string;
       name: string;
+      /**
+       * What the LTI tool says it does, from its registration; null when it says nothing
+       */
+      description: string | null;
       /**
        * The distinct origins the LTI tool's launches go to, which an approval trusts: with `createdAt`, what tells two LTI tools of one name apart
        */

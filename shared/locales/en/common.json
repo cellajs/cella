@@ -16,6 +16,7 @@
   "active": "Active",
   "add": "Add",
   "add_files": "Add files",
+  "add_lti_tab.text": "LTI tools an admin approved for {{resource, lowercase}} pages.",
   "add_provider_account": "Add {{provider}} account",
   "add_resource": "Add {{resource, lowercase}}",
   "added_on": "Added {{date}}",

@@ -225,6 +225,7 @@ export const listLtiTabsQuerySchema = pageQuerySchema.extend({
 export const ltiTabSchema = z.object({
   id: z.string().describe('The LTI installation, which `installationId` places: a channel holds one tab of it'),
   name: z.string(),
+  description: z.string().nullable().describe('What the LTI tool says it does, from its registration; null when it says nothing'),
   launchOrigins: z
     .array(z.string())
     .describe(

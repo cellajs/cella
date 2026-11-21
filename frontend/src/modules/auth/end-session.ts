@@ -45,11 +45,16 @@ const endings: Record<SessionEnd, (user: MeUser | null, redirect?: string) => En
   replaced: () => ({ forget: 'user', deleteDatabase: false, load: 'here' }),
 };
 
-/** Deletes the database of every user this browser no longer knows: the stored user's and the last user's stay. A failure is logged. */
-export const sweepForgottenUserDbs = (): Promise<void> =>
-  sweepLocalUserDbs(() => Object.values(storedUserIds())).catch((error) =>
+/**
+ * Deletes the database of every user this browser no longer knows: the stored user's and the last user's stay. A
+ * failure is logged. An embedded document deletes none: it stores no user, and other frames hold theirs open.
+ */
+export const sweepForgottenUserDbs = async (): Promise<void> => {
+  if (isEmbedded) return;
+  await sweepLocalUserDbs(() => Object.values(storedUserIds())).catch((error) =>
     console.error('[localUserDb] Deleting the databases of forgotten users failed:', error),
   );
+};
 
 /**
  * Ends the session on the server. What needs the session goes first, while it lasts: pending seen marks would beacon
