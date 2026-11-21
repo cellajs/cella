@@ -4,7 +4,7 @@ import { safeEqual } from 'shared/utils/safe-equal';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { loadCachedSession } from '#/middlewares/guard/session-cache';
-import { deleteAuthCookie, getAuthCookie, getBrowserKeys } from '#/modules/auth/core/general/helpers/cookie';
+import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
 import type { SessionFacts, SessionModel } from '#/modules/auth/core/sessions/sessions-db';
 import { findSessionBySecret } from '#/modules/auth/core/sessions/sessions-queries';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
@@ -67,31 +67,30 @@ const refusalAsNull = (err: unknown): null => {
   throw err;
 };
 
-/** The embedded session token a request presents: its header, or the stream's query parameter; empty while its page holds none. */
-const embeddedSessionToken = (ctx: Context) => ctx.req.header(embeddedSessionHeader) ?? ctx.req.query(embeddedSessionParam);
+/** The event stream (`getMyStream`): an EventSource sets no header, so this one route reads the token from its query. */
+const isEventStream = (ctx: Context) => ctx.req.method === 'GET' && ctx.req.path.endsWith('/me/stream');
 
-/** Whether a request asks for the embedded session: it carries the header or the query parameter, even an empty one. */
+/** The embedded session token a request presents: its header, or the event stream's query; empty while its page holds none. */
+const embeddedSessionToken = (ctx: Context) =>
+  ctx.req.header(embeddedSessionHeader) ?? (isEventStream(ctx) ? ctx.req.query(embeddedSessionParam) : undefined);
+
+/** Whether a request asks for the embedded session: it carries the token, even an empty one. */
 export const asksForEmbeddedSession = (ctx: Context) => embeddedSessionToken(ctx) !== undefined;
 
 /**
- * The embedded session a request presents. Its token names the session, and a browser key in the partitioned cookies
+ * The embedded session a request presents. Its token names the session, and the browser key in the partitioned cookie
  * must be the one the session recorded at its launch: the token alone, sent from another browser or another platform's
- * site, and the cookies alone, which every frame of the app on the platform's page sends, both read as nothing.
+ * site, and the cookie alone, which every frame of the app on the platform's page sends, both read as nothing.
  * @throws AppError 401 without the token or the cookie, for a key the session did not record, and as `readSession`.
  */
 const readEmbeddedSession = async (ctx: Context): Promise<ResolvedSession> => {
   const token = embeddedSessionToken(ctx);
-  const browserKeys = getBrowserKeys(ctx);
-  if (!token || !browserKeys.length) throw new AppError(401, 'unauthorized', 'warn');
+  const browserKey = getAuthCookie(ctx, 'embedded-browser-key');
+  if (!token || !browserKey) throw new AppError(401, 'unauthorized', 'warn');
   const resolved = await readSession(token);
-  const recorded = resolved.browserKeyHash;
-  if (!recorded || !browserKeys.some((browserKey) => safeEqual(recorded, hashToken(browserKey)))) throw new AppError(401, 'no_session', 'warn');
+  if (!resolved.browserKeyHash || !safeEqual(resolved.browserKeyHash, hashToken(browserKey))) throw new AppError(401, 'no_session', 'warn');
   return resolved;
 };
-
-/** The session token a request presents for the session it asks for, undefined when it presents none. */
-export const presentedSessionToken = (ctx: Context) =>
-  asksForEmbeddedSession(ctx) ? embeddedSessionToken(ctx) || undefined : getAuthCookie(ctx, 'session');
 
 interface ResolveSessionOpts {
   /** A refusal also deletes the session cookie; never the browser key, which other frames of the partition count with. */

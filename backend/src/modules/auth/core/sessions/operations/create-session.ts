@@ -7,12 +7,12 @@ import { baseDb } from '#/db/db';
 import { deviceColumns } from '#/lib/device-info';
 import { enrollDevice } from '#/modules/auth/core/devices/operations/enroll-device';
 import { type NewDevice, notifySignIn } from '#/modules/auth/core/devices/operations/notify-sign-in';
-import { getBrowserKeys, setAuthCookie, setBrowserKey } from '#/modules/auth/core/general/helpers/cookie';
+import { getAuthCookie, setAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
 import { collectSignInContext, type SignInContext } from '#/modules/auth/core/sessions/helpers/sign-in-context';
 import { findSession } from '#/modules/auth/core/sessions/operations/resolve-session';
 import { revokeSessions } from '#/modules/auth/core/sessions/operations/revoke-sessions';
 import type { SessionKind } from '#/modules/auth/core/sessions/sessions-db';
-import { findLiveSessionsHeldByUser, insertSession, updateSessionHandoff } from '#/modules/auth/core/sessions/sessions-queries';
+import { findLiveSessionsHeldByUser, insertSession } from '#/modules/auth/core/sessions/sessions-queries';
 import { stepUpWindow } from '#/modules/auth/core/step-up/helpers/step-up';
 import type { AuthStrategy, StepUpProof } from '#/modules/auth/core/strategies';
 import { findSystemRole } from '#/modules/system/system-queries';
@@ -32,19 +32,15 @@ const dbCtx = { var: { db: baseDb } };
 /** How long a session lasts; the cookie that carries it expires with it. */
 export const sessionLifetime = new TimeSpan(1, 'w');
 
-/** How long a finished launch's handoff stays redeemable: the embedded page loads and redeems it at once. */
-const handoffWindow = new TimeSpan(2, 'm');
-
-/** What an embedded session's `secretHash` holds until its handoff is redeemed: no hash of a token, so no token reads it. */
-const handoffSecretHash = (handoffCode: string) => `handoff:${hashToken(handoffCode)}`;
-
 /**
- * Revokes the user's oldest live sessions of one kind beyond the cap before a sign-in inserts one: embedded sessions
- * never push out an ordinary one. Regular and mfa sessions count together, since an mfa session is the full session of
- * a user with MFA on. Concurrent sign-ins may exceed the cap by one.
+ * Revokes the user's oldest live sessions of one kind beyond its cap before a sign-in inserts one: embedded sessions
+ * count against `maxEmbeddedSessionsPerUser` and never push out an ordinary one. Regular and mfa sessions count
+ * together, since an mfa session is the full session of a user with MFA on. Concurrent sign-ins may exceed the cap by
+ * one.
  */
 export const revokeExcessSessions = async (userId: string, { embedded = false }: { embedded?: boolean } = {}): Promise<void> => {
-  const excess = await findLiveSessionsHeldByUser(dbCtx, { userId, embedded, offset: appConfig.maxSessionsPerUser - 1 });
+  const cap = embedded ? appConfig.maxEmbeddedSessionsPerUser : appConfig.maxSessionsPerUser;
+  const excess = await findLiveSessionsHeldByUser(dbCtx, { userId, embedded, offset: cap - 1 });
   if (excess.length === 0) return;
 
   await revokeSessions(dbCtx, { userId, sessionIds: excess.map(({ id }) => id), reason: 'session_cap', by: null });
@@ -85,8 +81,6 @@ export interface SessionExtras {
  * Stores a session for the user and returns what its cookies need: the random token, which exists only there, since the
  * row keeps its hash, and for a session that starts stepped up the content of its step-up cookie. `strategy` is the
  * method that started the sign-in; a second factor goes in `steppedUpVia`. Database only, so it runs without a request.
- * With a `browserKey` the session is embedded, and the token is a handoff code: the session lives `handoffWindow` until
- * the frame redeems it for a token of its own (`redeemEmbeddedHandoff`).
  */
 export const createSession = async (
   user: Pick<UserModel, 'id'>,
@@ -106,13 +100,12 @@ export const createSession = async (
   const sessionId = generateId();
   const now = getIsoDate();
   const lifetimeEnd = isoDateIn(sessionLifetime);
-  const signInEnd = endsAt && endsAt < lifetimeEnd ? endsAt : lifetimeEnd;
-  const expiresAt = browserKey ? isoDateIn(handoffWindow) : signInEnd;
+  const expiresAt = endsAt && endsAt < lifetimeEnd ? endsAt : lifetimeEnd;
   const timeSpan = new TimeSpan(Date.parse(expiresAt) - Date.now(), 'ms');
   const browserKeyHash = browserKey ? hashToken(browserKey) : null;
   const session = {
     id: sessionId,
-    secretHash: browserKey ? handoffSecretHash(sessionToken) : secretHash,
+    secretHash,
     userId: user.id,
     kind,
     ...deviceColumns(device),
@@ -192,33 +185,22 @@ export const setUserSession = async (
 };
 
 /**
- * Starts an embedded session for the user after an LTI launch, with the connection recorded, and returns its one-use
- * handoff code. A browser key this partition presents is kept and refreshed to outlive the session; a launch that
- * finds none sets one. It starts stepped up for nothing and no MFA challenge: the launch is the proof. No other
- * session ends.
+ * Starts an embedded session for the user after an LTI launch, with the connection and the browser key recorded, and
+ * returns its token for the frame's memory. It starts stepped up for nothing and no MFA challenge: the launch is the
+ * proof. No ordinary session ends.
  */
-export const setEmbeddedSession = async (ctx: Context<Env>, user: UserModel, { connectionId }: { connectionId: string }) => {
-  const [browserKey = newHashedToken().raw] = getBrowserKeys(ctx);
-  const { sessionToken: handoffCode } = await startSession(ctx, user, { strategy: 'lti', kind: 'regular', extras: { connectionId, browserKey } });
-  setBrowserKey(ctx, browserKey, sessionLifetime);
-  return handoffCode;
-};
+export const setEmbeddedSession = async (
+  ctx: Context<Env>,
+  user: UserModel,
+  { connectionId, browserKey }: { connectionId: string; browserKey: string },
+) => (await startSession(ctx, user, { strategy: 'lti', kind: 'regular', extras: { connectionId, browserKey } })).sessionToken;
 
 /**
- * Redeems the handoff code of an embedded session for its token, which the frame keeps in memory: the code works once,
- * within `handoffWindow`, and only beside the browser key the launch recorded.
- * @throws AppError 401 `no_session` without a browser key, or for a code no live session holds for one presented.
+ * The browser key of this partition, kept from its cookie or set there at a first launch, and refreshed to outlive
+ * the session a launch starts. Two first launches at the same moment each set one, and the earlier frame's is lost.
  */
-export const redeemEmbeddedHandoff = async (ctx: Context<Env>, handoffCode: string) => {
-  const browserKeys = getBrowserKeys(ctx);
-  if (!browserKeys.length) throw new AppError(401, 'no_session', 'warn');
-  const { raw: sessionToken, hash: secretHash } = newHashedToken();
-  const redeemed = await updateSessionHandoff(dbCtx, {
-    handoffSecretHash: handoffSecretHash(handoffCode),
-    browserKeyHashes: browserKeys.map(hashToken),
-    secretHash,
-    expiresAt: isoDateIn(sessionLifetime),
-  });
-  if (!redeemed) throw new AppError(401, 'no_session', 'warn');
-  return sessionToken;
+export const keepBrowserKey = (ctx: Context<Env>) => {
+  const browserKey = getAuthCookie(ctx, 'embedded-browser-key') ?? newHashedToken().raw;
+  setAuthCookie(ctx, 'embedded-browser-key', browserKey, sessionLifetime);
+  return browserKey;
 };

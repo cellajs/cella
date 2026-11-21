@@ -12,7 +12,9 @@ import type { UserId } from '#/db/utils/ids';
 import { ltiClaims } from '#/lib/lti-vocabulary';
 import type { MembershipEntity } from '#/lib/module';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { setEmbeddedSession } from '#/modules/auth/core/sessions/operations/create-session';
+import { getAuthCookie } from '#/modules/auth/core/general/helpers/cookie';
+import { keepBrowserKey, setEmbeddedSession } from '#/modules/auth/core/sessions/operations/create-session';
+import { issueHandoffToken, spendHandoffToken } from '#/modules/auth/core/tokens/token-lifecycle';
 import { decodeLaunchState } from '#/modules/auth/flows/lti/helpers/launch-state';
 import { launchMembershipsUrl } from '#/modules/auth/flows/lti/helpers/platform-memberships';
 import { createLtiContextChannel, type LtiContext, ltiContextChannelType } from '#/modules/auth/flows/lti/lti-context-channel';
@@ -23,7 +25,7 @@ import type { LtiPerson } from '#/modules/auth/flows/lti/operations/create-lti-a
 import { requestLtiMemberImport } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { findLaunchConnection, validateLtiLaunch } from '#/modules/auth/flows/lti/operations/validate-lti-launch';
 import type { LtiConnection } from '#/modules/connections/connections-db';
-import { addLtiDeployment } from '#/modules/connections/connections-queries';
+import { addLtiDeployment, findConnectionById } from '#/modules/connections/connections-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { channelIdColumnsOf } from '#/modules/memberships/helpers/membership-helpers';
 import type { MembershipModel } from '#/modules/memberships/memberships-db';
@@ -34,6 +36,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { findTenant } from '#/modules/tenants/tenants-queries';
 import { findUserById } from '#/modules/user/user-queries';
 import { accessFrom, membershipActorVars } from '#/permissions/access';
+import { hashToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
@@ -203,10 +206,11 @@ const recordLtiDeployment = async (
  * launch with a context maps the person to a role there (`ltiContextRole`) and enters it (`enterLtiContext`). A launch
  * without one admits nobody new: it signs in only a member the tenant knows from an earlier launch or an import
  * (`signInKnownLtiMember`) and writes no membership, role or seat. Either records an LTI deployment the connection does
- * not hold yet, in the same transaction, and starts the embedded session: no MFA challenge, the launch is the proof. A
+ * not hold yet, in the same transaction, and hands the frame a one-use code for its embedded session: no MFA challenge,
+ * the launch is the proof. A
  * launch by someone who sets the context up (`setsUpLtiContext`), through the connection that holds it, asks for a
  * member import (`requestLtiMemberImport`) without waiting for it.
- * @returns The embedded page of the channel to redirect to, with the embedded session's handoff code in its fragment.
+ * @returns The embedded page of the channel to redirect to, with the hand-over code in its fragment (`redeemLtiHandoffOp`).
  * @throws AppError 403 `lti_launch_cross_site` for a request the browser does not mark same-origin, 403
  *   `lti_launch_no_context` for a launch without a context by a person the tenant does not know as a member, 403
  *   `lti_launch_no_roles` for a person `ltiContextRole` maps to no role, 403 `channel_archived` for a person the launch
@@ -266,11 +270,35 @@ export async function finishLtiLaunchOp(ctx: Context<Env>, form: z.infer<typeof 
   invalidateCache.user(userId);
   if (contextRow && setsUp) void requestLtiMemberImport(contextRow, userId);
 
-  const user = await findUserById(dbCtx, { id: userId });
-  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
-  const handoffCode = await setEmbeddedSession(ctx, user, { connectionId: connection.id });
+  const browserKeyHash = hashToken(keepBrowserKey(ctx));
+  const handoff = await issueHandoffToken(dbCtx, {
+    kind: 'lti-handoff',
+    tenantId: connection.tenantId,
+    userId,
+    connectionId: connection.id,
+    browserKeyHash,
+  });
 
   log.info('LTI launch', { connectionId: connection.id, channelType: channel.entityType, channelId: channel.id, context: !!entry });
-  // The fragment never reaches a server or a Referer, and the page takes it out of its address before anything reads it.
-  return `${embeddedPageUrl(channel)}#${new URLSearchParams({ [embeddedHandoffKey]: handoffCode })}`;
+  // The fragment reaches no server and no Referer, and the page takes it out of its address at once.
+  return `${embeddedPageUrl(channel)}#${new URLSearchParams({ [embeddedHandoffKey]: handoff.rawToken })}`;
+}
+
+/**
+ * Redeems the hand-over of a finished launch (an `lti-handoff` token) for the embedded session's token: spent once,
+ * only beside the browser key the launch bound it to, and only while its connection is active and its person exists.
+ * Then the session starts (`setEmbeddedSession`).
+ * @throws AppError 401 `lti-handoff_not_found` without the browser key, for a spent, foreign or orphaned hand-over,
+ *   401 `lti-handoff_expired`, and 403 `system_access_forbidden` as a sign-in.
+ */
+export async function redeemLtiHandoffOp(ctx: Context<Env>, code: string): Promise<string> {
+  const browserKey = getAuthCookie(ctx, 'embedded-browser-key');
+  if (!browserKey) throw new AppError(401, 'lti-handoff_not_found', 'warn');
+  const handoff = await spendHandoffToken({ kind: 'lti-handoff', rawToken: code, browserKeyHash: hashToken(browserKey) });
+  const [connection, user] = await Promise.all([
+    handoff.connectionId ? findConnectionById(dbCtx, { id: handoff.connectionId }) : undefined,
+    handoff.userId ? findUserById(dbCtx, { id: handoff.userId }) : undefined,
+  ]);
+  if (connection?.status !== 'active' || !user) throw new AppError(401, 'lti-handoff_not_found', 'warn', { meta: { tokenId: handoff.id } });
+  return setEmbeddedSession(ctx, user, { connectionId: connection.id, browserKey });
 }

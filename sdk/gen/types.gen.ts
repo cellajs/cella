@@ -3646,12 +3646,6 @@ export type InitiateLtiLoginErrors = {
    */
   401: unknown;
   /**
-   * Not in a frame
-   *
-   * A page: the browser marks the request as no frame navigation, such as one in a window of its own.
-   */
-  403: unknown;
-  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -3723,12 +3717,6 @@ export type InitiateLtiLoginByPostErrors = {
    */
   401: unknown;
   /**
-   * Not in a frame
-   *
-   * A page: the browser marks the request as no frame navigation, such as one in a window of its own.
-   */
-  403: unknown;
-  /**
    * Payload too large
    */
   413: PayloadTooLargeError;
@@ -3787,12 +3775,6 @@ export type ReceiveLtiLaunchErrors = {
    * A page: the state names no active LTI connection, or the platform posted an error.
    */
   401: unknown;
-  /**
-   * Not in a frame
-   *
-   * A page: the browser marks the post as no frame navigation, such as one in a window of its own.
-   */
-  403: unknown;
   /**
    * Payload too large
    */

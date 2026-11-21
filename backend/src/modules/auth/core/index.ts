@@ -14,7 +14,6 @@ export { sendSecurityInboxEmail } from '#/modules/auth/core/general/helpers/send
 export {
   asksForEmbeddedSession,
   findSession,
-  presentedSessionToken,
   type ResolvedSession,
   resolveSession,
   sessionRefusal,

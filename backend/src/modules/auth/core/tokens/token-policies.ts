@@ -46,6 +46,9 @@ export type TokenPolicy =
  * - `lti-nonce` is a launch at the app as an LTI tool: its id goes out as the `nonce`, and its raw value is what the
  *   frame keeps, in its own storage or the platform's, which the launch posts back. It names the connection, and lives
  *   as long as a platform takes from the login to the launch.
+ * - `lti-handoff` is a finished launch at the app as an LTI tool: its raw value goes to the embedded page in the address
+ *   fragment, which redeems it once for the session's token. It names the person and the connection, is bound to the
+ *   browser key the launch kept, and lives as long as the page takes to load.
  */
 export const tokenPolicies = {
   invitation: { carrier: 'link', ttl: new TimeSpan(7, 'd'), singleUseWindow: new TimeSpan(30, 'm'), sameSite: 'lax' },
@@ -58,6 +61,7 @@ export const tokenPolicies = {
   'lti-tool-registration': { carrier: 'handoff', ttl: new TimeSpan(1, 'h') },
   'lti-launch': { carrier: 'handoff', ttl: new TimeSpan(5, 'm') },
   'lti-nonce': { carrier: 'handoff', ttl: new TimeSpan(5, 'm') },
+  'lti-handoff': { carrier: 'handoff', ttl: new TimeSpan(2, 'm') },
 } as const satisfies Record<TokenKind, TokenPolicy>;
 
 type TokenKindCarriedBy<C extends TokenPolicy['carrier']> = {

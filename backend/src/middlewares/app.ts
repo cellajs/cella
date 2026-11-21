@@ -5,13 +5,11 @@ import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
-import { AppError } from '#/core/error';
 import { env } from '#/env';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { clientVersionMiddleware } from '#/middlewares/client-version';
 import { compressResponse } from '#/middlewares/compress';
 import { loggerMiddleware } from '#/middlewares/logger';
-import { asksForEmbeddedSession } from '#/modules/auth/core';
 import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
 import { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';
 import { runWithLogContext } from '#/utils/logger';
@@ -56,15 +54,6 @@ app.use('*', (ctx, next) => {
 });
 
 app.use('*', loggerMiddleware);
-
-// A request on the embedded session changes state only when the browser marks it same-origin. Another frame on the
-// platform's page holds the same partitioned cookie, and the browser marks its requests cross-site.
-const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
-app.use('*', async (ctx, next) => {
-  const crossSiteWrite = !safeMethods.has(ctx.req.method) && ctx.req.header('Sec-Fetch-Site') !== 'same-origin';
-  if (crossSiteWrite && asksForEmbeddedSession(ctx)) throw new AppError(403, 'embedded_session_cross_site', 'warn');
-  await next();
-});
 
 // No CORS middleware: the API is same-origin under /api, so other origins get no grant and the browser blocks them.
 // CSRF rejects state-changing requests whose Origin header is not the app origin. It protects cookie auth only, so a

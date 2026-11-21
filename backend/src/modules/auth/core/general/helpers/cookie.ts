@@ -7,7 +7,6 @@ import { safeEqual } from 'shared/utils/safe-equal';
 import type { Env } from '#/core/context';
 import { env } from '#/env';
 import { isTokenKind, type LinkTokenKind, type TokenPolicy, tokenPolicies } from '#/modules/auth/core/tokens/token-policies';
-import { hashToken } from '#/utils/hash-token';
 import type { TimeSpan } from '#/utils/time-span';
 
 /**
@@ -95,41 +94,18 @@ const cookieAttributes = (name: CookieName) => {
   return { secure, sameSite: isLaxCookie(name) ? 'lax' : 'strict' } as const;
 };
 
-/** Sets a cookie under `cookieName` sealed as `name`, with the attributes `cookieAttributes` gives that name. */
-const setSealedCookie = (ctx: Context<Env>, cookieName: string, name: CookieName, content: string, timeSpan: TimeSpan) => {
+/** Sets a signed auth cookie, with the attributes `cookieAttributes` gives its name. */
+export const setAuthCookie = (ctx: Context<Env>, name: CookieName, content: string, timeSpan: TimeSpan) => {
   // A lifetime measured from a stored expiry has milliseconds; the cookie and its seal both take whole seconds.
   const maxAge = Math.floor(timeSpan.seconds());
   const options = { path: '/', prefix, httpOnly: true, maxAge, ...cookieAttributes(name) } satisfies CookieOptions;
-  setCookie(ctx, cookieName, sealAuthCookie(name, content, maxAge), options);
+  setCookie(ctx, versionedCookieName(name), sealAuthCookie(name, content, maxAge), options);
 };
-
-/** Sets a signed auth cookie, with the attributes `cookieAttributes` gives its name. */
-export const setAuthCookie = (ctx: Context<Env>, name: CookieName, content: string, timeSpan: TimeSpan) =>
-  setSealedCookie(ctx, versionedCookieName(name), name, content, timeSpan);
 
 /** Reads an auth cookie's content; a missing, forged, transplanted or expired value reads as undefined. */
 export const getAuthCookie = (ctx: Context, name: CookieName) => {
   const sealed = getCookie(ctx, versionedCookieName(name), prefix);
   return sealed ? openAuthCookie(name, sealed) : undefined;
-};
-
-/**
- * Each browser key of embedded sessions has a cookie of its own, named after the key's hash. Two launches that start
- * at once in one partition each set a key, and neither overwrites the other's.
- */
-const browserKeyCookieName = (browserKey: string) => `${versionedCookieName('embedded-browser-key')}-${hashToken(browserKey).slice(0, 16)}`;
-
-/** Sets or refreshes the cookie of one browser key. */
-export const setBrowserKey = (ctx: Context<Env>, browserKey: string, timeSpan: TimeSpan) =>
-  setSealedCookie(ctx, browserKeyCookieName(browserKey), 'embedded-browser-key', browserKey, timeSpan);
-
-/** The browser keys a request presents, each from a cookie that opens; none outside an embedded page's partition. */
-export const getBrowserKeys = (ctx: Context): string[] => {
-  const family = `${authCookieName('embedded-browser-key')}-`;
-  return Object.entries(getCookie(ctx)).flatMap(([cookieName, sealed]) => {
-    const browserKey = cookieName.startsWith(family) ? openAuthCookie('embedded-browser-key', sealed) : undefined;
-    return browserKey ? [browserKey] : [];
-  });
 };
 
 /** Deletes an auth cookie: the attributes must mirror the set ones (prefix implies Path=/, Secure, no Domain), or the browser keeps it. */

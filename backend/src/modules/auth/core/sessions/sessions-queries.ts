@@ -97,33 +97,6 @@ export const findLiveSession = async (ctx: DbContext, { id }: { id: string }) =>
   return live;
 };
 
-interface UpdateSessionHandoffOpts {
-  /** What the session's `secretHash` holds until the handoff is redeemed. */
-  handoffSecretHash: string;
-  /** The hashes of the browser keys the request presents; the session's must be among them. */
-  browserKeyHashes: string[];
-  /** The hash of the session token the redemption hands out. */
-  secretHash: string;
-  expiresAt: string;
-}
-
-/**
- * Redeems a live session's handoff: one update swaps its secret for the session token's hash and sets its expiry. A
- * second redemption finds nothing.
- * @returns The session's id, or undefined when no live session holds that handoff for one of those browser keys.
- */
-export const updateSessionHandoff = async (
-  ctx: DbContext,
-  { handoffSecretHash, browserKeyHashes, secretHash, expiresAt }: UpdateSessionHandoffOpts,
-) => {
-  const [redeemed] = await ctx.var.db
-    .update(sessionsTable)
-    .set({ secretHash, expiresAt })
-    .where(and(eq(sessionsTable.secretHash, handoffSecretHash), inArray(sessionsTable.browserKeyHash, browserKeyHashes), liveSession(getIsoDate())))
-    .returning({ id: sessionsTable.id });
-  return redeemed;
-};
-
 /** Stores a session; its `secretHash` is the hash of the session token, never the token. */
 export const insertSession = async (ctx: DbContext, { values }: { values: InsertSessionModel }) => {
   await ctx.var.db.insert(sessionsTable).values(values);

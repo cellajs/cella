@@ -2,7 +2,6 @@ import type { Context } from 'hono';
 import { html } from 'hono/html';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
-import { AppError } from '#/core/error';
 import { i18n } from '#/lib/i18n';
 import { anyFrameAncestor, protocolPage, refusalPage } from '#/lib/protocol-page';
 
@@ -102,7 +101,7 @@ export const storagePage = (ctx: Context<Env>, exchange: StorageExchange) => {
     fields: undefined,
     pageOrigin: undefined,
     refusal: i18n.t('backend:lti.state_not_kept'),
-    unframed: i18n.t('error:lti_launch_not_framed.text'),
+    unframed: i18n.t('backend:lti.not_framed'),
   });
   const form = exchange.fields
     ? html`<form method="post" action="${ltiFinishUrl()}">
@@ -114,20 +113,6 @@ export const storagePage = (ctx: Context<Env>, exchange: StorageExchange) => {
     ${form}`;
   const frameAncestors = exchange.pageOrigin ? `${exchange.origin} ${exchange.pageOrigin}` : exchange.origin;
   return protocolPage(ctx, { body, script: storageScript, frameAncestors, formAction: "'self'" });
-};
-
-/** The fetch destinations of a frame's navigation (Fetch Metadata): `iframe`, and `frame` for a frameset. */
-const frameDestinations = new Set(['iframe', 'frame']);
-
-/**
- * Refuses a login or launch the browser marks as no frame navigation, such as one in a window of its own. At top level
- * any page could start it, and the finish would post with the app's own first-party cookies. A request without
- * `Sec-Fetch-Dest` is left to the page, which refuses outside a frame.
- * @throws AppError 403 `lti_launch_not_framed`.
- */
-export const assertFrameNavigation = (ctx: Context<Env>) => {
-  const destination = ctx.req.header('Sec-Fetch-Dest');
-  if (destination !== undefined && !frameDestinations.has(destination)) throw new AppError(403, 'lti_launch_not_framed', 'warn');
 };
 
 /**

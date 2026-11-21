@@ -2,17 +2,11 @@ import type { z } from '@hono/zod-openapi';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import type { Env } from '#/core/context';
-import { redeemEmbeddedHandoff } from '#/modules/auth/core/sessions/operations/create-session';
-import {
-  assertFrameNavigation,
-  launchStepRefusalPage,
-  type StorageExchange,
-  storagePage,
-} from '#/modules/auth/flows/lti/helpers/platform-storage-pages';
+import { launchStepRefusalPage, type StorageExchange, storagePage } from '#/modules/auth/flows/lti/helpers/platform-storage-pages';
 import { registeredPage, registrationRefusalPage } from '#/modules/auth/flows/lti/helpers/registration-page';
 import { authLtiRoutes, ltiContextRoutes } from '#/modules/auth/flows/lti/lti-routes';
 import type { ltiLoginParamsSchema } from '#/modules/auth/flows/lti/lti-schema';
-import { finishLtiLaunchOp } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
+import { finishLtiLaunchOp, redeemLtiHandoffOp } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
 import { getLtiContextsOp } from '#/modules/auth/flows/lti/operations/get-lti-contexts';
 import { getLtiKeySetOp } from '#/modules/auth/flows/lti/operations/get-lti-key-set';
 import { initiateLtiLoginOp } from '#/modules/auth/flows/lti/operations/initiate-lti-login';
@@ -32,10 +26,9 @@ app.openapi(authLtiRoutes.registerLtiPlatform, async (ctx) => {
   }
 });
 
-/** Answers a launch step's storage page, or its refusal as a page the platform's frame shows: a step outside a frame is refused first. */
+/** Answers a launch step's storage page, which refuses outside a frame, or its refusal as a page the platform's frame shows. */
 const answerStoragePage = async (ctx: Context<Env>, step: () => Promise<StorageExchange>) => {
   try {
-    assertFrameNavigation(ctx);
     return storagePage(ctx, await step());
   } catch (err) {
     return launchStepRefusalPage(ctx, err);
@@ -66,7 +59,7 @@ app.openapi(authLtiRoutes.finishLtiLaunch, async (ctx) => {
 });
 
 app.openapi(authLtiRoutes.redeemLtiHandoff, async (ctx) =>
-  ctx.json({ token: await redeemEmbeddedHandoff(ctx, ctx.req.valid('json').code) }, 200, { 'Cache-Control': 'no-store' }),
+  ctx.json({ token: await redeemLtiHandoffOp(ctx, ctx.req.valid('json').code) }, 200, { 'Cache-Control': 'no-store' }),
 );
 
 export const authLtiHandlers = app;

@@ -145,13 +145,13 @@ describe('LTI launch at the app as an LTI tool', async () => {
 
   type Connected = Awaited<ReturnType<typeof connect>>;
 
-  /** Starts a login as the platform's frame does, naming its storage frame unless told not to, and reads what its page stores and where it goes next. */
-  async function login(connected: Connected, { storageFrame = true } = {}) {
+  /** Starts a login as the platform's frame does, naming its storage frame, and reads what its page stores and where it goes next. */
+  async function login(connected: Connected) {
     const query = new URLSearchParams({
       iss: connected.issuer,
       client_id: connected.clientId,
       login_hint: 'hint',
-      ...(storageFrame && { lti_storage_target: '_parent' }),
+      lti_storage_target: '_parent',
     });
     const page = await fetchApp(`/auth/lti/login?${query}`);
     const exchange = pageExchange(await page.text());
@@ -362,28 +362,6 @@ describe('LTI launch at the app as an LTI tool', async () => {
         type: 'lti_launch_invalid',
       },
       {
-        name: 'a login the browser opens outside a frame',
-        run: async () =>
-          fetchApp(`/auth/lti/login?${new URLSearchParams({ iss: connected.issuer, client_id: connected.clientId, login_hint: 'hint' })}`, {
-            headers: { 'Sec-Fetch-Dest': 'document' },
-          }),
-        status: 403,
-        type: 'lti_launch_not_framed',
-      },
-      {
-        name: 'a launch the browser posts outside a frame',
-        run: async () => {
-          const started = await login(connected);
-          return fetchApp('/auth/lti/launch', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: connected.issuer, 'Sec-Fetch-Dest': 'document' },
-            body: new URLSearchParams({ id_token: await sign(launchClaims(connected, started.nonce), connected.platform), state: started.state }),
-          });
-        },
-        status: 403,
-        type: 'lti_launch_not_framed',
-      },
-      {
         name: 'a finish the browser marks cross-site',
         run: async () => {
           const started = await login(connected);
@@ -403,22 +381,6 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(valid.response.status).toBe(303);
     const replay = await finish({ id_token: valid.idToken, state: valid.started.state, storage_value: valid.started.value });
     await expectRefusalPage(replay, 401, 'lti-nonce_not_found');
-  });
-
-  // Contract: a platform that names no storage frame launches the app inside its page, the frame keeping the value.
-  it('answers a login that names no storage frame and finishes its launch', async () => {
-    const connected = await connect(await fakePlatform('platform-frameless'));
-    const started = await login(connected, { storageFrame: false });
-    expect([started.page.status, started.exchange.target]).toEqual([200, undefined]);
-    const idToken = await sign(launchClaims(connected, started.nonce), connected.platform);
-    const launchPage = await fetchApp('/auth/lti/launch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: connected.issuer },
-      body: new URLSearchParams({ id_token: idToken, state: started.state }),
-    });
-    const read = pageExchange(await launchPage.text());
-    expect([read.subject, read.key, read.target]).toEqual(['lti.get_data', started.exchange.key, undefined]);
-    expect((await finish({ id_token: idToken, state: started.state, storage_value: started.value })).status).toBe(303);
   });
 
   // Contract: the template's role mapping as a platform's launch meets it: a context role admits. Attack: an institution
@@ -468,13 +430,12 @@ describe('LTI launch at the app as an LTI tool', async () => {
     await expectRefusalPage(refused.response, 403, 'lti_deployment_unknown');
   });
 
-  // Attack: every frame of the app on the platform's page sends the partitioned browser key cookie, and a token or a
-  // handoff code can leave the browser. Neither half alone, a token beside another browser's key, nor a spent or
-  // carried-off code reads a session. Bug: a later launch in the same partition replaced the session an open frame sent.
+  // Attack: every frame of the app on the platform's page sends the partitioned browser key cookie, and a token can
+  // leave the browser. Neither half alone, nor a token beside another browser's key, reads a session. Bug: a later
+  // launch in the same partition replaced the session an open frame sent.
   it('reads the embedded session only with its token beside the browser key it recorded, never the normal one for it, and ends it with its connection', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
-    const launched = await launch(connected);
-    const embedded = await embeddedSessionOf(fetchApp, launched.response);
+    const embedded = await embeddedSessionOf(fetchApp, (await launch(connected)).response);
     const member = await createFactorOrgUser(call, connected.org.tenantId, connected.org.id, `lti-${nanoid(8)}`, adminRole);
     const both = `${embedded.cookie}; ${member.sessionCookie}`;
 
@@ -487,32 +448,14 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect((await me(embeddedHeaders({ token: '', cookie: both }))).status).toBe(401);
     expect((await me({ Cookie: embedded.cookie })).status).toBe(401);
     expect((await me(embeddedHeaders({ token: embedded.token, cookie: member.sessionCookie }))).status).toBe(401);
-    expect((await fetchApp(`/me?${new URLSearchParams({ [embeddedSessionParam]: embedded.token })}`, { headers: { Cookie: both } })).status).toBe(
-      200,
-    );
-
-    // Another browser's launch: its key does not take this token, and its code redeems nothing here or without a key.
-    const elsewhere = await launch(connected);
-    const elsewhereKey = browserKeyCookieOf(elsewhere.response)?.pair ?? '';
+    const elsewhereKey = browserKeyCookieOf((await launch(connected)).response)?.pair ?? '';
     expect((await me(embeddedHeaders({ token: embedded.token, cookie: elsewhereKey }))).status).toBe(401);
-    expect((await redeemHandoff(fetchApp, handoffCodeOf(launched.response), embedded.cookie)).status).toBe(401);
-    expect((await redeemHandoff(fetchApp, handoffCodeOf(elsewhere.response), embedded.cookie)).status).toBe(401);
-    expect((await redeemHandoff(fetchApp, handoffCodeOf(elsewhere.response), '')).status).toBe(401);
 
-    // Another account's launch in the same partition keeps the browser key, and both frames keep their own session.
+    // Another account's launch in the same partition, and both frames keep their own session.
     const later = await launch(connected, {}, connected.platform, { Cookie: embedded.cookie });
-    expect(browserKeyCookieOf(later.response)?.name).toBe(browserKeyCookieOf(launched.response)?.name);
     const laterUser = await userOf(embeddedHeaders(await embeddedSessionOf(fetchApp, later.response)));
     expect(laterUser.id).not.toBe(embeddedUser.id);
     expect((await userOf(embeddedHeaders(embedded))).id).toBe(embeddedUser.id);
-
-    // A frame beside the app's can send a body-less form post with the token in the query; the browser marks it cross-site.
-    const crossSite = await fetchApp(`/me?${new URLSearchParams({ [embeddedSessionParam]: embedded.token })}`, {
-      method: 'DELETE',
-      headers: { Cookie: embedded.cookie, 'Sec-Fetch-Site': 'cross-site' },
-    });
-    expect(crossSite.status).toBe(403);
-    expect((await crossSite.json()).type).toBe('embedded_session_cross_site');
 
     // An account a launch made has no proven address: the gate refuses it what it refuses a guest, such as a tenant of its own.
     const tenant = await fetchApp('/tenants', {
@@ -530,6 +473,51 @@ describe('LTI launch at the app as an LTI tool', async () => {
     });
     expect(deleted.response.status).toBe(204);
     expect((await me(embeddedHeaders(embedded))).status).toBe(401);
+  });
+
+  // Attack: a token in a query is easier to carry off than a header. Only the event stream, which an EventSource opens
+  // without a header, reads it there: a write or another read with it presents no embedded session.
+  it('reads the embedded token from a query on the event stream alone', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const embedded = await embeddedSessionOf(fetchApp, (await launch(connected)).response);
+    const inQuery = (path: string) => `${path}?${new URLSearchParams({ [embeddedSessionParam]: embedded.token })}`;
+
+    const signOut = await fetchApp(inQuery('/auth/sign-out'), {
+      method: 'POST',
+      headers: { Cookie: embedded.cookie, Origin: appConfig.frontendUrl, 'Sec-Fetch-Site': 'same-origin' },
+    });
+    expect(signOut.status).toBe(401);
+    expect((await fetchApp(inQuery('/me'), { headers: { Cookie: embedded.cookie } })).status).toBe(401);
+    expect((await fetchApp('/me', { headers: embeddedHeaders(embedded) })).status).toBe(200);
+
+    const stream = await fetchApp(inQuery('/me/stream'), { headers: { Cookie: embedded.cookie } });
+    expect(stream.status).toBe(200);
+    await stream.body?.cancel();
+  });
+
+  // Attack: a hand-over code from another browser's launch, planted in this frame, or one carried off, redeems nothing
+  // beside the wrong browser key or none; a spent one redeems nothing; an unredeemed one is no session; and none
+  // redeems once its connection is gone.
+  it('redeems a hand-over once, beside the browser key its launch kept, while its connection lasts', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const here = (await launch(connected)).response;
+    const hereKey = browserKeyCookieOf(here)?.pair ?? '';
+    const planted = (await launch(connected)).response;
+
+    expect((await redeemHandoff(fetchApp, handoffCodeOf(planted), hereKey)).status).toBe(401);
+    expect((await redeemHandoff(fetchApp, handoffCodeOf(here), '')).status).toBe(401);
+    expect((await fetchApp('/me', { headers: embeddedHeaders({ token: handoffCodeOf(here), cookie: hereKey }) })).status).toBe(401);
+    expect((await redeemHandoff(fetchApp, handoffCodeOf(here), hereKey)).status).toBe(200);
+    expect((await redeemHandoff(fetchApp, handoffCodeOf(here), hereKey)).status).toBe(401);
+
+    const unredeemed = (await launch(connected, {}, connected.platform, { Cookie: hereKey })).response;
+    const admin = await createFactorOrgUser(call, connected.org.tenantId, connected.org.id, `lti-${nanoid(8)}`, adminRole);
+    const deleted = await call(deleteLtiConnection, {
+      path: { tenantId: connected.org.tenantId, organizationId: connected.org.id, connectionId: connected.connection.id },
+      headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
+    });
+    expect(deleted.response.status).toBe(204);
+    expect((await redeemHandoff(fetchApp, handoffCodeOf(unredeemed), hereKey)).status).toBe(401);
   });
 
   // Bug: a launch on the app's own site, where the frame sends the device id of the app's tab, revoked the person's
@@ -577,9 +565,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(await meStatus()).toBe(401);
     expect(await meStatus(asEmbedded)).toBe(200);
 
-    const signedOut = await signOut(asEmbedded);
-    expect(signedOut.status).toBe(204);
-    expect(browserKeyCookieOf(signedOut)).toBeUndefined();
+    expect((await signOut(asEmbedded)).status).toBe(204);
     expect(await meStatus(asEmbedded)).toBe(401);
   });
 
