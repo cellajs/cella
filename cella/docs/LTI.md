@@ -85,7 +85,9 @@ Switching a tab on asks whom it opens for, its audience:
 
 The tab list, the start of a launch and the launch itself check the audience alike, and someone outside it is refused as for a tab that does not exist. The audience bounds who opens the tab, not whom the LTI tool reads: with members granted, it reads every member either way, and the question says so. The tab's row in the Tabs card changes its audience later.
 
-Whoever may update the channel also adds a tab with the Add button at the end of its tab bar, without opening settings. The button shows while an LTI tool may get a tab there and has none on: it lists those LTI tools, asks the same question, and opens the tab once it is on.
+Whoever may update the channel also adds a tab with the Add button at the end of its tab bar, without opening settings. The button shows while an LTI tool may get a tab there and has none on: it lists those LTI tools, asks the same question, and opens the tab once it is on, if it opens for them.
+
+A page whose tabs show in the menu has no tab bar and so no Add button: a tab is added there in its settings.
 
 Under LTI tools in organization settings, each LTI tool lists its tabs, each a link to its channel with whom it opens for, the ones switched off marked off, and why one that is on does not open. An admin removes a tab there for good, after a confirmation: what the LTI tool keeps for the tab may be lost.
 

@@ -152,11 +152,6 @@ function resolveNavTabs(parentRouteId: string, { dataTabs = [], ...options }: Na
 const resolveLandingTab = (parentRouteId: string, options: NavTabOptions = {}): PageTab | undefined =>
   resolveNavTabs(parentRouteId, { ...options, dataTabs: [] })[0];
 
-const tabLinkId = (id: string) => `tab-${id}`;
-
-/** Focuses the link of tab `id` in the page bar; nothing while the bar does not show it. */
-export const focusPageTab = (id: string) => document.getElementById(tabLinkId(id))?.focus();
-
 /**
  * A channel's page tabs, gated and ordered as its page bar shows them, linked with `channelParams` so they work from any
  * page: route tabs take the channel's params as they are, registry tabs add their `$tool`.
@@ -289,6 +284,13 @@ export function PageTabNav({
     if (!isMobile && hasStarted && getHasNavigated()) firstTabRef.current?.focus();
   }, [hasStarted]);
 
+  // A navigation names the tab to focus in its history state, such as one just added; its link takes focus once shown
+  const focusTabId = useRouterState({ select: (state) => state.location.state.focusTab });
+  const showsFocusTab = !!focusTabId && tabs.some((tab) => tab.id === focusTabId);
+  useEffect(() => {
+    if (showsFocusTab) document.getElementById(`tab-${focusTabId}`)?.focus();
+  }, [showsFocusTab, focusTabId]);
+
   // The active tab has revealed itself by now, as child effects run first. On mount the row jumps, as a reveal does.
   const hasCenteredRef = useRef(false);
   useEffect(() => {
@@ -317,7 +319,7 @@ export function PageTabNav({
         return (
           <Link
             key={id}
-            id={tabLinkId(id)}
+            id={`tab-${id}`}
             ref={index === 0 ? firstTabRef : undefined}
             resetScroll={false}
             className={tabNavItemClass}

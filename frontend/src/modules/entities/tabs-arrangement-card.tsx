@@ -125,9 +125,9 @@ function TabsArrangement({ entity, parentRouteId, onPersist, lti, children }: Ta
 
   const persistSlot = (nextConfig: SlotToolsConfig) => onPersist({ [slot]: nextConfig });
 
-  // The ids a write stores: never an LTI tool's that is not placed, unless `placing` it now
-  const orderOf = (ids: string[], placing?: string) => {
-    const stored = ids.filter((id) => id === placing || !rows.some((row) => row.id === id && isUnplaced(row)));
+  // The ids a write stores: never an LTI tool's that is not placed
+  const orderOf = (ids: string[]) => {
+    const stored = ids.filter((id) => !rows.some((row) => row.id === id && isUnplaced(row)));
     return lti.read ? stored : keepUnshownIds(slotConfig?.order ?? [], stored);
   };
 
@@ -136,19 +136,10 @@ function TabsArrangement({ entity, parentRouteId, onPersist, lti, children }: Ta
     persistSlot({ order: orderOf(rows.map((row) => row.id)), hidden: nextHidden });
   };
 
-  const reorder = (ids: string[], placing?: string) => {
-    const order = orderOf(ids, placing);
+  const reorder = (ids: string[]) => {
+    const order = orderOf(ids);
     setDraft({ order, persistedOrderKey });
     persistSlot({ order, hidden: [...hidden] });
-  };
-
-  // A tab placed for the first time takes the place its row has; one placed before keeps its own
-  const keepPlace = (id: string) => {
-    if (!slotConfig?.order?.includes(id))
-      reorder(
-        rows.map((row) => row.id),
-        id,
-      );
   };
 
   const onRowReorder = (fromIdx: number, toIdx: number, edge: 'top' | 'bottom') => {
@@ -223,7 +214,7 @@ function TabsArrangement({ entity, parentRouteId, onPersist, lti, children }: Ta
       headerCellClass: 'justify-center',
       renderCell: ({ row, tabIndex }) =>
         row.lti ? (
-          <LtiTabSwitch channel={entity} row={row.lti} tabIndex={tabIndex} onToggle={() => keepPlace(row.id)} />
+          <LtiTabSwitch channel={entity} row={row.lti} tabIndex={tabIndex} />
         ) : row.locked ? (
           <LockIcon className="size-3.5 opacity-50" aria-label={t('c:locked')} />
         ) : (
