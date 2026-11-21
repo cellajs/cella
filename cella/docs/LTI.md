@@ -151,7 +151,9 @@ A launch without a context admits nobody new. It signs in a person this tenant a
 
 A person a context admits also becomes a member of the organization, at the organization role their role in the context's channel gives there. When that role may update the organization, as the permission engine decides, they get the highest role below it that may not.
 
-A launch without a context lands a known person on the organization's embedded page. An app whose contexts sit below the organization decides what those roles see of people ([What members see](./PERMISSIONS.md#what-members-see)) and what that page shows.
+A launch in a context below the organization opens that context's channel and nothing else of the organization. The backend does not start with the `lti` sign-in method on while the organization role such a channel's roles bring along is elevated or grants anything on people or on the channels below ([What members see](./PERMISSIONS.md#what-members-see)).
+
+A launch without a context lands a known person on the organization's embedded page. An app whose contexts sit below the organization decides what that page shows.
 
 A person who arrives for the first time gets an account without a proven email address, and takes a seat of the tenant's member limit. An account named before the platform released a name takes the name a later launch or import brings, as long as nothing else signs it in.
 
