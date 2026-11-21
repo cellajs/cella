@@ -284,13 +284,6 @@ export function PageTabNav({
     if (!isMobile && hasStarted && getHasNavigated()) firstTabRef.current?.focus();
   }, [hasStarted]);
 
-  // A navigation names the tab to focus in its history state, such as one just added; its link takes focus once shown
-  const focusTabId = useRouterState({ select: (state) => state.location.state.focusTab });
-  const showsFocusTab = !!focusTabId && tabs.some((tab) => tab.id === focusTabId);
-  useEffect(() => {
-    if (showsFocusTab) document.getElementById(`tab-${focusTabId}`)?.focus();
-  }, [showsFocusTab, focusTabId]);
-
   // The active tab has revealed itself by now, as child effects run first. On mount the row jumps, as a reveal does.
   const hasCenteredRef = useRef(false);
   useEffect(() => {

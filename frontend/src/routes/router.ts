@@ -86,11 +86,6 @@ declare module '@tanstack/react-router' {
     router: typeof router;
   }
 
-  interface HistoryState {
-    /** A page bar tab whose link takes focus once the bar shows it, such as a tab just added. */
-    focusTab?: string;
-  }
-
   interface StaticDataRouteOption {
     /** The layout this route stands up: an error or not-found notice below it reads the layouts still standing from the nearest one. */
     boundary?: BoundaryType;

@@ -50,8 +50,8 @@ function AddLtiTabButton({ channel }: { channel: EnrichedChannel }) {
   const router = useRouter();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const { rows } = useLtiTabRows(channel);
-  const { confirmTabOn, isTurningOn } = useLtiTabOn(channel);
-  const offered = rows.filter((row) => isOffered(row) && !isTurningOn(row));
+  const { confirmTabOn } = useLtiTabOn(channel);
+  const offered = rows.filter(isOffered);
   if (!offered.length) return null;
 
   // Opens the tab only while the person stays on `pathname` and their own tabs hold it: an audience they are outside of leaves it out
@@ -64,7 +64,7 @@ function AddLtiTabButton({ channel }: { channel: EnrichedChannel }) {
     const id = ltiTabId(link.installationId);
     const dataTabs = [{ id, title: link.title }];
     const tab = resolveChannelTabs(channel.entityType, getChannelRouteParams(channel), { dataTabs }).find((candidate) => candidate.id === id);
-    if (tab) router.navigate({ to: tab.path, params: tab.params, state: { focusTab: id } });
+    if (tab) router.navigate({ to: tab.path, params: tab.params });
   };
 
   const id = `add-lti-tab-${channel.id}`;

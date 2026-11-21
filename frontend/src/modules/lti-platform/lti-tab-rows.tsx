@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { CheckIcon, ChevronDownIcon, PencilIcon, UsersIcon } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ListLtiTabsResponse, LtiResourceLink } from 'sdk';
 import { zLtiResourceLink } from 'sdk/zod.gen';
@@ -155,23 +155,20 @@ export function LtiTabAudience({ channel, row, tabIndex }: { channel: EnrichedCh
  * memberships. The first switch on places the tab; a later one switches its resource link on.
  */
 export function useLtiTabOn(channel: EnrichedChannel) {
-  const { mutateAsync: create } = useCreateLtiResourceLinkMutation();
-  const { mutateAsync: update } = useUpdateLtiResourceLinkMutation();
+  const { mutateAsync: create, isPending: placing } = useCreateLtiResourceLinkMutation();
+  const { mutateAsync: update, isPending: switching } = useUpdateLtiResourceLinkMutation();
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
   const isSystemAdmin = useUserStore((state) => state.isSystemAdmin);
-  // The LTI installations whose switch on from here has not returned
-  const [turningOn, setTurningOn] = useState<string[]>([]);
   const isMember = !!myMemberships?.results.some((membership) => membership.channelId === channel.id);
   const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) };
 
   const switchOn = ({ tab }: LtiTabRow, audience: LtiAudience, onOn?: (link: LtiResourceLink) => void) => {
     const link = tab.resourceLink;
-    setTurningOn((ids) => [...ids, tab.id]);
     const write = link
       ? update({ path: { ...path, ltiResourceLinkId: link.id }, body: { enabled: true, audience } })
       : create({ path, body: { channelType: channel.entityType, channelId: channel.id, installationId: tab.id, title: tab.name, audience } });
     // The promise settles after the menu that asked has closed. The mutation reports its own failures.
-    write.finally(() => setTurningOn((ids) => ids.filter((id) => id !== tab.id))).then(onOn, () => {});
+    write.then(onOn, () => {});
   };
 
   /** The confirmation that switches `row`'s tab on; `onOn` runs once it is on. */
@@ -193,7 +190,7 @@ export function useLtiTabOn(channel: EnrichedChannel) {
     content: <LtiAudienceChoice current={row.tab.resourceLink?.audience} onChoose={(audience) => switchOn(row, audience, onOn)} />,
   });
 
-  return { confirmTabOn, isTurningOn: (row: LtiTabRow) => turningOn.includes(row.tab.id) };
+  return { confirmTabOn, pending: placing || switching };
 }
 
 interface LtiTabSwitchProps {
@@ -206,11 +203,10 @@ interface LtiTabSwitchProps {
 export function LtiTabSwitch({ channel, row, tabIndex }: LtiTabSwitchProps) {
   const { t } = useTranslation();
   const switchRef = useRef<HTMLElement>(null);
-  const { confirmTabOn, isTurningOn } = useLtiTabOn(channel);
+  const { confirmTabOn, pending: switchingOn } = useLtiTabOn(channel);
   const { mutate: update, isPending: switchingOff } = useUpdateLtiResourceLinkMutation();
   const { tab } = row;
   const link = tab.resourceLink;
-  const switchingOn = isTurningOn(row);
 
   const switchOff = () => {
     if (!link) return;
