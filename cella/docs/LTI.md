@@ -246,7 +246,7 @@ The embedded session belongs to the one frame its launch opened. The launch hand
 
 The browser keeps a key for the platform's site in a cookie no script reads, set at the first launch there and kept by later ones. A request counts only when its token and that key belong to one session. A token taken out of the browser is worth nothing, and so is the cookie alone, which every frame of the app on the platform's page sends.
 
-Every frame on a platform's site keeps its own session, in one tab or several, for one person or several. Each open of an LTI tab is a launch and a session, and beyond a cap per person the oldest of them end. A frame of the app that the platform's page adds without a launch has no session: it shows the page that asks the person to open the app again, and no data.
+Every frame on a platform's site keeps its own session, in one tab or several, for one person or several. Each open of an LTI tab is a launch and a session, and beyond a cap per person the oldest of them end. A frame of the app that the platform's page adds without a launch has no session: it shows the page that asks the person to reload the platform's page, and no data.
 
 A change counts only from the app's own pages, never from another frame on the platform's page. The embedded app keeps its user in memory and its own realtime connection. Its local data stays apart from a tab of the app beside it, frames of one person share one local database, and a session that ends in one frame deletes none.
 
@@ -256,7 +256,7 @@ The template ships the organization's embedded page. An app that maps a context 
 
 - **A launch state the frame did not keep:** the launch stops and asks the person to open the app again from the page they came from.
 - **A launch in a window of its own:** the page asks the person to open the app inside the platform's page. That leaves out Canvas's mobile apps and a platform set to open its LTI tools in a new window.
-- **A reloaded frame or an ended embedded session:** the frame shows one page that asks the person to open the app again from the page they came from. After a reload the frame holds no token, and its session lasts until it expires or the cap ends it.
+- **A reloaded frame or an ended embedded session:** the frame shows one page that asks the person to reload the page they opened the app on, which launches again. After a reload of the frame alone it holds no token, and its session lasts until it expires or the cap ends it.
 - **An app update:** nothing reloads an embedded page. The update applies at the next open.
 - **A browser that cannot keep the embedded session:** that page also names the browsers that can, such as Chrome, Edge and Firefox.
 - **Two first launches at once:** when two launches run at the same moment in a browser that never launched the app on that site before, one of the two frames asks to be opened again.

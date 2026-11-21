@@ -34,7 +34,7 @@
   "email_exists": "This email already has an account",
   "email_exists.text": "Sign in instead, or use another email address.",
   "embedded_session_missing": "Not signed in here",
-  "embedded_session_missing.text": "Open {{appName}} again from the page you opened it on. If you see this message again, this browser does not keep you signed in inside another site; Chrome, Edge and Firefox do.",
+  "embedded_session_missing.text": "Reload the page you opened {{appName}} on. If you see this message again after that, this browser does not keep you signed in inside another site; Chrome, Edge and Firefox do.",
   "error": "Error",
   "error.text": "Unknown error.",
   "field_conflict": "Field conflict",
