@@ -16,8 +16,8 @@ channel types below the organization.
 
 `assertBroughtAlongRolesOpenNothing` in `admit-lti-person.ts` runs when the backend loads, with `lti` on. A launch gives
 a membership of the context's channel, which brings along an organization membership at the role `organizationRoles`
-names. In one app that role read every person and every channel of the organization: a student who opened one course
-page read 102 email addresses. The backend now refuses to start while that role opens more than the channel.
+names. Where that role reads every person and every channel of the organization, a student who opens one course page
+can read every member's email address. The backend now refuses to start while that role opens more than the channel.
 
 ## Blast radius
 
