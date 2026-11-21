@@ -240,7 +240,13 @@ Under LTI connections, each connection lists its LTI contexts, the channel each 
 
 A launch ends on a page under `/embed`: the app without its navigation, account menu or links out of the frame. Only the origins your mode lists may frame them, and no page of the app outside a registration or a launch may be framed at all.
 
-The embedded session lives in a cookie of its own, kept per platform site by the browser. It accepts a change only from the app's own pages, never from another frame on the platform's page. The embedded app keeps its own user, local data and realtime connection, apart from a tab of the app opened beside it.
+The embedded session belongs to the one frame its launch opened. The launch hands that frame a one-use code in its address, and the page trades it at once for the session's token, which it keeps in its memory alone.
+
+The browser keeps a key for the platform's site in a cookie no script reads, set at the first launch there and kept by later ones. A request counts only when its token and that key belong to one session. A token taken out of the browser is worth nothing, and so is the cookie alone, which every frame of the app on the platform's page sends.
+
+Every frame on a platform's site keeps its own session, in one tab or several, for one person or several, and a launch ends no other session. A frame of the app that the platform's page adds without a launch has no session and shows nothing.
+
+A change counts only from the app's own pages, never from another frame on the platform's page. The embedded app keeps its user in memory, its own local data and its own realtime connection, apart from other frames and from a tab of the app beside it.
 
 The template ships the organization's embedded page. An app that maps a context to a channel of its own adds an embedded route for that channel and names it in its pinned [routes-config.tsx](../../frontend/src/routes-config.tsx).
 
@@ -248,7 +254,8 @@ The template ships the organization's embedded page. An app that maps a context 
 
 - **A launch state the frame did not keep:** the launch stops and asks the person to open the app again from the page they came from.
 - **A launch in a window of its own:** the page asks the person to open the app inside the platform's page.
-- **A browser that cannot keep the embedded session:** the page says so and names the browsers that can, such as Chrome, Edge and Firefox.
+- **A reloaded frame, an app update or an ended embedded session:** the frame shows one page that asks the person to open the app again from the page they came from.
+- **A browser that cannot keep the embedded session:** that page also names the browsers that can, such as Chrome, Edge and Firefox.
 - **A context not set up yet:** someone who arrives before anyone who sets it up is told that someone who manages the page on the platform must open it first.
 - **A launch without a context:** someone the organization does not know yet is told to open the app from a page they are a member of first.
 - **No role the app takes:** a launch with no context role is refused with a page in the template, and nothing is written. A platform's admin who is not enrolled in the context enrols there first.
@@ -278,7 +285,6 @@ The template ships the organization's embedded page. An app that maps a context 
 - Acting for a person on the platform: an installed LTI tool's token acts only as itself.
 - Launch state in a cookie.
 - Registrations that every tenant may install: each registration belongs to one tenant.
-- Binding an embedded page to the frame that launched it: a page on the platform's own origin can frame an embedded page under the person's session.
 - A launch from a live Canvas: none has been run, and what the app sends Canvas follows Canvas's code alone. Members are read only after a launch: nothing from Canvas is confirmed end to end.
 - Roles named by the app itself, in the `custom` claim as Canvas sends its own.
 
