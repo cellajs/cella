@@ -5,7 +5,7 @@ import { PullToRefresh } from '~/modules/common/pull-to-refresh';
 import { queryClient } from '~/query/query-client';
 import { router } from '~/routes/router';
 
-/** The router, with pull-to-refresh while online, outside an embedded page, whose session a reload would end. */
+/** The router, with pull-to-refresh while online, outside an embedded page, which holds no token after a reload. */
 export function AppRouter() {
   // Subscribed, so pull-to-refresh comes back when the connection does
   const isOnline = useOnlineManager();

@@ -77,8 +77,8 @@ if (canonicalUrl) {
         <LucideProvider size={'1rem' as unknown as number} strokeWidth={appConfig.theme.strokeWidth}>
           <PersistedQueryProvider>
             <AppRouter />
-            {/* Outside the router: the root error page replaces the root route's component, and both outlive it. A reload
-             ends an embedded page's session: an update applies at its next open. */}
+            {/* Outside the router: the root error page replaces the root route's component, and both outlive it. After a
+             reload an embedded page holds no token and asks to be opened again: an update applies at its next open. */}
             {!isEmbedded && <ReloadPrompt />}
             <ToasterProvider />
           </PersistedQueryProvider>

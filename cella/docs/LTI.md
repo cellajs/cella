@@ -99,13 +99,11 @@ A person opens an LTI tool's tab on the platform. From that click to the page in
 2. The frame posts a login to the LTI tool, which keeps its launch state in the frame's own storage, or in the platform's storage.
 3. The platform checks again and signs a statement of who the person is, the tab's channel as the context, their roles and the released fields.
 4. The LTI tool checks the signature and its state, finds or creates the person, and sets their role in the channel the context maps to.
-5. The LTI tool starts an embedded session and shows that channel's embedded page in the frame.
+5. The LTI tool shows that channel's embedded page in the frame, and the page starts its embedded session.
 
 The LTI tool keeps the launch state in the frame's own browser storage first. Only where the browser keeps nothing there does it use the platform's storage, which a platform offers by naming a storage frame. No cookie holds it.
 
 A platform that names no storage frame launches the app inside its page. A browser that keeps nothing for the frame launches it only from a platform that names one.
-
-A launch in a window of its own is refused with a page that asks the person to open the app inside the platform's page. That leaves out Canvas's mobile apps and a platform set to open its LTI tools in a new window.
 
 Every launch checks the person's standing anew: someone who left the channel is refused at their next click.
 
@@ -257,8 +255,9 @@ The template ships the organization's embedded page. An app that maps a context 
 ## When it fails
 
 - **A launch state the frame did not keep:** the launch stops and asks the person to open the app again from the page they came from.
-- **A launch in a window of its own:** the page asks the person to open the app inside the platform's page.
-- **A reloaded frame, an app update or an ended embedded session:** the frame shows one page that asks the person to open the app again from the page they came from.
+- **A launch in a window of its own:** the page asks the person to open the app inside the platform's page. That leaves out Canvas's mobile apps and a platform set to open its LTI tools in a new window.
+- **A reloaded frame or an ended embedded session:** the frame shows one page that asks the person to open the app again from the page they came from. After a reload the frame holds no token, and its session lasts until it expires or the cap ends it.
+- **An app update:** nothing reloads an embedded page. The update applies at the next open.
 - **A browser that cannot keep the embedded session:** that page also names the browsers that can, such as Chrome, Edge and Firefox.
 - **Two first launches at once:** when two launches run at the same moment in a browser that never launched the app on that site before, one of the two frames asks to be opened again.
 - **A context not set up yet:** someone who arrives before anyone who sets it up is told that someone who manages the page on the platform must open it first.

@@ -48,8 +48,8 @@ const errorDetailRows = (error: ApiError) =>
  * `boundary` names the layout still standing around the notice, and so what the notice brings itself: root (none:
  * the overlay hosts and the footer), public (the public layout: the footer), auth (the auth layout: the footer, and
  * glass secondary actions on its gradient), app (the app layout: nothing). On an embedded page it offers no way out
- * of the frame: no home and no footer, whose links lead to the app's other pages, and no reload, which ends the frame's
- * session.
+ * of the frame: no home and no footer, whose links lead to the app's other pages, and no reload, after which the frame
+ * holds no token and asks to be opened again.
  * Without an `error`, the route's `error` and `severity` search params name it.
  */
 export function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath = '/' }: ErrorNoticeProps) {

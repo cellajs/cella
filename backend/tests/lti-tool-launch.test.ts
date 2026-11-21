@@ -241,8 +241,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect([frameAncestorsOf(launchPage), read.subject, read.origin]).toEqual([framing, 'lti.get_data', authorization]);
   });
 
-  // An attacker holds a platform registration of their own, a launch of someone else, a frame beside the app's, or a page
-  // that opens the login or launch at top level, where the finish would post with the app's first-party cookies.
+  // An attacker holds a platform registration of their own, a launch of someone else, or a frame beside the app's.
   it('refuses forged, replayed, misdirected and incomplete launches, and creates no account for them', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
     const other = await connect(await fakePlatform('platform-b'));

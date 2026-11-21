@@ -22,8 +22,8 @@ export type SessionKind = (typeof sessionKinds)[number];
  * from another of their sessions, `mfa_enabled` because enabling MFA drops every other regular session. An
  * administrator's act: `admin_revoke`, by a system administrator for a person locked out or compromised, or by an
  * organization admin deleting the LTI connection a session came through. The server's housekeeping during a
- * sign-in: `session_cap` beyond `maxSessionsPerUser`. `replaced` by a newer session in the same browser: a sign-in, or
- * the mfa session that enabling MFA mints.
+ * sign-in: `session_cap` beyond `maxSessionsPerUser`, or beyond `maxEmbeddedSessionsPerUser` for an embedded session.
+ * `replaced` by a newer session in the same browser: a sign-in, or the mfa session that enabling MFA mints.
  */
 const sessionRevocationReasons = ['sign_out', 'other_session', 'mfa_enabled', 'admin_revoke', 'session_cap', 'replaced'] as const;
 export type SessionRevocationReason = (typeof sessionRevocationReasons)[number];
