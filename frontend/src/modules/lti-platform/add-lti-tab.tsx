@@ -7,11 +7,13 @@ import { appConfig } from 'shared';
 import { ltiTabId } from 'shared/tools-config';
 import { DropdownActionGroup, DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { resolveChannelTabs } from '~/modules/common/page/tab-nav';
+import { focusPageTab, resolveChannelTabs } from '~/modules/common/page/tab-nav';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { useCan } from '~/modules/entities/use-can';
 import { LtiTabOrigin, type LtiTabRow, useLtiTabOn, useLtiTabRows } from '~/modules/lti-platform/lti-tab-rows';
+import { ltiResourceLinksQueryOptions } from '~/modules/lti-platform/query';
 import { Button } from '~/modules/ui/button';
+import { queryClient } from '~/query/query-client';
 import { getChannelRouteParams } from '~/utils/channel-route';
 
 /** Its tab is not on here, and nothing keeps it from being switched on. */
@@ -24,11 +26,15 @@ function AddLtiTabMenu({ channel }: { channel: EnrichedChannel }) {
   const { rows } = useLtiTabRows(channel);
   const { confirmTabOn } = useLtiTabOn(channel);
 
-  const openTab = (link: LtiResourceLink) => {
+  const openTab = async (link: LtiResourceLink) => {
     const id = ltiTabId(link.installationId);
     const dataTabs = [{ id, title: link.title }];
     const tab = resolveChannelTabs(channel.entityType, getChannelRouteParams(channel), { dataTabs }).find((candidate) => candidate.id === id);
-    if (tab) navigate({ to: tab.path, params: tab.params });
+    if (!tab) return;
+    // The bar holds the tab's link, which takes the focus, once the tabs are read again
+    await queryClient.query(ltiResourceLinksQueryOptions(channel)).catch(() => {});
+    await navigate({ to: tab.path, params: tab.params });
+    focusPageTab(id);
   };
 
   return (
@@ -61,9 +67,9 @@ function AddLtiTabButton({ channel }: { channel: EnrichedChannel }) {
       .create(<AddLtiTabMenu channel={channel} />, { id, triggerId: id, triggerRef, align: 'end', kind: 'menu', popupClassName: 'w-80' });
 
   return (
-    <Button ref={triggerRef} soft size="xs" aria-label={t('c:add_resource', { resource: t('c:tab') })} onClick={open}>
+    <Button ref={triggerRef} soft size="xs" aria-label={t('c:add_resource', { resource: t('c:tab') })} className="max-sm:size-8" onClick={open}>
       <PlusIcon />
-      {t('c:add')}
+      <span className="max-sm:sr-only">{t('c:add')}</span>
     </Button>
   );
 }

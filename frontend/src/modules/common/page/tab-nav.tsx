@@ -152,6 +152,11 @@ function resolveNavTabs(parentRouteId: string, { dataTabs = [], ...options }: Na
 const resolveLandingTab = (parentRouteId: string, options: NavTabOptions = {}): PageTab | undefined =>
   resolveNavTabs(parentRouteId, { ...options, dataTabs: [] })[0];
 
+const tabLinkId = (id: string) => `tab-${id}`;
+
+/** Focuses the link of tab `id` in the page bar; nothing while the bar does not show it. */
+export const focusPageTab = (id: string) => document.getElementById(tabLinkId(id))?.focus();
+
 /**
  * A channel's page tabs, gated and ordered as its page bar shows them, linked with `channelParams` so they work from any
  * page: route tabs take the channel's params as they are, registry tabs add their `$tool`.
@@ -312,7 +317,7 @@ export function PageTabNav({
         return (
           <Link
             key={id}
-            id={`tab-${id}`}
+            id={tabLinkId(id)}
             ref={index === 0 ? firstTabRef : undefined}
             resetScroll={false}
             className={tabNavItemClass}
