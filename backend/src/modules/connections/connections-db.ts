@@ -44,8 +44,9 @@ export const connectionsTable = snakeCase.table(
     jitProvisioning: boolean().notNull().default(false),
     config: jsonb().$type<ConnectionConfig>().notNull().default({}),
     /**
-     * An LTI connection's own RS256 key pair, minted at registration: the private JWK, encrypted for this row
-     * (`mintConnectionKey`). Null on a connection registered before keys were made per connection.
+     * An LTI connection's own RS256 keys with the moment each was minted, encrypted for this row (`connection-key.ts`):
+     * the one that signs, and during a rotation the one beside it. Null on a connection registered before keys were
+     * made per connection.
      */
     privateJwk: text(),
     ...auditColumns(),

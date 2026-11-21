@@ -13,7 +13,7 @@ import { log } from '#/utils/logger';
 const dbCtx = { var: { db: baseDb } };
 
 /**
- * A platform's login initiation (1EdTech Security Framework 1.0, section 5.1.1). Finds the active connection by issuer
+ * A platform's login initiation (1EdTech Security Framework 1.1, section 5.1.1). Finds the active connection by issuer
  * and client id (without a client id, the issuer's only one), issues a one-use `lti-nonce` and answers the exchange
  * that puts its value into platform storage, then sends the browser to the stored authorization endpoint with the
  * authentication request. Nothing of the address comes from the request: the redirect is the registered launch
@@ -53,6 +53,7 @@ export async function initiateLtiLoginOp(params: z.infer<typeof ltiLoginParamsSc
     subject: 'lti.put_data',
     target,
     origin: authorization.origin,
+    pageOrigin: connection.config.pageOrigin,
     key: ltiStorageKey(nonce.id),
     value: nonce.rawToken,
     next: authorization.href,

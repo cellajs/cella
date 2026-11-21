@@ -33,10 +33,10 @@ export const ltiConnectionsQueryOptions = (path: QueryOrgContext) =>
     queryFn: () => fetchAllPages((page) => listLtiConnections({ path, query: page }), syncChunkSize),
   });
 
-/** A connection can launch from many courses: a tile shows a page and loads more on request. */
+/** A connection can launch from many contexts: a tile shows a page and loads more on request. */
 const contextsPageSize = 10;
 
-/** The courses of one LTI connection of the organization, with how the last member import of each ran. */
+/** The contexts of one LTI connection of the organization, with how the last member import of each ran. */
 export const ltiContextsQueryOptions = (path: QueryOrgContext, connectionId: string) =>
   infiniteQueryOptions({
     queryKey: ltiConnectionKeys.contexts(path, connectionId),

@@ -20,16 +20,18 @@ import { afterAll, afterEach, describe, expect, it, onTestFinished, vi } from 'v
 import { AppError, type ErrorKey, resourceErrorTexts } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
-import { lisContextRoles, lisInstitutionRoles, ltiClaims, ltiRolesAsRead, ltiTestUserRole } from '#/lib/lti-vocabulary';
+import { lisContextRoles, lisInstitutionRoles, ltiClaims, ltiTestUserRole } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
 import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
 import { ltiLaunchUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
-import { planLtiContextChannel, storedLtiContextChannel } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
-import { importLtiMembersOp, ltiMemberImportQueue, maxCoursesPerHour } from '#/modules/auth/flows/lti/operations/import-lti-members';
+import { ltiRoleIn } from '#/modules/auth/flows/lti/operations/admit-lti-person';
+import { planLtiContextChannel, setsUpLtiContext, storedLtiContextChannel } from '#/modules/auth/flows/lti/operations/finish-lti-launch';
+import { importLtiMembersOp, ltiMemberImportQueue, maxContextsPerHour } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
+import { maxLtiDeployments } from '#/modules/connections/connections-schema';
 import { ltiContextTypes } from '#/modules/lti-platform/launch-context';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { countTakenSeats } from '#/modules/memberships/operations/organization-seats';
@@ -40,7 +42,7 @@ import { identitiesTable } from '#/modules/user/identities-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization, createTestUser } from './helpers';
-import { decodeHtml, parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
+import { decodeHtml, parseForm, sendLtiAuthenticationRequest, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser, orgMembershipOf } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
@@ -107,7 +109,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
   async function connect(
     platform: Platform,
     deploymentIds = ['deployment-1'],
-    { org: existing, clientId = `${platform.name}-client` }: { org?: TestOrganization; clientId?: string } = {},
+    { org: existing, clientId = `${platform.name}-client`, pageOrigin }: { org?: TestOrganization; clientId?: string; pageOrigin?: string } = {},
   ) {
     const org = existing ?? (await createTestOrganization());
     const issuer = `https://${platform.name}.example.com`;
@@ -127,6 +129,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
           authorizationEndpoint: `${issuer}/authorize`,
           tokenEndpoint: `https://auth.${platform.name}.example.net/token`,
           jwksUri: platform.jwksUri,
+          ...(pageOrigin && { pageOrigin }),
           productFamilyCode: 'test',
           version: '1',
           deploymentIds,
@@ -198,6 +201,33 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(embeddedCookieOf(response).cookie).toBeUndefined();
   };
 
+  // Attack: a page on an origin the deploy lists for embedded pages, or one another connection's platform frames from,
+  // frames this connection's login and launch pages to run its launch inside itself. Neither may frame them, and both
+  // storage messages go to the connection's authorization origin.
+  it("lets only the connection's authorization origin and recorded page origin frame its login and launch pages", async () => {
+    onTestFinished(overrideConfig(appConfig, { ltiFrameAncestors: ['https://listed.example.com'] }));
+    const connected = await connect(await fakePlatform('canvas-a'), undefined, { pageOrigin: 'https://school-a.example.com' });
+    await connect(await fakePlatform('canvas-b'), undefined, { pageOrigin: 'https://school-b.example.com' });
+    // `connect` puts the authorization endpoint under the issuer.
+    const authorization = connected.issuer;
+    const framing = `frame-ancestors ${authorization} https://school-a.example.com`;
+    const frameAncestorsOf = (page: Response) =>
+      page.headers
+        .get('Content-Security-Policy')
+        ?.split('; ')
+        .find((directive) => directive.startsWith('frame-ancestors'));
+
+    const started = await login(connected);
+    expect([frameAncestorsOf(started.page), started.exchange.origin]).toEqual([framing, authorization]);
+    const launchPage = await fetchApp('/auth/lti/launch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: authorization },
+      body: new URLSearchParams({ id_token: await sign(launchClaims(connected, started.nonce), connected.platform), state: started.state }),
+    });
+    const read = pageExchange(await launchPage.text());
+    expect([frameAncestorsOf(launchPage), read.subject, read.origin]).toEqual([framing, 'lti.get_data', authorization]);
+  });
+
   // An attacker holds a platform registration of their own, a launch of someone else, or a frame beside the app's.
   it('refuses forged, replayed, misdirected and incomplete launches, and creates no account for them', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
@@ -244,12 +274,28 @@ describe('LTI launch at the app as an LTI tool', async () => {
         type: 'lti_platform_unknown',
       },
       {
-        name: 'several audiences without azp',
-        run: async () => (await launch(connected, { aud: [connected.clientId, 'stranger'] })).response,
+        name: 'another audience beside the client id, with azp naming the client',
+        run: async () => (await launch(connected, { aud: [connected.clientId, 'stranger'], azp: connected.clientId })).response,
         status: 401,
         type: 'lti_launch_invalid',
       },
-      { name: 'expired', run: async () => (await launch(connected, { exp: nowSeconds - 60 })).response, status: 401, type: 'lti_launch_invalid' },
+      {
+        name: 'a header that names no key, signed by the one key of the set',
+        run: async () => {
+          const started = await login(connected);
+          const claims = launchClaims(connected, started.nonce);
+          const idToken = await new SignJWT(claims).setProtectedHeader({ alg: 'RS256' }).sign(connected.platform.privateKey);
+          return finish({ id_token: idToken, state: started.state, storage_value: started.value });
+        },
+        status: 401,
+        type: 'lti_launch_invalid',
+      },
+      {
+        name: 'expired past the leeway',
+        run: async () => (await launch(connected, { exp: nowSeconds - 120 })).response,
+        status: 401,
+        type: 'lti_launch_invalid',
+      },
       {
         name: 'a wrong message type',
         run: async () => (await launch(connected, { [ltiClaims.messageType]: 'LtiDeepLinkingRequest' })).response,
@@ -268,12 +314,6 @@ describe('LTI launch at the app as an LTI tool', async () => {
         run: async () => (await launch(connected, { [ltiClaims.roles]: undefined })).response,
         status: 401,
         type: 'lti_launch_invalid',
-      },
-      {
-        name: 'a deployment the connection does not hold',
-        run: async () => (await launch(connected, { [ltiClaims.deploymentId]: 'deployment-2' })).response,
-        status: 403,
-        type: 'lti_deployment_unknown',
       },
       {
         name: 'the test user role',
@@ -335,25 +375,20 @@ describe('LTI launch at the app as an LTI tool', async () => {
     await expectRefusalPage(noStorage, 400, 'lti_storage_missing');
   });
 
-  // Contract: the template's role mapping as a platform's launch meets it. A context role admits, and so does the
-  // institution role Administrator alone, which platforms send their admins and this side reads as the context's
-  // Administrator; a context role decides whenever there is one. A launch with neither is refused and creates no account.
-  it('admits a context role or the institution role Administrator at the least privileged role, and refuses a launch with neither', async () => {
+  // Contract: the template's role mapping as a platform's launch meets it: a context role admits. Attack: an institution
+  // Administrator without a context role, as Canvas sends anyone who administers any of its accounts, is refused like
+  // anyone else without one, and creates no account.
+  it('admits a context role at the least privileged role, and refuses institution roles alone and no roles', async () => {
     const connected = await connect(await fakePlatform('platform-a'));
     const roleOf = async (sub: string) => {
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.subject, sub));
       return identity && (await orgMembershipOf(identity.userId, connected.org.id))?.role;
     };
-    const leastPrivileged = hierarchy.getLeastPrivilegedRole('organization');
 
+    expect((await launch(connected, { sub: 'lms-learner', [ltiClaims.roles]: [lisContextRoles.learner] })).response.status).toBe(303);
+    expect(await roleOf('lms-learner')).toBe(hierarchy.getLeastPrivilegedRole('organization'));
     for (const [sub, roles] of [
-      ['lms-learner', [lisContextRoles.learner]],
       ['lms-admin', [lisInstitutionRoles.administrator]],
-    ] as const) {
-      expect((await launch(connected, { sub, [ltiClaims.roles]: roles })).response.status, sub).toBe(303);
-      expect(await roleOf(sub)).toBe(leastPrivileged);
-    }
-    for (const [sub, roles] of [
       ['lms-staff', [lisInstitutionRoles.staff]],
       ['lms-nobody', []],
     ] as const) {
@@ -362,12 +397,12 @@ describe('LTI launch at the app as an LTI tool', async () => {
     }
   });
 
-  // Two first launches at once: one records its deployment, the other is refused whether it read the connection before that record or after.
-  it('records the deployment of the first launch to a connection that holds none, and refuses a concurrent first launch from another', async () => {
-    const connected = await connect(await fakePlatform('platform-a'), []);
-    const deploymentIds = ['deployment-1', 'deployment-2'];
+  // Contract: a platform deploys one registration in several places under one client id (LTI Core 1.3, section 3.1.3).
+  // Two first launches of new deployments at once both record theirs; past the cap a new one is refused.
+  it('launches every deployment of the platform, records two new ones launched at once, and refuses one past the cap', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
     const posts = await Promise.all(
-      deploymentIds.map(async (deploymentId) => {
+      ['deployment-2', 'deployment-3'].map(async (deploymentId) => {
         const started = await login(connected);
         const idToken = await sign({ ...launchClaims(connected, started.nonce), [ltiClaims.deploymentId]: deploymentId }, connected.platform);
         return { id_token: idToken, state: started.state, storage_value: started.value };
@@ -375,12 +410,16 @@ describe('LTI launch at the app as an LTI tool', async () => {
     );
     const responses = await Promise.all(posts.map((post) => finish(post)));
 
-    const winner = responses.findIndex((response) => response.status === 303);
-    expect(winner).not.toBe(-1);
-    await expectRefusalPage(responses[1 - winner], 403, 'lti_deployment_unknown');
+    expect(responses.map(({ status }) => status)).toEqual([303, 303]);
     const [row] = await db.select().from(connectionsTable).where(eq(connectionsTable.id, connected.connection.id));
-    expect(isLtiConnection(row) && row.config.deploymentIds).toEqual([deploymentIds[winner]]);
-    expect(await db.select().from(identitiesTable).where(eq(identitiesTable.kind, 'lti'))).toHaveLength(1);
+    expect(isLtiConnection(row) && [...row.config.deploymentIds].sort()).toEqual(['deployment-1', 'deployment-2', 'deployment-3']);
+
+    const full = await connect(
+      await fakePlatform('platform-full'),
+      Array.from({ length: maxLtiDeployments }, (_, index) => `deployment-${index}`),
+    );
+    const refused = await launch(full, { [ltiClaims.deploymentId]: 'deployment-new' });
+    await expectRefusalPage(refused.response, 403, 'lti_deployment_unknown');
   });
 
   // The embedded cookie is partitioned per parent site; a sibling frame there holds it too.
@@ -492,6 +531,32 @@ describe('LTI launch at the app as an LTI tool', async () => {
     // NRPS's prose names one version where its example lists them: a single string reads as a list of one.
     await launch(connected, teacher({ context_memberships_url: membershipsUrl, service_versions: '2.0' }));
     expect(await kept()).toMatchObject({ membershipsUrl });
+  });
+
+  // Attack: a list takes away only what a list once held. A platform on the template lets whoever may change a channel
+  // open its tab for editors as Instructor and lists members alone, as Moodle lists a category manager nowhere. Their
+  // launch starts the import that reads a whole list without them, and they keep what the launch gave them.
+  it('keeps what a launch gave someone the whole list of the context never held, through the import their launch starts', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    const membershipsUrl = 'https://school.example.net/api/lti/courses/c1/names_and_roles';
+    const editor = { sub: 'lms-editor', [ltiClaims.roles]: [lisContextRoles.instructor] };
+    const nrps = { [ltiClaims.namesRoleService]: { context_memberships_url: membershipsUrl, service_versions: ['2.0'] } };
+    expect((await launch(connected, { ...editor, ...nrps })).response.status).toBe(303);
+
+    const platform: GuardedTransport = async ({ method }) =>
+      method === 'POST'
+        ? Response.json({ access_token: 'token', token_type: 'Bearer', expires_in: 3600 })
+        : Response.json({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] });
+    const [context] = await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.connectionId, connected.connection.id));
+    await importLtiMembersOp(context.id, { transport: platform, resolve: async () => [{ address: '127.0.0.1', family: 4 }] });
+    const [row] = await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.id, context.id));
+    expect(row).toMatchObject({ importReadCount: 1, importIssue: null });
+
+    const [identity] = await db
+      .select()
+      .from(identitiesTable)
+      .where(and(eq(identitiesTable.provider, connected.issuer), eq(identitiesTable.subject, 'lms-editor')));
+    expect(await orgMembershipOf(identity.userId, connected.org.id)).toMatchObject({ role: memberRole });
   });
 
   /** Sets the tenant's member limit to the seats its organization holds, and `free` more. */
@@ -705,7 +770,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
     const { id: _id, ...held } = course;
     await db
       .insert(ltiContextsTable)
-      .values(Array.from({ length: maxCoursesPerHour }, (_, index) => ({ ...held, contextId: `spent-${index}`, importRanAt: getIsoDate() })));
+      .values(Array.from({ length: maxContextsPerHour }, (_, index) => ({ ...held, contextId: `spent-${index}`, importRanAt: getIsoDate() })));
     expect((await launch(second, { ...elsewhere, ...teacher })).response.status).toBe(303);
     expect((await courses()).find(({ id }) => id === course.id)).toEqual(course);
 
@@ -723,31 +788,46 @@ describe('LTI launch at the app as an LTI tool', async () => {
 
   // D6: an address across institutions is no proof of the account behind it.
   it('creates a separate account for an email claim an account of another tenant holds', async () => {
+    onTestFinished(overrideConfig(appConfig, { ltiAsksEmail: true }));
     const connected = await connect(await fakePlatform('platform-a'));
     const elsewhere = await createTestOrganization();
     const holder = await createFactorOrgUser(call, elsewhere.tenantId, elsewhere.id, `lti-${nanoid(8)}`, adminRole);
     const launched = await launch(connected, { email: holder.email });
     expect(launched.response.status).toBe(303);
     const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.kind, 'lti'));
-    expect(identity.userId).not.toBe(holder.id);
+    expect([identity.userId === holder.id, identity.email]).toEqual([false, holder.email]);
     expect(await orgMembershipOf(holder.id, connected.org.id)).toBeUndefined();
   });
 
+  // An app that asks for no addresses holds none: an email a platform sends unasked is dropped.
+  it('stores no email from a launch while the app does not ask for one', async () => {
+    const connected = await connect(await fakePlatform('platform-a'));
+    expect((await launch(connected, { email: 'ada@school.example.edu' })).response.status).toBe(303);
+    const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.kind, 'lti'));
+    expect(identity.email).toBeNull();
+  });
+
   // The template's hierarchy has no channel below the organization: the plan is checked as an app with one meets it.
-  it('lets an Instructor or Administrator set up a context below the organization, and tells anyone else it is not set up', async () => {
+  // Attack: an institution Administrator, alone or beside a Learner, sets no context up.
+  it('lets whoever the mapping gives a role that may update set up a context below the organization, and tells anyone else it is not set up', async () => {
     const { org, connection: ltiConnection } = await connect(await fakePlatform('platform-a'));
+    if (!isLtiConnection(ltiConnection)) throw new Error('the test stored no LTI connection');
     const ctx = { var: { db } };
     const context = { id: 'course-1', title: 'Course one', types: [] };
-    const plan = (ltiRoles: string[]) => () => planLtiContextChannel({ connection: ltiConnection, context, channelType: 'organization', ltiRoles });
+    const plan = (ltiRoles: string[]) => () => {
+      const role = ltiRoleIn('organization', { ltiRoles, connection: ltiConnection });
+      const setsUp = !!role && setsUpLtiContext(org.id, 'organization', role);
+      return planLtiContextChannel({ connection: ltiConnection, context, channelType: 'organization', setsUp });
+    };
 
-    expect(plan([lisContextRoles.learner])).toThrow(expect.objectContaining({ status: 409, type: 'lti_context_not_set_up' }));
     expect(plan([lisContextRoles.instructor])()).toEqual({ create: context, channelType: 'organization' });
     expect(plan([lisContextRoles.administrator])()).toEqual({ create: context, channelType: 'organization' });
-    // An institution Administrator with no context role sets a context up too; a context role decides when there is one.
-    expect(plan(ltiRolesAsRead([lisInstitutionRoles.administrator]))()).toEqual({ create: context, channelType: 'organization' });
-    expect(plan(ltiRolesAsRead([lisContextRoles.learner, lisInstitutionRoles.administrator]))).toThrow(
-      expect.objectContaining({ status: 409, type: 'lti_context_not_set_up' }),
-    );
+    for (const roles of [
+      [lisContextRoles.learner],
+      [lisInstitutionRoles.administrator],
+      [lisContextRoles.learner, lisInstitutionRoles.administrator],
+    ])
+      expect(plan(roles), roles.join(' ')).toThrow(expect.objectContaining({ status: 409, type: 'lti_context_not_set_up' }));
 
     // Once a launch recorded the channel it created, everyone of the context lands there, also through a new
     // registration of the platform in the tenant.
@@ -855,7 +935,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
     expect(put).toMatchObject({ subject: 'lti.put_data', origin: new URL(appConfig.oauthUrl).origin });
     storage.set(put.key, put.value ?? '');
     const authorization = new URL(put.next ?? '');
-    const answer = parseForm(await (await fetch(`${oauth.issuer}/lti/authorize${authorization.search}`)).text());
+    const answer = await sendLtiAuthenticationRequest(oauth.issuer, authorization.searchParams, platformSide.admin.sessionCookie);
     expect(answer.action).toBe(ltiLaunchUrl());
 
     const launchPage = await fetchApp('/auth/lti/launch', {

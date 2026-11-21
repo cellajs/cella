@@ -490,7 +490,7 @@ export type LtiInstallation = {
   name: string;
   logoUri: string | null;
   /**
-   * The domain the LTI tool names itself by: a label it picks
+   * The domain the LTI tool names itself by: a label it picks, which its addresses need not lie on
    */
   domain: string;
   /**
@@ -502,6 +502,18 @@ export type LtiInstallation = {
    */
   keySetOrigin: string;
   description: string | null;
+  /**
+   * The LTI tool's home page, an HTTPS address it named; null when it named none
+   */
+  clientUri: string | null;
+  /**
+   * Its terms of service, an HTTPS address it named; null when it named none
+   */
+  tosUri: string | null;
+  /**
+   * Its privacy policy, an HTTPS address it named; null when it named none
+   */
+  policyUri: string | null;
   /**
    * The claims the LTI tool asked for that the platform can release
    */
@@ -1090,9 +1102,9 @@ export type Connection = {
          */
         jwksUri: string;
         /**
-         * The platform's address of this registration, when it gave one
+         * The origin of the platform's own pages, which may frame the LTI tool's login and launch pages beside its authorization endpoint: Canvas's account domain, recorded at registration; absent when the platform named none
          */
-        registrationClientUri?: string;
+        pageOrigin?: string;
         /**
          * The platform's product, such as `canvas` or `moodle`
          */
@@ -1102,7 +1114,7 @@ export type Connection = {
          */
         version: string;
         /**
-         * The LTI deployment a launch must name: the one the registration returned, else the first launch; empty before either
+         * The platform's LTI deployments the connection takes launches from: the one the registration returned, and each one a launch named first; empty before either
          */
         deploymentIds: Array<string>;
       }
@@ -3682,7 +3694,12 @@ export type InitiateLtiLoginByPostData = {
     lti_storage_target?: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * The frame that answers platform storage messages
+     */
+    lti_storage_target?: string;
+  };
   url: '/auth/lti/login';
 };
 
@@ -3863,7 +3880,7 @@ export type FinishLtiLaunchErrors = {
   /**
    * Launch refused
    *
-   * A page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a role the app takes, a test user, a launch without a course by someone not known here yet, an archived course, or a new member when the organization has no seat left.
+   * A page: not same-origin, a launch without a deployment or from one past what the connection takes, an anonymous launch, a launch without a role the app takes, a test user, a launch without a context by someone not known here yet, an archived channel, or a new member when the organization has no seat left.
    */
   403: unknown;
   /**
@@ -3875,7 +3892,7 @@ export type FinishLtiLaunchErrors = {
   /**
    * Not set up yet
    *
-   * A page: someone who can change the course on the platform opens the app from it first.
+   * A page: someone who sets the context up opens the app from it first.
    */
   409: unknown;
   /**
@@ -4168,7 +4185,7 @@ export type ListLtiContextsResponses = {
       title: string | null;
       channel: ChannelBase;
       /**
-       * Where the platform lists the course's members (NRPS), from the last launch that named it; null when none did
+       * Where the platform lists the context's members (NRPS), from the last launch that named it; null when none did
        */
       membershipsUrl: string | null;
       /**
@@ -4180,7 +4197,7 @@ export type ListLtiContextsResponses = {
        */
       importReadCount: number | null;
       /**
-       * Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.
+       * Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the context's channel is not active. Null when it read and wrote everyone.
        */
       importIssue:
         | 'waiting'
@@ -4192,6 +4209,7 @@ export type ListLtiContextsResponses = {
         | 'retrying'
         | 'failed'
         | 'too_many_members'
+        | 'unreadable_members'
         | 'member_limit'
         | 'no_role'
         | 'inactive'

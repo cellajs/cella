@@ -27,6 +27,14 @@ import { auditShape } from '#/schemas/entity-base';
 /** An address an LTI tool gives: HTTPS, or plain HTTP in development and test. */
 const ltiToolUrlSchema = z.string().max(maxLength.url).refine(isFetchableUrl);
 
+/** A page about the LTI tool that the platform links (section 2.2.1): kept when it is an HTTPS address, else dropped. */
+const ltiToolPageSchema = z
+  .string()
+  .max(maxLength.url)
+  .refine((address) => URL.canParse(address) && new URL(address).protocol === 'https:')
+  .optional()
+  .catch(undefined);
+
 const customParametersSchema = boundedRecord(z.string().max(maxLength.field), 50);
 
 /** An LTI tool describes itself in a few paragraphs at most. */
@@ -53,29 +61,42 @@ const ltiToolConfigSchema = z.object({
   target_link_uri: ltiToolUrlSchema,
   custom_parameters: customParametersSchema.optional(),
   description: z.string().max(descriptionMaxLength).optional(),
-  messages: z.array(ltiToolMessageSchema).min(1).max(20),
+  // Empty or left out: support for the resource link launch is implicit (section 2.2.3).
+  messages: z.array(ltiToolMessageSchema).max(20).default([]),
   claims: z.array(z.string().max(maxLength.field)).max(50),
 });
 
-export type LtiToolConfig = z.infer<typeof ltiToolConfigSchema>;
+/** The pages an LTI tool names about itself (section 2.2.1): members of the registration beside its LTI configuration. */
+const ltiToolPagesSchema = z.object({ client_uri: ltiToolPageSchema, tos_uri: ltiToolPageSchema, policy_uri: ltiToolPageSchema });
 
 /**
- * An LTI tool's registration request (LTI Dynamic Registration 1.0, section 2.2). Anything the platform does not offer
- * is refused: client authentication other than `private_key_jwt`, a response type other than `id_token`, an ID token
- * signed other than RS256. Unknown members are dropped.
+ * An LTI tool's configuration as the platform records it: its LTI configuration and the pages it names, each in the
+ * spec's member name. A registration answer gives each back where the request had it.
+ */
+export type LtiToolConfig = z.infer<typeof ltiToolConfigSchema> & z.infer<typeof ltiToolPagesSchema>;
+
+/** A list of values that includes `required` and may hold others (section 2.2.1). */
+const includingSchema = (required: string) =>
+  z
+    .array(z.string().max(maxLength.field))
+    .max(10)
+    .refine((values) => values.includes(required));
+
+/**
+ * An LTI tool's registration request (LTI Dynamic Registration 1.0, section 2.2). `response_types` holds `id_token`
+ * and `grant_types` holds `implicit`, beside any others, of which the platform records what it uses. Refused: client
+ * authentication other than `private_key_jwt`, an ID token signed other than RS256. Unknown members are dropped.
  */
 export const ltiToolRegistrationRequestSchema = z.object({
   application_type: z.literal('web'),
-  grant_types: z
-    .array(z.enum(['implicit', 'client_credentials']))
-    .max(2)
-    .refine((types) => types.includes('implicit')),
-  response_types: z.array(z.literal('id_token')).min(1).max(1),
+  grant_types: includingSchema('implicit'),
+  response_types: includingSchema('id_token'),
   redirect_uris: z.array(ltiToolUrlSchema).min(1).max(20),
   initiate_login_uri: ltiToolUrlSchema,
   client_name: validNameSchema,
   jwks_uri: ltiToolUrlSchema,
   logo_uri: ltiToolUrlSchema.optional(),
+  ...ltiToolPagesSchema.shape,
   token_endpoint_auth_method: z.literal('private_key_jwt'),
   id_token_signed_response_alg: z.literal('RS256').optional(),
   scope: z.string().max(maxLength.url).optional(),
@@ -136,7 +157,7 @@ export const ltiInstallationSchema = z
     clientId: z.string().describe("The `client_id` of the LTI tool's registration"),
     name: z.string(),
     logoUri: z.string().nullable(),
-    domain: z.string().describe('The domain the LTI tool names itself by: a label it picks'),
+    domain: z.string().describe('The domain the LTI tool names itself by: a label it picks, which its addresses need not lie on'),
     launchOrigins: z
       .array(z.string())
       .describe("The distinct origins the LTI tool's launches go to: its login initiation, redirect and target addresses. What an approval trusts"),
@@ -144,6 +165,9 @@ export const ltiInstallationSchema = z
       .string()
       .describe("The origin of the LTI tool's key set: whoever serves keys there gets the installation's tokens. What an approval trusts too"),
     description: z.string().nullable(),
+    clientUri: z.string().nullable().describe("The LTI tool's home page, an HTTPS address it named; null when it named none"),
+    tosUri: z.string().nullable().describe('Its terms of service, an HTTPS address it named; null when it named none'),
+    policyUri: z.string().nullable().describe('Its privacy policy, an HTTPS address it named; null when it named none'),
     claims: z.array(z.string()).describe('The claims the LTI tool asked for that the platform can release'),
     requestedFields: z.array(z.enum(ltiReleasableFields)).describe('The personal fields those claims carry: what an approval may release'),
     releasedFields: z.array(z.enum(ltiReleasableFields)),

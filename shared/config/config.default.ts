@@ -147,6 +147,7 @@ export const config = {
     rateLimitDaysAfterWindow: 1,
     pushSubscriptionDaysUnseen: 400,
     pendingLtiConnectionDays: 1,
+    unlaunchedLtiAccountDays: 30,
     backupDays: 7,
   },
 
@@ -253,7 +254,7 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 54,
+  clientCacheVersion: 55,
 
   // Authentication
 

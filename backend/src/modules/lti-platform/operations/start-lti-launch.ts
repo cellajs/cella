@@ -40,8 +40,8 @@ export const readAsLauncher = async (personId: string, link: LaunchedLink) => {
 
 /**
  * Starts a launch of a resource link, for a caller who may launch it (`readAsLauncher`): a one-use launch record names
- * the person, the tenant and the resource link. The answer is the login initiation page that hands the record to the
- * LTI tool.
+ * the person, the tenant, the resource link and the caller's session, the only one the launch endpoint signs it in.
+ * The answer is the login initiation page that hands the record to the LTI tool.
  * @throws AppError 404 `not_found` for no such link or a caller who may not launch it; for a tab that does not open
  *   (`ltiTabClosure`), 409 with why or 403 `lti_tab_channel_archived`.
  */
@@ -64,6 +64,7 @@ export async function startLtiLaunchOp(ctx: UserContext, id: string) {
     kind: 'lti-launch',
     tenantId,
     createdBy: ctx.var.user.id,
+    sessionId: ctx.var.session.id,
     ltiResourceLinkId: link.id,
   });
   const url = new URL(loginInitiationUrl);

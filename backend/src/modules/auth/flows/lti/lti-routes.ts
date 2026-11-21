@@ -18,7 +18,7 @@ import { locationSchema, paginationSchema, tenantOrgParamSchema } from '#/schema
 const formBody = <T>(schema: T) => ({ content: { 'application/x-www-form-urlencoded': { schema } }, required: true });
 
 const loginDescription =
-  "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the connection's platform alone; a refusal, text only, by any page.";
+  "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page.";
 
 const loginResponses = {
   200: { description: 'Login page\n\nA page that stores the launch value in platform storage and moves on to the platform.' },
@@ -72,7 +72,8 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [ltiLoginLimiter],
     summary: 'Start an LTI launch by form post',
     description: `${loginDescription} A cross-site form post by design: the CSRF check leaves it out.`,
-    request: { body: formBody(ltiLoginParamsSchema) },
+    // The spec names the storage frame in the login address (LTI OIDC Login with Client Side postMessages 0.1, section 2.1).
+    request: { query: ltiLoginParamsSchema.pick({ lti_storage_target: true }), body: formBody(ltiLoginParamsSchema) },
     responses: loginResponses,
   }),
   receiveLtiLaunch: xRoute({
@@ -99,7 +100,7 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [ltiKeySetLimiter],
     summary: 'Get LTI key set',
     description:
-      'The key set of one LTI connection, the `jwks_uri` the app registered at its platform: the public half of the key pair the connection was given at registration, which signs the client assertions the app sends that platform alone. It answers from before the platform answers the registration until the connection is deleted, and a platform may keep it five minutes. A connection without a key that decrypts answers 404.',
+      "The key set of one LTI connection, the `jwks_uri` the app registered at its platform: the public halves of the connection's own keys, which sign the client assertions the app sends that platform alone. It holds one key, and two while the key rotates: the next key is published days before it signs, and the key it replaces stays days after. It answers from before the platform answers the registration until the connection is deleted, and a platform may keep it five minutes. A connection without a key that decrypts answers 404.",
     request: { params: ltiKeySetParamSchema },
     responses: {
       200: {
@@ -127,15 +128,15 @@ export const authLtiRoutes = createXRoutes(['auth', 'cella'], {
       401: { description: 'Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected.' },
       403: {
         description:
-          'Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a role the app takes, a test user, a launch without a course by someone not known here yet, an archived course, or a new member when the organization has no seat left.',
+          'Launch refused\n\nA page: not same-origin, a launch without a deployment or from one past what the connection takes, an anonymous launch, a launch without a role the app takes, a test user, a launch without a context by someone not known here yet, an archived channel, or a new member when the organization has no seat left.',
       },
       404: { description: "Organization gone\n\nA page: the connection's tenant holds no organization." },
-      409: { description: 'Not set up yet\n\nA page: someone who can change the course on the platform opens the app from it first.' },
+      409: { description: 'Not set up yet\n\nA page: someone who sets the context up opens the app from it first.' },
     },
   }),
 });
 
-/** The courses of an organization's LTI connections, for a user who may update the organization. */
+/** The LTI contexts of an organization's LTI connections, for a user who may update the organization. */
 export const ltiContextRoutes = createXRoutes(['connections', 'cella'], {
   listLtiContexts: xRoute({
     method: 'get',
@@ -144,7 +145,7 @@ export const ltiContextRoutes = createXRoutes(['connections', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get LTI contexts',
     description:
-      "The courses of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
+      "The contexts of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
     request: { params: tenantOrgParamSchema, query: listLtiContextsQuerySchema },
     responses: { 200: json('LTI contexts', paginationSchema(ltiContextSchema), { results: [mockLtiContextResponse()], totalSize: 1 }) },
   }),

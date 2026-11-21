@@ -147,6 +147,7 @@ export const config = {
     rateLimitDaysAfterWindow: 1,
     pushSubscriptionDaysUnseen: 400,
     pendingLtiConnectionDays: 1,
+    unlaunchedLtiAccountDays: 30,
     backupDays: 7,
   },
 

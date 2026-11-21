@@ -4,14 +4,19 @@ import type { RestrictionCap } from 'shared';
 import type { DbContext } from '#/core/context';
 import { baseDb } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
-import { ltiRolesAsRead } from '#/lib/lti-vocabulary';
 import type { BackendQueue, MembershipEntity } from '#/lib/module';
 import { getPgBoss } from '#/lib/pg-boss';
-import { type LtiMember, type ReadLtiMembersOptions, readLtiMembers } from '#/modules/auth/flows/lti/helpers/platform-memberships';
+import {
+  isFilteredMembershipsUrl,
+  type LtiMember,
+  type ReadLtiMembersOptions,
+  readLtiMembers,
+} from '#/modules/auth/flows/lti/helpers/platform-memberships';
 import type { LtiContextModel, LtiImportIssue } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { countLtiImportsSince, findLtiContextById, recordLtiImport, recordLtiImportWaiting } from '#/modules/auth/flows/lti/lti-contexts-queries';
 import { admitLtiPerson, applyLtiRole, ltiRoleIn } from '#/modules/auth/flows/lti/operations/admit-lti-person';
 import { connectionServiceAccountId } from '#/modules/auth/flows/lti/operations/connection-service-account';
+import { endUnlistedLtiMemberships } from '#/modules/auth/flows/lti/operations/end-lti-memberships';
 import { isLtiConnection, type LtiConnection } from '#/modules/connections/connections-db';
 import { findConnectionById, holdConnection } from '#/modules/connections/connections-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
@@ -19,13 +24,13 @@ import type { OrganizationModel } from '#/modules/organization/organization-db';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { findTenant } from '#/modules/tenants/tenants-queries';
-import { isoDateAgo } from '#/utils/iso-date';
+import { getIsoDate, isoDateAgo } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
 const dbCtx = { var: { db: baseDb } };
 
-/** How long after an import of a context neither a teacher's launch nor a queued job starts another. */
+/** How long after an import of a context neither a launch that sets it up nor a queued job starts another. */
 const importPeriod = new TimeSpan(10, 'm');
 
 /** How often the job tries a failed import again, from a minute up to an hour apart. */
@@ -35,15 +40,15 @@ const importRetryLimit = 5;
 const importBudgetSeconds = 120;
 
 /**
- * The most courses of one connection whose import ran within the last hour, however many its platform names. A class
+ * The most contexts of one connection whose import ran within the last hour, however many its platform names. A class
  * whose 60 teams each switch on a tab of their own imports 61 contexts with its course: two such classes fit in an hour.
  * What an import adds is bounded by the tenant's seats, and what one read costs by the page and member limits.
  */
-export const maxCoursesPerHour = 150;
+export const maxContextsPerHour = 150;
 
-/** Whether the connection's imports within the last hour reached `maxCoursesPerHour`. */
+/** Whether the connection's imports within the last hour reached `maxContextsPerHour`. */
 const connectionImportsSpent = async (connectionId: string) =>
-  (await countLtiImportsSince(dbCtx, { connectionId, since: isoDateAgo(new TimeSpan(1, 'h')) })) >= maxCoursesPerHour;
+  (await countLtiImportsSince(dbCtx, { connectionId, since: isoDateAgo(new TimeSpan(1, 'h')) })) >= maxContextsPerHour;
 
 /** Whether an import of the context ran within `importPeriod`. */
 const importedLately = ({ importRanAt }: LtiContextModel) => !!importRanAt && importRanAt > isoDateAgo(importPeriod);
@@ -51,6 +56,7 @@ const importedLately = ({ importRanAt }: LtiContextModel) => !!importRanAt && im
 /** What the import writes into, and as whom. */
 interface ImportTarget {
   connection: LtiConnection;
+  context: LtiContextModel;
   channel: MembershipEntity;
   organization: OrganizationModel;
   memberQuota: RestrictionCap;
@@ -64,14 +70,14 @@ interface ImportTarget {
  *   app's `ltiContextRole` maps them to none, and `connection_gone` once the connection was deleted; nothing is written
  *   for any of them.
  */
-const importPerson = async (ctx: DbContext, { connection, channel, organization, memberQuota, by }: ImportTarget, person: LtiMember) => {
+const importPerson = async (ctx: DbContext, { connection, context, channel, organization, memberQuota, by }: ImportTarget, person: LtiMember) => {
   if (!(await holdConnection(ctx, { id: connection.id }))) return 'connection_gone';
-  const role = ltiRoleIn(channel.entityType, { ltiRoles: ltiRolesAsRead(person.roles), connection });
+  const role = ltiRoleIn(channel.entityType, { ltiRoles: person.roles, connection });
   if (!role) return 'no_role';
   const { user_id: sub, name, given_name: givenName, family_name: familyName, email } = person;
   const admitted = await admitLtiPerson(ctx, { connection, organization, memberQuota, person: { sub, name, givenName, familyName, email }, by });
   if (!admitted) return 'member_limit';
-  await applyLtiRole(ctx, { organization, channel, userId: admitted.userId, seat: admitted.seat, role, by });
+  await applyLtiRole(ctx, { organization, contextId: context.id, listed: true, channel, userId: admitted.userId, seat: admitted.seat, role, by });
   return 'imported';
 };
 
@@ -87,9 +93,11 @@ const forgetsAddress = new Set<LtiImportIssue>(['scope_not_granted', 'members_re
 
 /**
  * Imports the people a platform lists for an LTI context into the context's channel, as the connection's service
- * account, and records how it ran on the context. It adds and updates, never removes, and touches no one the platform
- * did not list as active. Run twice, or beside a launch of a listed person, it makes one account per
- * person. A person who needs a seat while the member limit leaves none is left out. An inactive connection or tenant,
+ * account, and records how it ran on the context. It admits only people the platform lists as active. After a whole,
+ * unfiltered list that names one and holds no row it cannot read, it ends what the context gave the people a list
+ * held before and this one leaves out or names inactive (`endUnlistedLtiMemberships`). Run twice, or beside a launch
+ * of a listed person, it makes one account per person. A person who needs a seat while the member limit leaves none
+ * is left out. An inactive connection or tenant,
  * or a channel that is archived or gone, ends it at once. A deleted connection ends it before the next person, without
  * an error and unrecorded. An aborted `signal` ends it before the next page or person. A first attempt while the
  * connection's hourly budget is spent reads nothing and records that it waits. A refusal of the scope or the member
@@ -116,21 +124,28 @@ export async function importLtiMembersOp(contextId: string, { lastAttempt = true
     if (connection.status !== 'active' || tenant?.status !== 'active' || !organization || !channel || channel.archived) return record(0, 'inactive');
     if (!retry && (await connectionImportsSpent(connection.id))) return recordLtiImportWaiting(dbCtx, { id: context.id, by });
 
+    const readFrom = getIsoDate();
     const read = await readLtiMembers(connection, context.membershipsUrl, options);
     if ('refusal' in read) {
       return recordLtiImport(dbCtx, { id: context.id, readCount: 0, issue: read.refusal, forgetAddress: forgetsAddress.has(read.refusal), by });
     }
 
-    const target: ImportTarget = { connection, channel, organization, memberQuota: tenant.restrictions.quotas.user, by };
+    const target: ImportTarget = { connection, context, channel, organization, memberQuota: tenant.restrictions.quotas.user, by };
     let issue: LtiImportIssue | null = read.issue;
     for (const person of read.people) {
       options.signal?.throwIfAborted();
       const outcome = await baseDb.transaction((tx) => importPerson({ var: { db: tx } }, target, person));
       if (outcome === 'connection_gone') return;
-      // The member limit, which an admin acts on, outranks a list too long, true of the course at every import, which
+      // The member limit, which an admin acts on, outranks a list too long, true of the context at every import, which
       // outranks people left without a role.
       if (outcome === 'member_limit') issue = outcome;
       else if (outcome === 'no_role' && !issue) issue = outcome;
+    }
+    // A read cut short or with a row it cannot read, a list without an active member, or part of a list says nothing of
+    // who left.
+    if (!read.issue && read.people.length && !isFilteredMembershipsUrl(context.membershipsUrl)) {
+      const ended = await endUnlistedLtiMemberships(target, { listed: read.people, before: readFrom, signal: options.signal });
+      if (ended === 'connection_gone') return;
     }
     await record(read.people.length, issue);
     log.info('LTI members imported', { contextId: context.id, connectionId: connection.id, read: read.people.length, issue });
@@ -171,9 +186,9 @@ export const ltiMemberImportQueue = {
 } satisfies BackendQueue;
 
 /**
- * Queues a member import of a context after a launch by its Instructor or Administrator `by`, when the context holds
- * a membership address and no import ran for it within `importPeriod`. While its connection's hour is spent
- * (`maxCoursesPerHour`) it queues nothing and records that the import waits. The launch never waits for it: a job
+ * Queues a member import of a context after a launch by `by`, who sets it up (`setsUpLtiContext`), when the context
+ * holds a membership address and no import ran for it within `importPeriod`. While its connection's hour is spent
+ * (`maxContextsPerHour`) it queues nothing and records that the import waits. The launch never waits for it: a job
  * store that refuses the job, or a failed write, is logged.
  */
 export const requestLtiMemberImport = async (context: LtiContextModel, by: UserId) => {

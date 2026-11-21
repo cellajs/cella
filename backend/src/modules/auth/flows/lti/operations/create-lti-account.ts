@@ -1,3 +1,4 @@
+import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext } from '#/core/context';
@@ -20,6 +21,9 @@ export interface LtiPerson {
   email?: string;
 }
 
+/** The email a platform released for a person, kept only while the app asks for one (`ltiAsksEmail`); null otherwise. */
+export const ltiKeptEmail = ({ email }: LtiPerson) => (appConfig.ltiAsksEmail ? (email ?? null) : null);
+
 /** The name a platform released for a person, whole or from its parts; undefined when it released none. */
 const releasedName = ({ name, givenName, familyName }: LtiPerson) => name ?? ([givenName, familyName].filter(Boolean).join(' ') || undefined);
 
@@ -35,9 +39,9 @@ interface CreateLtiAccountOpts {
 
 /**
  * Makes the account of a person a platform names for the first time, with the `lti` identity (the connection's
- * tenant, the platform's issuer and `sub`) that finds it again: without a proven address, as an anonymous account is made, named as the platform
- * released it. An email is a display snapshot on the identity and never links an account. A launch and a member import
- * call it under `lockIdentityKey` of that identity, once they found none.
+ * tenant, the platform's issuer and `sub`) that finds it again: without a proven address, as an anonymous account is
+ * made, named as the platform released it. An email the app asked for is a display snapshot on the identity and never
+ * links an account. A launch and a member import call it under `lockIdentityKey` of that identity, once they found none.
  */
 export const createLtiAccount = async (ctx: DbContext, { connection, person, signedInAt }: CreateLtiAccountOpts): Promise<UserId> => {
   const { sub, givenName, familyName } = person;
@@ -55,7 +59,7 @@ export const createLtiAccount = async (ctx: DbContext, { connection, person, sig
       tenantId: connection.tenantId,
       provider: connection.issuer,
       subject: sub,
-      email: person.email ?? null,
+      email: ltiKeptEmail(person),
       connectionId: connection.id,
       verifiedAt: signedInAt ?? null,
       lastSignInAt: signedInAt ?? null,

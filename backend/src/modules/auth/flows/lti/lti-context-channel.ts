@@ -1,6 +1,6 @@
 import { type ChannelEntityType, hierarchy } from 'shared';
 import type { DbContext } from '#/core/context';
-import { isLisContextRole, isLisContextType } from '#/lib/lti-vocabulary';
+import { isLisContextRole, isLisContextType, lisContextRoles } from '#/lib/lti-vocabulary';
 import type { MembershipEntity } from '#/lib/module';
 import type { LtiConnection } from '#/modules/connections/connections-db';
 import type { MembershipModel } from '#/modules/memberships/memberships-db';
@@ -22,16 +22,16 @@ export interface LtiContextChannelFacts {
   context: LtiContext;
   /** The channel type `ltiContextChannelType` answered for the context. */
   channelType: ChannelEntityType;
-  /** The person whose launch creates it: an Instructor or Administrator of the context. */
+  /** The person whose launch creates it, who sets the context up (`ltiContextRole`). */
   createdBy: string;
 }
 
 /** What a launch or a member import hands `ltiContextRole`. */
 export interface LtiRoleFacts {
   /**
-   * The person's LTI roles as full URIs: context roles (`lisContextRoles`), and any institution or system roles the
-   * platform sends beside them. A platform's admin who is not enrolled, an institution Administrator with no context
-   * role, also holds the context role Administrator (`ltiRolesAsRead`): no answer tells them from an enrolled one.
+   * The person's LTI roles as full URIs, as the platform sent them: context roles (`lisContextRoles`), and any
+   * institution or system roles beside them (`lisInstitutionRoles`, `lisSystemRoles`). A platform's admin who is not
+   * enrolled may arrive with institution roles alone.
    */
   ltiRoles: string[];
   /** The type of the context's channel the role is for. */
@@ -50,24 +50,29 @@ export const ltiContextChannelType = ({ types }: LtiContext): ChannelEntityType 
   !types.length || types.some(isLisContextType) ? 'organization' : null;
 
 /**
- * Creates the channel an LTI context becomes, below the organization and named after the course, on the first launch
- * by an Instructor or Administrator of the context; it runs inside the launch's transaction. Never called while
+ * Creates the channel an LTI context becomes, below the organization and named after the context, on the first launch
+ * by someone who sets it up (`ltiContextRole`); it runs inside the launch's transaction. Never called while
  * `ltiContextChannelType` answers the organization, which is the template's answer.
  */
 export const createLtiContextChannel = async (_ctx: DbContext, { context }: LtiContextChannelFacts): Promise<MembershipEntity> => {
   throw new Error(`createLtiContextChannel: the template creates no channel for LTI context ${context.id}`);
 };
 
+/** The context roles the template's `ltiContextRole` lets set a context up. */
+const setUpRoles: readonly string[] = [lisContextRoles.instructor, lisContextRoles.administrator];
+
 /**
  * The role a launch or an import gives in a channel of `channelType`, or null for none: the launch is refused with a
  * page, and the import leaves the person out. An answer that is no role of that type gives its least privileged role.
  * Re-applied at every launch: a role in a channel below the organization follows the launch up and down, an
- * organization role only goes up. An LTI administrator never becomes an app admin. A platform's admin who is not
- * enrolled arrives as the context role Administrator (`LtiRoleFacts.ltiRoles`) and may set a context up: mapping
- * Administrator to a role with more rights gives it to them too. The template's answer, by case:
- * - a context role, Administrator included: the least privileged role;
- * - institution or system roles alone: null;
- * - no roles at all: null.
+ * organization role only goes up. An LTI administrator never becomes an app admin. Whoever this gives a role that may
+ * update a channel of that type, as the permission engine judges the role alone, sets the context up: their launch
+ * creates its channel and starts its member import. The template's answer, by case:
+ * - Instructor or Administrator of the context: the most privileged role: they set it up;
+ * - any other context role: the least privileged role;
+ * - institution or system roles alone, or no roles at all: null.
  */
-export const ltiContextRole = ({ channelType, ltiRoles }: LtiRoleFacts): MembershipModel['role'] | null =>
-  ltiRoles.some(isLisContextRole) ? hierarchy.getLeastPrivilegedRole(channelType) : null;
+export const ltiContextRole = ({ channelType, ltiRoles }: LtiRoleFacts): MembershipModel['role'] | null => {
+  if (ltiRoles.some((role) => setUpRoles.includes(role))) return hierarchy.getMostPrivilegedRole(channelType);
+  return ltiRoles.some(isLisContextRole) ? hierarchy.getLeastPrivilegedRole(channelType) : null;
+};

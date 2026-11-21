@@ -12,7 +12,7 @@ import { signLtiIdToken } from '#/modules/lti-platform/helpers/id-token';
 import { launchCustom, launchNamesRoleService, launchOrigins, launchTargetLinkUri } from '#/modules/lti-platform/helpers/launch-message';
 import { ltiLaunchRoles } from '#/modules/lti-platform/helpers/lti-roles';
 import { ltiServiceScope } from '#/modules/lti-platform/helpers/lti-service-scopes';
-import { releasedClaims } from '#/modules/lti-platform/helpers/platform-offer';
+import { ltiIssuerUrl, releasedClaims } from '#/modules/lti-platform/helpers/platform-offer';
 import { findLtiLaunchTarget, findLtiRegistration } from '#/modules/lti-platform/lti-platform-queries';
 import { readAsLauncher } from '#/modules/lti-platform/operations/start-lti-launch';
 import { findServedUserById } from '#/modules/user/user-queries';
@@ -22,7 +22,10 @@ const dbCtx = { var: { db: baseDb } };
 
 const requestParam = z.string().max(maxLength.url).optional();
 
-/** The OIDC authentication request of a launch (1EdTech Security Framework 1.0, section 5.1.1.2), as GET query or POST form. */
+/**
+ * The OIDC authentication request of a launch (1EdTech Security Framework 1.0, section 5.1.1.2), as GET query or POST
+ * form. `resubmitted` is the platform's own: its page sets it when it sends the request on (`resubmission`).
+ */
 const authenticationRequestSchema = z.object({
   scope: requestParam,
   response_type: requestParam,
@@ -34,44 +37,63 @@ const authenticationRequestSchema = z.object({
   lti_message_hint: requestParam,
   nonce: requestParam,
   state: requestParam,
+  resubmitted: requestParam,
 });
+
+type AuthenticationRequest = z.infer<typeof authenticationRequestSchema>;
 
 /** An error the launch posts back to the registered `redirect_uri` (OpenID Connect Core, section 3.1.2.6). */
 class LaunchError extends Error {
   constructor(
     readonly error: string,
     readonly description: string,
+    /** What the log records, where it says more than the LTI tool may hear. */
+    readonly reason = description,
   ) {
     super(description);
   }
 }
 
+/**
+ * The answer to a launch no record matches. A browser without a session hears the same: whether a visitor is signed in
+ * is nothing a client learns by sending them here.
+ */
+const noLaunchMatches = 'no launch matches the hints';
+
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** The checks of section 5.1.1.2 a request passes before its launch record is read, in the order the spec lists them. */
-const assertAuthenticationRequest = (request: z.infer<typeof authenticationRequestSchema>) => {
+const assertAuthenticationRequest = (request: AuthenticationRequest) => {
   if (!request.scope?.split(' ').includes('openid')) throw new LaunchError('invalid_scope', 'scope must be openid');
   if (request.response_type !== 'id_token') throw new LaunchError('unsupported_response_type', 'response_type must be id_token');
   if (request.response_mode !== 'form_post') throw new LaunchError('invalid_request', 'response_mode must be form_post');
   if (!request.nonce) throw new LaunchError('invalid_request', 'nonce is required');
   if (request.prompt !== 'none') throw new LaunchError('invalid_request', 'prompt must be none');
   const { login_hint: loginHint, lti_message_hint: messageHint } = request;
-  if (!loginHint || !messageHint || !uuidPattern.test(loginHint)) throw new LaunchError('login_required', 'no launch matches the hints');
+  if (!loginHint || !messageHint || !uuidPattern.test(loginHint)) throw new LaunchError('login_required', noLaunchMatches);
   return { nonce: request.nonce, loginHint, messageHint };
 };
 
+interface LaunchRecordRef {
+  loginHint: string;
+  messageHint: string;
+  clientId: string;
+  sessionId: string;
+}
+
 /**
- * Spends the launch record the hints name and finds what it launches: a resource link of an installation of the
- * requesting client, in the record's tenant. A spent, expired or foreign record finds nothing.
+ * Spends the launch record the hints name, when the session that started it presents it, and finds what it launches:
+ * a resource link of an installation of the requesting client, in the record's tenant. A spent, expired or foreign
+ * record finds nothing, and so does one another session presents, which stays for its own.
  */
-const spendLaunchRecord = async ({ loginHint, messageHint, clientId }: { loginHint: string; messageHint: string; clientId: string }) => {
-  const record = await spendHandoffToken({ kind: 'lti-launch', rawToken: messageHint, id: loginHint }).catch((err) => {
+const spendLaunchRecord = async ({ loginHint, messageHint, clientId, sessionId }: LaunchRecordRef) => {
+  const record = await spendHandoffToken({ kind: 'lti-launch', rawToken: messageHint, id: loginHint, sessionId }).catch((err) => {
     if (err instanceof AppError && err.status === 401) return null;
     throw err;
   });
   const target = record?.ltiResourceLinkId ? await findLtiLaunchTarget(dbCtx, { resourceLinkId: record.ltiResourceLinkId }) : undefined;
   if (!record?.createdBy || !target || target.client.id !== clientId || target.resourceLink.tenantId !== record.tenantId) {
-    throw new LaunchError('login_required', 'no launch matches the hints');
+    throw new LaunchError('login_required', noLaunchMatches);
   }
   return { personId: record.createdBy, target };
 };
@@ -136,14 +158,28 @@ const launchClaims = async ({ nonce, target, personId }: { nonce: string; target
 };
 
 /**
+ * The platform's page that sends an authentication request on to the launch endpoint, as a form post from the app's
+ * origin. A navigation another site starts carries no session cookie, and the post this page makes does.
+ */
+const resubmission = (request: AuthenticationRequest) => {
+  const action = ltiIssuerUrl('authorization');
+  const fields = Object.fromEntries(Object.entries(request).flatMap(([name, value]) => (value === undefined ? [] : [[name, value]])));
+  return { action, fields: { ...fields, resubmitted: '1' }, formOrigins: [new URL(action).origin] };
+};
+
+/**
  * The launch endpoint (1EdTech Security Framework 1.0, section 5.1.1): checks the authentication request an LTI tool
  * sends the browser with, spends its launch record and answers the page that posts the signed ID token to the LTI tool.
- * No session reaches it: the record names the person, and the checks of the start run again now. Any refusal is posted
- * back to the request's `redirect_uri` as an error with its `state`, unless no address of the LTI tool may hear it.
+ * It signs only for the browser session that started the launch (section 5.1.1.3), whose person the record names, and
+ * the checks of the start run again now. A request without the session cookie is answered with the `resubmission`
+ * page once; with no session then, or another session than the record's, it fails with `login_required`, as `prompt`
+ * none asks. Any refusal is posted back to the request's `redirect_uri` as an error with its `state`, unless no address
+ * of the LTI tool may hear it.
+ * @param sessionId - The app session the request presents, null without one.
  * @throws AppError 400 `lti_launch_refused` for a request without a known LTI `client_id` or with a `redirect_uri`
  *   that client did not register, refused in place.
  */
-export async function authorizeLtiLaunchOp(params: Record<string, unknown>) {
+export async function authorizeLtiLaunchOp(params: Record<string, unknown>, sessionId: string | null) {
   const parsed = authenticationRequestSchema.safeParse(params);
   const request = parsed.success ? parsed.data : undefined;
   const registration = request?.client_id ? await findLtiRegistration(dbCtx, { clientId: request.client_id }) : undefined;
@@ -162,13 +198,17 @@ export async function authorizeLtiLaunchOp(params: Record<string, unknown>) {
 
   try {
     const { nonce, loginHint, messageHint } = assertAuthenticationRequest(request);
-    const { personId, target } = await spendLaunchRecord({ loginHint, messageHint, clientId: registration.id });
+    if (!sessionId) {
+      if (request.resubmitted) throw new LaunchError('login_required', noLaunchMatches, 'no session in this browser');
+      return resubmission(request);
+    }
+    const { personId, target } = await spendLaunchRecord({ loginHint, messageHint, clientId: registration.id, sessionId });
     const idToken = await signLtiIdToken(await launchClaims({ nonce, target, personId }));
     log.info('LTI launch', { clientId: registration.id, resourceLinkId: target.resourceLink.id, installationId: target.account.id });
     return answer({ id_token: idToken });
   } catch (err) {
     if (!(err instanceof LaunchError)) throw err;
-    log.warn('LTI launch refused', { clientId: registration.id, error: err.error, reason: err.description });
+    log.warn('LTI launch refused', { clientId: registration.id, error: err.error, reason: err.reason });
     return answer({ error: err.error, error_description: err.description });
   }
 }

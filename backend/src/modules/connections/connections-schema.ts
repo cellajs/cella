@@ -18,6 +18,13 @@ const ssoConnectionConfigSchema = z.object({
 
 const platformAddressSchema = z.string().max(maxLength.url);
 
+/**
+ * The most LTI deployments one connection records. A platform makes one for each account or course an admin installs
+ * the registration in, and a school stays far below this. The cap bounds the connection's row against a platform that
+ * names a new deployment at every launch: a launch from one more is refused.
+ */
+export const maxLtiDeployments = 100;
+
 /** An LTI connection's protocol part: the platform's endpoints from its configuration, and its LTI deployments. */
 const ltiConnectionConfigSchema = z.object({
   authorizationEndpoint: platformAddressSchema.describe("The platform's OIDC authorization endpoint, where a launch's login goes"),
@@ -26,13 +33,19 @@ const ltiConnectionConfigSchema = z.object({
     .optional()
     .describe('The audience of a token request at the platform, when it names one apart from its token endpoint'),
   jwksUri: platformAddressSchema.describe("The platform's key set, which signs its launches"),
-  registrationClientUri: platformAddressSchema.optional().describe("The platform's address of this registration, when it gave one"),
+  pageOrigin: platformAddressSchema
+    .optional()
+    .describe(
+      "The origin of the platform's own pages, which may frame the LTI tool's login and launch pages beside its authorization endpoint: Canvas's account domain, recorded at registration; absent when the platform named none",
+    ),
   productFamilyCode: z.string().max(maxLength.field).describe("The platform's product, such as `canvas` or `moodle`"),
   version: z.string().max(maxLength.field).describe("The platform's version"),
   deploymentIds: z
     .array(z.string().max(maxLength.field))
-    .max(1)
-    .describe('The LTI deployment a launch must name: the one the registration returned, else the first launch; empty before either'),
+    .max(maxLtiDeployments)
+    .describe(
+      "The platform's LTI deployments the connection takes launches from: the one the registration returned, and each one a launch named first; empty before either",
+    ),
 });
 
 export type LtiConnectionConfig = z.infer<typeof ltiConnectionConfigSchema>;

@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { maxLength } from '#/db/utils/constraints';
 import { isFetchableUrl } from '#/lib/guarded-fetch';
-import { ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
+import { canvasMembers, ltiPlatformConfigurationMember, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
 import { ltiImportIssues } from '#/modules/auth/flows/lti/lti-contexts-db';
-import { orderByQuerySchema, pageQuerySchema, validUuidSchema } from '#/schemas';
+import { orderByQuerySchema, pageQuerySchema, validDomainSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
 /** What a platform opens the registration link with. */
@@ -41,6 +41,8 @@ export const ltiPlatformConfigurationSchema = z.object({
     product_family_code: z.string().max(maxLength.field),
     version: z.string().max(maxLength.field),
     messages_supported: z.array(z.object({ type: z.string().max(maxLength.field) })).max(100),
+    // It goes into a page's `frame-ancestors`: a value that is no bare host, such as a wildcard or a list, is refused.
+    [canvasMembers.accountDomain]: validDomainSchema.optional(),
   }),
 });
 
@@ -54,7 +56,6 @@ const deploymentIdSchema = z.string().min(1).max(maxLength.field).optional();
  */
 export const ltiRegistrationResponseSchema = z.object({
   client_id: z.string().min(1).max(maxLength.field),
-  registration_client_uri: platformUrlSchema.optional(),
   deployment_id: deploymentIdSchema,
   [ltiToolConfigurationMember]: z.object({ deployment_id: deploymentIdSchema }).optional(),
 });
@@ -69,7 +70,7 @@ const idTokenSchema = z
   .optional();
 
 /**
- * A platform's login initiation (1EdTech Security Framework 1.0, section 5.1.1.1; LTI Core 1.3, section 4.1), as GET
+ * A platform's login initiation (1EdTech Security Framework 1.1, section 5.1.1.1; LTI Core 1.3, section 4.1), as GET
  * query or POST form. Every member is optional here: the login refuses a missing one with its own page.
  */
 export const ltiLoginParamsSchema = z.object({
@@ -82,7 +83,7 @@ export const ltiLoginParamsSchema = z.object({
   lti_storage_target: z.string().max(maxLength.field).optional().describe('The frame that answers platform storage messages'),
 });
 
-/** What a platform posts to the launch address (1EdTech Security Framework 1.0, section 5.1.1.3): an ID token, or an error. */
+/** What a platform posts to the launch address (1EdTech Security Framework 1.1, section 5.1.1.3): an ID token, or an error. */
 export const ltiLaunchFormSchema = z.object({
   id_token: idTokenSchema.describe('The signed launch'),
   state: z.string().max(maxLength.url).optional().describe('The state the login sent'),
@@ -100,7 +101,7 @@ export const ltiFinishFormSchema = z.object({
 /** The path of one LTI connection's key set. */
 export const ltiKeySetParamSchema = z.object({ connectionId: validUuidSchema });
 
-/** A JSON Web Key Set (RFC 7517, section 5) of one public RS256 key. */
+/** A JSON Web Key Set (RFC 7517, section 5) of a connection's public RS256 keys: one, and two during a rotation. */
 export const ltiKeySetSchema = z.object({
   keys: z.array(
     z.object({
@@ -114,7 +115,7 @@ export const ltiKeySetSchema = z.object({
   ),
 });
 
-/** The LTI contexts of an organization, the courses launched most recently first by default. */
+/** The LTI contexts of an organization, those launched most recently first by default. */
 export const listLtiContextsQuerySchema = pageQuerySchema.extend({
   connectionId: validUuidSchema.optional().describe('Lists the contexts of this LTI connection only'),
   orderBy: orderByQuerySchema(['createdAt'], 'createdAt desc'),
@@ -130,14 +131,14 @@ export const ltiContextSchema = z.object({
   membershipsUrl: z
     .string()
     .nullable()
-    .describe("Where the platform lists the course's members (NRPS), from the last launch that named it; null when none did"),
+    .describe("Where the platform lists the context's members (NRPS), from the last launch that named it; null when none did"),
   importRanAt: z.string().nullable().describe('When the last member import ran; null before the first'),
   importReadCount: z.int().nullable().describe('How many people the last member import read from the platform'),
   importIssue: z
     .enum(ltiImportIssues)
     .nullable()
     .describe(
-      "Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone.",
+      "Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the context's channel is not active. Null when it read and wrote everyone.",
     ),
   createdAt: z.string().describe('When the first launch recorded it'),
 });

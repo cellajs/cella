@@ -19,6 +19,8 @@ export interface StorageExchange {
   target: string;
   /** The origin of the platform's authorization endpoint: the message goes there, and only an answer from there counts. */
   origin: string;
+  /** The origin of the platform's own pages its connection recorded, when it did: Canvas frames the LTI tool there. */
+  pageOrigin?: string;
   key: string;
   /** The value to put; absent for a get. */
   value?: string;
@@ -56,10 +58,11 @@ else refuse();`;
 
 /**
  * The login page, which puts the nonce's value into platform storage, or the launch page, which reads it back. Only the
- * platform's own origin may frame it.
+ * connection's own platform may frame it, from its authorization origin and its page origin: a page another
+ * connection's platform frames from could otherwise run this platform's launch inside itself.
  */
 export const storagePage = (ctx: Context<Env>, exchange: StorageExchange) => {
-  const data = JSON.stringify({ ...exchange, fields: undefined, refusal: i18n.t('backend:lti.storage_unanswered') });
+  const data = JSON.stringify({ ...exchange, fields: undefined, pageOrigin: undefined, refusal: i18n.t('backend:lti.storage_unanswered') });
   const form = exchange.fields
     ? html`<form method="post" action="${ltiFinishUrl()}">
       ${Object.entries(exchange.fields).map(([name, value]) => html`<input type="hidden" name="${name}" value="${value}" />`)}
@@ -68,7 +71,8 @@ export const storagePage = (ctx: Context<Env>, exchange: StorageExchange) => {
     : '';
   const body = html`<p id="status" data-exchange="${data}"></p>
     ${form}`;
-  return protocolPage(ctx, { body, script: storageScript, frameAncestors: exchange.origin, formAction: "'self'" });
+  const frameAncestors = exchange.pageOrigin ? `${exchange.origin} ${exchange.pageOrigin}` : exchange.origin;
+  return protocolPage(ctx, { body, script: storageScript, frameAncestors, formAction: "'self'" });
 };
 
 /**

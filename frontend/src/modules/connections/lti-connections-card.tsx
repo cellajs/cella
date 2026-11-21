@@ -1,5 +1,5 @@
 import { onlineManager, useSuspenseInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { GraduationCapIcon, LinkIcon, TrashIcon } from 'lucide-react';
+import { LinkIcon, PlugIcon, TrashIcon } from 'lucide-react';
 import { type MouseEvent, Suspense, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
@@ -39,12 +39,13 @@ const importIssues = {
   retrying: 'c:lti_import.retrying',
   failed: 'c:lti_import.failed',
   too_many_members: 'c:lti_import.too_many_members',
+  unreadable_members: 'c:lti_import.unreadable_members',
   member_limit: 'c:lti_import.member_limit',
   no_role: 'c:lti_import.no_role',
   inactive: 'c:lti_import.inactive',
 } as const satisfies Record<NonNullable<LtiContext['importIssue']>, TKey>;
 
-/** How the last member import of a course ran; one that stopped short says why, and when. */
+/** How the last member import of a context ran; one that stopped short says why, and when. */
 function ImportState({ context }: { context: LtiContext }) {
   const { t } = useTranslation();
   const { membershipsUrl, importRanAt, importReadCount, importIssue } = context;
@@ -63,7 +64,7 @@ function ImportState({ context }: { context: LtiContext }) {
   );
 }
 
-/** The courses a platform launched the app from, each with the channel it maps to and how its people were last imported. */
+/** The contexts a platform launched the app from, each with the channel it maps to and how its people were last imported. */
 function LtiContextList({ path, connectionId }: { path: QueryOrgContext; connectionId: string }) {
   const { t } = useTranslation();
   const { data, hasNextPage, fetchNextPage, isFetchingNextPage } = useSuspenseInfiniteQuery(ltiContextsQueryOptions(path, connectionId));
@@ -93,7 +94,7 @@ function LtiContextList({ path, connectionId }: { path: QueryOrgContext; connect
   );
 }
 
-/** The course list under its own boundary: a list that fails to load leaves the connection and its actions standing. */
+/** The context list under its own boundary: a list that fails to load leaves the connection and its actions standing. */
 function LtiContexts({ path, connectionId }: { path: QueryOrgContext; connectionId: string }) {
   const { t } = useTranslation();
   return (
@@ -108,12 +109,12 @@ function LtiContexts({ path, connectionId }: { path: QueryOrgContext; connection
   );
 }
 
-/** One LTI platform the app is registered at, with its courses; deleting it ends the launches from there. */
+/** One LTI platform the app is registered at, with its contexts; deleting it ends the launches from there. */
 function LtiConnectionTile({ connection, path }: { connection: Connection; path: QueryOrgContext }) {
   const { t } = useTranslation();
   const { mutate: remove } = useDeleteLtiConnectionMutation();
   const platform = 'productFamilyCode' in connection.config ? connection.config.productFamilyCode : null;
-  const deploymentId = 'deploymentIds' in connection.config ? connection.config.deploymentIds[0] : undefined;
+  const deploymentIds = 'deploymentIds' in connection.config ? connection.config.deploymentIds : [];
 
   // Deleting ends every launch from that platform: the click asks first
   const openDeleteConfirm = (event: MouseEvent<HTMLButtonElement>) =>
@@ -127,7 +128,7 @@ function LtiConnectionTile({ connection, path }: { connection: Connection; path:
   return (
     <ExpandableTile
       value={connection.id}
-      icon={<GraduationCapIcon />}
+      icon={<PlugIcon />}
       title={connection.name}
       lead={<LtiContexts path={path} connectionId={connection.id} />}
       meta={
@@ -141,8 +142,16 @@ function LtiConnectionTile({ connection, path }: { connection: Connection; path:
             <span className="break-all">{connection.issuer}</span>
           </ExpandableTileDetail>
           {platform && <ExpandableTileDetail label={t('c:platform')}>{platform}</ExpandableTileDetail>}
-          <ExpandableTileDetail label={t('c:lti_deployment')} wide>
-            {deploymentId ? <span className="break-all">{deploymentId}</span> : t('c:lti_deployment_none')}
+          <ExpandableTileDetail label={t('c:lti_deployments')} wide>
+            {deploymentIds.length ? (
+              <span className="flex flex-col break-all">
+                {deploymentIds.map((deploymentId) => (
+                  <span key={deploymentId}>{deploymentId}</span>
+                ))}
+              </span>
+            ) : (
+              t('c:lti_deployment_none')
+            )}
           </ExpandableTileDetail>
           <ExpandableTileDetail label={t('c:connected')}>{dateShort(connection.createdAt)}</ExpandableTileDetail>
         </>

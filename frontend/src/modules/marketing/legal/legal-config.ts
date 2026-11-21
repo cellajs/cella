@@ -148,6 +148,7 @@ export const sharedDataTypes: SharedDataType[] = [
     storageLocation: 'Primary database (EU)',
     retentionPeriod: [
       'Account: until you delete it',
+      `Account an LTI platform's member list made, never opened: ${retention.unlaunchedLtiAccountDays} days after it is made, once it is in no organization and the platform is disconnected`,
       `History of your changes: ${retention.activityDays} days longer`,
       'What you created: stays with your organization, credited to a deleted user',
       `What you delete: ${retention.deletedItemsDays} days, then removed for good`,

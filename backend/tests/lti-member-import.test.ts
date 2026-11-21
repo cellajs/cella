@@ -2,7 +2,7 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { getRequestListener } from '@hono/node-server';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { decodeJwt, importJWK, type JWK, jwtVerify } from 'jose';
+import { compactVerify, createLocalJWKSet, decodeJwt, decodeProtectedHeader, importJWK, type JWK, jwtVerify } from 'jose';
 import { nanoid } from 'nanoid';
 import {
   approveLtiInstallation,
@@ -24,24 +24,24 @@ import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { GuardedTransport } from '#/lib/guarded-fetch';
-import { lisContextRoles, lisInstitutionRoles, ltiNrps } from '#/lib/lti-vocabulary';
+import { lisContextRoles, lisInstitutionRoles, lisSystemRoles, ltiNrps } from '#/lib/lti-vocabulary';
 import { getPgBoss } from '#/lib/pg-boss';
 import { sessionsTable } from '#/modules/auth/core/sessions/sessions-db';
-import { mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
+import { keyOverlap, keyRotationPeriod, mintConnectionKey } from '#/modules/auth/flows/lti/helpers/connection-key';
 import { maxMembersPages } from '#/modules/auth/flows/lti/helpers/platform-memberships';
 import { ltiKeySetUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
 import { ltiContextsTable } from '#/modules/auth/flows/lti/lti-contexts-db';
 import { upsertLtiContext } from '#/modules/auth/flows/lti/lti-contexts-queries';
-import { ltiRoleIn } from '#/modules/auth/flows/lti/operations/admit-lti-person';
 import { connectionServiceAccountId } from '#/modules/auth/flows/lti/operations/connection-service-account';
 import {
   importLtiMembersOp,
   ltiMemberImportQueue,
-  maxCoursesPerHour,
+  maxContextsPerHour,
   requestLtiMemberImport,
 } from '#/modules/auth/flows/lti/operations/import-lti-members';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
+import { rotateLtiConnectionKeys } from '#/modules/auth/flows/lti/operations/rotate-lti-connection-keys';
 import { connectionsTable, isLtiConnection } from '#/modules/connections/connections-db';
 import { holdConnection } from '#/modules/connections/connections-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -53,6 +53,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { identitiesTable } from '#/modules/user/identities-db';
 import { usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
+import type { TimeSpan } from '#/utils/time-span';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization, expectRefusal } from './helpers';
 import {
@@ -64,7 +65,7 @@ import {
   moodlePlatform,
   type PlatformFixture,
 } from './lti-platform-fixtures';
-import { decodeHtml, parseForm, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
+import { decodeHtml, parseForm, sendLtiAuthenticationRequest, startTestOauthServer, type TestOauthServer } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser, orgMembershipOf } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
@@ -213,6 +214,12 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
       .set({ restrictions: { ...tenant.restrictions, quotas: { ...tenant.restrictions.quotas, user } } })
       .where(eq(tenantsTable.id, tenant.id));
   };
+  /** Whether the organization role `userId` holds in `org` may update it, as the permission engine decides. */
+  const mayUpdateOrganization = async (userId: string, org: Awaited<ReturnType<typeof createTestOrganization>>) => {
+    const { role } = await orgMembershipOf(userId, org.id);
+    const memberships = [{ channelType: 'organization' as const, channelId: org.id, role }];
+    return checkAccess({ actorId: userId, scopes: null, memberships }, 'update', buildSubjectFromEntity('organization', org)).allowed;
+  };
   const ltiIdentities = (issuer: string) =>
     db
       .select()
@@ -320,7 +327,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
         body: new URLSearchParams(initiation.fields),
       });
       const stored = pageExchange(await loginPage.text());
-      const answer = parseForm(await (await fetch(`${oauth.issuer}/lti/authorize${new URL(stored.next ?? '').search}`)).text());
+      const answer = await sendLtiAuthenticationRequest(oauth.issuer, new URL(stored.next ?? '').searchParams, cookie);
       const launchPage = await fetchApp('/auth/lti/launch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: new URL(appConfig.oauthUrl).origin },
@@ -391,10 +398,10 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
           .map(({ id, name }) => ({ subject: id, userId: expect.any(String), email: null, name }))
           .sort((a, b) => a.subject.localeCompare(b.subject)),
       );
-      for (const { subject, userId } of imported.identities) {
+      for (const { userId } of imported.identities) {
         expect(people.map(({ id }) => id)).not.toContain(userId);
-        const ltiRoles = [subject === platformSide.admin.id ? lisContextRoles.instructor : lisContextRoles.learner];
-        expect(await orgMembershipOf(userId, toolSide.org.id)).toMatchObject({ role: ltiRoleIn('organization', { ltiRoles, connection }) });
+        // The Instructor's mapped role may update the organization; the role anyone imported holds there may not.
+        expect(await mayUpdateOrganization(userId, toolSide.org)).toBe(false);
       }
 
       const learnerAccount = imported.identities.find(({ subject }) => subject === learners[0].id)?.userId;
@@ -438,20 +445,15 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
       await importLtiMembersOp(side.context.id, api.options);
 
       const [identity] = await ltiIdentities(side.issuer);
-      const { role } = await orgMembershipOf(identity.userId, side.org.id);
-      const access = {
-        actorId: identity.userId,
-        scopes: null,
-        memberships: [{ channelType: 'organization' as const, channelId: side.org.id, role }],
-      };
-      expect(checkAccess(access, 'update', buildSubjectFromEntity('organization', side.org)).allowed).toBe(false);
+      expect(await mayUpdateOrganization(identity.userId, side.org)).toBe(false);
     } finally {
       vi.mocked(ltiContextRole).mockReset();
     }
   });
 
-  // Attack: the platform decides whom it lists, never whom the organization loses or how far anyone already in it falls.
-  it('lowers no organization role and removes no one, listed or not', async () => {
+  // Attack: the platform decides whom it lists, never how far anyone already in the organization falls, or whom it
+  // loses beyond those the connection admitted.
+  it('lowers no organization role and removes no one it did not admit, listed or not', async () => {
     const side = await connectToFakePlatform();
     const unlisted = await createFactorOrgUser(call, side.org.tenantId, side.org.id, `lti-${nanoid(8)}`, memberRole);
     await db
@@ -471,6 +473,104 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(after).toHaveLength(before.length + 1);
     expect(await orgMembershipOf(side.admin.id, side.org.id)).toMatchObject({ role: adminRole });
     expect(await orgMembershipOf(unlisted.id, side.org.id)).toMatchObject({ role: memberRole });
+  });
+
+  const learner = (userId: string, status?: string): Member => ({ user_id: userId, roles: [lisContextRoles.learner], ...(status && { status }) });
+
+  /** Whether the person the platform knows as `subject` holds a membership in the side's organization. */
+  const seated = async (side: { org: { id: string }; issuer: string }, subject: string) => {
+    const [identity] = await db
+      .select({ userId: identitiesTable.userId })
+      .from(identitiesTable)
+      .where(and(eq(identitiesTable.kind, 'lti'), eq(identitiesTable.provider, side.issuer), eq(identitiesTable.subject, subject)));
+    const held = await db
+      .select({ id: membershipsTable.id })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, identity.userId), eq(membershipsTable.channelId, side.org.id)));
+    return held.length > 0;
+  };
+
+  // Contract: a whole list holds a context's current members (NRPS 2.0, sections 2.3 and 2.4.1). Who a list held and
+  // this one leaves out or names Inactive loses what the context gave them; a membership given another way, or by
+  // another context, stays.
+  it('ends what a context gave the people a list held and its whole list leaves out or names inactive, and keeps what holds them another way', async () => {
+    const side = await connectToFakePlatform();
+    const invited = await createFactorOrgUser(call, side.org.tenantId, side.org.id, `lti-${nanoid(8)}`, memberRole);
+    await db
+      .insert(identitiesTable)
+      .values({ userId: invited.id, kind: 'lti', tenantId: side.org.tenantId, provider: side.issuer, subject: 'lms-invited', email: null });
+    const other = await addCourse(side, side.connection, `${side.issuer}/api/lti/courses/course-2/memberships`, 'course-2');
+    const first = ['lms-left', 'lms-inactive', 'lms-both', 'lms-invited', 'lms-stays'].map((subject) => learner(subject));
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: first })).options);
+    await importLtiMembersOp(other.id, fakePlatformApi(() => ({ members: [learner('lms-both')] })).options);
+
+    await importLtiMembersOp(
+      side.context.id,
+      fakePlatformApi(() => ({ members: [learner('lms-inactive', 'Inactive'), learner('lms-stays')] })).options,
+    );
+    expect(await seated(side, 'lms-left')).toBe(false);
+    expect(await seated(side, 'lms-inactive')).toBe(false);
+    expect(await seated(side, 'lms-both')).toBe(true);
+    expect(await seated(side, 'lms-invited')).toBe(true);
+    expect(await seated(side, 'lms-stays')).toBe(true);
+    expect(await orgMembershipOf(side.admin.id, side.org.id)).toMatchObject({ role: adminRole });
+
+    // The account stays, and the next import that lists the person admits them again.
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: [learner('lms-left'), learner('lms-stays')] })).options);
+    expect(await seated(side, 'lms-left')).toBe(true);
+  });
+
+  // Attack: only a whole list of the context that names someone and holds no row the app cannot read says who left. A
+  // read cut short, a failed or refused read, a list asked for by role, or an empty list ends no one: a row that fails
+  // validation would otherwise end its person at every import.
+  it('ends nothing after a read cut short or with an unreadable row, a failed or refused read, part of a list, or an empty list', async () => {
+    const side = await connectToFakePlatform();
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: [learner('lms-student')] })).options);
+
+    const endless = fakePlatformApi((url) => ({ members: [learner('lms-other')], next: url.href }));
+    await importLtiMembersOp(side.context.id, endless.options);
+    expect(await contextRow(side.context.id)).toMatchObject({ importIssue: 'too_many_members' });
+    const unreadable = fakePlatformApi(() => Response.json({ members: [learner('lms-other'), { user_id: 'lms-student', roles: 'Learner' }] }));
+    await importLtiMembersOp(side.context.id, unreadable.options);
+    expect(await contextRow(side.context.id)).toMatchObject({ importIssue: 'unreadable_members' });
+    const failing = fakePlatformApi(() => new Response('', { status: 500 }));
+    await expect(importLtiMembersOp(side.context.id, failing.options)).rejects.toThrow();
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: [] })).options);
+    expect(await contextRow(side.context.id)).toMatchObject({ importIssue: null, importReadCount: 0 });
+    // A refusal of the list forgets its address, which the step after names again.
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => new Response(null, { status: 403 })).options);
+    expect(await contextRow(side.context.id)).toMatchObject({ importIssue: 'members_refused' });
+    expect(await seated(side, 'lms-student')).toBe(true);
+
+    const filtered = `${side.context.membershipsUrl}?role=${encodeURIComponent(lisContextRoles.instructor)}`;
+    await db.update(ltiContextsTable).set({ membershipsUrl: filtered }).where(eq(ltiContextsTable.id, side.context.id));
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: [learner('lms-other')] })).options);
+    expect(await seated(side, 'lms-student')).toBe(true);
+  });
+
+  // Attack: a role that may update the organization comes from the app alone, never from LTI. A seat an admin raised
+  // to one stays when the list drops the person, and keeps its record: once the admin lowers it, the next import ends it.
+  it('keeps a seat an admin raised to a role that may update the organization, and ends it at the next import once lowered', async () => {
+    const side = await connectToFakePlatform();
+    await importLtiMembersOp(side.context.id, fakePlatformApi(() => ({ members: [learner('lms-raised'), learner('lms-stays')] })).options);
+    const [identity] = await db
+      .select({ userId: identitiesTable.userId })
+      .from(identitiesTable)
+      .where(and(eq(identitiesTable.provider, side.issuer), eq(identitiesTable.subject, 'lms-raised')));
+    const setRole = (role: typeof adminRole | typeof memberRole) =>
+      db
+        .update(membershipsTable)
+        .set({ role })
+        .where(and(eq(membershipsTable.userId, identity.userId), eq(membershipsTable.channelId, side.org.id)));
+    const dropped = () => fakePlatformApi(() => ({ members: [learner('lms-stays')] })).options;
+
+    await setRole(adminRole);
+    await importLtiMembersOp(side.context.id, dropped());
+    expect(await orgMembershipOf(identity.userId, side.org.id)).toMatchObject({ role: adminRole });
+
+    await setRole(memberRole);
+    await importLtiMembersOp(side.context.id, dropped());
+    expect(await seated(side, 'lms-raised')).toBe(false);
   });
 
   // Attack: a platform that never ends its list holds no import, and no worker, for long. A person it lists without a
@@ -502,13 +602,13 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 5, importIssue: 'member_limit' });
   });
 
-  // Attack: a platform that names any number of courses makes the app read at most `maxCoursesPerHour` different ones
+  // Attack: a platform that names any number of courses makes the app read at most `maxContextsPerHour` different ones
   // within an hour: the course that would pass the bound waits, a retry of a course already counted reads. The course
   // says its import waits, unless the last import was refused in a way that lasts.
   it('starts no import of a connection whose courses within the hour reached their bound, and records that it waits', async () => {
     const side = await connectToFakePlatform();
     const { id: _id, ...held } = (await contextRow(side.context.id)) ?? side.context;
-    const spent = Array.from({ length: maxCoursesPerHour - 1 }, (_, index) => ({ ...held, contextId: `spent-${index}`, importRanAt: getIsoDate() }));
+    const spent = Array.from({ length: maxContextsPerHour - 1 }, (_, index) => ({ ...held, contextId: `spent-${index}`, importRanAt: getIsoDate() }));
     await db.insert(ltiContextsTable).values(spent);
     const api = fakePlatformApi(() => ({ members: [{ user_id: 'lms-student', roles: [lisContextRoles.learner] }] }));
     const other = await addCourse(side, side.connection, `${side.issuer}/api/lti/courses/course-2/memberships`, 'course-2');
@@ -624,7 +724,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     const connection = await registerAt(side, canvas);
     expect(connection).toMatchObject({
       issuer: 'https://canvas.instructure.com',
-      config: { deploymentIds: ['1:abc123def456'], registrationClientUri: canvas.registration.registration_client_uri },
+      config: { deploymentIds: ['1:abc123def456'] },
     });
     const context = await addCourse(side, connection, canvas.membershipsUrl('1'));
     const second = `${canvas.membershipsUrl('1')}?page=2&per_page=50`;
@@ -637,7 +737,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     await importLtiMembersOp(context.id, api.options);
     const [token] = api.requests.filter(({ params }) => params);
     expect(token.url.href).toBe('https://sso.canvaslms.com/login/oauth2/token');
-    expect(decodeJwt(token.params?.get('client_assertion') ?? '')).toMatchObject({ iss: '10000000000001', aud: 'sso.canvaslms.com' });
+    expect(decodeJwt(token.params?.get('client_assertion') ?? '')).toMatchObject({ iss: '10000000000001', aud: ['sso.canvaslms.com'] });
     expect(api.memberReads().map(({ url }) => url.href)).toEqual([`${canvas.membershipsUrl('1')}?limit=50`, second]);
     expect(await contextRow(context.id)).toMatchObject({ importReadCount: 2, importIssue: null });
   });
@@ -650,11 +750,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     const moodle = moodlePlatform('moodle.school.edu', 'moodle-client');
     const connection = await registerAt(side, moodle);
     const context = await addCourse(side, connection, moodle.membershipsUrl('2'));
-    const teacherRoles = [
-      'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Administrator',
-      lisContextRoles.instructor,
-      'http://purl.imsglobal.org/vocab/lis/v2/system/person#Administrator',
-    ];
+    const teacherRoles = [lisInstitutionRoles.administrator, lisContextRoles.instructor, lisSystemRoles.administrator];
     const api = fakePlatformApi((url) =>
       url.searchParams.get('from') === '50'
         ? moodleMemberPage(url, [moodleMember('3', 'Sam Student', [lisContextRoles.learner])])
@@ -664,7 +760,10 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
 
     await importLtiMembersOp(context.id, api.options);
     const [token] = api.requests.filter(({ params }) => params);
-    expect(decodeJwt(token.params?.get('client_assertion') ?? '')).toMatchObject({ iss: 'moodle-client', aud: moodle.configuration.token_endpoint });
+    expect(decodeJwt(token.params?.get('client_assertion') ?? '')).toMatchObject({
+      iss: 'moodle-client',
+      aud: [moodle.configuration.token_endpoint],
+    });
     expect(api.memberReads().map(({ url }) => url.href)).toEqual([
       `${moodle.membershipsUrl('2')}?limit=50`,
       `${moodle.membershipsUrl('2')}?limit=50&from=50`,
@@ -770,7 +869,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
   });
 
   // Attack: a person the app's role mapping gives no role is no member: the import leaves them out with no account,
-  // and the course says people were left out. An institution Administrator alone is read as the context's.
+  // and the course says people were left out. An institution Administrator alone has no role in the context.
   it('leaves out who has no role the app takes, makes no account for them, and records it', async () => {
     const side = await connectToFakePlatform();
     const api = fakePlatformApi(() => ({
@@ -781,7 +880,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
       ],
     }));
     await importLtiMembersOp(side.context.id, api.options);
-    expect((await ltiIdentities(side.issuer)).map(({ subject }) => subject).sort()).toEqual(['lms-admin', 'lms-learner']);
+    expect((await ltiIdentities(side.issuer)).map(({ subject }) => subject)).toEqual(['lms-learner']);
     expect(await contextRow(side.context.id)).toMatchObject({ importReadCount: 3, importIssue: 'no_role' });
   });
 
@@ -853,7 +952,7 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     const [tokenRequest] = api.requests.filter(({ params }) => params);
     expect(tokenRequest.url.href).toBe(victim.config.tokenEndpoint);
     const assertion = tokenRequest.params?.get('client_assertion') ?? '';
-    expect(decodeJwt(assertion)).toMatchObject({ iss: victim.clientId, sub: victim.clientId, aud: victim.issuer });
+    expect(decodeJwt(assertion)).toMatchObject({ iss: victim.clientId, sub: victim.clientId, aud: [victim.issuer] });
     const [attackerKey] = await publicKeyOf(attacker.id);
     const [victimKey] = await publicKeyOf(victim.id);
     await expect(jwtVerify(assertion, await importJWK(attackerKey, 'RS256'))).resolves.toBeDefined();
@@ -870,6 +969,46 @@ describe('LTI member import by Names and Role Provisioning Services', async () =
     expect(deleted.response.status).toBe(204);
     expect((await keySetOf(connection.id)).status).toBe(404);
     expect((await keySetOf(generateId())).status).toBe(404);
+  });
+
+  // A platform checks the app's assertions against the key set it read last, from before the rotation or during it: what
+  // the app signs verifies against either set in its time, and a dropped key verifies nothing.
+  it('rotates a connection key without breaking a platform that holds the key set from before or during the rotation', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    const side = await connectToFakePlatform();
+    const api = fakePlatformApi(() => ({ members: [] }));
+    const keySet = async () => createLocalJWKSet({ keys: await publicKeyOf(side.connection.id) });
+    const verifies = (assertion: string, keys: Awaited<ReturnType<typeof keySet>>) =>
+      compactVerify(assertion, keys).then(
+        () => true,
+        () => false,
+      );
+    const signed = async () => {
+      await importLtiMembersOp(side.context.id, api.options);
+      return api.requests.findLast(({ params }) => params)?.params?.get('client_assertion') ?? '';
+    };
+    const later = (span: TimeSpan) => vi.setSystemTime(Date.now() + span.milliseconds());
+
+    const before = await keySet();
+    const first = await signed();
+    later(keyRotationPeriod);
+    await rotateLtiConnectionKeys();
+    expect(await publicKeyOf(side.connection.id)).toHaveLength(2);
+    const during = await keySet();
+    expect(await verifies(await signed(), before)).toBe(true);
+
+    later(keyOverlap);
+    const next = await signed();
+    expect(decodeProtectedHeader(next).kid).not.toBe(decodeProtectedHeader(first).kid);
+    expect([await verifies(first, during), await verifies(next, during)]).toEqual([true, true]);
+
+    later(keyOverlap);
+    await rotateLtiConnectionKeys();
+    const after = await keySet();
+    expect([await verifies(first, after), await verifies(next, after)]).toEqual([false, true]);
   });
 
   // A key copied onto another connection's row fails to decrypt there: that connection holds no key, and says so.

@@ -63,6 +63,15 @@ const sweepRules: { table: string; aged: string }[] = [
   { table: 'rate_limits', aged: `expire < now() - ${days(retention.rateLimitDaysAfterWindow)}` },
   // An LTI connection stays pending only while its platform answers the registration: one left over is a failed one.
   { table: 'connections', aged: `kind = 'lti' AND status = 'pending' AND created_at < now() - ${days(retention.pendingLtiConnectionDays)}` },
+  // An account an LTI member import made for someone who never launched goes once nothing holds it: no membership, and
+  // the connection that made it is gone. Its actor goes too: such an account wrote nothing.
+  {
+    table: 'actors',
+    aged: `kind = 'user' AND last_sign_in_at IS NULL
+      AND id IN (SELECT user_id FROM identities WHERE kind = 'lti' AND last_sign_in_at IS NULL AND connection_id IS NULL
+        AND created_at < now() - ${days(retention.unlaunchedLtiAccountDays)})
+      AND NOT EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = actors.id)`,
+  },
   { table: 'push_subscriptions', aged: `last_seen_at < now() - ${days(retention.pushSubscriptionDaysUnseen)}` },
   {
     table: 'push_subscriptions',

@@ -115,6 +115,30 @@ function FieldList({ fields }: { fields: PersonalField[] }) {
   return fields.map((field) => t(fieldLabels[field])).join(', ');
 }
 
+/** The pages the LTI tool names, each a link that opens apart; empty when it names none. */
+const ltiToolPages = (t: TFunction, { clientUri, tosUri, policyUri }: LtiInstallation) =>
+  [
+    { href: clientUri, label: t('c:home_page') },
+    { href: tosUri, label: t('c:terms_of_use') },
+    { href: policyUri, label: t('c:privacy_policy') },
+  ].flatMap(({ href, label }) => (href ? [{ href, label }] : []));
+
+/** Each page with the host it goes to beside it: a lookalike shows before the click. */
+function LtiToolPageLinks({ pages }: { pages: ReturnType<typeof ltiToolPages> }) {
+  return (
+    <span className="flex flex-wrap gap-x-4 gap-y-1">
+      {pages.map(({ href, label }) => (
+        <span key={label} className="break-all">
+          <a href={href} target="_blank" rel="noreferrer" className="link-inline">
+            {label}
+          </a>{' '}
+          <span className="text-muted-foreground">{new URL(href).host}</span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 /** An access scope as an admin decides on it: people are read only in the LTI contexts where it has a tab that opens. */
 const ltiScopeLabel = (t: TFunction, scope: AccessScope) => (scope === 'user:read' ? t('c:lti_scope_user_read') : scopeLabel(t, scope));
 
@@ -127,6 +151,7 @@ const approveSchema = zApproveLtiInstallationBody;
  */
 function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallation; path: QueryOrgContext }) {
   const { t } = useTranslation();
+  const pages = ltiToolPages(t, installation);
   const { mutate: approve, isPending } = useApproveLtiInstallationMutation();
   const form = useForm<z.infer<typeof approveSchema>>({
     resolver: formResolver(approveSchema),
@@ -156,6 +181,15 @@ function ApproveLtiToolForm({ installation, path }: { installation: LtiInstallat
           <p className="text-sm break-all">{installation.keySetOrigin}</p>
           <p className="text-muted-foreground text-sm">{t('c:key_set_origin.text')}</p>
         </div>
+        {pages.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <span className="group-label text-xs">{t('c:lti_tool_pages')}</span>
+            <p className="text-sm">
+              <LtiToolPageLinks pages={pages} />
+            </p>
+            <p className="text-muted-foreground text-sm">{t('c:lti_tool_pages.text')}</p>
+          </div>
+        )}
         {installation.requestedFields.length > 0 && (
           <FormField
             control={form.control}
@@ -505,6 +539,7 @@ export function LtiInstallationTile({ installation, organization, sharesName = f
   const { mutate: setStatus, isPending: settingStatus } = useSetLtiInstallationStatusMutation();
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
   const isPending = installation.status === 'pending';
+  const pages = ltiToolPages(t, installation);
   const { data: tabs } = useQuery({ ...ltiInstallationTabsQueryOptions(path, installation.id), enabled: installation.status === 'disabled' });
 
   const openApproveDialog = () =>
@@ -593,7 +628,11 @@ export function LtiInstallationTile({ installation, organization, sharesName = f
           <ExpandableTileDetail label={t('c:key_set_origin')} wide>
             {installation.keySetOrigin}
           </ExpandableTileDetail>
-          <ExpandableTileDetail label={t('c:lti_tool_domain')}>{installation.domain}</ExpandableTileDetail>
+          {pages.length > 0 && (
+            <ExpandableTileDetail label={t('c:lti_tool_pages')}>
+              <LtiToolPageLinks pages={pages} />
+            </ExpandableTileDetail>
+          )}
           <ExpandableTileDetail label={t('c:asks_for')}>
             <FieldList fields={installation.requestedFields} />
           </ExpandableTileDetail>

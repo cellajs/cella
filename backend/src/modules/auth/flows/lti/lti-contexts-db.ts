@@ -1,4 +1,4 @@
-import { index, integer, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, integer, primaryKey, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
@@ -7,15 +7,16 @@ import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
 import { isoTimestamp } from '#/db/utils/timestamp-columns';
 import { connectionsTable } from '#/modules/connections/connections-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /**
  * Why the last member import of a context stopped short, in fixed words: the connection holds no key and must register
  * again, the app refused an address the platform names, the platform refused the scope, the token or the member list,
  * the import failed and is tried again or was tried for the last time, the platform listed more people than an import
- * reads, the tenant's member limit left people out, the app's role mapping gave some people no role and left them out
- * (`no_role`), or the connection, the tenant or the channel is not active. Or that no import ran: it waits until its
- * connection's hourly budget of courses frees up.
+ * reads, it listed rows the app cannot read (`unreadable_members`), the tenant's member limit left people out, the
+ * app's role mapping gave some people no role and left them out (`no_role`), or the connection, the tenant or the
+ * channel is not active. Or that no import ran: it waits until its connection's hourly budget of contexts frees up.
  */
 export const ltiImportIssues = [
   'waiting',
@@ -27,6 +28,7 @@ export const ltiImportIssues = [
   'retrying',
   'failed',
   'too_many_members',
+  'unreadable_members',
   'member_limit',
   'no_role',
   'inactive',
@@ -34,7 +36,7 @@ export const ltiImportIssues = [
 export type LtiImportIssue = (typeof ltiImportIssues)[number];
 
 /**
- * An LTI context (a course) of a platform and the channel it became: one row per tenant, issuer and context, written by
+ * An LTI context of a platform, such as a course, and the channel it became: one row per tenant, issuer and context, written by
  * the launch that maps it and by the member import that reads its people. A new registration of the same platform in
  * the tenant takes the row over: its launches find the channel again. It goes with its channel (the organization
  * foreign key and the channel id columns below it). A tenant table read through queries, outside RLS like memberships.
@@ -71,6 +73,7 @@ export const ltiContextsTable = snakeCase.table(
     ...auditColumns(),
   },
   (table) => [
+    // LTI Core 1.3 (5.4.1) recommends a context id unique per issuer, which keeps a context under two deployments one channel.
     uniqueIndex('lti_contexts_tenant_id_issuer_context_id_idx').on(table.tenantId, table.issuer, table.contextId),
     index('lti_contexts_connection_id_idx').on(table.connectionId),
     index('lti_contexts_channel_id_idx').on(table.channelId),
@@ -80,3 +83,32 @@ export const ltiContextsTable = snakeCase.table(
 
 export type LtiContextModel = typeof ltiContextsTable.$inferSelect;
 export type InsertLtiContextModel = typeof ltiContextsTable.$inferInsert;
+
+/**
+ * The memberships an LTI context gave: the seat and the channel's membership a launch or an import of the context
+ * made, and one another context gave that this one admits too. A membership with no row, such as one given by an
+ * invitation or a parent's that came along, is never ended by a list. A row goes with its context or its membership.
+ * `updatedAt`, or `createdAt` before a second write, is when a launch or an import of the context last admitted the
+ * person: a complete read ends only the rows not written since it began.
+ */
+export const ltiContextMembershipsTable = snakeCase.table(
+  'lti_context_memberships',
+  {
+    contextId: uuid()
+      .notNull()
+      .references(() => ltiContextsTable.id, { onDelete: 'cascade' }),
+    membershipId: uuid()
+      .notNull()
+      .references(() => membershipsTable.id, { onDelete: 'cascade' }),
+    /**
+     * An import of the context's member list admitted the person: only then may a later list end the membership. A
+     * launch alone leaves it false, as for someone who may change the channel without being a member the list names.
+     */
+    listed: boolean().notNull().default(false),
+    ...auditColumns(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.contextId, table.membershipId] }),
+    index('lti_context_memberships_membership_id_idx').on(table.membershipId),
+  ],
+);

@@ -67,14 +67,15 @@ type SigningKey = NonNullable<Awaited<ReturnType<typeof connectionSigningKey>>>;
 /**
  * A client assertion for the connection's registration (`private_key_jwt`), signed with the connection's own key: a
  * platform verifies it against that registration's key set alone. Its audience is what the platform's configuration
- * names, its authorization server, else its token endpoint, as one string: an opaque value, never read as an address.
+ * names, its authorization server, else its token endpoint: an opaque value, never read as an address. It goes as an
+ * array of one (Security Framework 1.1, section 4.1.1), which Canvas and Moodle take.
  */
 const signClientAssertion = ({ clientId, config }: LtiConnection, { kid, key }: SigningKey) =>
   new SignJWT({})
     .setProtectedHeader({ alg: 'RS256', kid, typ: 'JWT' })
     .setIssuer(clientId)
     .setSubject(clientId)
-    .setAudience(config.authorizationServer ?? config.tokenEndpoint)
+    .setAudience([config.authorizationServer ?? config.tokenEndpoint])
     .setJti(randomUUID())
     .setIssuedAt()
     .setExpirationTime(`${assertionLifetimeSeconds}s`)
@@ -174,7 +175,10 @@ const nextLink = (header: string | null, page: URL) => {
   return undefined;
 };
 
-type MembersOutcome = { people: LtiMember[]; issue: 'too_many_members' | null } | { refusal: LtiImportIssue };
+type MembersOutcome = { people: LtiMember[]; issue: 'too_many_members' | 'unreadable_members' | null } | { refusal: LtiImportIssue };
+
+/** Whether a membership address asks for part of the list, by role or by resource link (NRPS 2.0, section 2.4.1). */
+export const isFilteredMembershipsUrl = (address: string) => ['role', 'rlid'].some((name) => new URL(address).searchParams.has(name));
 
 /** The pages of a context's membership container from `first`, read with the connection's token. */
 const readMemberPages = async (
@@ -187,6 +191,7 @@ const readMemberPages = async (
   if ('refusal' in token) return token;
 
   const people = new Map<string, LtiMember>();
+  let unreadable = false;
   let renewed = false;
   let page = new URL(first);
   page.searchParams.set('limit', String(membersPageSize));
@@ -211,13 +216,14 @@ const readMemberPages = async (
 
     for (const row of container.members) {
       const member = memberSchema.safeParse(row).data;
+      if (!member) unreadable = true;
       if (!member || member.roles.includes(ltiTestUserRole) || (member.status ?? 'Active') !== 'Active') continue;
       if (people.size >= maxMembers && !people.has(member.user_id)) return { people: [...people.values()], issue: 'too_many_members' };
       people.set(member.user_id, member);
     }
     pages += 1;
     const next = nextLink(response.headers.get('Link'), page);
-    if (!next) return { people: [...people.values()], issue: null };
+    if (!next) return { people: [...people.values()], issue: unreadable ? 'unreadable_members' : null };
     const trusted = trustedMembershipsUrl(next, first);
     if (!trusted) return { refusal: 'address_refused' };
     page = trusted;
@@ -232,8 +238,9 @@ const readMemberPages = async (
  * a key signs and sends nothing. A member that fails validation, names a test user or is not active is left out, and a
  * person listed twice counts once. A 401 gets one new token; any other client error but 408 and 429 is the platform's
  * refusal. The read stops at `maxMembersPages` pages, `maxMembers` people or an aborted `signal`.
- * @returns The people, with `too_many_members` when the platform lists more; or the refusal of the token or the list,
- *   `address_refused` for an address the app does not reach, or `register_again` for a connection without a key.
+ * @returns The people, with `too_many_members` when the platform lists more, else `unreadable_members` when a row
+ *   failed validation; or the refusal of the token or the list, `address_refused` for an address the app does not
+ *   reach, or `register_again` for a connection without a key.
  * @throws AppError 400 `outbound_request_failed` for an answer that is neither a page nor a refusal, or a platform
  *   that does not answer.
  */

@@ -412,7 +412,7 @@
     },
     {
       "name": "auth",
-      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification and account linking. As an LTI tool the app registers at an LTI platform by Dynamic Registration, imports a course's people from a platform built on the template, and lists each course with how its last import ran for an organization admin.",
+      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification and account linking. As an LTI tool the app registers at an LTI platform by Dynamic Registration, imports a context's people from a platform built on the template, lists each context with how its last import ran for an organization admin, and rotates each connection's key.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -2393,7 +2393,7 @@
           },
           "domain": {
             "type": "string",
-            "description": "The domain the LTI tool names itself by: a label it picks"
+            "description": "The domain the LTI tool names itself by: a label it picks, which its addresses need not lie on"
           },
           "launchOrigins": {
             "type": "array",
@@ -2408,6 +2408,18 @@
           },
           "description": {
             "type": ["string", "null"]
+          },
+          "clientUri": {
+            "type": ["string", "null"],
+            "description": "The LTI tool's home page, an HTTPS address it named; null when it named none"
+          },
+          "tosUri": {
+            "type": ["string", "null"],
+            "description": "Its terms of service, an HTTPS address it named; null when it named none"
+          },
+          "policyUri": {
+            "type": ["string", "null"],
+            "description": "Its privacy policy, an HTTPS address it named; null when it named none"
           },
           "claims": {
             "type": "array",
@@ -2581,6 +2593,9 @@
           "launchOrigins",
           "keySetOrigin",
           "description",
+          "clientUri",
+          "tosUri",
+          "policyUri",
           "claims",
           "requestedFields",
           "releasedFields",
@@ -2604,6 +2619,9 @@
           "launchOrigins": ["https://peer-review.example.com", "https://launch.peer-review.example.com"],
           "keySetOrigin": "https://peer-review.example.com",
           "description": "Students review the drafts of their peers.",
+          "clientUri": "https://peer-review.example.com",
+          "tosUri": "https://peer-review.example.com/terms",
+          "policyUri": "https://peer-review.example.com/privacy",
           "claims": ["iss", "sub", "name", "email"],
           "requestedFields": ["name", "email"],
           "releasedFields": ["name"],
@@ -4472,10 +4490,10 @@
                     "maxLength": 2048,
                     "description": "The platform's key set, which signs its launches"
                   },
-                  "registrationClientUri": {
+                  "pageOrigin": {
                     "type": "string",
                     "maxLength": 2048,
-                    "description": "The platform's address of this registration, when it gave one"
+                    "description": "The origin of the platform's own pages, which may frame the LTI tool's login and launch pages beside its authorization endpoint: Canvas's account domain, recorded at registration; absent when the platform named none"
                   },
                   "productFamilyCode": {
                     "type": "string",
@@ -4493,8 +4511,8 @@
                       "type": "string",
                       "maxLength": 255
                     },
-                    "maxItems": 1,
-                    "description": "The LTI deployment a launch must name: the one the registration returned, else the first launch; empty before either"
+                    "maxItems": 100,
+                    "description": "The platform's LTI deployments the connection takes launches from: the one the registration returned, and each one a launch named first; empty before either"
                   }
                 },
                 "required": ["authorizationEndpoint", "tokenEndpoint", "jwksUri", "productFamilyCode", "version", "deploymentIds"]
@@ -9310,7 +9328,7 @@
         "operationId": "initiateLtiLogin",
         "tags": ["auth", "cella"],
         "summary": "Start an LTI launch",
-        "description": "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the connection's platform alone; a refusal, text only, by any page.",
+        "description": "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page.",
         "x-enabled-by": {
           "strategy": "lti"
         },
@@ -9415,12 +9433,25 @@
         "operationId": "initiateLtiLoginByPost",
         "tags": ["auth", "cella"],
         "summary": "Start an LTI launch by form post",
-        "description": "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the connection's platform alone; a refusal, text only, by any page. A cross-site form post by design: the CSRF check leaves it out.",
+        "description": "A platform's login initiation for a launch (LTI 1.3, OIDC third-party login), as a GET or a form post from the platform's frame. Finds the active LTI connection by issuer and client id, stores a one-use nonce and answers a page that puts the nonce's value into platform storage, then goes on to the platform's authorization endpoint. A platform that offers no platform storage cannot launch the app. Its page may be framed by the origin of the platform's authorization endpoint and the origin of the platform's own pages its registration recorded; a refusal, text only, by any page. A cross-site form post by design: the CSRF check leaves it out.",
         "x-enabled-by": {
           "strategy": "lti"
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["ltiLoginLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "description": "The frame that answers platform storage messages"
+            },
+            "required": false,
+            "description": "The frame that answers platform storage messages",
+            "name": "lti_storage_target",
+            "in": "query"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -9561,7 +9592,7 @@
         "operationId": "getLtiKeySet",
         "tags": ["auth", "cella"],
         "summary": "Get LTI key set",
-        "description": "The key set of one LTI connection, the `jwks_uri` the app registered at its platform: the public half of the key pair the connection was given at registration, which signs the client assertions the app sends that platform alone. It answers from before the platform answers the registration until the connection is deleted, and a platform may keep it five minutes. A connection without a key that decrypts answers 404.",
+        "description": "The key set of one LTI connection, the `jwks_uri` the app registered at its platform: the public halves of the connection's own keys, which sign the client assertions the app sends that platform alone. It holds one key, and two while the key rotates: the next key is published days before it signs, and the key it replaces stays days after. It answers from before the platform answers the registration until the connection is deleted, and a platform may keep it five minutes. A connection without a key that decrypts answers 404.",
         "x-enabled-by": {
           "strategy": "lti"
         },
@@ -9712,13 +9743,13 @@
             "description": "Launch not valid\n\nA page naming the check the launch failed, or the platform it names is not connected."
           },
           "403": {
-            "description": "Launch refused\n\nA page: not same-origin, a deployment the connection does not hold, an anonymous launch, a launch without a role the app takes, a test user, a launch without a course by someone not known here yet, an archived course, or a new member when the organization has no seat left."
+            "description": "Launch refused\n\nA page: not same-origin, a launch without a deployment or from one past what the connection takes, an anonymous launch, a launch without a role the app takes, a test user, a launch without a context by someone not known here yet, an archived channel, or a new member when the organization has no seat left."
           },
           "404": {
             "description": "Organization gone\n\nA page: the connection's tenant holds no organization."
           },
           "409": {
-            "description": "Not set up yet\n\nA page: someone who can change the course on the platform opens the app from it first."
+            "description": "Not set up yet\n\nA page: someone who sets the context up opens the app from it first."
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
@@ -10017,7 +10048,7 @@
         "operationId": "listLtiContexts",
         "tags": ["connections", "cella"],
         "summary": "Get LTI contexts",
-        "description": "The courses of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
+        "description": "The contexts of the LTI connections of the organization's tenant, or of the one `connectionId` names, that a launch mapped to one of the organization's channels, each with how its last member import ran. Requires permission to update the organization.",
         "x-enabled-by": {
           "strategy": "lti"
         },
@@ -10166,7 +10197,7 @@
                           },
                           "membershipsUrl": {
                             "type": ["string", "null"],
-                            "description": "Where the platform lists the course's members (NRPS), from the last launch that named it; null when none did"
+                            "description": "Where the platform lists the context's members (NRPS), from the last launch that named it; null when none did"
                           },
                           "importRanAt": {
                             "type": ["string", "null"],
@@ -10188,12 +10219,13 @@
                               "retrying",
                               "failed",
                               "too_many_members",
+                              "unreadable_members",
                               "member_limit",
                               "no_role",
                               "inactive",
                               null
                             ],
-                            "description": "Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the course's channel is not active. Null when it read and wrote everyone."
+                            "description": "Why the last member import stopped short: the connection must be registered again, the app refused an address the platform names, the platform refused the scope, the token or the member list, the import failed and is tried again or was tried for the last time, the platform listed more people than one import reads, the member limit left people out, or the connection, the organization or the context's channel is not active. Null when it read and wrote everyone."
                           },
                           "createdAt": {
                             "type": "string",
@@ -11085,6 +11117,9 @@
                       "launchOrigins": ["https://peer-review.example.com", "https://launch.peer-review.example.com"],
                       "keySetOrigin": "https://peer-review.example.com",
                       "description": "Students review the drafts of their peers.",
+                      "clientUri": "https://peer-review.example.com",
+                      "tosUri": "https://peer-review.example.com/terms",
+                      "policyUri": "https://peer-review.example.com/privacy",
                       "claims": ["iss", "sub", "name", "email"],
                       "requestedFields": ["name", "email"],
                       "releasedFields": ["name"],
@@ -12446,7 +12481,7 @@
         "operationId": "startLtiLaunch",
         "tags": ["lti-platform", "cella"],
         "summary": "Start LTI launch",
-        "description": "Starts a launch of the resource link's LTI tool for the signed-in user: a one-use launch record, answered as the login initiation page a frame loads. The launch endpoint checks again, when the LTI tool comes back, that the user may read the channel and that the tab opens for them. Requires permission to read its channel and a place in the tab's audience, which a 404 refuses as a tab that does not exist. A tab that does not open is refused with why: switched off, an LTI tool not active, a channel type that holds no tabs or is not allowed for it (409), or an archived channel (403).",
+        "description": "Starts a launch of the resource link's LTI tool for the signed-in user: a one-use launch record, bound to this session and answered as the login initiation page a frame loads. The launch endpoint issues the ID token only to this session, in this browser, and checks again, when the LTI tool comes back, that the user may read the channel and that the tab opens for them. Requires permission to read its channel and a place in the tab's audience, which a 404 refuses as a tab that does not exist. A tab that does not open is refused with why: switched off, an LTI tool not active, a channel type that holds no tabs or is not allowed for it (409), or an archived channel (403).",
         "x-enabled-by": {
           "feature": "ltiPlatform"
         },

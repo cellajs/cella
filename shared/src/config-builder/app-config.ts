@@ -15,11 +15,12 @@ type BaseConfig = WidenScalars<typeof defaultConfig>;
 type UrlBearingService = 'frontend' | 'backend' | 'yjs' | 'mcp' | 'oauth';
 type BuiltServices = BaseConfig['services'] & Record<UrlBearingService, { publicUrl: string }>;
 // The optional keys come from the interface: a key the app's literal leaves out would be missing from `BaseConfig`.
-type Config = Omit<BaseConfig, 's3' | 'services' | 'company' | 'repositoryUrl'> & {
+type Config = Omit<BaseConfig, 's3' | 'services' | 'company' | 'repositoryUrl' | 'ltiAsksEmail'> & {
   s3: S3Config;
   services: BuiltServices;
   company: CompanyConfig;
   repositoryUrl?: string;
+  ltiAsksEmail?: true;
   mode: ConfigMode;
   /** Development, tunnel and test: a stack on this machine, whose ports `devAppIndex` and the dev port offset move. */
   isLocal: boolean;

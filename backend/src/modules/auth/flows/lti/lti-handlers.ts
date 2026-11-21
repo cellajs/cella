@@ -39,7 +39,10 @@ const answerLogin = (ctx: Context<Env>, params: z.infer<typeof ltiLoginParamsSch
 
 app.openapi(authLtiRoutes.initiateLtiLogin, (ctx) => answerLogin(ctx, ctx.req.valid('query')));
 
-app.openapi(authLtiRoutes.initiateLtiLoginByPost, (ctx) => answerLogin(ctx, ctx.req.valid('form')));
+app.openapi(authLtiRoutes.initiateLtiLoginByPost, (ctx) => {
+  const form = ctx.req.valid('form');
+  return answerLogin(ctx, { ...form, lti_storage_target: form.lti_storage_target ?? ctx.req.valid('query').lti_storage_target });
+});
 
 app.openapi(authLtiRoutes.receiveLtiLaunch, (ctx) => answerStoragePage(ctx, () => receiveLtiLaunchOp(ctx.req.valid('form'))));
 

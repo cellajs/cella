@@ -3,7 +3,8 @@ import type { DbContext } from '#/core/context';
 import type { ActorId, UserId } from '#/db/utils/ids';
 import type { MembershipEntity } from '#/lib/module';
 import { type LtiRoleFacts, ltiContextRole } from '#/modules/auth/flows/lti/lti-context-channel';
-import { createLtiAccount, type LtiPerson, nameLtiAccount } from '#/modules/auth/flows/lti/operations/create-lti-account';
+import { type LtiAdmission, recordLtiContextMemberships } from '#/modules/auth/flows/lti/lti-contexts-queries';
+import { createLtiAccount, type LtiPerson, ltiKeptEmail, nameLtiAccount } from '#/modules/auth/flows/lti/operations/create-lti-account';
 import type { LtiConnection } from '#/modules/connections/connections-db';
 import { resolveOrganizationMembershipRole } from '#/modules/memberships/helpers/membership-helpers';
 import type { MembershipModel } from '#/modules/memberships/memberships-db';
@@ -12,6 +13,7 @@ import { insertMemberships } from '#/modules/memberships/operations/insert-membe
 import { hasFreeSeats } from '#/modules/memberships/operations/organization-seats';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
 import { findIdentityBySubject, lockIdentityKey, updateIdentity } from '#/modules/user/identities-queries';
+import { accessFrom, membershipActorVars } from '#/permissions/access';
 import { log } from '#/utils/logger';
 
 /** A person's organization membership, when they hold a seat. */
@@ -39,15 +41,15 @@ const lockLtiPerson = async (ctx: DbContext, { connection, organization, person 
 type LtiIdentity = NonNullable<Awaited<ReturnType<typeof lockLtiPerson>>['identity']>;
 
 /**
- * Keeps the email the platform released on the identity, records a launch's sign-in there, the proof that verifies it,
- * and names the account.
+ * Keeps the email the platform released on the identity while the app asks for one (`ltiKeptEmail`), else clears it,
+ * records a launch's sign-in there, the proof that verifies it, and names the account.
  */
 const updateLtiPerson = async (
   ctx: DbContext,
   identity: LtiIdentity,
   { connection, person, signedInAt, by }: { connection: LtiConnection; person: LtiPerson; signedInAt?: string; by: ActorId },
 ) => {
-  const email = person.email ?? null;
+  const email = ltiKeptEmail(person);
   const signIn = signedInAt ? { lastSignInAt: signedInAt, verifiedAt: identity.verifiedAt ?? signedInAt, connectionId: connection.id } : undefined;
   if (signIn || identity.email !== email) await updateIdentity(ctx, { id: identity.id, values: { ...signIn, email } });
   await nameLtiAccount(ctx, { userId: identity.userId, person, by });
@@ -105,23 +107,33 @@ export const ltiRoleIn = (channelType: ChannelEntityType, facts: Omit<LtiRoleFac
   return hierarchy.getLeastPrivilegedRole(channelType);
 };
 
+/** Whether an organization membership at `role` may update the organization, as the permission engine judges the role alone. */
+export const mayUpdateOrganization = (organization: OrganizationModel, userId: string, role: OrganizationRole) =>
+  checkAccess(
+    accessFrom({
+      var: membershipActorVars(userId, [{ channelType: 'organization', channelId: organization.id, organizationId: organization.id, role }]),
+    }),
+    'update',
+    buildSubjectFromEntity('organization', organization),
+  ).allowed;
+
 /** The organization role a person gets for `role`: the highest at or below it that may not update the organization. */
 const belowOrganizationUpdate = (organization: OrganizationModel, userId: UserId, role: string): OrganizationRole => {
   const roles = hierarchy.getRoles('organization');
   const names: readonly string[] = roles;
-  const subject = buildSubjectFromEntity('organization', organization);
-  const mayUpdate = (candidate: OrganizationRole) =>
-    checkAccess(
-      { actorId: userId, scopes: null, memberships: [{ channelType: 'organization', channelId: organization.id, role: candidate }] },
-      'update',
-      subject,
-    ).allowed;
   const from = names.indexOf(role);
-  return (from < 0 ? undefined : roles.slice(from).find((candidate) => !mayUpdate(candidate))) ?? hierarchy.getLeastPrivilegedRole('organization');
+  return (
+    (from < 0 ? undefined : roles.slice(from).find((candidate) => !mayUpdateOrganization(organization, userId, candidate))) ??
+    hierarchy.getLeastPrivilegedRole('organization')
+  );
 };
 
 interface ApplyLtiRoleOpts {
   organization: OrganizationModel;
+  /** The context's row: it records the memberships it gives (`recordLtiContextMemberships`). */
+  contextId: string;
+  /** True for an import, whose list holds the person; false for a launch. */
+  listed: boolean;
   /** The context's channel: the organization, or a channel below it. */
   channel: MembershipEntity;
   userId: UserId;
@@ -132,24 +144,38 @@ interface ApplyLtiRoleOpts {
 }
 
 /**
- * Gives a person the role a launch or an import maps them to in the context's channel. A role in a channel below the
- * organization follows the platform up and down. An organization role only goes up, and never to one that may update
- * the organization (`belowOrganizationUpdate`): a platform's administrator administers the platform, not this
- * organization. A person without a seat is seated first at such a role: the channel's membership then brings along
- * no organization membership above it.
+ * Gives a person the role a launch or an import maps them to in the context's channel, and records the seat and the
+ * channel's membership as the context's where it made them or a context recorded them. A parent membership the
+ * channel's brings along gets no record. A role in a channel below the organization follows the platform up and down.
+ * An organization role only goes up, and never to one that may update the organization (`belowOrganizationUpdate`): a
+ * platform's administrator administers the platform, not this organization. A person without a seat is seated first
+ * at such a role: the channel's membership then brings along no organization membership above it.
  */
-export const applyLtiRole = async (ctx: DbContext, { organization, channel, userId, seat, role, by }: ApplyLtiRoleOpts) => {
+export const applyLtiRole = async (ctx: DbContext, { organization, contextId, listed, channel, userId, seat, role, by }: ApplyLtiRoleOpts) => {
   const organizationRole = belowOrganizationUpdate(
     organization,
     userId,
     channel.entityType === 'organization' ? role : resolveOrganizationMembershipRole(channel.entityType, role),
   );
-  if (!seat) await insertMemberships(ctx, { items: [{ userId, role: organizationRole, entity: organization, createdBy: by }] });
-  else if (channel.entityType === 'organization' && hierarchy.outranks('organization', organizationRole, seat.role))
-    await updateMembershipRole(ctx, { id: seat.id, role: organizationRole, by });
-  if (channel.entityType === 'organization') return;
+  const admissions: LtiAdmission[] = [];
+  if (!seat) {
+    const [made] = await insertMemberships(ctx, { items: [{ userId, role: organizationRole, entity: organization, createdBy: by }] });
+    admissions.push({ id: made.id, created: true });
+  } else {
+    if (channel.entityType === 'organization' && hierarchy.outranks('organization', organizationRole, seat.role))
+      await updateMembershipRole(ctx, { id: seat.id, role: organizationRole, by });
+    admissions.push({ id: seat.id, created: false });
+  }
 
-  const [membership] = await findMembershipsByUserIdsAndChannel(ctx, { userIds: [userId], channelId: channel.id });
-  if (!membership) await insertMemberships(ctx, { items: [{ userId, role, entity: channel, createdBy: by }] });
-  else if (membership.role !== role) await updateMembershipRole(ctx, { id: membership.id, role, by });
+  if (channel.entityType !== 'organization') {
+    const [membership] = await findMembershipsByUserIdsAndChannel(ctx, { userIds: [userId], channelId: channel.id });
+    if (!membership) {
+      const [made] = await insertMemberships(ctx, { items: [{ userId, role, entity: channel, createdBy: by }] });
+      admissions.push({ id: made.id, created: true });
+    } else {
+      if (membership.role !== role) await updateMembershipRole(ctx, { id: membership.id, role, by });
+      admissions.push({ id: membership.id, created: false });
+    }
+  }
+  await recordLtiContextMemberships(ctx, { contextId, userId, admissions, listed, by });
 };

@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { nanoid } from 'nanoid';
 import { createLtiRegistrationLink, listLtiConnections } from 'sdk';
 import { appConfig } from 'shared';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
@@ -13,8 +13,9 @@ import { registrationRefusalPage } from '#/modules/auth/flows/lti/helpers/regist
 import { ltiKeySetUrl } from '#/modules/auth/flows/lti/helpers/registration-request';
 import { registerLtiPlatformOp } from '#/modules/auth/flows/lti/operations/register-lti-platform';
 import { connectionsTable } from '#/modules/connections/connections-db';
-import { adminRole, defaultHeaders, memberRole } from './fixtures';
+import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createTestOrganization, expectRefusal } from './helpers';
+import { canvasPlatform } from './lti-platform-fixtures';
 import { decodeHtml } from './oauth-helpers';
 import { createFactorOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -149,6 +150,59 @@ describe('LTI registration', async () => {
       body: { token_endpoint_auth_method: 'private_key_jwt', jwks_uri: ltiKeySetUrl(connection.id) },
       keySetStatus: 200,
     });
+  });
+
+  // Contract: hosted Canvas reads its privacy level from a member of its own (canvas-lms `Lti::IMS::Registration`), and
+  // its configuration names its account domain, which the connection keeps as the origin of the platform's pages. A
+  // platform of another product family gets no Canvas member.
+  it("follows the email choice in Canvas's privacy level, keeps its account domain, and sends Canvas members to Canvas alone", async () => {
+    const toolConfiguration = 'https://purl.imsglobal.org/spec/lti-tool-configuration';
+    const privacyLevel = 'https://canvas.instructure.com/lti/privacy_level';
+    const registerAtCanvas = async (clientId: string) => {
+      const canvas = canvasPlatform('school.instructure.com', clientId);
+      const requests: Record<string, Record<string, unknown>>[] = [];
+      const transport: GuardedTransport = async ({ url, method, body }) => {
+        if (method === 'GET' && url.href === canvas.configurationUrl) return Response.json(canvas.configuration);
+        if (method !== 'POST' || url.href !== canvas.configuration.registration_endpoint) return new Response(null, { status: 404 });
+        requests.push(JSON.parse(body ?? '{}'));
+        return Response.json(canvas.registration, { status: 201 });
+      };
+      const { link } = await mintLink();
+      const connection = await registerLtiPlatformOp(
+        { link, openid_configuration: canvas.configurationUrl },
+        { transport, resolve: async () => [{ address: '1.1.1.1', family: 4 }] },
+      );
+      return { request: requests[0]?.[toolConfiguration], connection };
+    };
+
+    const named = await registerAtCanvas('10000000000001');
+    expect([named.request?.[privacyLevel], named.connection.config.pageOrigin]).toEqual(['name_only', 'https://school.instructure.com']);
+    onTestFinished(overrideConfig(appConfig, { ltiAsksEmail: true }));
+    expect((await registerAtCanvas('10000000000002')).request?.[privacyLevel]).toBe('public');
+
+    const { link } = await mintLink();
+    const other = fakePlatform();
+    const connection = await registerLtiPlatformOp({ link, openid_configuration: configurationUrl }, other.options);
+    expect(JSON.stringify(other.registrations[0].body[toolConfiguration])).not.toMatch(/placements|canvas\.instructure\.com/);
+    expect(connection.config.pageOrigin).toBeUndefined();
+  });
+
+  // Attack: a platform's account domain goes into the login and launch pages' `frame-ancestors`. One that is no bare
+  // host, such as a wildcard or a list of sources, refuses the configuration before anything is stored.
+  it('refuses a configuration whose account domain is no bare host', async () => {
+    const platformMember = 'https://purl.imsglobal.org/spec/lti-platform-configuration';
+    for (const accountDomain of ['*.instructure.com', 'school.example.edu https://elsewhere.example.com', 'school.example.edu/path']) {
+      const { org, link } = await mintLink();
+      const base = platformConfiguration();
+      const accountDomainMember = { 'https://canvas.instructure.com/lti/account_domain': accountDomain };
+      const platform = fakePlatform(platformConfiguration({ [platformMember]: { ...base[platformMember], ...accountDomainMember } }));
+
+      await expect(registerLtiPlatformOp({ link, openid_configuration: configurationUrl }, platform.options)).rejects.toMatchObject({
+        type: 'lti_configuration_invalid',
+      });
+      expect(platform.registrations).toHaveLength(0);
+      expect(await db.select().from(connectionsTable).where(eq(connectionsTable.tenantId, org.tenantId))).toEqual([]);
+    }
   });
 
   // A refused registration leaves nothing behind: the connection stored before the call goes, and its key set with it.

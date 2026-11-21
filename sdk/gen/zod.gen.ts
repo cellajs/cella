@@ -387,6 +387,9 @@ export const zLtiInstallation = z.object({
   launchOrigins: z.array(z.string()),
   keySetOrigin: z.string(),
   description: z.string().nullable(),
+  clientUri: z.string().nullable(),
+  tosUri: z.string().nullable(),
+  policyUri: z.string().nullable(),
   claims: z.array(z.string()),
   requestedFields: z.array(z.enum(['name', 'email', 'picture'])),
   releasedFields: z.array(z.enum(['name', 'email', 'picture'])),
@@ -912,10 +915,10 @@ export const zConnection = z.object({
       tokenEndpoint: z.string().max(2048),
       authorizationServer: z.string().max(2048).optional(),
       jwksUri: z.string().max(2048),
-      registrationClientUri: z.string().max(2048).optional(),
+      pageOrigin: z.string().max(2048).optional(),
       productFamilyCode: z.string().max(255),
       version: z.string().max(255),
-      deploymentIds: z.array(z.string().max(255)).max(1),
+      deploymentIds: z.array(z.string().max(255)).max(100),
     }),
     z.object({
       idpEntityIds: z.array(z.string().min(1).max(255)).optional(),
@@ -1689,6 +1692,10 @@ export const zInitiateLtiLoginByPostBody = z.object({
   lti_storage_target: z.string().max(255).optional(),
 });
 
+export const zInitiateLtiLoginByPostQuery = z.object({
+  lti_storage_target: z.string().max(255).optional(),
+});
+
 export const zReceiveLtiLaunchBody = z.object({
   id_token: z.string().max(32768).optional(),
   state: z.string().max(2048).optional(),
@@ -1828,6 +1835,7 @@ export const zListLtiContextsResponse = z.object({
           'retrying',
           'failed',
           'too_many_members',
+          'unreadable_members',
           'member_limit',
           'no_role',
           'inactive',

@@ -207,6 +207,11 @@ export interface RetentionConfig {
   /** An LTI connection still pending its platform's answer to the registration, from its creation: a failed registration. */
   pendingLtiConnectionDays: number;
   /**
+   * An account an LTI member import made, from its creation, once it holds no membership and its connection is gone:
+   * one that ever signed in stays.
+   */
+  unlaunchedLtiAccountDays: number;
+  /**
    * Every copy outside the live data, from when it is made: the daily database backups, the backup and dump before a
    * reset or a teardown, and an uploaded file's earlier versions. Infra applies it; backups serve disasters only.
    */
@@ -435,6 +440,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   enabledAuthStrategies: readonly BaseAuthStrategies[];
   enabledOAuthProviders: readonly BaseOAuthProviders[];
   ltiFrameAncestors: string[];
+  /** Set, the app as an LTI tool asks a platform for each person's email beside their name; unset, for the name alone. */
+  ltiAsksEmail?: true;
   federations: Record<string, FederationConfig>;
   totp: TotpConfig;
   maxSessionsPerUser: number;

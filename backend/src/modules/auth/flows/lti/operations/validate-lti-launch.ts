@@ -11,11 +11,18 @@ import { isSignedByPlatform } from '#/modules/auth/flows/lti/helpers/platform-ke
 import { ltiIdSchema, profileClaim } from '#/modules/auth/flows/lti/lti-schema';
 import type { LtiConnection } from '#/modules/connections/connections-db';
 import { findActiveLtiConnections } from '#/modules/connections/connections-queries';
+import { maxLtiDeployments } from '#/modules/connections/connections-schema';
 
 const dbCtx = { var: { db: baseDb } };
 
-/** How far a launch's `iat` may lie from now either way: a platform's clock drifts, and a launch takes seconds. */
+/**
+ * How far a launch's `iat` may lie from now either way, a platform's clock drift included: the Security Framework 1.1
+ * leaves the range to the LTI tool (section 5.1.3) and puts a drift margin at 300 seconds at most (section 7.5.1).
+ */
 const issuedAtWindowSeconds = 5 * 60;
+
+/** The leeway on a launch's `exp` for a platform clock that drifts (Security Framework 1.1, section 5.1.2). */
+const clockSkewSeconds = 60;
 
 /** The claims a valid launch carries, as the launch reads them after every rule passed. */
 const ltiLaunchSchema = z.object({
@@ -74,19 +81,26 @@ const rolesOf = (claims: JWTPayload) => {
 };
 
 /**
- * The checks of a launch, one row per rule, in the order of the 1EdTech Security Framework 1.0 (section 5.1.3) and
- * then LTI Core 1.3 (section 5.3). The first that fails refuses the launch.
+ * The checks of a launch, one row per rule: the key's id, then the order of the 1EdTech Security Framework 1.1 (section
+ * 5.1.3) and LTI Core 1.3 (section 5.3). The first that fails refuses the launch.
  */
 const launchRules: LaunchRule[] = [
+  // The LTI tool's own rule: the certification guide lists a header that names no key as a bad launch, and jose would
+  // take a one-key set's only key for it.
+  { rule: 'kid', holds: ({ header }) => typeof header.kid === 'string' && header.kid.length > 0 },
   { rule: 'signature', holds: ({ token, connection }) => isSignedByPlatform(token, connection) },
   { rule: 'alg', holds: ({ header }) => header.alg === 'RS256' },
   { rule: 'issuer', holds: ({ claims, connection }) => claims.iss === connection.issuer },
-  { rule: 'audience', holds: ({ claims, connection }) => audiences(claims).includes(connection.clientId) },
+  // The client id and no other audience, which the LTI tool would have to trust (Security Framework 1.1, section 5.1.3).
   {
-    rule: 'authorized_party',
-    holds: ({ claims, connection }) => (claims.azp === undefined ? audiences(claims).length === 1 : claims.azp === connection.clientId),
+    rule: 'audience',
+    holds: ({ claims, connection }) => {
+      const [audience, ...more] = audiences(claims);
+      return audience === connection.clientId && !more.length;
+    },
   },
-  { rule: 'expiry', holds: ({ claims, nowSeconds }) => typeof claims.exp === 'number' && nowSeconds < claims.exp },
+  { rule: 'authorized_party', holds: ({ claims, connection }) => claims.azp === undefined || claims.azp === connection.clientId },
+  { rule: 'expiry', holds: ({ claims, nowSeconds }) => typeof claims.exp === 'number' && nowSeconds < claims.exp + clockSkewSeconds },
   {
     rule: 'issued_at',
     holds: ({ claims, nowSeconds }) => typeof claims.iat === 'number' && Math.abs(nowSeconds - claims.iat) <= issuedAtWindowSeconds,
@@ -102,12 +116,13 @@ const launchRules: LaunchRule[] = [
   },
   { rule: 'message_type', holds: ({ claims }) => claims[ltiClaims.messageType] === 'LtiResourceLinkRequest' },
   { rule: 'version', holds: ({ claims }) => claims[ltiClaims.version] === '1.3.0' },
-  // A connection whose platform named no deployment at registration takes on the first one a launch names.
+  // Every deployment the platform signs under the connection's client id launches (LTI Core 1.3, section 3.1.3): a new
+  // one is recorded by the launch, below the cap.
   {
     rule: 'deployment_id',
     holds: ({ claims, connection: { config } }) => {
       const deploymentId = ltiIdSchema.safeParse(claims[ltiClaims.deploymentId]).data;
-      return !!deploymentId && (config.deploymentIds.includes(deploymentId) || config.deploymentIds.length === 0);
+      return !!deploymentId && (config.deploymentIds.includes(deploymentId) || config.deploymentIds.length < maxLtiDeployments);
     },
     refusal: { status: 403, type: 'lti_deployment_unknown' },
   },

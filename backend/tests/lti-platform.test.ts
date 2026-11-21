@@ -70,7 +70,7 @@ describe('LTI platform', async () => {
   }
 
   /** An LTI tool posting its registration to the worker, as the app itself registers. */
-  const register = (token: string, body: object = ltiRegistrationRequest(generateId())) =>
+  const register = (token: string, body: object = ltiRegistrationRequest(generateId(), appConfig.slug)) =>
     fetch(`${oauth.issuer}/lti/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -123,6 +123,61 @@ describe('LTI platform', async () => {
       jwksUri: ltiKeySetUrl(connection.id),
       ltiToolConfig: { domain: new URL(appConfig.backendUrl).host },
     });
+  });
+
+  // Contract: LTI Dynamic Registration 1.0 admits each of these registrations (sections 2.2.1 and 2.2.3). Each is
+  // accepted, and the registration answer says what the platform recorded, each member where the request had it.
+  it('takes a registration without a resource link message, with more types, and with addresses off its domain', async () => {
+    const admin = await orgWithUser();
+    const request = ltiRegistrationRequest(generateId(), appConfig.slug);
+    const config = request[ltiToolConfigurationMember];
+    const registered = async (body: object) => {
+      const response = await register((await startRegistration(admin)).token, body);
+      expect(response.status).toBe(201);
+      return (await response.json()) as Record<string, unknown> & { [ltiToolConfigurationMember]: { messages: unknown[]; deployment_id: string } };
+    };
+
+    // Support for the resource link launch is implicit: a deep linking message alone, or none.
+    const deepLinkingOnly = await registered({
+      ...request,
+      [ltiToolConfigurationMember]: { ...config, messages: [{ type: 'LtiDeepLinkingRequest' }] },
+    });
+    expect(deepLinkingOnly[ltiToolConfigurationMember].messages).toEqual([]);
+    const { messages: _messages, ...withoutMessages } = config;
+    expect((await registered({ ...request, [ltiToolConfigurationMember]: withoutMessages }))[ltiToolConfigurationMember].messages).toEqual([]);
+
+    // Response and grant types hold what the platform needs beside others; it answers the ones it records.
+    const moreTypes = await registered({
+      ...request,
+      response_types: ['code', 'id_token'],
+      grant_types: ['authorization_code', 'implicit', 'client_credentials'],
+    });
+    expect(moreTypes).toMatchObject({ response_types: ['id_token'], grant_types: ['implicit', 'client_credentials'] });
+
+    // The domain is a label: the admin sees every origin a launch goes to and the key set's, and the pages it names.
+    const offDomain = await registered({
+      ...request,
+      initiate_login_uri: 'https://login.example.org/lti',
+      jwks_uri: 'https://keys.example.net/jwks',
+      client_uri: 'https://peer-review.example.com',
+      tos_uri: 'https://peer-review.example.com/terms',
+      // Attack: a script address in a link of the approval dialog. Only an HTTPS page is kept.
+      policy_uri: 'javascript:alert(1)',
+    });
+    const listed = await call(listLtiInstallations, { path: admin.path, headers: admin.headers });
+    const installation = (listed.data as { results: Record<string, unknown>[] }).results.find(
+      ({ id }) => id === offDomain[ltiToolConfigurationMember].deployment_id,
+    );
+    expect(installation).toMatchObject({
+      launchOrigins: expect.arrayContaining(['https://login.example.org']),
+      keySetOrigin: 'https://keys.example.net',
+      clientUri: 'https://peer-review.example.com',
+      tosUri: 'https://peer-review.example.com/terms',
+      policyUri: null,
+    });
+    expect(offDomain).toMatchObject({ client_uri: 'https://peer-review.example.com', tos_uri: 'https://peer-review.example.com/terms' });
+    expect(offDomain).not.toHaveProperty('policy_uri');
+    expect(offDomain[ltiToolConfigurationMember]).not.toHaveProperty('client_uri');
   });
 
   it('refuses a registration token used before', async () => {
@@ -188,12 +243,12 @@ describe('LTI platform', async () => {
     const { installationId } = await pendingInstallation(admin);
     const path = installationPath(admin, installationId);
 
-    // The app asks for name and email claims, never a picture.
+    // The app asks for name claims, an email only when its config opts in, never a picture.
     const widened = await call(approveLtiInstallation, { path, body: { releasedFields: ['name', 'picture'] }, headers: admin.headers });
     await expectRefusal(widened, 400, 'lti_field_not_requested');
 
     const approved = await call(approveLtiInstallation, { path, body: { releasedFields: ['name'] }, headers: admin.headers });
-    expect(approved.data).toMatchObject({ status: 'active', requestedFields: ['name', 'email'], releasedFields: ['name'] });
+    expect(approved.data).toMatchObject({ status: 'active', requestedFields: ['name'], releasedFields: ['name'] });
   });
 
   // An installation acts only once approved, and only through its registration: never switched on as an account, never by a key.

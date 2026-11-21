@@ -381,12 +381,13 @@ export const spendCookieToken = async (
 
 /**
  * `createdBy` is the user who minted the token, on whose word a spend acts; an `lti-nonce` has none. An `lti-launch`
- * record names its resource link, an `lti-nonce` its connection.
+ * record names its resource link and the session that started it, an `lti-nonce` its connection.
  */
 interface IssueHandoffTokenOpts {
   kind: HandoffTokenKind;
   tenantId: string;
   createdBy?: string;
+  sessionId?: string;
   ltiResourceLinkId?: string;
   connectionId?: string;
 }
@@ -395,10 +396,13 @@ interface IssueHandoffTokenOpts {
  * Issues a handoff token. It replaces no earlier one: a tenant may hand links to several platforms at once.
  * @returns The row's id, the raw value, which exists only here and in the URL handed over, and when it expires.
  */
-export const issueHandoffToken = async (ctx: DbContext, { kind, tenantId, createdBy, ltiResourceLinkId, connectionId }: IssueHandoffTokenOpts) => {
+export const issueHandoffToken = async (
+  ctx: DbContext,
+  { kind, tenantId, createdBy, sessionId, ltiResourceLinkId, connectionId }: IssueHandoffTokenOpts,
+) => {
   const { raw, hash } = newHashedToken();
   const expiresAt = isoDateIn(tokenPolicies[kind].ttl);
-  const values = { kind, tenantId, createdBy, ltiResourceLinkId, connectionId, secretHash: hash, expiresAt };
+  const values = { kind, tenantId, createdBy, sessionId, ltiResourceLinkId, connectionId, secretHash: hash, expiresAt };
   const { id } = await insertHandoffToken(ctx, { values });
   return { id, rawToken: raw, expiresAt };
 };
@@ -419,10 +423,17 @@ const liveHandoff = <T extends { id: string; expiresAt: string }>(kind: HandoffT
 export const readHandoffToken = async ({ kind, rawToken }: HandoffTokenRef) => liveHandoff(kind, await findHandoffToken(dbCtx, { kind, rawToken }));
 
 /**
- * Spends the handoff token a raw value names, and when `id` is given only the row of that id. The row goes in one
- * statement: of two requests presenting it, exactly one gets it. A refused expired one goes too. Inside a caller's
- * transaction (`txCtx`) the spend rolls back with it.
- * @throws AppError 401 `<kind>_not_found` for a value that names no row (never issued, or spent), 401 `<kind>_expired`.
+ * Spends the handoff token a raw value names, and when `id` is given only the row of that id, when `sessionId` is given
+ * only a row bound to that session. The row goes in one statement: of two requests presenting it, exactly one gets it.
+ * A refused expired one goes too. Inside a caller's transaction (`txCtx`) the spend rolls back with it.
+ * @throws AppError 401 `<kind>_not_found` for a value that names no row (never issued, spent, or bound to another
+ *   session), 401 `<kind>_expired`.
  */
-export const spendHandoffToken = async ({ kind, rawToken, id, txCtx = dbCtx }: HandoffTokenRef & { id?: string; txCtx?: DbContext }) =>
-  liveHandoff(kind, await deleteHandoffToken(txCtx, { kind, rawToken, id }));
+export const spendHandoffToken = async ({
+  kind,
+  rawToken,
+  id,
+  sessionId,
+  txCtx = dbCtx,
+}: HandoffTokenRef & { id?: string; sessionId?: string; txCtx?: DbContext }) =>
+  liveHandoff(kind, await deleteHandoffToken(txCtx, { kind, rawToken, id, sessionId }));
