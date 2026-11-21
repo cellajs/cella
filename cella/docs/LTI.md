@@ -244,9 +244,9 @@ The embedded session belongs to the one frame its launch opened. The launch hand
 
 The browser keeps a key for the platform's site in a cookie no script reads, set at the first launch there and kept by later ones. A request counts only when its token and that key belong to one session. A token taken out of the browser is worth nothing, and so is the cookie alone, which every frame of the app on the platform's page sends.
 
-Every frame on a platform's site keeps its own session, in one tab or several, for one person or several, and a launch ends no other session. A frame of the app that the platform's page adds without a launch has no session and shows nothing.
+Every frame on a platform's site keeps its own session, in one tab or several, for one person or several. Each open of an LTI tab is a launch and a session, and beyond a cap per person the oldest of them end. A frame of the app that the platform's page adds without a launch has no session: it shows the page that asks the person to open the app again, and no data.
 
-A change counts only from the app's own pages, never from another frame on the platform's page. The embedded app keeps its user in memory, its own local data and its own realtime connection, apart from other frames and from a tab of the app beside it.
+A change counts only from the app's own pages, never from another frame on the platform's page. The embedded app keeps its user in memory and its own realtime connection. Its local data stays apart from a tab of the app beside it, frames of one person share one local database, and a session that ends in one frame deletes none.
 
 The template ships the organization's embedded page. An app that maps a context to a channel of its own adds an embedded route for that channel and names it in its pinned [routes-config.tsx](../../frontend/src/routes-config.tsx).
 
@@ -256,6 +256,7 @@ The template ships the organization's embedded page. An app that maps a context 
 - **A launch in a window of its own:** the page asks the person to open the app inside the platform's page.
 - **A reloaded frame, an app update or an ended embedded session:** the frame shows one page that asks the person to open the app again from the page they came from.
 - **A browser that cannot keep the embedded session:** that page also names the browsers that can, such as Chrome, Edge and Firefox.
+- **Two first launches at once:** when two launches run at the same moment in a browser that never launched the app on that site before, one of the two frames asks to be opened again.
 - **A context not set up yet:** someone who arrives before anyone who sets it up is told that someone who manages the page on the platform must open it first.
 - **A launch without a context:** someone the organization does not know yet is told to open the app from a page they are a member of first.
 - **No role the app takes:** a launch with no context role is refused with a page in the template, and nothing is written. A platform's admin who is not enrolled in the context enrols there first.
