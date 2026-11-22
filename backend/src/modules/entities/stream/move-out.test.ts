@@ -1,5 +1,6 @@
 import type { SSEStreamingApi } from 'hono/streaming';
 import { appConfig, type EntityRole } from 'shared';
+import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ActivityRow } from '#/lib/activity-bus';
 import { dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
@@ -80,6 +81,8 @@ afterEach(() => {
 });
 
 describe('dispatchMoveOuts', () => {
+  assumeMemberAttachmentPolicy({ read: 'own' });
+
   it('sends moveOut to subscribers who lost readability', async () => {
     const member = fakeSubscriber([membership(org, memberRole, 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);

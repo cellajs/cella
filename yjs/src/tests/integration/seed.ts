@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import type pg from 'pg';
-import { appConfig, hierarchy, toColumnName, toTableName, type YjsDocKey, type YjsDocScope } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy, toColumnName, toTableName, type YjsDocKey, type YjsDocScope } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { memberRoleIn } from 'shared/testing/member-policy';
 import { descriptionToUpdate } from '#/modules/yjs/helpers/description-update';
 import type { YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
@@ -84,10 +85,17 @@ export async function seedMembership(
   );
 }
 
+/** A role of the channel's own type: the least organization role need not be one. */
+const joinRole = (plan: TestEntityHierarchyPlan, channelType: ChannelEntityType) => {
+  const role = memberRoleIn(channelType, plan.entityType);
+  if (!role) throw new Error(`No ${channelType} role reads the channel and creates ${plan.entityType} where it may home`);
+  return role;
+};
+
 /**
- * Makes `userId` a `role` member of every channel the plan seeded: an organization role that is not elevated reaches no
- * row homed below the organization, so a member acts there through these memberships. None in the template, whose plans
- * seed no channel.
+ * Makes `userId` a member of every channel the plan seeded, at `role` or else at `memberRoleIn` each. Below the
+ * organization a member who is not elevated reaches a row through these memberships alone. None in the template, whose
+ * plans seed no channel.
  */
 export async function joinAttachmentHome(
   client: pg.Client,
@@ -95,7 +103,7 @@ export async function joinAttachmentHome(
   orgId: string,
   plan: TestEntityHierarchyPlan,
   userId: string,
-  role: string = hierarchy.getLeastPrivilegedRole('organization'),
+  role?: string,
 ) {
   for (const row of plan.seedChannelRows) {
     const fields = new Map<string, unknown>([
@@ -105,7 +113,7 @@ export async function joinAttachmentHome(
       ['channel_id', row.id],
       ['organization_id', orgId],
       ['user_id', userId],
-      ['role', role],
+      ['role', role ?? joinRole(plan, row.channelType)],
       ['created_by', userId],
       ['display_order', 1],
     ]);
