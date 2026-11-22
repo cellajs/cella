@@ -36,7 +36,7 @@ No script: manual.
 3. Declare it last in the organization's roles, as the least privileged.
 4. Run `pnpm generate`: the `role` column default of `memberships` and `invitations` follows the least organization role.
 5. Check what else takes the least organization role as its default: the invite form (`invite-submit.tsx`), an institution sign-in (`role-from-claims.ts`), an API key's service account (`api-keys-card.tsx`) and the service accounts of an LTI connection and an LTI tool installation (`connection-service-account.ts`, `lti-platform-queries.ts`).
-6. An app that carries its own helper for a least organization role that reads no one, such as `assumeMembersReadPeople`, deletes it and the lines it marked in template tests: those tests now call `assumeMembersReadPeople` from `backend/tests/members-read-people.ts` themselves.
+6. An app that carries its own helper for a least organization role that reads no one, such as `assumeMembersReadPeople`, deletes it and the lines it marked in template tests: those tests now call `assumeMembersReadPeople` from `backend/tests/members-read-people.ts` themselves. Take each of those test files from the template whole and compare it with the template's: a merge without a conflict can keep the app's call beside the template's, and the typecheck reports only a doubled import.
 
 ## Verify
 
