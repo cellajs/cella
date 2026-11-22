@@ -16,7 +16,15 @@ import {
   organizationUpdateBodySchema,
   organizationWithMembershipSchema,
 } from '#/modules/organization/organization-schema';
-import { batchResponseSchema, idsBodySchema, paginationSchema, slugIncludeQuerySchema, tenantOnlyParamSchema, tenantOrgParamSchema } from '#/schemas';
+import {
+  batchResponseSchema,
+  idsBodySchema,
+  paginationSchema,
+  slugIncludeQuerySchema,
+  tenantOnlyParamSchema,
+  tenantOrgParamSchema,
+  validIdOrSlugSchema,
+} from '#/schemas';
 
 export const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], {
   batchCreateOrganizations: xRoute({
@@ -47,7 +55,7 @@ export const organizationRoutes = createXRoutes(['organizations', 'cella', 'chan
     xScope: 'organization:read',
     summary: 'Get organization',
     description: 'Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.',
-    request: { params: tenantOrgParamSchema, query: slugIncludeQuerySchema },
+    request: { params: tenantOrgParamSchema.extend({ organizationId: validIdOrSlugSchema }), query: slugIncludeQuerySchema },
     responses: { 200: json('Organization', organizationSchema), ...errors(404) },
   }),
   updateOrganization: xRoute({

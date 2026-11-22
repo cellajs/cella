@@ -13,7 +13,7 @@ import {
   startLtiLaunch,
   startLtiToolRegistration,
 } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig, getEntityPolicies, getPolicyPermissions, hierarchy, policyMatrix } from 'shared';
 import { embeddedSessionHeader, embeddedSessionParam } from 'shared/utils/embedded-session';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
@@ -80,6 +80,11 @@ const pageExchange = (page: string) => {
   );
   return exchange;
 };
+
+/** The organization role of a person whose context role is the top one: the highest that may not update the organization. */
+const topLtiOrganizationRole = hierarchy
+  .getRoles('organization')
+  .find((role) => getPolicyPermissions(getEntityPolicies(policyMatrix, 'organization'), 'organization', role)?.update !== 1);
 
 describe('LTI launch at the app as an LTI tool', async () => {
   const call = await createAppClient();
@@ -682,7 +687,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
       .select()
       .from(identitiesTable)
       .where(and(eq(identitiesTable.provider, connected.issuer), eq(identitiesTable.subject, 'lms-editor')));
-    expect(await orgMembershipOf(identity.userId, connected.org.id)).toMatchObject({ role: memberRole });
+    expect(await orgMembershipOf(identity.userId, connected.org.id)).toMatchObject({ role: topLtiOrganizationRole });
   });
 
   /** Sets the tenant's member limit to the seats its organization holds, and `free` more. */
@@ -1097,7 +1102,7 @@ describe('LTI launch at the app as an LTI tool', async () => {
         );
       expect(identity).toMatchObject({ connectionId: connection.id });
       expect(identity.userId).not.toBe(platformSide.admin.id);
-      expect(await orgMembershipOf(identity.userId, toolSide.org.id)).toMatchObject({ role: hierarchy.getLeastPrivilegedRole('organization') });
+      expect(await orgMembershipOf(identity.userId, toolSide.org.id)).toMatchObject({ role: topLtiOrganizationRole });
       expect(await db.select().from(ltiContextsTable).where(eq(ltiContextsTable.connectionId, connection.id))).toMatchObject([
         { contextId: platformSide.org.id, channelType: 'organization', channelId: toolSide.org.id },
       ]);

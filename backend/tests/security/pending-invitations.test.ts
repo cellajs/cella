@@ -8,11 +8,14 @@ import { usersTable } from '#/modules/user/user-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, createTestUser, endRateLimitWindows, rawJsonRequest, sentMails } from '../helpers';
 import { inviteToOrganization } from '../invitations/helpers';
+import { assumeMembersReadPeople } from '../members-read-people';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
+
+assumeMembersReadPeople();
 
 type PendingRow = Record<string, unknown> & { id: string; email: string };
 

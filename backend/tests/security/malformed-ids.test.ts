@@ -72,6 +72,18 @@ describe('Malformed ids in a path', async () => {
     expect(written.status).toBe(400);
   });
 
+  // A slug runs to the slug column's length, past an id's, and a read by slug takes the whole of it.
+  it('reads an organization by a slug longer than an id', async () => {
+    const slug = `long-slug-${'x'.repeat(50)}`;
+    const named = await createTestOrganization({ slug });
+    const reader = await createOrgUser(call, named.tenantId, named.id, 'long-slug-reader', adminRole);
+    const response = await baseApp.request(`/tenants/${named.tenantId}/organizations/${slug}?slug=true`, {
+      headers: { ...defaultHeaders, Cookie: reader.sessionCookie },
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ id: named.id, slug });
+  });
+
   it('answers a well-formed id that names nothing with 404 (positive control)', async () => {
     const { status } = await get(
       `/tenants/${organization.tenantId}/organizations/${organization.id}/attachments/00000000-0000-4000-8000-000000000000`,

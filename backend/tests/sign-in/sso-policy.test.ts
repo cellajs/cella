@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
+import { assumeMembersReadPeople } from '../members-read-people';
 
 /** Addresses compare lower case: a generated local part must be too. */
 const suffix = () => nanoid(6).toLowerCase();
@@ -31,6 +32,8 @@ import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'magic', 'sso'] });
+
+assumeMembersReadPeople();
 
 // The deployment under test holds no federation client; the registry answers as if it did.
 vi.mock('#/modules/auth/core/federations/federations', async (importOriginal) => ({

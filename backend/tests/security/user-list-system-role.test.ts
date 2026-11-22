@@ -3,11 +3,14 @@ import { getAdminDb } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { createSystemAdminUser, createTestOrganization, createTestSession, type ErrorResponse, expectRefusal, rawJsonRequest } from '../helpers';
+import { assumeMembersReadPeople } from '../members-read-people';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
+
+assumeMembersReadPeople();
 
 type UserRow = { id: string; role?: string | null };
 

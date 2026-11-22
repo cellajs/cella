@@ -33,6 +33,7 @@ export {
   validCDNUrlSchema,
   validDomainSchema,
   validEmailSchema,
+  validIdOrSlugSchema,
   validIdSchema,
   validNameSchema,
   validSlugSchema,

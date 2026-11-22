@@ -1,4 +1,19 @@
-import { buildSubjectFromEntity, type ChannelEntityType, checkAccess, hierarchy, type OrganizationRole, type RestrictionCap } from 'shared';
+import {
+  buildSubjectFromEntity,
+  type ChannelEntityType,
+  checkAccess,
+  type EntityHierarchy,
+  type EntityType,
+  getEntityPolicies,
+  getPolicyPermissions,
+  hierarchy,
+  isStrategyEnabled,
+  type OrganizationRole,
+  type PolicyMatrix,
+  policyMatrix,
+  type RestrictionCap,
+  resolveHierarchy,
+} from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId, UserId } from '#/db/utils/ids';
 import type { MembershipEntity } from '#/lib/module';
@@ -15,6 +30,39 @@ import type { OrganizationModel } from '#/modules/organization/organization-db';
 import { findIdentityBySubject, lockIdentityKey, updateIdentity } from '#/modules/user/identities-queries';
 import { accessFrom, membershipActorVars } from '#/permissions/access';
 import { log } from '#/utils/logger';
+
+/**
+ * Refuses at load an organization role that a membership of a channel below the organization brings along, when it is
+ * elevated or grants anything at the organization on `user` or on a channel type below it: a launch there opens that
+ * channel and nothing else of the organization. A product homed at the organization itself is not judged: that stays
+ * the app's choice.
+ * @throws Error naming the channel type, its role, the organization role and each cell that grants.
+ */
+export const assertBroughtAlongRolesOpenNothing = (entityHierarchy: EntityHierarchy = hierarchy, policies: PolicyMatrix = policyMatrix) => {
+  const { hierarchy: resolved, channelEntityTypes } = resolveHierarchy({ hierarchy: entityHierarchy });
+  const below = channelEntityTypes.filter((type) => type !== 'organization');
+  const judged: EntityType[] = ['user', ...below];
+  for (const channelType of below) {
+    for (const role of resolved.getRoles(channelType)) {
+      const organizationRole = resolved.getOrganizationRole(channelType, role);
+      if (organizationRole === undefined) continue;
+      const refusal = (opens: string) =>
+        new Error(
+          `LTI tool: channel "${channelType}" maps role "${role}" to organization role "${organizationRole}", which ${opens}. ` +
+            'Map every role below the organization to an organization role that is not elevated and grants nothing on user or on the channels below it.',
+        );
+      if (resolved.elevatedGrants.has(`organization:${organizationRole}`)) throw refusal('is elevated');
+      const grants = judged.flatMap((type) =>
+        Object.entries(getPolicyPermissions(getEntityPolicies(policies, type), 'organization', organizationRole) ?? {})
+          .filter(([, cell]) => cell !== 0)
+          .map(([action, cell]) => `${type}.${action} = ${cell}`),
+      );
+      if (grants.length) throw refusal(`grants ${grants.join(', ')} at the organization`);
+    }
+  }
+};
+
+if (isStrategyEnabled('lti')) assertBroughtAlongRolesOpenNothing();
 
 /** A person's organization membership, when they hold a seat. */
 type Seat = Pick<MembershipModel, 'id' | 'role'>;

@@ -17209,7 +17209,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 50
+              "maxLength": 255
             },
             "required": true,
             "name": "organizationId",
@@ -19932,7 +19932,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 50
+              "maxLength": 255
             },
             "required": true,
             "name": "userId",
