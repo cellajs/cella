@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { gitKeyOptions } from '../../lib/deploy/git-remote';
+import { gitKeyEnv } from '../../lib/deploy/git-remote';
 import { REPOSITORY_KEY_NAME, repositoryUrl } from '../../lib/deploy/repository-key';
 import { actionLabel } from '../../lib/operator-actions';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
@@ -37,9 +37,9 @@ export async function runRepositoryKey(context: InfraContext): Promise<void> {
     return;
   }
 
-  const answer = spawnSync('git', [...gitKeyOptions(key), 'ls-remote', repository, 'HEAD'], {
+  const answer = spawnSync('git', ['ls-remote', repository, 'HEAD'], {
     encoding: 'utf8',
-    env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+    env: { ...process.env, GIT_TERMINAL_PROMPT: '0', ...gitKeyEnv(key) },
   });
   if (answer.status !== 0) {
     console.error(`${crossMark} ${repository} did not answer to that key, so it is not stored: ${answer.stderr.trim().split('\n').at(-1) ?? ''}`);

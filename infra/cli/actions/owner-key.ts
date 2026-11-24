@@ -1,6 +1,7 @@
 import {
   assertIamManager,
   durableKeyLife,
+  endingKeyMinutes,
   formatBearer,
   type KeyDescription,
   type KeyPair,
@@ -19,8 +20,6 @@ export interface OwnerKey extends KeyPair {
   organizationId: string;
   /** Who bears the key, as IAM described it when the key was checked. */
   bearer: KeyDescription;
-  /** Let go of the key at the end of the action; the key itself stays valid until it is revoked or ends. Safe to call twice. */
-  release(): Promise<void>;
 }
 
 /**
@@ -28,7 +27,8 @@ export interface OwnerKey extends KeyPair {
  * typed at the prompt, never read from the environment.
  * The bearer is validated first: an organization Owner, or a principal holding IAMManager; an application the engine created is refused by name.
  * The key is used as it is: an Owner moment runs no Pulumi and no child process. A durable key (`durableKeyLife`) is refused, as it would
- * write IAM from every address between Owner moments. Every failure names the fix and exits before the stack is touched.
+ * write IAM from every address between Owner moments, and so is one about to end (`endingKeyMinutes`). Every failure names the fix and
+ * exits before the stack is touched.
  * A key typed at the prompt is kept in memory for this run of the CLI, so a menu session asks once; every action validates it again.
  * `projectId` is the environment's, when it has one yet: a first setup picks the project with the key.
  */
@@ -77,10 +77,18 @@ export async function acquireOwnerKey(opts: {
     );
     endAction(1);
   }
+  const minutes = endingKeyMinutes(desc);
+  if (minutes !== undefined) {
+    forgetOwnerKey();
+    console.error(
+      `${warningMark} This key ends in ${minutes} min, and an Owner moment must not lose its key halfway. Make one that expires within hours.`,
+    );
+    endAction(1);
+  }
   console.info(`${checkMark} ${formatBearer(desc, role)}`);
   rememberOwnerKey(pair);
   if (remembered) console.info(pc.dim('Using the Owner API key typed earlier in this session.'));
-  return { ...pair, organizationId, bearer: desc, release: async () => {} };
+  return { ...pair, organizationId, bearer: desc };
 }
 
 /** End the action on a check Scaleway gave no answer to: the key was not refused, so a key the run holds stays for the retry. */

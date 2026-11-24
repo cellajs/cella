@@ -51,7 +51,7 @@ The first setup has two parts. The **Owner moment** runs on the Owner API key yo
 2. Creates the deploy and uploads identities with their policies and keys, and stores the uploads key in the environment's `/runtime/` secret folder.
 3. Lets the app's operators reach this environment. The app's first environment makes the `<app>-operator` application and the `<app>-operators` group, whose one policy grants to both.
 4. Makes a one-day key of `<app>-operator` for the rest of this setup. The key stays in this run's memory. The CLI waits until Scaleway accepts it before the operator part uses it.
-5. Does the same for the app's observer, and writes its read-only key to `infra/.env.<mode>` on this machine.
+5. Does the same for the app's observer, and writes its read-only key to `~/.config/<app>/observer.env` on this machine.
 6. Offers to **revoke the Owner API key you pasted**, as nothing after the Owner moment needs it.
 
 The **operator part** runs on the key step 4 made. When that key could not be made, it asks for one ([Operator key](./KEYS.md#operator-key)).

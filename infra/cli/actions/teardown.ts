@@ -80,12 +80,8 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   }
 
   const owner = await acquireIdentityKey(context, 'A teardown deletes the identities of the environment with its resources.');
-  try {
-    if (!(await destroyStack(context, owner, kept))) return;
-    await deleteIdentities(context, owner);
-  } finally {
-    await owner.release();
-  }
+  if (!(await destroyStack(context, owner, kept))) return;
+  await deleteIdentities(context, owner);
   printRevokeReminder();
 }
 

@@ -1,5 +1,5 @@
 import { menuPath } from '../../lib/operator-actions';
-import { describeKey, durableKeyLife, type KeyDescription, type KeyPair } from '../../lib/scaleway/operator-identity';
+import { describeKey, durableKeyLife, endingKeyMinutes, type KeyDescription, type KeyPair } from '../../lib/scaleway/operator-identity';
 import { type AppPrincipalNames, allPrincipalNames, appPrincipalNames } from '../../lib/scaleway/principals';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { findGroup } from '../../lib/scaleway/scaleway-iam';
@@ -39,8 +39,9 @@ export function refusalLines(opts: { status: number | undefined; detail: string;
 type BearerVerdict = { organizationId: string } | { refusal: string };
 
 /**
- * Whether a described key unlocks the session: it is the operator application's or a user's who is in the operators group, and it ends
- * within a day (`durableKeyLife`). The group is read with the key itself, which the group's policy lets it do.
+ * Whether a described key unlocks the session: it is the operator application's or a user's who is in the operators group, it ends
+ * within a day (`durableKeyLife`) and not within the action it starts (`endingKeyMinutes`). The group is read with the key itself, which
+ * the group's policy lets it do.
  */
 async function bearerVerdict(desc: KeyDescription, pair: KeyPair, names: AppPrincipalNames): Promise<BearerVerdict> {
   const { organizationId } = desc;
@@ -70,6 +71,12 @@ async function bearerVerdict(desc: KeyDescription, pair: KeyPair, names: AppPrin
   if (life) {
     return {
       refusal: `${pair.accessKey} would work ${life}, and a key that leaks must die within the day, so the session refuses it. ${oneDayKeyHowto(names)}`,
+    };
+  }
+  const minutes = endingKeyMinutes(desc);
+  if (minutes !== undefined) {
+    return {
+      refusal: `${pair.accessKey} ends in ${minutes} min, and an action must not lose its key halfway, so the session refuses it. ${oneDayKeyHowto(names)}`,
     };
   }
   return { organizationId };

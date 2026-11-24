@@ -113,7 +113,10 @@ export function postgresManaged(config: PostgresManagedConfig): StoreProvisioner
           // (cli/actions/db-exposure.ts), and a refresh of this instance before an expose lets `{}` plan a new one.
           loadBalancer: dbPublicEndpoint ? {} : undefined,
         },
-        { deleteBeforeReplace: true },
+        // A replace deletes the instance before its successor exists, and the data with it. Protected, a plan that replaces or deletes it
+        // fails and names it; `pulumi state unprotect <urn>` before the apply is the deliberate way through, and a teardown lifts every
+        // protection itself.
+        { deleteBeforeReplace: true, protect: true },
       );
 
       if (acl?.ok) {
@@ -124,7 +127,7 @@ export function postgresManaged(config: PostgresManagedConfig): StoreProvisioner
         });
       }
 
-      const database = new scaleway.databases.Database('main-database', { instanceId: instance.id, name: dbSlug, region });
+      const database = new scaleway.databases.Database('main-database', { instanceId: instance.id, name: dbSlug, region }, { protect: true });
 
       // The roles, their passwords and privileges, and the connection strings are made by the operator task ensure-database through the
       // database API, so no password passes through the state (tasks/ensure-database.ts).

@@ -41,29 +41,19 @@ describe('runAction', () => {
     expect(log).not.toHaveBeenCalled();
   });
 
-  it('reports a failure the action did not expect in one line and resolves to 1', async () => {
-    vi.stubEnv('INFRA_DEBUG', undefined);
+  it('reports a failure the action did not expect in one line, names the file that keeps its stack, and resolves to 1', async () => {
     const lines: string[] = [];
     const broken = runnersOf(async () => {
       throw new Error('AccessDenied: the state bucket refused this key');
     });
-    await expect(runAction('unlock', context, { runners: broken, log: (line) => lines.push(stripVTControlCharacters(line)) })).resolves.toEqual({
-      code: 1,
-    });
+    const keep = vi.fn(() => '/infra/.debug/unlock.stack.txt');
+    await expect(runAction('unlock', context, { runners: broken, keep, log: (line) => lines.push(stripVTControlCharacters(line)) })).resolves.toEqual(
+      { code: 1 },
+    );
     expect(lines[0]).toContain('Unlock failed: AccessDenied: the state bucket refused this key');
-    expect(lines[1]).toContain('INFRA_DEBUG=true');
+    expect(lines[1]).toContain('/infra/.debug/unlock.stack.txt');
     expect(lines).toHaveLength(2);
-  });
-
-  it('prints the stack trace of an unexpected failure with INFRA_DEBUG=true', async () => {
-    vi.stubEnv('INFRA_DEBUG', 'true');
-    const lines: string[] = [];
-    const broken = runnersOf(async () => {
-      throw new Error('boom');
-    });
-    await runAction('unlock', context, { runners: broken, log: (line) => lines.push(stripVTControlCharacters(line)) });
-    expect(lines[1]).toContain('Error: boom');
-    expect(lines[1]).toContain('index.test.ts');
+    expect(keep).toHaveBeenCalledWith('unlock', expect.any(Error));
   });
 
   it('lets a Ctrl-C at a prompt through to the handler that ends the run', async () => {

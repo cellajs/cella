@@ -1,9 +1,5 @@
 import { defineProject } from 'vitest/config';
 
-// Default `pnpm test` excludes the integration suite (requires a live host).
-// `pnpm test:integration` sets INTEGRATION=true to opt back in.
-const integration = process.env.INTEGRATION === 'true';
-
 export default defineProject({
   logLevel: 'error',
   test: {
@@ -17,7 +13,7 @@ export default defineProject({
       'resources/**/*.test.ts',
       '*.test.ts',
     ],
-    exclude: ['node_modules/**', 'dist/**', ...(integration ? [] : ['tests/integration/**'])],
+    exclude: ['node_modules/**', 'dist/**'],
     testTimeout: 5000,
   },
 });

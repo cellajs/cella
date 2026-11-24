@@ -16,6 +16,11 @@ export const tildeMark = pc.yellow('~');
 
 export const DIVIDER = '─'.repeat(60);
 
+/** True when a person can answer a prompt: stdin is a terminal and the run is not automated, as a runner that gives its job a terminal is. */
+export function hasPerson(): boolean {
+  return Boolean(process.stdin.isTTY) && process.env.CI !== 'true';
+}
+
 /** True when stderr is a TTY and the run is not automated; automation and piped output get a single static line. */
 function spinnerEnabled(): boolean {
   return Boolean(process.stderr.isTTY) && process.env.CI !== 'true';

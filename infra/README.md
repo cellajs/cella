@@ -104,7 +104,8 @@ Stable check `id`s:
 
 ## Key files
 
-- `infra/.env.<mode>`: this machine's observer key, which overrides the ambient environment.
+- `~/.config/<app>/observer.env`: this machine's observer key, which every checkout and worktree of the app reads and no repository holds.
+- `infra/.env.<mode>`: values of one environment on this machine, which override the ambient environment. It holds no key.
 - `infra/Pulumi.<mode>.yaml`: the environment's Scaleway project, committed as `infra:projectId`.
 - A bare `infra/.env`: never read.
 
@@ -183,7 +184,7 @@ One name per concept across code and docs:
 | **launch checklist** | The steps of a setup: Tools, Repository, Domain, Sign in, Create, Connect, First release, First admin. Each is ticked from what exists and the first open one is marked. A stack not set up yet opens on it. |
 | **Owner moment** | A run that writes IAM, with your own Owner API key made for the occasion. |
 | **operator key** | A one-day key of the `<app>-operator` application, or of a member of the `<app>-operators` group, for privileged work: no IAM write. A setup's Owner moment makes the first. Later ones are made in the console at each sitting. |
-| **observer key** | The read-only `<app>-observer` key, from any address. Kept in `infra/.env.<mode>`. |
+| **observer key** | The read-only `<app>-observer` key, from any address. Kept in `~/.config/<app>/observer.env`. |
 | **deploy key** | An environment's `<slug>-<mode>-ci-deploy` key, which its main job deploys with. |
 | **uploads key** | An environment's `<slug>-<mode>-uploads` key, which signs the backend's uploads and presigned URLs, kept in the runtime folder. |
 | **Transloadit key** | The app's `<app>-transloadit` key, which only writes objects of the upload buckets. Kept in Transloadit's Template Credentials. |

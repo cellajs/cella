@@ -95,15 +95,23 @@ describe('acquireLock / releaseLock', () => {
   it('release removes our own lock', async () => {
     const { s3, current } = makeLockS3();
     await acquireLock(s3, 'b', 'k', opts);
-    await releaseLock(s3, 'b', 'k', 'operator:a');
+    await releaseLock(s3, 'b', 'k', { owner: 'operator:a' });
     expect(current()).toBeUndefined();
   });
 
   it('release leaves a lock owned by someone else', async () => {
     const other: LockInfo = { owner: 'operator:b', operation: 'deploy', acquiredAt: '', expiresAt: new Date(2_000_000).toISOString() };
     const { s3, current } = makeLockS3(other);
-    await releaseLock(s3, 'b', 'k', 'operator:a');
+    await releaseLock(s3, 'b', 'k', { owner: 'operator:a' });
     expect(current()).toBeDefined();
+  });
+
+  it('reads a lock object it cannot parse as held, by whatever engine wrote it', async () => {
+    const { s3, overwrite, current } = makeLockS3();
+    overwrite({ holder: 'run:from-another-engine', until: 'later' });
+    const before = current();
+    expect(await acquireLock(s3, 'b', 'k', { ...opts, adopt: true })).toMatchObject({ acquired: false, held: { owner: 'unknown' } });
+    expect(current()).toBe(before);
   });
 
   it('forceUnlock removes any lock and returns its info', async () => {

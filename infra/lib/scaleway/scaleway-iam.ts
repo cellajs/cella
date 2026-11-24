@@ -2,16 +2,16 @@ import { changeMark, checkMark, tildeMark } from '../utils/cli-output';
 import { errorMessage } from '../utils/errors';
 import { createApiKey, deleteApiKey, IAM_BASE, listApiKeys, resolveApplicationIdByName } from './iam-client';
 import { principalNames, principalTags } from './principals';
-import { scwFetch, scwSend } from './scw-fetch';
+import { scwErrorStatus, scwFetch, scwSend } from './scw-fetch';
 
 /** A Scaleway permissions_denied error (403), regardless of resource. */
 function isPermissionDenied(error: unknown): boolean {
-  return error instanceof Error && /permissions_denied|→ 403/.test(error.message);
+  return scwErrorStatus(error) === 403 || (error instanceof Error && /permissions_denied/.test(error.message));
 }
 
 /** A Scaleway already-exists conflict (409 / duplicate name). */
 function isAlreadyExists(error: unknown): boolean {
-  return error instanceof Error && /already.?exists|→ 409|duplicate/i.test(error.message);
+  return scwErrorStatus(error) === 409 || (error instanceof Error && /already.?exists|duplicate/i.test(error.message));
 }
 
 interface ScwApp {

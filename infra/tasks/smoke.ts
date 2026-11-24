@@ -11,7 +11,7 @@ import { sleep as defaultSleep } from '../lib/utils/sleep';
 import { isHealthy } from './wait-for-version';
 
 /** Extract the hashed entry script src (e.g. /assets/index-abc123.js) from HTML. */
-export function extractEntryAsset(html: string): string | undefined {
+function extractEntryAsset(html: string): string | undefined {
   const match = html.match(/src="([^"]*assets\/[^"]+\.js)"/);
   return match?.[1];
 }
@@ -28,12 +28,12 @@ export const SECURITY_HEADERS = [
 ] as const;
 
 /** True when the HTML references a hashed entry script (e.g. /assets/index-abc.js). */
-export function hasHashedAsset(html: string): boolean {
+function hasHashedAsset(html: string): boolean {
   return extractEntryAsset(html) !== undefined;
 }
 
 /** True when the body looks like an HTML document (SPA fallback served index.html). */
-export function isHtmlDocument(body: string): boolean {
+function isHtmlDocument(body: string): boolean {
   return /<html/i.test(body);
 }
 

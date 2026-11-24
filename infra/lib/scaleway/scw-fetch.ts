@@ -5,16 +5,29 @@ import { retry } from '../utils/retry.ts';
 // SCW_DEBUG only, never the generic DEBUG var: verbose mode prints API bodies into retained CI logs.
 const DEBUG = process.env.SCW_DEBUG === '1';
 
-/** True for endpoints whose bodies carry live secret values (Secret Manager access, IAM api-key minting). Verbose logging redacts these bodies. */
+/** True for endpoints whose bodies carry live secret values (Secret Manager access, IAM api-key minting, a machine's user data). Verbose logging redacts these bodies. */
 export function carriesSecretValues(url: string): boolean {
-  return url.includes('/secret-manager/') || url.includes('/api-keys');
+  return url.includes('/secret-manager/') || url.includes('/api-keys') || url.includes('/user_data/');
 }
 
 const REDACTED = '[redacted: secret-bearing endpoint]';
 
-// A rejected fetch is a transient network failure (an HTTP error status resolves), so one network blip must not fail a deploy's read.
-const networkAttempts = 3;
-const networkRetryDelayMs = 2000;
+// A rejected fetch is a transient network failure, and so is an answer of `transientStatuses`: one blip must not fail a deploy's read.
+const attempts = 3;
+const retryDelayMs = 2000;
+
+/** Answers of an endpoint that did no work: too many requests, or a gateway that reached no service. */
+const transientStatuses = new Set([429, 502, 503, 504]);
+
+/** The longest a `Retry-After` holds a call. */
+const maxRetryAfterMs = 30_000;
+
+/** A `Retry-After` header as milliseconds from `now`: seconds or an HTTP date; undefined when absent or unreadable. */
+export function retryAfterMs(header: string | null | undefined, now = Date.now()): number | undefined {
+  if (!header) return undefined;
+  const ms = /^\d+$/.test(header.trim()) ? Number(header) * 1000 : Date.parse(header) - now;
+  return Number.isFinite(ms) ? Math.min(Math.max(ms, 0), maxRetryAfterMs) : undefined;
+}
 
 /** The undici codes of a connection that never opened: the request never reached Scaleway. */
 const unsentCodes = new Set(['ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'UND_ERR_CONNECT_TIMEOUT']);
@@ -39,46 +52,54 @@ export function scwS3Endpoint(region: string): string {
 /** How long one call may take before it fails as a network error, so a stalled endpoint never holds a screen or a deploy step for good. */
 const REQUEST_TIMEOUT_MS = 60_000;
 
-async function request(auth: ScwAuth, method: string, url: string, body?: unknown): Promise<string> {
+async function request(auth: ScwAuth, method: string, url: string, body?: string, contentType = 'application/json'): Promise<string> {
   if (DEBUG) {
-    const bodyLog = body ? ` body=${carriesSecretValues(url) ? REDACTED : JSON.stringify(body)}` : '';
+    const bodyLog = body ? ` body=${carriesSecretValues(url) ? REDACTED : body}` : '';
     process.stderr.write(`[scw] → ${method} ${url}${bodyLog}\n`);
   }
   const fetchImpl = resolveFetch(auth.fetchImpl);
-  let res: Awaited<ReturnType<FetchLike>>;
   let tried = 0;
   try {
-    res = await retry(
-      (attempt) => {
+    return await retry(
+      async (attempt) => {
         tried = attempt;
-        return fetchImpl(url, {
+        const res = await fetchImpl(url, {
           method,
-          headers: { 'X-Auth-Token': auth.secretKey, 'Content-Type': 'application/json' },
-          body: body !== undefined ? JSON.stringify(body) : undefined,
+          headers: { 'X-Auth-Token': auth.secretKey, 'Content-Type': contentType },
+          body,
           signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        });
+        const text = await res.text();
+        if (DEBUG) process.stderr.write(`[scw] ← ${res.status} ${carriesSecretValues(url) ? REDACTED : text.slice(0, 500)}\n`);
+        if (res.ok) return text;
+        throw Object.assign(new Error(`Scaleway ${method} ${url} → ${res.status}: ${text}`), {
+          status: res.status,
+          retryAfterMs: retryAfterMs(res.headers?.get('retry-after')),
         });
       },
       {
-        attempts: networkAttempts,
-        delayMs: networkRetryDelayMs,
-        // A create that timed out may have been made: only a POST that never left is sent again.
-        retryable: method === 'POST' ? neverSent : undefined,
-        onRetry: (attempt, error) => console.warn(`[scw] ${method} ${url} attempt ${attempt} failed (${errorMessage(error)}); retrying`),
+        attempts,
+        delayMs: (error) =>
+          error instanceof Error && 'retryAfterMs' in error && typeof error.retryAfterMs === 'number' ? error.retryAfterMs : retryDelayMs,
+        retryable: (error) => {
+          const status = scwErrorStatus(error);
+          // A create that timed out or met a 5xx may have been made: a POST is sent again only when it never left or was refused as one too many.
+          if (method === 'POST') return status === undefined ? neverSent(error) : status === 429;
+          return status === undefined || transientStatuses.has(status);
+        },
+        onRetry: (attempt, error) =>
+          console.warn(`[scw] ${method} ${url} attempt ${attempt} failed (${errorMessage(error).slice(0, 200)}); retrying`),
       },
     );
   } catch (err) {
+    if (scwErrorStatus(err) !== undefined) throw err;
     throw new Error(`Scaleway ${method} ${url} failed after ${tried} attempts: ${errorMessage(err)}`);
   }
-  const text = await res.text();
-  if (DEBUG) process.stderr.write(`[scw] ← ${res.status} ${carriesSecretValues(url) ? REDACTED : text.slice(0, 500)}\n`);
-  if (!res.ok) throw new Error(`Scaleway ${method} ${url} → ${res.status}: ${text}`);
-  return text;
 }
 
-/** The HTTP status a failed Scaleway call carried, read from the error {@link scwFetch} throws; undefined for a failure without an answer. */
+/** The HTTP status a failed Scaleway call carried, on the error {@link scwFetch} throws; undefined for a failure without an answer. */
 export function scwErrorStatus(error: unknown): number | undefined {
-  const status = error instanceof Error ? error.message.match(/ → (\d{3}): /)?.[1] : undefined;
-  return status ? Number(status) : undefined;
+  return error instanceof Error && 'status' in error && typeof error.status === 'number' ? error.status : undefined;
 }
 
 /**
@@ -93,7 +114,7 @@ export function scwUnanswered(error: unknown): boolean {
 
 /** Authenticated Scaleway call whose JSON response body is the result. */
 export async function scwFetch<T>(auth: ScwAuth, method: string, url: string, body?: unknown): Promise<T> {
-  const text = await request(auth, method, url, body);
+  const text = await request(auth, method, url, body === undefined ? undefined : JSON.stringify(body));
   if (text === '') throw new Error(`Scaleway ${method} ${url} returned an empty body where JSON was expected`);
   try {
     return JSON.parse(text) as T;
@@ -104,5 +125,10 @@ export async function scwFetch<T>(auth: ScwAuth, method: string, url: string, bo
 
 /** Authenticated Scaleway call with no expected response body (DELETE, 204). */
 export async function scwSend(auth: ScwAuth, method: string, url: string, body?: unknown): Promise<void> {
-  await request(auth, method, url, body);
+  await request(auth, method, url, body === undefined ? undefined : JSON.stringify(body));
+}
+
+/** Authenticated Scaleway call that sends and answers plain text, as a machine's user data does. */
+export function scwText(auth: ScwAuth, method: string, url: string, text?: string): Promise<string> {
+  return request(auth, method, url, text, 'text/plain');
 }

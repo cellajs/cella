@@ -158,8 +158,9 @@ export async function runDeploy(
   await persist();
 
   const step = async (title: string, run: () => void | Promise<void>): Promise<void> => {
-    // A run whose lease another took must change nothing more: the other run holds the environment now.
-    if (lease?.lost) throw new Error(`the lease was taken by another run before "${title}": this run stops`);
+    // A run without the lease must change nothing more: another run may hold the environment now.
+    if (lease?.lost)
+      throw new Error(`this run no longer holds the lease before "${title}" (another run took it, or it ended unrenewed): this run stops`);
     fx.group(title);
     const startedAt = Date.now();
     try {

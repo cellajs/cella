@@ -72,9 +72,10 @@ iptables -I DOCKER-USER -d 169.254.42.42 -j DROP || iptables -I FORWARD -d 169.2
 step clone
 git init -q /build
 git -C /build remote add origin "$REPO"
-# A private repository's read key goes with this one fetch as a header: it is in no URL, no remote and no file the build sees.
+# A private repository's read key goes with this one fetch as a header, in git's environment: it is in no URL, no remote, no argument and no
+# file the build sees.
 if [ -n "$REPO_KEY" ]; then
-  git -C /build -c http.extraHeader="Authorization: Basic $(printf 'x-access-token:%s' "$REPO_KEY" | base64 -w0)" fetch -q --depth 1 origin "$SHA"
+  GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.extraHeader GIT_CONFIG_VALUE_0="Authorization: Basic $(printf 'x-access-token:%s' "$REPO_KEY" | base64 -w0)" git -C /build fetch -q --depth 1 origin "$SHA"
 else
   git -C /build fetch -q --depth 1 origin "$SHA"
 fi

@@ -1,0 +1,10 @@
+{
+  "descriptionHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "imageDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "commit": "0123456789abcdef0123456789abcdef01234567",
+  "appliedAt": "2026-11-20T10:00:00.000Z",
+  "describes": {
+    "roles": ["backend", "cdc"],
+    "singleVM": true
+  }
+}

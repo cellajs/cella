@@ -8,7 +8,7 @@ import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operat
 import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createSecretManagerClient, type SecretManagerSecret } from '../../lib/scaleway/scaleway-secret-manager';
 import { controlActor, makeControlClient, recordRotation } from '../../lib/stack/control-store';
-import { checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
+import { checkMark, hasPerson, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { isEnvFileDeliverable } from '../../lib/utils/env-file';
 import { errorMessage } from '../../lib/utils/errors';
 import {
@@ -412,30 +412,25 @@ export async function runSecrets(context: InfraContext): Promise<void> {
       )
     : undefined;
   let identityKey: OwnerKey | undefined;
-  let outcome = { changed: false, rotated: false };
-  const pick = Boolean(process.stdin.isTTY) && !autoAcceptDefaults();
+  const pick = hasPerson() && !autoAcceptDefaults();
 
-  try {
-    outcome = await secretsMenu({
-      readKey: reader.secretKey,
-      writeKey: async () => (await operatorKey()).secretKey,
-      identityKey: async () => {
-        identityKey ??= await acquireIdentityKey(context, 'Minting a managed key creates an application, a policy and a key.');
-        return identityKey;
-      },
-      projectId,
-      region: appConfig.s3.region,
-      slug: appConfig.slug,
-      mode: context.environment,
-      pick,
-      notice,
-      rotation: lastSecretsRotation(context, reader),
-      rotate: () => runRotateSecrets(context),
-      prompts: { select: menuSelect, password: maskedSecret, confirm },
-    });
-  } finally {
-    await identityKey?.release();
-  }
+  const outcome = await secretsMenu({
+    readKey: reader.secretKey,
+    writeKey: async () => (await operatorKey()).secretKey,
+    identityKey: async () => {
+      identityKey ??= await acquireIdentityKey(context, 'Minting a managed key creates an application, a policy and a key.');
+      return identityKey;
+    },
+    projectId,
+    region: appConfig.s3.region,
+    slug: appConfig.slug,
+    mode: context.environment,
+    pick,
+    notice,
+    rotation: lastSecretsRotation(context, reader),
+    rotate: () => runRotateSecrets(context),
+    prompts: { select: menuSelect, password: maskedSecret, confirm },
+  });
   // A rotation ends on a redeploy of every machine, which carries the values set before it.
   if (outcome.rotated) return;
   // Esc on a table that took no key leaves the action: the menu comes back at once.

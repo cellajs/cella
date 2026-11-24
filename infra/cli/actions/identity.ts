@@ -132,7 +132,7 @@ async function planIdentities(
   return {
     ...changes,
     policies: [...changes.policies, ...(await planDeclaredPolicies(auth, organizationId, appPolicies))],
-    observer: observerStep(observer.length > 0, context.environment),
+    observer: observerStep(observer.length > 0, context.appConfig.appSlug),
     ...(transloadit ? { transloadit: transloadit.step } : {}),
   };
 }
@@ -191,38 +191,34 @@ export async function runIdentity(context: InfraContext): Promise<void> {
   }
 
   const ownerKey = await acquireIdentityKey(context, 'Updating identities writes applications and policies.');
-  try {
-    const auth = { secretKey: ownerKey.secretKey };
-    if (!plan) {
-      plan = await planIdentities(auth, ownerKey.organizationId, context);
-      if (!show(plan)) return;
-      if (!(await confirmOrDefault({ message: 'Write them?', default: false }))) return;
-    }
-    // The setup makes the deploy application with its key; the uploads application is the one Update identities makes.
-    const { uploads } = principalNames(appConfig.slug, context.environment);
-    if (plan.missingApplications.includes(uploads)) {
-      await ensureApplication(
-        { ...registry, callerSecretKey: ownerKey.secretKey, projectId, organizationId: ownerKey.organizationId },
-        { suffix: 'uploads', description: "The uploads key: signs the backend's uploads and presigned URLs" },
-      );
-    }
-    await writeDeclaredPolicies(auth, ownerKey.organizationId, [
-      ...declaredIdentities(registry, { projectId, organizationId: ownerKey.organizationId }).policies,
-      ...(await observerPolicies(auth, ownerKey.organizationId, context)),
-    ]);
-    if (plan.uploadsKey) {
-      const secrets = secretsFor(context, ownerKey.secretKey);
-      await writeUploadsKey({ auth, secrets, organizationId: ownerKey.organizationId, projectId, step: plan.uploadsKey });
-    }
-    for (const policy of plan.extraPolicies) {
-      await scwSend(auth, 'DELETE', `${IAM_BASE}/policies/${policy.id}`);
-      console.info(`  ${changeMark} Deleted ${policy.name} from ${policy.application}.`);
-    }
-    if (plan.observer !== 'none') await ensureObserverForEnvironment(context, ownerKey, projectId);
-    if (plan.transloadit) await ensureTransloaditForEnvironment(context, auth, ownerKey.organizationId);
-    console.info(`${checkMark} The identities of ${context.environment} are written.`);
-  } finally {
-    await ownerKey.release();
+  const auth = { secretKey: ownerKey.secretKey };
+  if (!plan) {
+    plan = await planIdentities(auth, ownerKey.organizationId, context);
+    if (!show(plan)) return;
+    if (!(await confirmOrDefault({ message: 'Write them?', default: false }))) return;
   }
+  // The setup makes the deploy application with its key; the uploads application is the one Update identities makes.
+  const { uploads } = principalNames(appConfig.slug, context.environment);
+  if (plan.missingApplications.includes(uploads)) {
+    await ensureApplication(
+      { ...registry, callerSecretKey: ownerKey.secretKey, projectId, organizationId: ownerKey.organizationId },
+      { suffix: 'uploads', description: "The uploads key: signs the backend's uploads and presigned URLs" },
+    );
+  }
+  await writeDeclaredPolicies(auth, ownerKey.organizationId, [
+    ...declaredIdentities(registry, { projectId, organizationId: ownerKey.organizationId }).policies,
+    ...(await observerPolicies(auth, ownerKey.organizationId, context)),
+  ]);
+  if (plan.uploadsKey) {
+    const secrets = secretsFor(context, ownerKey.secretKey);
+    await writeUploadsKey({ auth, secrets, organizationId: ownerKey.organizationId, projectId, step: plan.uploadsKey });
+  }
+  for (const policy of plan.extraPolicies) {
+    await scwSend(auth, 'DELETE', `${IAM_BASE}/policies/${policy.id}`);
+    console.info(`  ${changeMark} Deleted ${policy.name} from ${policy.application}.`);
+  }
+  if (plan.observer !== 'none') await ensureObserverForEnvironment(context, ownerKey, projectId);
+  if (plan.transloadit) await ensureTransloaditForEnvironment(context, auth, ownerKey.organizationId);
+  console.info(`${checkMark} The identities of ${context.environment} are written.`);
   printRevokeReminder();
 }

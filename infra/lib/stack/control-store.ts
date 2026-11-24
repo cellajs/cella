@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { makeS3Client } from '../scaleway/s3-client';
 import { errorMessage } from '../utils/errors';
 import { isRecord } from '../utils/guards';
@@ -234,21 +235,39 @@ export interface LockInfo {
   operation: string;
   acquiredAt: string;
   expiresAt: string;
+  /** Random per acquire, which tells two holders under one owner apart. Absent on a lock an engine without tokens wrote. */
+  token?: string;
 }
+
+/** Who asks for a lock as its own: the owner alone names a lease by its run, as a job names its child's. */
+export type LockHolder = Pick<LockInfo, 'owner' | 'token'>;
+
+const heldBy = (info: LockInfo, holder: LockHolder): boolean =>
+  info.owner === holder.owner && (holder.token === undefined || info.token === holder.token);
+
+/** What a lock object this engine cannot parse reads as: held, with no end, until an operator's Unlock removes it. */
+const UNREADABLE_LOCK: LockInfo = {
+  owner: 'unknown',
+  operation: 'a lease record this engine cannot read',
+  acquiredAt: '1970-01-01T00:00:00.000Z',
+  expiresAt: '9999-12-31T23:59:59.000Z',
+};
 
 export type AcquireResult = { acquired: true; info: LockInfo } | { acquired: false; held: LockInfo };
 
-function parseLockInfo(text: string): LockInfo | undefined {
+function parseLockInfo(text: string): LockInfo {
   let raw: unknown;
   try {
     raw = JSON.parse(text);
   } catch {
-    return undefined;
+    return UNREADABLE_LOCK;
   }
-  if (!isRecord(raw)) return undefined;
-  const { owner, operation, acquiredAt, expiresAt } = raw;
-  if (typeof owner !== 'string' || typeof operation !== 'string' || typeof acquiredAt !== 'string' || typeof expiresAt !== 'string') return undefined;
-  return { owner, operation, acquiredAt, expiresAt };
+  if (!isRecord(raw)) return UNREADABLE_LOCK;
+  const { owner, operation, acquiredAt, expiresAt, token } = raw;
+  if (typeof owner !== 'string' || typeof operation !== 'string' || typeof acquiredAt !== 'string' || typeof expiresAt !== 'string') {
+    return UNREADABLE_LOCK;
+  }
+  return { owner, operation, acquiredAt, expiresAt, ...(typeof token === 'string' ? { token } : {}) };
 }
 
 async function readLock(s3: S3Like, bucket: string, key: string): Promise<{ info?: LockInfo; etag?: string }> {
@@ -260,7 +279,7 @@ async function putLock(s3: S3Like, bucket: string, key: string, info: LockInfo, 
   await putJsonObject(s3, bucket, key, `${JSON.stringify(info, null, 2)}\n`, opts);
 }
 
-/** Read the lock object without mutating it. Undefined when no lock is held or the object is unparseable. */
+/** Read the lock object without mutating it. Undefined when no lock object exists. */
 export async function peekLock(s3: S3Like, bucket: string, key: string): Promise<LockInfo | undefined> {
   return (await readLock(s3, bucket, key)).info;
 }
@@ -281,6 +300,7 @@ export async function acquireLock(
     operation: opts.operation,
     acquiredAt: new Date(now).toISOString(),
     expiresAt: new Date(now + opts.ttlMs).toISOString(),
+    token: randomUUID(),
   };
   try {
     await putLock(s3, bucket, key, info, { ifNoneMatch: '*' });
@@ -301,23 +321,23 @@ export async function acquireLock(
   }
 }
 
-/** Release the lock only when we still own it, so a lock broken and re-taken by someone else is left alone. */
-export async function releaseLock(s3: S3Like, bucket: string, key: string, owner: string): Promise<void> {
+/** Release the lock only when it is still the holder's: a lock broken and taken again by someone else is left alone. */
+export async function releaseLock(s3: S3Like, bucket: string, key: string, holder: LockHolder): Promise<void> {
   const { DeleteObjectCommand } = await s3sdk();
   const { info } = await readLock(s3, bucket, key);
-  if (!info || info.owner !== owner) return;
+  if (!info || !heldBy(info, holder)) return;
   await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 }
 
 export type RenewResult = { renewed: true; info: LockInfo } | { renewed: false; held?: LockInfo };
 
 /**
- * Extend our own lock's expiry under `If-Match`, so a live holder keeps a short lease alive and a dead one lets it lapse within one TTL.
- * A lock that is missing, owned by someone else, or replaced between read and write is reported as not renewed and never overwritten.
+ * Extend the holder's own lock under `If-Match`: a live holder keeps a short lease alive, and a dead one lets it lapse within one TTL.
+ * A lock that is missing, another holder's, or replaced between read and write is reported as not renewed and never overwritten.
  */
-export async function renewLock(s3: S3Like, bucket: string, key: string, owner: string, ttlMs: number, now = Date.now()): Promise<RenewResult> {
+export async function renewLock(s3: S3Like, bucket: string, key: string, holder: LockHolder, ttlMs: number, now = Date.now()): Promise<RenewResult> {
   const { info, etag } = await readLock(s3, bucket, key);
-  if (!info || info.owner !== owner) return { renewed: false, held: info };
+  if (!info || !heldBy(info, holder)) return { renewed: false, held: info };
   const next: LockInfo = { ...info, expiresAt: new Date(now + ttlMs).toISOString() };
   try {
     await putLock(s3, bucket, key, next, conditionOn(etag));

@@ -1,6 +1,4 @@
 import { spawn } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { rerunReleaseCheck } from '../../lib/deploy/release-gate';
 import { actionLabel, menuPath } from '../../lib/operator-actions';
 import { shutOutOfBuckets } from '../../lib/scaleway/bucket-admission';
@@ -15,7 +13,7 @@ import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from 
 import { exitCodeOf } from '../../lib/utils/child-exit';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { infraDir } from '../../lib/utils/paths';
+import { debugFile, infraDir } from '../../lib/utils/paths';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { type PublishedEngine, pruneEngines, recordAppliedEngine } from '../../tasks/publish-engine';
@@ -167,16 +165,13 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
       }
     }
 
-    let debugLogPath: string | undefined;
-    if (opts.debugProvider) {
-      const dir = resolve(infraDir, '.debug');
-      mkdirSync(dir, { recursive: true });
-      debugLogPath = resolve(dir, `${opts.operation}-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
-    }
+    const debugLogPath = opts.debugProvider ? debugFile(opts.operation, 'log') : undefined;
 
     if (stackLock.lost) {
       await releaseLock();
-      console.error(`${warningMark} This run lost the lease to another one; nothing applied. Run "${opts.operation}" again.`);
+      console.error(
+        `${warningMark} This run no longer holds the lease (another run took it, or it ended unrenewed); nothing applied. Run "${opts.operation}" again.`,
+      );
       endAction(1);
     }
     while (true) {
@@ -213,7 +208,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
     if (completed && opts.engine) {
       const { engine } = opts;
       try {
-        if (stackLock.lost) throw new Error('this run lost the lease to another one');
+        if (stackLock.lost) throw new Error('this run no longer holds the lease');
         await recordAppliedEngine({ appConfig, stack, projectId, key: operator, engine });
       } catch (error) {
         await releaseLock();

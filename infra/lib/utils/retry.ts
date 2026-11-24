@@ -4,8 +4,8 @@ import { sleep as defaultSleep } from './sleep';
 export interface RetryOptions {
   /** Total number of attempts before giving up. */
   attempts: number;
-  /** Delay between attempts, in milliseconds. */
-  delayMs: number;
+  /** Delay between attempts, in milliseconds: one number, or what the failed attempt asks for. */
+  delayMs: number | ((error: unknown) => number);
   /** Whether a failure may be tried again; one it refuses rejects at once. Every failure may when it is left out. */
   retryable?: (error: unknown) => boolean;
   /** Called after a failed attempt that will be retried (not on the last one). */
@@ -26,7 +26,7 @@ export async function retry<T>(fn: (attempt: number) => Promise<T>, opts: RetryO
       if (opts.retryable && !opts.retryable(error)) break;
       if (attempt < opts.attempts) {
         opts.onRetry?.(attempt, error);
-        await sleep(opts.delayMs);
+        await sleep(typeof opts.delayMs === 'number' ? opts.delayMs : opts.delayMs(error));
       }
     }
   }

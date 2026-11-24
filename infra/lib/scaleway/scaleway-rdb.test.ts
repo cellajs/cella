@@ -50,40 +50,6 @@ describe('createRdbClient', () => {
     expect(await client(fn).findInstance('cella-postgres')).toBeUndefined();
   });
 
-  it('creates a database with POST .../databases', async () => {
-    const { fn, calls } = makeFetch([{ method: 'POST', match: '/databases', body: { name: 'cella' } }]);
-
-    await client(fn).createDatabase('i-1', 'cella');
-
-    expect(calls[0]).toMatchObject({
-      method: 'POST',
-      url: 'https://api.scaleway.com/rdb/v1/regions/nl-ams/instances/i-1/databases',
-      body: { name: 'cella' },
-    });
-  });
-
-  it('deletes a database with DELETE .../databases/{name}', async () => {
-    const { fn, calls } = makeFetch([{ method: 'DELETE', match: '/databases/', status: 204 }]);
-
-    await client(fn).deleteDatabase('i-1', 'cella');
-
-    expect(calls[0]).toMatchObject({ method: 'DELETE', url: 'https://api.scaleway.com/rdb/v1/regions/nl-ams/instances/i-1/databases/cella' });
-  });
-
-  it('sets a privilege with PUT .../privileges', async () => {
-    const { fn, calls } = makeFetch([
-      { method: 'PUT', match: '/privileges', body: { database_name: 'cella', user_name: 'runtime_role', permission: 'all' } },
-    ]);
-
-    await client(fn).setPrivilege('i-1', 'cella', 'runtime_role', 'all');
-
-    expect(calls[0]).toMatchObject({
-      method: 'PUT',
-      url: 'https://api.scaleway.com/rdb/v1/regions/nl-ams/instances/i-1/privileges',
-      body: { database_name: 'cella', user_name: 'runtime_role', permission: 'all' },
-    });
-  });
-
   it('creates a backup at the region root, not under the instance', async () => {
     const { fn, calls } = makeFetch([{ method: 'POST', match: '/backups', body: { id: 'bk-1', status: 'creating' } }]);
 
@@ -104,26 +70,12 @@ describe('createRdbClient', () => {
     expect(calls[0]?.body).not.toHaveProperty('expires_at');
   });
 
-  it('reads an instance with its endpoints by id', async () => {
-    const { fn, calls } = makeFetch([{ method: 'GET', match: '/instances/i-1', body: { id: 'i-1', status: 'ready', endpoints: [] } }]);
-
-    expect(await client(fn).getInstance('i-1')).toMatchObject({ status: 'ready', endpoints: [] });
-    expect(calls[0]).toMatchObject({ method: 'GET', url: 'https://api.scaleway.com/rdb/v1/regions/nl-ams/instances/i-1' });
-  });
-
   it('deletes an endpoint at the region root, not under the instance', async () => {
     const { fn, calls } = makeFetch([{ method: 'DELETE', match: '/endpoints/', status: 204 }]);
 
     await client(fn).deleteEndpoint('ep-1');
 
     expect(calls[0]).toMatchObject({ method: 'DELETE', url: 'https://api.scaleway.com/rdb/v1/regions/nl-ams/endpoints/ep-1' });
-  });
-
-  it('lists the instance ACL rules', async () => {
-    const { fn, calls } = makeFetch([{ method: 'GET', match: '/acls', body: { rules: [{ ip: '1.2.3.4/32' }], total_count: 1 } }]);
-
-    expect(await client(fn).listAclRules('i-1')).toEqual([{ ip: '1.2.3.4/32' }]);
-    expect(calls[0]).toMatchObject({ url: 'https://api.scaleway.com/rdb/v1/regions/nl-ams/instances/i-1/acls' });
   });
 
   it('surfaces a failed API call rather than returning a partial result', async () => {

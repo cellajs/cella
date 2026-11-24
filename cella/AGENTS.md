@@ -141,6 +141,8 @@ A deploy that never serves its new version almost always hit a boot-time crash, 
 - A worktree installs its own `node_modules` (`pnpm install`) and never links another checkout's: pnpm links workspace packages by relative path, so a borrowed folder runs the other checkout's code. pnpm clones packages from its store, so an install takes tens of megabytes of disk, whatever `du` reports.
 - At most two worktrees run a stack at once, on the shared database or a throwaway one; a third checks without a stack or waits. Count them first, and stop a stack and its container once the check is done ([Worktree stacks](./skills/verify/SKILL.md#worktree-stacks)).
 - Remove a worktree once its PR merges.
+- Agents that edit one checkout together run only the tests their brief names, and the session that started them runs `pnpm check` once their edits are in. A check an agent runs there rewrites the others' files and fails on their half-done work.
+- An agent that goes quiet is stopped and started again with its partial work named. Three rounds of fixes without progress end in a report to the developer.
 - An unattended command never waits on a prompt: pass the answers as flags or environment. A background or long-running command that writes to a file pipes through `head -c <bytes>`, since a prompt that asks again at end of input fills the disk.
 
 ## Commands

@@ -58,11 +58,7 @@ export async function runOperatorKey(context: InfraContext): Promise<void> {
     return;
   }
   const ownerKey = await acquireOwnerKey({ names, projectId, slug: appConfig.slug, mode });
-  try {
-    await writeOperators(context, ownerKey, reach);
-  } finally {
-    await ownerKey.release();
-  }
+  await writeOperators(context, ownerKey, reach);
   console.info(`\n${checkMark} ${pc.bold('The CLI asks for a one-day operator key, once per session.')} ${oneDayKeyHowto(names)}`);
   console.info(pc.dim(`  Members join '${names.operators}' in the console: IAM → Groups → ${names.operators} → Members.`));
   printRevokeReminder();

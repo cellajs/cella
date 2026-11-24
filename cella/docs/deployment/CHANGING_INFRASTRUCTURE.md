@@ -27,6 +27,8 @@ Identities are IAM, written at an Owner moment ([Identities](#identities)). To a
 
 When an identity differs from the declared ones, the apply stops before changing anything and names **Update identities**. `pnpm infra preview` shows the same plan without the question and changes nothing. Use it for a script or a look that must never apply.
 
+The database instance and its database are protected: a plan that would replace or delete either fails and names it, as a replace deletes the data before a successor exists. To replace one on purpose, run `pulumi state unprotect <urn>` before the apply. A teardown lifts the protection itself.
+
 A deploy reads what the last apply made, and stops with "an apply makes it" when something it needs is missing. A change a deploy does not need, such as a bucket policy, waits for the next apply. An engine change that owes one names it in its alignment.
 
 ## What needs an apply

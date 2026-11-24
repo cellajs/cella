@@ -49,8 +49,11 @@ function fake(
     startBuilder: async (zone, name) => {
       ops.push(`start:${name}@${zone}`);
       if (zone === opts.outOfStock) {
-        throw new Error(
-          `Scaleway POST https://api.scaleway.com/instance/v1/zones/${zone}/servers/0b1d/action → 412: {"type": "out_of_stock", "message": "resource is out of stock", "resource": "POP2-HC-8C-16G"}`,
+        throw Object.assign(
+          new Error(
+            `Scaleway POST https://api.scaleway.com/instance/v1/zones/${zone}/servers/0b1d/action → 412: {"type": "out_of_stock", "message": "resource is out of stock", "resource": "POP2-HC-8C-16G"}`,
+          ),
+          { status: 412 },
         );
       }
     },

@@ -1,6 +1,5 @@
-import { resolveFetch } from '../utils/fetch-like';
 import { sleep } from '../utils/sleep';
-import { type ScwAuth, scwErrorStatus, scwFetch, scwSend } from './scw-fetch';
+import { type ScwAuth, scwErrorStatus, scwFetch, scwSend, scwText } from './scw-fetch';
 
 /** A machine as the Instance API returns it. */
 export interface ScwServer {
@@ -33,22 +32,12 @@ export interface MachineSpec {
 
 /** Write one key of a machine's user data; the metadata service serves it to the machine within about a second (0.7 to 1.3 s measured). */
 export async function setUserData(auth: ScwAuth, zone: string, serverId: string, key: string, text: string): Promise<void> {
-  const res = await resolveFetch(auth.fetchImpl)(`${instanceApi(zone)}/servers/${serverId}/user_data/${key}`, {
-    method: 'PATCH',
-    headers: { 'X-Auth-Token': auth.secretKey, 'Content-Type': 'text/plain' },
-    body: text,
-  });
-  if (!res.ok) throw new Error(`setting the user data '${key}' of ${serverId} → ${res.status}: ${await res.text()}`);
+  await scwText(auth, 'PATCH', `${instanceApi(zone)}/servers/${serverId}/user_data/${key}`, text);
 }
 
 /** Read one key of a machine's user data. */
-export async function getUserData(auth: ScwAuth, zone: string, serverId: string, key: string): Promise<string> {
-  const res = await resolveFetch(auth.fetchImpl)(`${instanceApi(zone)}/servers/${serverId}/user_data/${key}`, {
-    method: 'GET',
-    headers: { 'X-Auth-Token': auth.secretKey },
-  });
-  if (!res.ok) throw new Error(`reading the user data '${key}' of ${serverId} → ${res.status}`);
-  return res.text();
+export function getUserData(auth: ScwAuth, zone: string, serverId: string, key: string): Promise<string> {
+  return scwText(auth, 'GET', `${instanceApi(zone)}/servers/${serverId}/user_data/${key}`);
 }
 
 /**

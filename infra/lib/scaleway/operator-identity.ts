@@ -21,7 +21,7 @@ export function envKeyPair(env: NodeJS.ProcessEnv, accessVar: string, secretVar:
 
 /**
  * Every API key an operator process may hold, resolved in one place so the CLI actions cannot drift apart in which env pair they read.
- * - `observer`: `SCW_OBSERVER_ACCESS_KEY` / `SCW_OBSERVER_SECRET_KEY` from infra/.env.<mode>, the observer application's key: read-only.
+ * - `observer`: `SCW_OBSERVER_ACCESS_KEY` / `SCW_OBSERVER_SECRET_KEY` from this machine's observer file, the observer application's key: read-only.
  * - `ambient`: `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` as the process found them (a CI job, a shell export): shown in diagnostics, never written to the env file.
  * A privileged key is not among them: the operator key and an Owner API key are typed at the prompt and never read from the environment.
  */
@@ -160,6 +160,15 @@ export function durableKeyLife(desc: Pick<KeyDescription, 'expiresAt'>, now = Da
   const hours = hoursUntilExpiry(desc, now);
   if (hours === undefined) return 'until it is revoked';
   return hours > DURABLE_KEY_HOURS ? `for ${Math.round(hours / 24)} more day(s)` : undefined;
+}
+
+/** The life a key needs to be taken: an apply or a teardown may run that long, and a key that ends halfway leaves pending operations and a held lease. */
+const KEY_MIN_MINUTES = 30;
+
+/** Minutes left of a key that ends too soon to start an action on, for the refusal that names them; undefined for a key with life enough. */
+export function endingKeyMinutes(desc: Pick<KeyDescription, 'expiresAt'>, now = Date.now()): number | undefined {
+  const hours = hoursUntilExpiry(desc, now);
+  return hours !== undefined && hours * 60 < KEY_MIN_MINUTES ? Math.max(0, Math.floor(hours * 60)) : undefined;
 }
 
 /** Where an Owner API key comes from, for every message that tells the operator how to get one. */
