@@ -21,7 +21,7 @@ const extensionMap = {
   'x-enabled-by': {
     id: 'xEnabledBy',
     description:
-      'Config switch the endpoint belongs to: a service, a feature flag, a sign-in method or an OAuth provider; refused before the guards while it is off',
+      'Config switch the endpoint belongs to: a service, a feature flag, a product, a sign-in method or an OAuth provider; refused before the guards while it is off',
     required: false,
     kind: 'metadata',
   },

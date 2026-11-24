@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
-import { accessScopes, appConfig } from 'shared';
+import { accessScopes, appConfig, isSwitchOn } from 'shared';
 import type { Env } from '#/core/context';
 import { toClientError } from '#/lib/error';
 import type { McpTool } from '#/modules/mcp/mcp-tools';
@@ -57,12 +57,13 @@ const isJsonRpcResponse = (message: unknown) =>
 
 /**
  * Model Context Protocol server over JSON-RPC 2.0 (Streamable HTTP, JSON responses): `initialize`, `tools/list`,
- * `tools/call`, `ping`. Tools are the routes carrying `xTool`; the token's scopes gate execution, and a call runs the
- * route's own handler. Returns `null` for notifications (messages without an `id`) and for responses the client posts,
- * which must not get a reply, and answers anything else that is not a request object with Invalid Request.
+ * `tools/call`, `ping`. Tools are the routes carrying `xTool` whose config switch is on; the token's scopes gate
+ * execution, and a call runs the route's own handler. Returns `null` for notifications (messages without an `id`) and
+ * for responses the client posts, which must not get a reply, and answers anything else that is not a request object
+ * with Invalid Request.
  * @see https://modelcontextprotocol.io
  */
-export async function handleMcpMessage(ctx: Context<Env>, message: unknown, tools: readonly McpTool[]): Promise<JsonRpcResponse | null> {
+export async function handleMcpMessage(ctx: Context<Env>, message: unknown, appTools: readonly McpTool[]): Promise<JsonRpcResponse | null> {
   if (isJsonRpcResponse(message)) return null;
   if (!isJsonRpcMessage(message)) return { jsonrpc: '2.0', id: readableId(message), error: { code: -32600, message: 'Invalid Request' } };
   // A request id is a string or a number; without one the message is a notification, and a null id is neither.
@@ -70,6 +71,8 @@ export async function handleMcpMessage(ctx: Context<Env>, message: unknown, tool
   if (message.id === undefined) return null;
 
   const id = message.id;
+  // A route that is switched off answers 404 to every caller: the server serves no tool for it.
+  const tools = appTools.filter(({ enabledBy }) => !enabledBy || isSwitchOn(enabledBy));
   const respond = (result: unknown): JsonRpcResponse => ({ jsonrpc: '2.0', id, result });
   const fail = (code: number, msg: string, data?: unknown): JsonRpcResponse => ({
     jsonrpc: '2.0',

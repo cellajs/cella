@@ -46,6 +46,13 @@ export const config = {
    */
   memberStatProductTypes: ['attachment'] as const,
 
+  /**
+   * Product types this app does not offer. Their routes answer 404 to every caller, the API docs mark them off, MCP
+   * lists no tool for them, and the stat columns, unseen counts and upload controls leave them out. The table, the
+   * policy and the access scopes stay: `config.test.ts` empties the list, so the suite still runs against the product.
+   */
+  switchedOffProductTypes: [] as readonly (typeof hierarchy.productTypes)[number][],
+
   /** Product types numbered per home channel, with the letter their share links carry: a file is `/{code}/a7`. */
   numberedProducts: { attachment: 'a' },
 

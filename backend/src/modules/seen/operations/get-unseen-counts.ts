@@ -1,5 +1,5 @@
 import type { SQL } from 'drizzle-orm';
-import { appConfig, type SeenTrackedProductType, seenGroupingChannelTypes } from 'shared';
+import { appConfig, isSwitchOn, type SeenTrackedProductType, seenGroupingChannelTypes } from 'shared';
 import type { UserContext } from '#/core/context';
 import { tenantRead } from '#/db/tenant-context';
 import { findUnseenCountsByUser, seenWindowStart } from '#/modules/seen/seen-queries';
@@ -39,6 +39,8 @@ export async function getUnseenCountsOp(ctx: UserContext) {
     const readableTypes: SeenTrackedProductType[] = [];
 
     for (const productType of appConfig.seenTrackedProductTypes) {
+      // No badge counts the rows of a product that is switched off.
+      if (!isSwitchOn({ product: productType })) continue;
       const readFilter = resolveCollectionReadFilter(access, productType, organizationId);
       const entityTable = getEntityTable(productType);
       const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, access);

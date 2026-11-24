@@ -1,4 +1,4 @@
-import type { ChannelEntityType } from 'shared';
+import { type ChannelEntityType, isSwitchOn } from 'shared';
 import { attachmentsCanonicalOptions } from '~/modules/attachment/query';
 import { membersListQueryOptions } from '~/modules/memberships/query';
 import type { BuildEntitySyncQueriesParams, EntitySyncQueryOptions } from '~/query/types';
@@ -32,7 +32,8 @@ export const buildEntitySyncQueries = ({ targetEntityId, targetEntityType, tenan
   switch (targetEntityType) {
     case 'organization': {
       addMembersQuery('organization');
-      syncQueries.push(attachmentsCanonicalOptions({ tenantId, organizationId: targetEntityId }));
+      // A list route of a product that is switched off answers 404.
+      if (isSwitchOn({ product: 'attachment' })) syncQueries.push(attachmentsCanonicalOptions({ tenantId, organizationId: targetEntityId }));
       break;
     }
 

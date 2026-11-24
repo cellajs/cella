@@ -1,5 +1,5 @@
 import { PaperclipIcon } from 'lucide-react';
-import { appConfig } from 'shared';
+import { appConfig, isSwitchOn } from 'shared';
 import { defineFrontendModule } from '~/lib/module';
 import { attachmentDialogParam } from '~/modules/attachment/dialog/params';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -17,15 +17,16 @@ defineFrontendModule({
   // Which products get a per-member stat column comes from `appConfig.memberStatProductTypes`; the icon is this module's.
   // `deepLinkParam` is the one this module's `attachmentsRouteSearchParamsSchema` declares, so a notification opens the dialog.
   product: { entityType: 'attachment', memberStatIcon: PaperclipIcon, deepLinkParam: attachmentDialogParam },
-  tools: appConfig.localBlobStorage.enabled
-    ? [
-        {
-          slot: 'account.preferences',
-          id: 'offline-files',
-          label: 'c:offline_files',
-          render: () => <OfflineFilesPreference />,
-          indicator: () => <OfflineFilesIndicator />,
-        },
-      ]
-    : [],
+  tools:
+    appConfig.localBlobStorage.enabled && isSwitchOn({ product: 'attachment' })
+      ? [
+          {
+            slot: 'account.preferences',
+            id: 'offline-files',
+            label: 'c:offline_files',
+            render: () => <OfflineFilesPreference />,
+            indicator: () => <OfflineFilesIndicator />,
+          },
+        ]
+      : [],
 });

@@ -32,6 +32,7 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
   listAttachments: xRoute({
     method: 'get',
     path: '/',
+    xEnabledBy: { product: 'attachment' },
     xCache: [sharedRangeAnswers('attachment')],
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xTool: {
@@ -48,6 +49,7 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
   batchCreateAttachments: xRoute({
     method: 'post',
     path: '/~batch-create',
+    xEnabledBy: { product: 'attachment' },
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xScope: 'attachment:write',
     xRateLimiter: [bulkPointsLimiter],
@@ -67,6 +69,7 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
   batchUpdateAttachments: xRoute({
     method: 'post',
     path: '/~batch-update',
+    xEnabledBy: { product: 'attachment' },
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
     xTool: {
@@ -82,6 +85,7 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
   getAttachment: xRoute({
     method: 'get',
     path: '/{attachmentId}',
+    xEnabledBy: { product: 'attachment' },
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xTool: {
       description: 'Read one attachment: its metadata and the description as text.',
@@ -96,6 +100,7 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
   updateAttachment: xRoute({
     method: 'patch',
     path: '/{attachmentId}',
+    xEnabledBy: { product: 'attachment' },
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     xTool: {
@@ -111,6 +116,7 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
   linkAttachmentKeys: xRoute({
     method: 'post',
     path: '/{attachmentId}/~link-keys',
+    xEnabledBy: { product: 'attachment' },
     xGuard: [actorGuard, tenantGuard, orgGuard],
     // Linking the stored variants of a file needs read access only.
     xScope: 'attachment:read',
@@ -124,6 +130,7 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
   batchDeleteAttachments: xRoute({
     method: 'post',
     path: '/~batch-delete',
+    xEnabledBy: { product: 'attachment' },
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
     xTool: {
@@ -140,6 +147,7 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
   presignAttachmentUrls: xRoute({
     method: 'post',
     path: '/~presign-urls',
+    xEnabledBy: { product: 'attachment' },
     xGuard: [actorGuard, tenantGuard, orgGuard],
     // Signing download URLs needs read access only.
     xScope: 'attachment:read',

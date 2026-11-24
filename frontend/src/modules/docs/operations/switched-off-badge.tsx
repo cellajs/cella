@@ -22,7 +22,7 @@ interface SwitchedOffBadgeProps {
   withReason?: boolean;
 }
 
-/** Marks an operation whose config switch is off in this app, naming the service, feature flag, sign-in method or provider. */
+/** Marks an operation whose config switch is off in this app, naming the service, feature flag, product, sign-in method or provider. */
 export function SwitchedOffBadge({ enabledBy, withReason }: SwitchedOffBadgeProps) {
   const { t } = useTranslation();
   if (!enabledBy || isSwitchOn(enabledBy)) return null;
@@ -32,9 +32,11 @@ export function SwitchedOffBadge({ enabledBy, withReason }: SwitchedOffBadgeProp
       ? t('c:docs.switched_off_service', { name: serviceNames[enabledBy.service] ?? enabledBy.service })
       : 'feature' in enabledBy
         ? t('c:docs.switched_off_feature', { name: enabledBy.feature })
-        : enabledBy.provider
-          ? t('c:docs.switched_off_provider', { name: t(`c:${enabledBy.provider}`) })
-          : t('c:docs.switched_off_strategy', { name: t(strategyNames[enabledBy.strategy]) });
+        : 'product' in enabledBy
+          ? t('c:docs.switched_off_product', { resource: t(`c:${enabledBy.product}`, { count: 2, defaultValue: enabledBy.product }) })
+          : enabledBy.provider
+            ? t('c:docs.switched_off_provider', { name: t(`c:${enabledBy.provider}`) })
+            : t('c:docs.switched_off_strategy', { name: t(strategyNames[enabledBy.strategy]) });
 
   return (
     <>

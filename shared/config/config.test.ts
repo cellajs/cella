@@ -8,4 +8,6 @@ export const test = {
   name: `${config.name} TEST`,
   slug: `${config.slug}-test`,
   services: { ...development.services, yjs: { enabled: true } },
+  // The suite runs against every template product, also one the app switches off for people.
+  switchedOffProductTypes: [],
 } satisfies DeepPartial<typeof config>;

@@ -1,6 +1,7 @@
 import { OpenAPIHono, z } from '@hono/zod-openapi';
 import { sql } from 'drizzle-orm';
 import type { Context } from 'hono';
+import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -96,6 +97,26 @@ describe('mcp-server', () => {
       params: { name: 'updateAttachment', arguments: { attachmentId: 'x', ops: {} } },
     });
     expect(res?.error?.code).toBe(-32602);
+  });
+
+  // An app leaves a template product out through `switchedOffProductTypes`: no token and no system role reaches it then.
+  it('serves no tool of a product that is switched off, and its routes answer 404 ahead of their guards', async () => {
+    const switchedOff = appConfig.switchedOffProductTypes;
+    appConfig.switchedOffProductTypes = ['attachment'];
+    try {
+      const list = await handle(null, { jsonrpc: '2.0', id: 2, method: 'tools/list' });
+      const { tools } = (list?.result ?? {}) as { tools: McpToolDescriptor[] };
+      expect(tools.map(({ name }) => name)).not.toContain('listAttachments');
+
+      const call = await handle(null, { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'listAttachments' } });
+      expect(call?.error).toMatchObject({ code: -32602, message: 'Unknown tool: listAttachments' });
+
+      // Switched on, the same request without a session answers 401: a 404 shows no guard ran.
+      const response = await baseApp.request('/tenants/tenant-1/organizations/org-1/attachments');
+      expect(response.status).toBe(404);
+    } finally {
+      appConfig.switchedOffProductTypes = switchedOff;
+    }
   });
 
   it('answers ping with an empty result', async () => {

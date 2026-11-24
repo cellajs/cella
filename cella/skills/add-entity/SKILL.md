@@ -124,6 +124,7 @@ and the renderers.
 - `<name>-routes.ts`: `createXRoutes(['<name>s', 'app', 'product'], { … })` with attachment's paths
   and methods (`/`, `/~batch-create`, `/~batch-update`, `/~batch-delete`, `/{<name>Id}` with a `patch`
   update), the path params from `tenantOrgParamSchema.extend({ <name>Id: validIdSchema })`, every route with
+  `xEnabledBy: { product: '<name>' }` (`appConfig.switchedOffProductTypes` then switches the product off),
   `xGuard: [actorGuard, tenantGuard, orgGuard]` and attachment's limiters, and `...errors(…)` in
   `responses` for the statuses its handler throws beyond its guards and limiters, as attachment's
   routes list them. A route agents may call takes `xTool`, which implies its scope; any other route

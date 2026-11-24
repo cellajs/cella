@@ -9,6 +9,7 @@ export const publicAttachmentRoutes = createXRoutes(['attachments', 'cella', 'pr
   presignPublicAttachmentUrls: xRoute({
     method: 'post',
     path: '/~presign-urls',
+    xEnabledBy: { product: 'attachment' },
     xGuard: [publicGuard],
     xRateLimiter: [presignedUrlLimiter],
     summary: 'Get presigned URLs as a visitor',

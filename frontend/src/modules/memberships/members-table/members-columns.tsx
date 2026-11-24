@@ -1,6 +1,6 @@
 import { ShieldCheckIcon, ShieldMinusIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { appConfig, type ChannelEntityType, hierarchy, isChannel } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy, isChannel, isSwitchOn } from 'shared';
 import { isEmbedded } from '~/lib/embedded-context';
 import { getMemberStatIcon, isMemberCountHidden } from '~/lib/entity-modules';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
@@ -13,6 +13,10 @@ import { UserCell } from '~/modules/user/user-cell';
 
 export const useColumns = (canUpdate: boolean, isSheet: boolean, entityType: ChannelEntityType) => {
   const { t } = useTranslation();
+
+  // A stat type whose product is switched off has no column; the last post is the first type's.
+  const [primaryStatType] = appConfig.memberStatProductTypes;
+  const statTypes = appConfig.memberStatProductTypes.filter((type) => isSwitchOn({ product: type }));
 
   const columns: ColumnOrColumnGroup<Member>[] = [
     ...(canUpdate ? [CheckboxColumn] : []),
@@ -76,15 +80,19 @@ export const useColumns = (canUpdate: boolean, isSheet: boolean, entityType: Cha
     dateColumn('createdAt', { name: t('c:created_at'), hidden: isSheet }),
     dateColumn('lastSeenAt', { name: t('c:last_seen_at') }),
     // From include=counts: the member's last post in this channel, their authored counts and their sub-channel memberships
-    dateColumn('lastPostedAt', {
-      name: t('c:last_post'),
-      get: (row) => {
-        const lastPostedAt = row.counts?.activity[appConfig.memberStatProductTypes[0]];
-        return lastPostedAt ? new Date(lastPostedAt) : null;
-      },
-    }),
+    ...(statTypes.includes(primaryStatType)
+      ? [
+          dateColumn<Member>('lastPostedAt', {
+            name: t('c:last_post'),
+            get: (row) => {
+              const lastPostedAt = row.counts?.activity[primaryStatType];
+              return lastPostedAt ? new Date(lastPostedAt) : null;
+            },
+          }),
+        ]
+      : []),
     // The response counts these product types only; each one's icon and hidden default come from the module that owns it
-    ...appConfig.memberStatProductTypes.map((type) =>
+    ...statTypes.map((type) =>
       countColumn<Member>(`${type}Count`, {
         name: t(`c:${type}`, { count: 2 }),
         icon: getMemberStatIcon(type),
