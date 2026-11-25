@@ -41,6 +41,7 @@
     "@opentelemetry/instrumentation": "^0.301.2",
     "@opentelemetry/instrumentation-http": "^0.301.2",
     "@opentelemetry/instrumentation-pg": "^0.78.0",
+    "@opentelemetry/instrumentation-runtime-node": "^0.38.0",
     "@opentelemetry/instrumentation-undici": "^0.35.1",
     "@opentelemetry/resources": "^3.1.1",
     "@opentelemetry/sdk-logs": "^3.1.1",

@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import process from 'node:process';
 import { z } from 'zod';
 import { severityLevels } from '../../types.ts';
+import { checkoutRelease } from './checkout-release.ts';
 import { envFlag } from './parse-env.ts';
 
 /** The values `NODE_ENV` takes in every service. */
@@ -38,7 +39,8 @@ export const workerEnvBase = z.object({
   // (OTEL_EXPORTER_OTLP_HEADERS, per-signal endpoints) from the environment themselves.
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
   // Build-time git SHA baked into the image, reported by `/health` and as `service.version` in telemetry.
-  RELEASE_SHA: z.string().default('unknown'),
+  // Unset in a checkout, it is the HEAD commit, the release the browser bundle reports too.
+  RELEASE_SHA: z.string().default(checkoutRelease),
 
   NODE_ENV: z.enum(nodeEnvs).default('development'),
   PINO_LOG_LEVEL: z.enum([...severityLevels, 'silent']).optional(),

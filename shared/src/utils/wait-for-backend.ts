@@ -1,3 +1,5 @@
+import { context } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import { appConfig } from '../config-builder/app-config.ts';
 import { sleep } from './sleep.ts';
 
@@ -18,7 +20,11 @@ export async function waitForBackend({ interval = 2000, timeout = 60_000 }: Wait
 
   while (Date.now() - start < timeout) {
     try {
-      const res = await fetch(healthUrl, { method: 'HEAD', signal: AbortSignal.timeout(2000) });
+      // The probe makes no span. Its refused connections are the expected wait, and their recorded exceptions would
+      // reach the monitor as errors.
+      const res = await context.with(suppressTracing(context.active()), () =>
+        fetch(healthUrl, { method: 'HEAD', signal: AbortSignal.timeout(2000) }),
+      );
       if (res.ok) return;
     } catch {}
     await sleep(interval);
