@@ -208,8 +208,10 @@ try {
   await healthy(apiProcess, 'api internal', ports.internal);
   const cdcProcess = start(cdc);
   await healthy(cdcProcess, 'cdc', ports.cdcHealth);
-  const yjsProcess = start(yjs);
-  await healthy(yjsProcess, 'yjs', ports.yjs);
+  // With yjs off in the config, the bundle loads and exits 0 with no /health to answer.
+  const yjsProcess = appConfig.services.yjs.enabled === false ? undefined : start(yjs);
+  if (yjsProcess) await healthy(yjsProcess, 'yjs', ports.yjs);
+  else await run(yjs, 60_000);
 
   // A service that answers once and then crashes, as one reading a missing module late would, is still caught.
   await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -218,10 +220,10 @@ try {
     [cdcProcess, 'cdc'],
     [yjsProcess, 'yjs'],
   ] as const)
-    if (child.exitCode !== null || child.signalCode !== null)
+    if (child && (child.exitCode !== null || child.signalCode !== null))
       throw new Error(`${name} exited (${child.exitCode ?? child.signalCode}) after answering /health`);
 
-  await stop(yjsProcess, 'yjs');
+  if (yjsProcess) await stop(yjsProcess, 'yjs');
   await stop(cdcProcess, 'cdc');
   await stop(apiProcess, 'api');
 } catch (error) {
