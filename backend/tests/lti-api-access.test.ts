@@ -20,7 +20,7 @@ import {
   updateLtiResourceLink,
   updateServiceAccount,
 } from 'sdk';
-import { type AccessScope, appConfig, policyMatrix } from 'shared';
+import { type AccessScope, appConfig, hierarchy, policyMatrix } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { lisContextRoles, lisInstitutionRoles, ltiClaims, ltiNrps, ltiToolConfigurationMember } from '#/lib/lti-vocabulary';
@@ -62,7 +62,11 @@ vi.mock('#/modules/lti-platform/launch-context', async (importOriginal) => {
 
 overrideConfig(appConfig.has, { ltiPlatform: true });
 
+// An installed LTI tool reads a tab's channel at that channel's least privileged role.
+const ltiToolRole = hierarchy.getLeastPrivilegedRole('organization');
+
 assumeMembersReadPeople();
+assumeMembersReadPeople(ltiToolRole);
 
 const ltiToolHost = 'peer-review.example.com';
 const launchUri = `https://${ltiToolHost}/launch`;
@@ -602,7 +606,7 @@ describe('LTI installation API access', async () => {
       const token = await tokenOf(ltiTool);
       const configured = policyMatrix.user;
       policyMatrix.user = (configured ?? []).map((entry) =>
-        entry.channelType === 'organization' && entry.role === memberRole ? { ...entry, permissions: { ...entry.permissions, read: 0 } } : entry,
+        entry.channelType === 'organization' && entry.role === ltiToolRole ? { ...entry, permissions: { ...entry.permissions, read: 0 } } : entry,
       );
       try {
         await expectRefusal(await readMembers(org, token), 403, 'forbidden');
