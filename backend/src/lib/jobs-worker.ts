@@ -10,6 +10,7 @@ import { ensureQueues, scheduleJobs, validateJobDeclarations, workDeclared } fro
 import { getBackendJobs, getBackendQueues } from '#/lib/module';
 import { getPgBoss, stopPgBoss } from '#/lib/pg-boss';
 import { baseLog } from '#/lib/pino';
+import { registerPostgresMetrics } from '#/lib/postgres-metrics';
 import { otel } from '#/lib/tracing';
 import '#/modules'; // composition root: registers every backend module, whose jobs and queues this worker runs
 
@@ -66,6 +67,8 @@ export async function startJobsWorker(options: { port?: number; inProcess?: bool
   await ensureQueues(boss);
   await scheduleJobs(boss);
   await workDeclared(boss);
+  // The one process per deployment reports the database's statistics, under the API's name when folded into it.
+  registerPostgresMetrics();
 
   const nextRuns = getBackendJobs()
     .map((job) => ({ name: job.name, at: boss.previewSchedule(job.cron, { count: 1 })[0] }))

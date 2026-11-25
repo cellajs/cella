@@ -203,8 +203,10 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   ctx.set('errorStatus', clientError.status);
 
   // The tracing middleware records `ctx.error` on the request span: a failed query goes there as the database's reason.
+  // Only an error answered with a 5xx: by the OpenTelemetry convention a 4xx leaves a server span's status unset and
+  // records no exception. Hono sets `ctx.error` for a refusal too, and this clears it.
   const traced = withoutFailedQuery(err);
-  if (traced instanceof Error) ctx.error = traced;
+  ctx.error = clientError.status >= 500 && traced instanceof Error ? traced : undefined;
 
   // Every 429 that states its wait sends it as the header the 429 response documents, whatever threw it, a redirect too.
   const retryAfter = clientError.status === 429 ? clientError.meta?.retryAfter : undefined;

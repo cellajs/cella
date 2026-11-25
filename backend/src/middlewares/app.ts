@@ -6,6 +6,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { env } from '#/env';
+import { requestSpanAttributes, setRequestSpanAttributes } from '#/lib/request-span';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { clientVersionMiddleware } from '#/middlewares/client-version';
 import { compressResponse } from '#/middlewares/compress';
@@ -40,9 +41,17 @@ app.use(
 const requestIdHeader = 'X-Request-Id';
 
 // The span records the request id from the response header, so a trace is searchable by the id a user quotes.
-app.use(
-  '*',
-  httpInstrumentationMiddleware({ serviceName: appConfig.name, serviceVersion: env.RELEASE_SHA, captureResponseHeaders: [requestIdHeader] }),
+const instrumentRequest = httpInstrumentationMiddleware({
+  serviceName: appConfig.name,
+  serviceVersion: env.RELEASE_SHA,
+  captureResponseHeaders: [requestIdHeader],
+});
+// The span also names the tenant, organization and user the guards set, read before the tracing middleware ends it.
+app.use('*', (ctx, next) =>
+  instrumentRequest(ctx, async () => {
+    await next();
+    setRequestSpanAttributes(requestSpanAttributes(ctx.var));
+  }),
 );
 
 // One id per request, generated here and never taken from the caller, so no two requests share one.

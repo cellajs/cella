@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from 'hono';
+import { routePath } from 'hono/route';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { requestLogger } from '#/lib/pino';
@@ -23,8 +24,10 @@ export const loggerMiddleware: MiddlewareHandler<Env> = async (ctx, next) => {
   if (isBenchTraffic(userId, tenantId) && status < 500) return;
 
   const logData = { requestId, method, url: path, status, responseTime, userId, sessionId };
+  // A message of the route (never the path, which can hold a token), the line's body where its logs are read.
+  const message = `${method} ${routePath(ctx, -1)} ${status} ${responseTime} ms`;
 
-  if (status >= 500) requestLogger.error(logData);
-  else if (status >= 400) requestLogger.warn(logData);
-  else requestLogger.info(logData);
+  if (status >= 500) requestLogger.error(logData, message);
+  else if (status >= 400) requestLogger.warn(logData, message);
+  else requestLogger.info(logData, message);
 };

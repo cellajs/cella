@@ -3,6 +3,7 @@ import process from 'node:process';
 import { parseEnv as parseDotenv } from 'node:util';
 import { appConfig, severityLevels } from 'shared';
 import { localDatabaseUrl } from 'shared/local-database';
+import { checkoutRelease } from 'shared/utils/checkout-release';
 import { envFlag, parseEnv } from 'shared/utils/parse-env';
 import { defaultCdcSlotName, loadRootEnv, nodeEnvs } from 'shared/utils/worker-env';
 import { z } from 'zod';
@@ -163,7 +164,8 @@ const envSchema = z
       .default(appConfig.mode === 'test' ? 'silent' : appConfig.mode === 'production' ? 'info' : 'debug'),
 
     // Build-time git SHA baked into the image, reported by `/health` so a deploy can be verified against CI.
-    RELEASE_SHA: z.string().default('unknown'),
+    // A checkout without it runs its HEAD commit, the release its browser bundle reports.
+    RELEASE_SHA: z.string().default(checkoutRelease),
   })
   .superRefine((values, ctx) => {
     for (const name of missingServiceSecrets(values)) {
