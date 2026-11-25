@@ -1,5 +1,88 @@
 # Changelog
 
+## [0.49.0](https://github.com/cellajs/cella/compare/0.48.0...0.49.0) (2026-11-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** drizzle 1.0.0-rc.6 reads snapshot format 10 and returns dates from raw queries, and the OAuth server boots on oidc-provider 9.15 ([#1897](https://github.com/cellajs/cella/issues/1897))
+* an app switches a product off in its config: its routes answer 404, the docs mark them off and MCP lists no tool for it ([#1895](https://github.com/cellajs/cella/issues/1895))
+* **infra:** a lease that tells its holders apart and ends on time, Scaleway calls that retry, one observer key file a machine, and a protected database ([#1894](https://github.com/cellajs/cella/issues/1894))
+* **lti:** a launch opens its channel and no more, a slug longer than an id can be read by slug, and eight small fixes ([#1892](https://github.com/cellajs/cella/issues/1892))
+* **lti:** an embedded session belongs to one frame, launch state stays in the frame's own storage, and an Add button on the tab bar switches an LTI tool's tab on ([#1891](https://github.com/cellajs/cella/issues/1891))
+* **lti:** the LTI tool fits Canvas and every deployment, a launch is bound to the browser that started it, roles follow the standard alone, and a member list ends what it no longer holds ([#1890](https://github.com/cellajs/cella/issues/1890))
+* **tenants:** a new tenant follows the running config, an update stores only what it changes, and a cap of 0 stored before deny by default keeps its meaning ([#1889](https://github.com/cellajs/cella/issues/1889))
+* deny by default where an omitted value granted access ([#1888](https://github.com/cellajs/cella/issues/1888))
+* **lti:** a tab launches as its own channel for an audience, roles come from membership, and an admin chooses where an LTI tool is placed ([#1886](https://github.com/cellajs/cella/issues/1886))
+* LTI course members by Names and Roles, a key per connection, identities per tenant, and LTI tools in the Tabs card ([#1884](https://github.com/cellajs/cella/issues/1884))
+* an installed LTI tool reads course members through the platform's API, and an LTI tool imports them ([#1883](https://github.com/cellajs/cella/issues/1883))
+* LTI 1.3 in both roles: an app registers and launches LTI tools, and is registered and launched as one ([#1882](https://github.com/cellajs/cella/issues/1882))
+* a role's policy decides whom a member sees, through the permission engine ([#1881](https://github.com/cellajs/cella/issues/1881))
+* the service images keep their code read-only to the process, copy only what runs, and drop every Linux capability ([#1879](https://github.com/cellajs/cella/issues/1879))
+* the template's docs live in cella/docs/, its security policy in .github/ ([#1876](https://github.com/cellajs/cella/issues/1876))
+* a query past its stale time refetches when a reader mounts ([#1875](https://github.com/cellajs/cella/issues/1875))
+* a channel is channelId and channelType everywhere, lists sort by orderBy in the URL, avatars take the row ([#1873](https://github.com/cellajs/cella/issues/1873))
+* files take numbered share links /{code}/a7 that unfurl over a picture of their kind, and a copied document keeps todos, captions and table headers ([#1868](https://github.com/cellajs/cella/issues/1868))
+* a stream whose client left never registers, the API routes each request once and compresses above a real threshold ([#1864](https://github.com/cellajs/cella/issues/1864))
+
+### 🎉 New features
+
+* a role's policy decides whom a member sees, through the permission engine ([#1881](https://github.com/cellajs/cella/issues/1881)) ([a957554](https://github.com/cellajs/cella/commit/a95755442c85355f277b9bf67d99e219df299585))
+* a slim table header shows its column's icon, the align skill reads an upgrade's reference-module commits, and search chips can cut long names short ([#1862](https://github.com/cellajs/cella/issues/1862)) ([8e9111d](https://github.com/cellajs/cella/commit/8e9111df1dc5cfc6b04a773e694df40ef0cf39b1))
+* an app switches a product off in its config: its routes answer 404, the docs mark them off and MCP lists no tool for it ([#1895](https://github.com/cellajs/cella/issues/1895)) ([5208437](https://github.com/cellajs/cella/commit/520843729d36e00ce9eb417013523245f6e0fea5))
+* an installed LTI tool reads course members through the platform's API, and an LTI tool imports them ([#1883](https://github.com/cellajs/cella/issues/1883)) ([20246e4](https://github.com/cellajs/cella/commit/20246e4e2f2cf8368ad34b7650ce03f5a0ddee9f))
+* deny by default where an omitted value granted access ([#1888](https://github.com/cellajs/cella/issues/1888)) ([229a324](https://github.com/cellajs/cella/commit/229a3249e8c51d9886645f25b2ce8f2c77c9117d))
+* files take numbered share links /{code}/a7 that unfurl over a picture of their kind, and a copied document keeps todos, captions and table headers ([#1868](https://github.com/cellajs/cella/issues/1868)) ([2af100b](https://github.com/cellajs/cella/commit/2af100bd03344f39204edc8d6af17770edcb4fd5))
+* **frontend:** docs paths shorten their tenant and organization segments, the archived banner is a flat band, and a hover-opened popover gets no cut-text title ([#1896](https://github.com/cellajs/cella/issues/1896)) ([017c457](https://github.com/cellajs/cella/commit/017c457834593db38e465cc1ceb7fb2bf67401f6))
+* **infra:** pick lists end in a Back row, the menu reads the stack while an action's output waits, and the CLI moves to 0.8.3 ([#1867](https://github.com/cellajs/cella/issues/1867)) ([6264324](https://github.com/cellajs/cella/commit/6264324661e4ef683f371aca5b405e4080d3e82d))
+* **infra:** the More pick shows a phrase beside each action with rules between its sections, and no menu prints a stray blank line ([#1861](https://github.com/cellajs/cella/issues/1861)) ([1ff24eb](https://github.com/cellajs/cella/commit/1ff24ebd7628e3b7196ccbb83f5080b7a1583977))
+* LTI 1.3 in both roles: an app registers and launches LTI tools, and is registered and launched as one ([#1882](https://github.com/cellajs/cella/issues/1882)) ([3fc9613](https://github.com/cellajs/cella/commit/3fc9613fe41112d9dbad7ccaa9faa15a986f508f))
+* LTI course members by Names and Roles, a key per connection, identities per tenant, and LTI tools in the Tabs card ([#1884](https://github.com/cellajs/cella/issues/1884)) ([a9fa460](https://github.com/cellajs/cella/commit/a9fa46053e25999005d89e859adc7b97b8877cef))
+* **lti:** a refused registration says why, an LTI tool can be deleted, and no text says channel ([#1885](https://github.com/cellajs/cella/issues/1885)) ([04c2b04](https://github.com/cellajs/cella/commit/04c2b040ce98abbbbc57ceaf8166182788cf40f9))
+* **lti:** a tab launches as its own channel for an audience, roles come from membership, and an admin chooses where an LTI tool is placed ([#1886](https://github.com/cellajs/cella/issues/1886)) ([09fb08e](https://github.com/cellajs/cella/commit/09fb08e6294e24530ade9fb2f3bd0678d9b64770))
+* **lti:** an embedded session belongs to one frame, launch state stays in the frame's own storage, and an Add button on the tab bar switches an LTI tool's tab on ([#1891](https://github.com/cellajs/cella/issues/1891)) ([596103e](https://github.com/cellajs/cella/commit/596103e754067b2c70a59e7e6829ed92504f2322))
+* **lti:** the LTI tool fits Canvas and every deployment, a launch is bound to the browser that started it, roles follow the standard alone, and a member list ends what it no longer holds ([#1890](https://github.com/cellajs/cella/issues/1890)) ([73ffc6c](https://github.com/cellajs/cella/commit/73ffc6cc982c70d4d4672b856158f3df2be83fa1))
+* **oauth:** signing keys rotate on a schedule, and the authorization server takes the new signer without a restart ([#1878](https://github.com/cellajs/cella/issues/1878)) ([46cade8](https://github.com/cellajs/cella/commit/46cade8bbb6e368e950f64e9842e6d38851419f9))
+* **pentest:** the probe signs in a member with the least role and accepts two ZAP findings, and the security review takes an intake of OWASP cheat sheets and peer advisories ([#1898](https://github.com/cellajs/cella/issues/1898)) ([846f8df](https://github.com/cellajs/cella/commit/846f8df1796ed1b4981532850e65440b8a3058cb))
+
+
+### 🐞 Bug fixes
+
+* a query past its stale time refetches when a reader mounts ([#1875](https://github.com/cellajs/cella/issues/1875)) ([2849ebf](https://github.com/cellajs/cella/commit/2849ebf2cfb9c904fdad833d7ac8ac432fb7ca2d))
+* a stream whose client left never registers, the API routes each request once and compresses above a real threshold ([#1864](https://github.com/cellajs/cella/issues/1864)) ([c981c7e](https://github.com/cellajs/cella/commit/c981c7e1b9c83bc5253b9d78e1bcffef8f6d6e63))
+* **bench:** a scenario's description says what it asks, without its name again ([#1869](https://github.com/cellajs/cella/issues/1869)) ([06b2102](https://github.com/cellajs/cella/commit/06b210253b411a4f9148187d21a04fb80e02fb98))
+* **frontend:** a hide, mute or reorder of my memberships survives an older read that lands after it ([#1874](https://github.com/cellajs/cella/issues/1874)) ([193a03f](https://github.com/cellajs/cella/commit/193a03f9156928f5d01a46bff4bba3bee8c7c5d5))
+* **frontend:** queries keep the data they have when a refetch fails, and tables keep their rows while a search loads ([#1871](https://github.com/cellajs/cella/issues/1871)) ([ba1ac09](https://github.com/cellajs/cella/commit/ba1ac09167877cd5ef361404fa0b312cc14ee74b))
+* **infra:** a lease that tells its holders apart and ends on time, Scaleway calls that retry, one observer key file a machine, and a protected database ([#1894](https://github.com/cellajs/cella/issues/1894)) ([4a352a8](https://github.com/cellajs/cella/commit/4a352a8fa6d4d2a16f145dc9d16beacbae9ffcea))
+* **infra:** a value set in Env vars & secrets reaches the machines with the deploy it offers ([#1887](https://github.com/cellajs/cella/issues/1887)) ([e0689d7](https://github.com/cellajs/cella/commit/e0689d73d1d1f88c0b0d2c86e6227d69042f9a35))
+* **infra:** every infra action converges when run again after a failure ([#1860](https://github.com/cellajs/cella/issues/1860)) ([4df05fd](https://github.com/cellajs/cella/commit/4df05fd79795b7d98ca5928bcf6ab7b4e3ae97fa))
+* **lti:** a launch opens its channel and no more, a slug longer than an id can be read by slug, and eight small fixes ([#1892](https://github.com/cellajs/cella/issues/1892)) ([fa0673c](https://github.com/cellajs/cella/commit/fa0673ccece9f18e108b9bb1bbe9c0cb74ad198d))
+* **skills:** the offline check's cold and nouser checks reopen a page that renders from the device ([#1880](https://github.com/cellajs/cella/issues/1880)) ([b2427d0](https://github.com/cellajs/cella/commit/b2427d0efece8e5c0c20e171cf48f35eb7f789b5))
+* **tenants:** a new tenant follows the running config, an update stores only what it changes, and a cap of 0 stored before deny by default keeps its meaning ([#1889](https://github.com/cellajs/cella/issues/1889)) ([9b56ec2](https://github.com/cellajs/cella/commit/9b56ec2a64b1df96d4265b3c9a9e0ac904a90c53))
+* **tests:** three suites hold in an app whose least organization role reads no attachment and is no channel role ([#1893](https://github.com/cellajs/cella/issues/1893)) ([f276205](https://github.com/cellajs/cella/commit/f276205fb1c5d390c3b4abb8e4381014f962af25))
+* the app finds out it is offline sooner, boots offline with nothing cached, recovers on reconnect, and saves offline description edits on a reseeded document ([#1877](https://github.com/cellajs/cella/issues/1877)) ([57c03dd](https://github.com/cellajs/cella/commit/57c03dd8a7b436ad11b2756fa4bde4a82db7533b))
+* the frontend bundle reports its release, and the frontend proxy's Permissions-Policy comes from config ([#1899](https://github.com/cellajs/cella/issues/1899)) ([c23b19f](https://github.com/cellajs/cella/commit/c23b19ff0d92bdd4be6d2fb5cc849f57e7e3a466))
+* the service images keep their code read-only to the process, copy only what runs, and drop every Linux capability ([#1879](https://github.com/cellajs/cella/issues/1879)) ([40f9edc](https://github.com/cellajs/cella/commit/40f9edc7beb4d2c632be7dd46666de6565824d6d))
+
+
+### 🔧 Small improvements
+
+* a batch update refuses one row without failing the rest, and the product batch factories are compositions of exported parts ([#1866](https://github.com/cellajs/cella/issues/1866)) ([024d278](https://github.com/cellajs/cella/commit/024d278e98226fa2900e8ba56ddda30220b0f655))
+* a channel is channelId and channelType everywhere, lists sort by orderBy in the URL, avatars take the row ([#1873](https://github.com/cellajs/cella/issues/1873)) ([e568bdb](https://github.com/cellajs/cella/commit/e568bdb28c793c04b6f9a9d3001f8b2dc46d1e8b))
+* code moves off the deprecated library APIs it used ([#1870](https://github.com/cellajs/cella/issues/1870)) ([1354f49](https://github.com/cellajs/cella/commit/1354f49fff134959f7292b0cb5eb0b0d0c860ca9))
+* the template's docs live in cella/docs/, its security policy in .github/ ([#1876](https://github.com/cellajs/cella/issues/1876)) ([97bc5e7](https://github.com/cellajs/cella/commit/97bc5e7e124108f7c53265764f4a7cb407e6bb6f))
+
+
+### 🏗️ Build & deps
+
+* the release PR opens as a draft and runs its checks once ready, and two gate jobs become steps of lint ([#1865](https://github.com/cellajs/cella/issues/1865)) ([9a9b220](https://github.com/cellajs/cella/commit/9a9b2204580a65943c5a9ca00e4ff436f5f27204))
+
+
+### 🧹 Chores
+
+* **deps:** drizzle 1.0.0-rc.6 reads snapshot format 10 and returns dates from raw queries, and the OAuth server boots on oidc-provider 9.15 ([#1897](https://github.com/cellajs/cella/issues/1897)) ([95be35f](https://github.com/cellajs/cella/commit/95be35f2a8e4384066aef6df4703831f6a40ea79))
+* doc comments on the share-link exports fit on one line ([#1872](https://github.com/cellajs/cella/issues/1872)) ([58fdaf1](https://github.com/cellajs/cella/commit/58fdaf1ca9f9170b4be073461ab79bd45dc8084f))
+
 ## [0.48.0](https://github.com/cellajs/cella/compare/0.47.1...0.48.0) (2026-11-16)
 
 
