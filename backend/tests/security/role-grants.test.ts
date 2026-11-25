@@ -43,8 +43,8 @@ interface Row {
 
 /**
  * Roles are declared most to least privileged, and a role grant may not outrank the granter's own. The suite gives the
- * least-privileged organization role `update` and `delete` on the organization, the cell an app sets to let members
- * manage it, so the role rank answers each attempt and not the action check before it.
+ * plain member's organization role (`memberRole`) `update` and `delete` on the organization, the cell an app sets to
+ * let members manage it. The role rank then answers each attempt, not the action check before it.
  */
 describe('Role grants above the actor', async () => {
   const call = await createAppClient();

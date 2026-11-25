@@ -24,7 +24,7 @@ export const memberRoleIn = (channelType: ChannelEntityType, entityType: EntityT
  * which `joinAttachmentHome` gives a member when the organization role is not elevated.
  */
 export function assumeMemberAttachmentPolicy(permissions: Partial<EntityActionPermissions>) {
-  const memberRole = hierarchy.getLeastPrivilegedRole('organization');
+  const memberRole = hierarchy.getDefaultRole('organization');
   const policies = getEntityPolicies(policyMatrix, 'attachment');
   const homes = hierarchy.possibleHomeChannels('attachment').filter((channelType) => channelType !== 'organization');
   const assumed = [

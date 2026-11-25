@@ -48,8 +48,8 @@ export async function serviceAccountWithKey(
 export const registerApp = (app: typeof oauthClientsTable.$inferInsert) => db.insert(oauthClientsTable).values(app).onConflictDoNothing();
 
 /**
- * Installs a registered app in `org` as its admin does: a service account with the organization's least privileged
- * role, bound to the app's client. A tenant installs an app once; installing it again keeps the first. Returns the
+ * Installs a registered app in `org` as its admin does: a service account at the plain member's organization role
+ * (`memberRole`), bound to the app's client. A tenant installs an app once; installing it again keeps the first. Returns the
  * installation's id.
  */
 export async function installApp(org: OrgPath, adminCookie: string, clientId: string) {

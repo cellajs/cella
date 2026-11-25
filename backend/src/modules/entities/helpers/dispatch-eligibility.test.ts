@@ -5,8 +5,8 @@ import type { StreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { memberRole } from '../../../../tests/fixtures';
 
-// The template reads no row by `own`: here the least privileged organization role reads only the attachments it wrote,
-// so the sweep reaches the decision `readerFrames` takes again for a row's author.
+// The template reads no row by `own`. Here the plain member's organization role, the default one, reads only the attachments
+// it wrote: the sweep then reaches the decision `readerFrames` takes again for a row's author.
 vi.mock('shared', async (importOriginal) => {
   const shared = await importOriginal<typeof import('shared')>();
   const { appConfig, hierarchy, publicReadGrants } = shared;
@@ -15,7 +15,7 @@ vi.mock('shared', async (importOriginal) => {
   const policies = configurePolicyMatrix(appConfig.entityTypes, ({ entityType, channels }) => {
     if (entityType !== 'attachment') return;
     channels.organization[hierarchy.getMostPrivilegedRole('organization')]({ read: 1 });
-    channels.organization[hierarchy.getLeastPrivilegedRole('organization')]({ read: 'own' });
+    channels.organization[hierarchy.getDefaultRole('organization')]({ read: 'own' });
   });
   const checkAccessFanout = (accesses: Access[], action: EntityActionType, subject: SubjectForPermission) =>
     getDecisionsForAccesses(

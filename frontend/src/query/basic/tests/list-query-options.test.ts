@@ -2,8 +2,8 @@ import '~/query/tests/query-client-env';
 import { hierarchy } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 
-// The organization's least privileged role, whatever the app calls it.
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
+// The organization's default role, whatever the app calls it.
+const memberRole = hierarchy.getDefaultRole('organization');
 
 // The list endpoints answer an empty page; each case reads the request the fetcher sent.
 vi.mock('sdk', async (importOriginal) => {
