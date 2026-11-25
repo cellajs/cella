@@ -108,6 +108,16 @@ describe('useFormWithDraft handleChanges', () => {
     expect(await submitChanges()).toEqual({ languageCodes: ['en', 'nl'] });
   });
 
+  // The store froze the form's own array: the next edit of a row in a field array threw "Cannot assign to read only property".
+  it('saves a draft of an array without freezing the form value', async () => {
+    vi.useFakeTimers();
+    await edit('languageCodes', ['en', 'nl']);
+    await act(() => vi.advanceTimersByTimeAsync(300));
+    vi.useRealTimers();
+    expect(useDraftStore.getState().getForm(formId)).toEqual({ languageCodes: ['en', 'nl'] });
+    expect(Object.isFrozen(form.getValues('languageCodes'))).toBe(false);
+  });
+
   // Each edit restarted the save: typing without a 300 ms pause saved nothing past the first edit, and a killed tab lost it.
   it('saves a steady stream of edits within 300 ms', async () => {
     vi.useFakeTimers();
