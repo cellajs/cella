@@ -19,6 +19,7 @@
 #   ORIGIN_HOST        : S3 REST hostname for the frontend bucket
 #   FRONTEND_CSP       : the CSP of every response but a page under /embed/
 #   FRONTEND_EMBED_CSP : the CSP of a page under /embed/
+#   FRONTEND_PERMISSIONS_POLICY : the Permissions-Policy of every response
 {
 	admin off
 	auto_https off
@@ -52,7 +53,7 @@
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
-		Permissions-Policy "camera=(self), microphone=(self), geolocation=()"
+		Permissions-Policy "{$FRONTEND_PERMISSIONS_POLICY}"
 		Cross-Origin-Opener-Policy "same-origin"
 		X-App-Version "{$RELEASE_SHA}"
 		-Server

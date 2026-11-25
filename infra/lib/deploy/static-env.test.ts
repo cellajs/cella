@@ -24,6 +24,7 @@ function render(singleVM: boolean, role: string) {
         APP_ORIGIN: ({ serviceUrl }) => serviceUrl('frontend'),
         FRONTEND_CSP: () => 'csp',
         FRONTEND_EMBED_CSP: () => 'csp',
+        FRONTEND_PERMISSIONS_POLICY: () => 'policy',
         ORIGIN_HOST: () => 'bucket',
       },
       context: { config, naming, region, mode: 'production', serviceUrl: (slug) => `https://${slug}.example` },

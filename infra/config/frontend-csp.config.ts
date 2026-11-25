@@ -92,3 +92,6 @@ export function frontendCsp(appConfig: EngineConfig, frameAncestors = "'self'"):
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+/** The frontend's Permissions-Policy: a page of the app may use the camera and microphone (the uploader), and none asks for a location. */
+export const frontendPermissionsPolicy = 'camera=(self), microphone=(self), geolocation=()';
