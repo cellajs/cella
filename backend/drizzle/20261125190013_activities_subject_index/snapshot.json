@@ -1,0 +1,58 @@
+{
+  "type": "diff",
+  "version": "10",
+  "dialect": "postgres",
+  "id": "d80c7663-089b-412c-a139-62f0c5804e31",
+  "prevIds": [
+    "684c7e3b-9265-4a32-b31e-a4ef88452e4b"
+  ],
+  "footprints": [
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "activities",
+        "activities_entity_type_subject_id_index"
+      ],
+      "writes": [
+        "s|idx|public.activities_entity_type_subject_id_index",
+        "n|idx|public.activities_entity_type_subject_id_index",
+        "e|idx|public.activities_entity_type_subject_id_index",
+        "n|rel|public.activities_entity_type_subject_id_index"
+      ],
+      "reads": [
+        "n|tbl|public.activities",
+        "n|sch|public",
+        "n|col|public.activities.entity_type",
+        "n|col|public.activities.subject_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "cdd5fc9479971b63"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"activities_entity_type_subject_id_index\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "entity_type",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "subject_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ]
+      }
+    }
+  ]
+}

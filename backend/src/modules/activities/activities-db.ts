@@ -29,9 +29,10 @@ export const activitiesTable = snakeCase.table(
     // Composite PK required for range partitioning by created_at
     primaryKey({ columns: [table.id, table.createdAt] }),
     index('activities_created_at_index').on(table.createdAt.desc()),
-    // Composite indexes for cursor-based scans
+    // Composite index for cursor-based scans
     index('activities_org_id_index').on(table.organizationId, table.id),
-    index('activities_entity_type_subject_id_index').on(table.entityType, table.id),
+    // One subject's activities
+    index('activities_entity_type_subject_id_index').on(table.entityType, table.subjectId),
   ],
 );
 
