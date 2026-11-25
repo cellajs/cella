@@ -14,6 +14,7 @@ export default defineConfig({
   forks: [
     { name: 'raak', localPath: '../raak', remoteUrl: 'git@github.com:cellajs/raak.git', pullBranch: 'main' },
     { name: 'projectcampus', localPath: '../projectcampus', remoteUrl: 'git@github.com:cellajs/projectcampus.git', pullBranch: 'main' },
+    { name: 'allok', localPath: '../allok', remoteUrl: 'git@github.com:cellajs/allok.git', pullBranch: 'main' },
   ],
 
   // Paths the fork fully owns: never merged, whether existing or new
