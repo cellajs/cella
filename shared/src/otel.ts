@@ -52,7 +52,8 @@ import { createRedactingSpanProcessor } from './tracing/redacting-span-processor
  */
 const instrumentations = () => [new HttpInstrumentation(), new UndiciInstrumentation(), new PgInstrumentation()];
 
-const exportOffMsg = '[otel] no OTEL_EXPORTER_OTLP_ENDPOINT or MAPLE_SECRET_INGEST_KEY set: telemetry export is off';
+// The standard OTLP variables are the one destination.
+const exportOffMsg = '[otel] no OTEL_EXPORTER_OTLP_ENDPOINT set: telemetry export is off';
 
 // One id per process, shared by every SDK it makes: a monitor tells two machines of one service apart by it.
 const serviceInstanceId = randomUUID();

@@ -128,10 +128,10 @@ const envSchema = z
     S3_ACCESS_KEY_ID: z.string().optional(),
     S3_ACCESS_KEY_SECRET: z.string().optional(),
 
-    MAPLE_SECRET_INGEST_KEY: z.string().optional(),
-    // The standard OTLP destination; it wins over the Maple key. The OTel exporters read it and its sibling variables
-    // (OTEL_EXPORTER_OTLP_HEADERS, per-signal endpoints) from the environment themselves.
+    // Where telemetry goes and the headers each export sends. The OTel exporters read both from the environment
+    // themselves, the per-signal variables too.
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
+    OTEL_EXPORTER_OTLP_HEADERS: z.string().optional(),
 
     // Key material the Ed25519 key signing Yjs editor tokens derives from; the relay holds only the public half.
     YJS_TOKEN_PRIVATE_KEY: secretString('YJS_TOKEN_PRIVATE_KEY', 32).optional(),

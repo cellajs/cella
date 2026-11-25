@@ -69,14 +69,16 @@ describe('runtime secret registry', () => {
       'DATABASE_CDC_URL',
       'DATABASE_SSL_CA',
       'CDC_SECRET',
-      'MAPLE_SECRET_INGEST_KEY',
+      'OTEL_EXPORTER_OTLP_ENDPOINT',
+      'OTEL_EXPORTER_OTLP_HEADERS',
     ]);
     expect(runtimeSecretsForConsumer('yjs').map((secret) => secret.envVar)).toEqual([
       'DATABASE_URL',
       'DATABASE_SSL_CA',
       'YJS_TOKEN_PUBLIC_KEY',
       'YJS_RELAY_SECRET',
-      'MAPLE_SECRET_INGEST_KEY',
+      'OTEL_EXPORTER_OTLP_ENDPOINT',
+      'OTEL_EXPORTER_OTLP_HEADERS',
     ]);
     expect(runtimeSecretsForConsumer('frontend')).toEqual([]);
     expect(runtimeSecretsForConsumer('oauth').map((secret) => secret.envVar)).toEqual([
@@ -94,7 +96,8 @@ describe('runtime secret registry', () => {
       'UNSUBSCRIBE_SECRET',
       'DATA_ENCRYPTION_KEY',
       'BREVO_API_KEY',
-      'MAPLE_SECRET_INGEST_KEY',
+      'OTEL_EXPORTER_OTLP_ENDPOINT',
+      'OTEL_EXPORTER_OTLP_HEADERS',
       'MATRIX_ACCESS_TOKEN',
     ]);
   });
