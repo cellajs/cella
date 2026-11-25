@@ -21,9 +21,9 @@ import { meKeys } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 import { withApp } from '~/stories/with-app';
 
-/** The app's organization roles: previews show the most privileged, the stats count the least privileged. */
+/** The app's organization roles: previews show the most privileged, the stats count the default one, which most members hold. */
 const mostPrivileged = hierarchy.getMostPrivilegedRole('organization');
-const leastPrivileged = hierarchy.getLeastPrivilegedRole('organization');
+const defaultRole = hierarchy.getDefaultRole('organization');
 // The tile counts the app's member-stat products, so the stories post what the app counts
 const postType = appConfig.memberStatProductTypes[0];
 
@@ -44,7 +44,7 @@ const organization: ChannelTileEntity = {
   publishedAt: '2026-01-10T09:00:00Z',
   included: {
     counts: {
-      membership: { [mostPrivileged]: 7, [leastPrivileged]: 41, pending: 2, total: 48 },
+      membership: { [mostPrivileged]: 7, [defaultRole]: 41, pending: 2, total: 48 },
       entities: { [postType]: 12 },
       activity: { [postType]: { created: Date.parse('2026-10-01T12:00:00Z') } },
     },
@@ -125,7 +125,7 @@ export const LargeCounts: Story = {
       included: {
         members: previews,
         counts: {
-          membership: { [mostPrivileged]: 1203, [leastPrivileged]: 1407, pending: 2, total: 2610 },
+          membership: { [mostPrivileged]: 1203, [defaultRole]: 1407, pending: 2, total: 2610 },
           entities: { [postType]: 21_312 },
           activity: { [postType]: { created: Date.parse('2026-10-01T12:00:00Z') } },
         },
@@ -160,7 +160,7 @@ export const Composed: Story = {
       <ChannelTileFooter>
         <ChannelTileDescription />
         <ChannelTileMembership fallback={<Button variant="outline">Join</Button>} />
-        <ChannelTileMemberCount countRole={leastPrivileged} />
+        <ChannelTileMemberCount countRole={defaultRole} />
       </ChannelTileFooter>
     </ChannelTileCard>
   ),

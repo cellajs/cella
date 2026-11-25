@@ -26,7 +26,7 @@ export const membershipsTable = snakeCase.table(
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
-    role: varchar({ enum: roles.all }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
+    role: varchar({ enum: roles.all }).notNull().default(hierarchy.getDefaultRole('organization')),
     hidden: boolean().default(false).notNull(),
     muted: boolean().default(false).notNull(),
     displayOrder: doublePrecision().notNull(),

@@ -170,7 +170,7 @@ export const mockInviteOutcome = () => ({ email: 'p.okafor@example.net', outcome
 const mockInviteOutcomes = () => [
   { email: 'sara.devries@example.com', outcome: 'invite' as const },
   mockInviteOutcome(),
-  { email: 'lena@example.com', outcome: 'member' as const, role: hierarchy.getRoles('organization').at(-1) },
+  { email: 'lena@example.com', outcome: 'member' as const, role: hierarchy.getDefaultRole('organization') },
 ];
 
 export const mockMembershipCheckResponse = () => ({ outcomes: mockInviteOutcomes() });

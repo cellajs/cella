@@ -37,9 +37,9 @@ type InviteFormValues = z.infer<typeof inviteFormSchema>;
 
 export type InviteRole = InviteFormValues['role'];
 
-/** The target vocabulary's least-privileged role; without an entity type, the organization's. */
+/** The target channel's default role; without an entity type, the organization's. */
 const defaultInviteRole = (entityType?: ChannelEntityType): InviteFormValues['role'] =>
-  hierarchy.getLeastPrivilegedRole(entityType ?? 'organization') as InviteFormValues['role'];
+  hierarchy.getDefaultRole(entityType ?? 'organization') as InviteFormValues['role'];
 
 /** The form every invite mode of one channel shares, so a switch of mode keeps the addresses. */
 export const useInviteFormDraft = (entityId?: string, entityType?: ChannelEntityType) =>

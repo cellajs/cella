@@ -32,7 +32,7 @@ export const invitationsTable = snakeCase.table(
     userId: uuid()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
-    role: varchar({ enum: roles.all }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
+    role: varchar({ enum: roles.all }).notNull().default(hierarchy.getDefaultRole('organization')),
     status: varchar({ enum: invitationStatuses }).notNull().default('pending'),
     /** Moved only by a write that changes `status`: the decline's moment for a declined row, which the sweep ages. */
     statusChangedAt: isoTimestamp().defaultNow().notNull(),
