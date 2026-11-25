@@ -14,6 +14,7 @@ import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
 import { getFlag } from '../lib/utils/args';
 import { ExitCodeError, errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
+import { infraDir } from '../lib/utils/paths';
 import type { MachineEnv } from './compose-env';
 import { type AllowedKey, buildDeployEnv } from './deploy-env';
 import type { SwitchResult } from './switch-machines';
@@ -576,7 +577,7 @@ function createRealEffects(): DeployEffects {
       const s3 = await diagnosticsClient(region);
       const control = await controlClient(region);
       const foundation = await readFoundation({ secretKey }, { region, zone, projectId, naming, mode, roles: request.roles });
-      const composeContent = await readFile(resolve(import.meta.dirname, '../compose.gen.yml'), 'utf8');
+      const composeContent = await readFile(join(infraDir, 'compose.gen.yml'), 'utf8');
       const effects = liveSwitchEffects({
         secretKey,
         projectId,
