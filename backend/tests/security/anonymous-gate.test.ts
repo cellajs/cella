@@ -53,7 +53,7 @@ describe('Anonymous gate', async () => {
 
     const wrong: string[] = [];
     for (const { operationId, method, path, admits, switched } of operations) {
-      // The gate runs before validation, so any value stands in for a path param; a stream is aborted once its status is in.
+      // Any value stands in for a path param: the gate runs before validation. A stream is aborted once its status is in.
       const controller = new AbortController();
       const response = await baseApp.request(path.replace(/\{[^}]+\}/g, 'any'), { method: method.toUpperCase(), headers, signal: controller.signal });
       const refused = response.status === 400 || response.status === 403 || response.status === 404;

@@ -1,13 +1,11 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
-import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { AppFooterLinks, type FooterLinkProps } from '~/modules/common/app/app-footer';
 import { Logo } from '~/modules/common/logo';
-import { lazyNamed } from '~/utils/lazy-named';
-
-const MorphAnimation = lazyNamed(() => import('~/modules/common/morph-animation/morph-animation'), 'MorphAnimation');
+// Static, not lazy, or the art trails the column: a lazy import suspends once, and React holds a fallback's content back 300ms
+import { MorphAnimation } from '~/modules/common/morph-animation/morph-animation';
 
 export function AuthLayout() {
   const { t } = useTranslation();
@@ -20,10 +18,8 @@ export function AuthLayout() {
 
   return (
     <div className="group/auth-layout rich-gradient focus-gap container flex min-h-[90svh] flex-col items-center overflow-y-clip pt-8 pb-40 before:fixed after:fixed sm:min-h-svh">
-      <Suspense fallback={null}>
-        {/* Overscan below 1 zooms in, a phone further, so the window always crops the colony; the zoom magnifies motion, hence the lower speed */}
-        <MorphAnimation variant="colony" grid={192} stamp="plus" overscan={isMobile ? 0.26 : 0.31} speed={0.4} />
-      </Suspense>
+      {/* Overscan below 1 zooms in, a phone further: the window always crops the colony. The zoom magnifies motion, hence the lower speed */}
+      <MorphAnimation variant="colony" grid={192} stamp="plus" overscan={isMobile ? 0.26 : 0.31} speed={0.4} />
 
       {/* The box the veil measures itself on, clear of the content column's entrance transform */}
       <div className="relative my-auto">

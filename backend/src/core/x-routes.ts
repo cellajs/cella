@@ -203,7 +203,7 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], p
  * guard that authenticates the session, the anonymous gate of a user-level route that does not admit an anonymous
  * session (`xAnonymous`, documented as `x-anonymous`), `xRateLimiter`, the preconditions of a route for one channel or
  * product (`preconditionTarget`: entity tags and `If-Match`), the route's own `middleware`, then validation and the
- * handler. The switch needs no caller, so a route that is off answers before any guard shows how it authenticates;
+ * handler. A route that is off answers before any guard shows how it authenticates: the switch needs no caller.
  * `middleware` runs after the guards and may read the actor.
  * A GET route that declares no limiter takes `readLimiter`, and a limiter a guard runs itself (`limiters`) is
  * documented on every route that lists the guard.
@@ -237,7 +237,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   const xMiddlewares = [...extensionMiddleware, ...existing].filter(isMarked).flatMap((mw) => [mw, ...(mw.__limiters ?? [])]);
   const provided = assertGuardOrder(route, xMiddlewares);
   const gated = keepsAnonymousOut(route, provided, config.xAnonymous === true);
-  // The gate follows the guard that authenticates the session, ahead of any guard after it, so an anonymous session is refused for what it is.
+  // An anonymous session is refused for what it is: the gate follows the guard that authenticates the session, ahead of any guard after it.
   const gateAt = extensionMiddleware.findIndex((mw) => isMarked(mw) && mw.__provides?.includes('actor')) + 1;
   const guarded = gated ? [...extensionMiddleware.slice(0, gateAt), anonymousGate, ...extensionMiddleware.slice(gateAt)] : extensionMiddleware;
   const middleware = [...operation, ...errorPage, ...switchGate, ...guarded, ...preconditions, ...existing];

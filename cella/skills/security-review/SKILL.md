@@ -1,17 +1,18 @@
 ---
 name: security-review
-description: Review the app one vector class at a time (who acts, what they may do, what goes in, what comes out, abuse and failure, platform) with a cheap scout, one attack-and-judge agent and a fix commit per class, all of a run in one PR. Use it when a new advisory names a vector no brief covers, for a periodic pass over the classes that changed most, or to run an app's own entities through the access classes.
+description: Review the app one vector class at a time (who acts, what they may do, what goes in, what comes out, abuse and failure, platform) with a cheap scout, one attack-and-judge agent and a fix commit per class, all of a run in one PR. Use it when a new advisory names a vector no brief covers, to read every OWASP cheat sheet and every advisory of the listed peer projects into the classes, for a periodic pass over the classes that changed most, or to run an app's own entities through the access classes.
 ---
 
 # Security review by vector class
 
-The unit of a review is a **vector class**, never an advisory or a file: every advisory, OWASP item and spec rule that names the same shape of attack joins one iteration, and the iteration ends in a version minimum, a rule in AGENTS.md where the shape repeats, and a test in `backend/tests/security/` that reproduces the attack. [classes.md](./classes.md) holds the 28 classes with their files, holding tests and questions; [roles.md](./roles.md) the prompts, file formats and final-message contracts of the three agents. The template ran every class once in October 2026 (cella#1604, 32 PRs); this skill is the distilled method, sized so a class costs about a third less than that run did.
+The unit of a review is a **vector class**, never an advisory or a file: every advisory, OWASP item and spec rule that names the same shape of attack joins one iteration, and the iteration ends in a version minimum, a rule in AGENTS.md where the shape repeats, and a test in `backend/tests/security/` that reproduces the attack. [classes.md](./classes.md) holds the 28 classes with their files, holding tests and questions; [roles.md](./roles.md) the prompts, file formats and final-message contracts of the three agents; [intake.md](./intake.md) the three lists that feed the classes. The template ran every class once in October 2026 (cella#1604, 32 PRs); this skill is the distilled method, sized so a class costs about a third less than that run did.
 
 **One run, one PR.** Every class a run fixes becomes one commit on the run's branch, and the run opens a single PR. A reviewer who wants a class on its own cherry-picks that commit onto a branch of its own before the merge. The first run opened 24 PRs for 28 classes, each with its own body, size table and full check, and then combined them into one; a run that builds toward one branch skips the 24 bodies and runs the full suite once.
 
 ## When to run a class
 
 - **A new advisory.** The [classifier rules](./classes.md#classifier-rules) file it into a class. Rerun that class only when the advisory names a sub-vector the class's last brief lacks; otherwise the version minimum and the existing test cover it.
+- **An intake.** [intake.md](./intake.md) gives every OWASP cheat sheet and every advisory of the listed peer projects one row: `n/a`, `holds` or `lead`. The classes with the most `lead` rows run first.
 - **A periodic pass.** Rank classes by commits since their last reviewed commit touched their files (`git log --since` over each class's file list) and run the top batch.
 - **An app after a new entity or module.** Run B1, B2, B3 and E2 over the app's own entities: the briefs are the template's, the attacks are against the app's hierarchy and roles.
 - **A new boundary.** Code that parses, signs, fetches, renders or stores for the first time gets its class before it ships.
@@ -96,7 +97,8 @@ cella/skills/security-review/
   SKILL.md                 this file: when, the pipeline, the batch steps, the rules
   classes.md               the 28 classes: gain, merges, advisories, files, holds, asks
   roles.md                 prompt templates, file formats and final messages per agent, the combiner included
-.todos/security-review/    untracked: briefs/, reports/, ledger.md
+  intake.md                the three lists, the row and its three verdicts, the peers
+.todos/security-review/    untracked: briefs/, reports/, intake/, ledger.md
 ```
 
-Advisory intake is a scratch script per run, in `.scratch/`, never a committed tool: for each direct dependency, `gh api graphql` over `securityVulnerabilities` (paginated, `gh` signed in), then each row files into a class by the [classifier rules](./classes.md#classifier-rules). The class sections already carry each class's advisory counts from the October 2026 intake; a fresh intake matters only for advisories published since.
+The dependency advisory intake is a scratch script per run, in `.scratch/`, never a committed tool: for each direct dependency, `gh api graphql` over `securityVulnerabilities` (paginated, `gh` signed in), then each row files into a class by the [classifier rules](./classes.md#classifier-rules). The class sections already carry each class's advisory counts from the October 2026 intake; a fresh intake matters only for advisories published since.

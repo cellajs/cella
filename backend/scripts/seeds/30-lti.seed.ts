@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import pc from 'picocolors';
 import { appConfig, hierarchy, isStrategyEnabled } from 'shared';
 import { getSeedDb } from '#/db/db';
@@ -55,6 +55,8 @@ export const ltiSeed = async () => {
         eq(membershipsTable.userId, defaultAdminUser.id),
         eq(membershipsTable.channelType, 'organization'),
         eq(membershipsTable.role, hierarchy.getMostPrivilegedRole('organization')),
+        // The organization seed leaves the admin's first organization a draft, which `pnpm cella pentest` never targets
+        isNotNull(organizationsTable.publishedAt),
       ),
     )
     .orderBy(asc(membershipsTable.displayOrder))
