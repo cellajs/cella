@@ -85,7 +85,8 @@
       "ignoreDependencies": ["pdfjs-dist"]
     },
     "infra": {
-      "entry": ["index.ts", "tasks/*.ts", "agent/src/entry.ts"]
+      // Pulumi.yaml runs program.mjs; the config files are what the engine in @cellajs/cli imports as `infra/config/<file>`.
+      "entry": ["program.mjs", "config/*.ts"]
     },
     "shared": {
       // pino resolves transport targets by name.

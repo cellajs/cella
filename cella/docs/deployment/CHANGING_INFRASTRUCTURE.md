@@ -44,7 +44,7 @@ Three rules decide what a release owes:
 
 - **Same description:** the release deploys without an apply.
 - **Changed description:** it ends **apply needed** until an apply from a checkout with the change. The run names the changed fields, such as `services.search added`.
-- **Engine code only:** a change to `infra/lib` or `infra/tasks` needs no apply.
+- **Engine code only:** a new `@cellajs/cli` that changes only the engine needs no apply.
 
 The apply that publishes a changed description starts its release again ([Apply needed](./RUNBOOKS.md#apply-needed)). Before it builds, the apply compares this checkout's description with the waiting release's. When they differ it names the fields and asks before going on: that release would keep waiting. A release that changes only engine code deploys on the applied engine. Its own engine runs from the next apply on.
 

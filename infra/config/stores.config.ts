@@ -1,5 +1,4 @@
-import { defineStores } from '../lib/stores';
-import { postgresManaged } from '../resources/stores/catalog';
+import { defineStores, postgresManaged } from '@cellajs/cli/infra';
 
 /**
  * Registry of stateful backing resources, reaching services through runtime secrets: one managed PostgreSQL with row-level

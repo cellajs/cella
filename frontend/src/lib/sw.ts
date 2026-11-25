@@ -31,7 +31,7 @@ const docsFiles = new Set(['/static/openapi.json', '/static/types.gen.ts', '/sta
 
 // A worker on another host than frontendUrl, such as the zone apex before it redirected, answers every visit from its
 // precache and never meets the server's redirect, and a redirected script fails its update fetch without evicting it.
-// That host answers its script request with this file (infra/resources/loadbalancer.ts), which takes over and leaves.
+// That host answers its script request with this file (cella-cli:src/infra/resources/loadbalancer.ts), which takes over and leaves.
 if (canonicalOriginUrl(self.location, __FRONTEND_URL__, __APP_MODE__)) {
   self.addEventListener('install', () => self.skipWaiting());
   self.addEventListener('activate', (event) => event.waitUntil(leaveHost()));

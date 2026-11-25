@@ -1,4 +1,4 @@
-import { defineGeneral } from '../lib/general-config';
+import { defineGeneral } from '@cellajs/cli/infra';
 
 export const generalConfig = defineGeneral({
   // A Scaleway marketplace label or pinned image UUID, passed straight to the instance: the agent is loaded at first boot, so nothing is baked.

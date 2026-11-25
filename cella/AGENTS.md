@@ -8,7 +8,7 @@ Base config: [shared/config/config.default.ts](../shared/config/config.default.t
 
 ## Before you finish
 
-**Always run `pnpm check` at the repo root after any code change, and only report the work done once it passes clean.** Also run `pnpm generate` if you touched DB schemas, and `pnpm --filter infra exec vitest run` if you touched `infra/`. If `pnpm check` fails, fix it or say so explicitly.
+**Always run `pnpm check` at the repo root after any code change, and only report the work done once it passes clean.** Also run `pnpm generate` if you touched DB schemas, and `pnpm --filter infra test` if you touched `infra/`. The deploy engine itself lives in [cella-cli](https://github.com/cellajs/cella-cli/tree/main/src/infra), with its tests. If `pnpm check` fails, fix it or say so explicitly.
 
 ## Routing
 

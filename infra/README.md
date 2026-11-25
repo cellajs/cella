@@ -8,14 +8,14 @@ The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in on
 
 ## What it does
 
-`infra/` is the deploy engine that apps built from cella share through template upgrades. It has four parts:
+The deploy engine ships in [@cellajs/cli](https://github.com/cellajs/cella-cli/tree/main/src/infra), and an app takes a new engine as a version bump. It has four parts:
 
 - **Pulumi program:** the foundation, such as the network, the database and the main job with its schedule.
 - **Deploy:** makes and deletes the machines through the Scaleway API.
 - **Agent:** runs on every machine.
 - **CLI:** an operator runs it on their own machine.
 
-The engine names no app. What an app deploys lives in the registries under [config/](config/), which an upgrade merges like every other template file. They are the app's part of infra: engine code reads them only as `infra/config/<file>`, the package's one export, and an app changes them without editing engine code.
+The engine names no app. This folder is the app's part: the registries under [config/](config/), which an upgrade merges like every other template file, the stack files and the environment records. The engine reads the registries as `infra/config/<file>`, and they call the helpers `@cellajs/cli/infra` exports. An app changes what it deploys here, without editing engine code.
 
 ## How a release flows
 
@@ -77,7 +77,7 @@ Every action also runs alone as `pnpm cella infra <action> [--mode <production|s
 pnpm --filter infra status [--mode <production|staging>] [--json]
 ```
 
-Without `--mode` it reads `INFRA_MODE`, else the first stack file it finds, production first. `--json` prints the report as JSON, shaped as [lib/status/types.ts](lib/status/types.ts) declares it.
+Without `--mode` it reads `INFRA_MODE`, else the first stack file it finds, production first. `--json` prints the report as JSON, shaped as [lib/status/types.ts](https://github.com/cellajs/cella-cli/blob/main/src/infra/lib/status/types.ts) declares it.
 
 Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure. The command always completes: a check that needs a Scaleway key degrades without one. `nextAction` is the highest-priority pending step with an exact command.
 
@@ -121,16 +121,15 @@ To add a service:
 2. Set its `enabled` flag and ports under `services` in [shared/config/config.default.ts](../shared/config/config.default.ts).
 3. Set its path prefix in [shared/src/config-builder/service-paths.ts](../shared/src/config-builder/service-paths.ts).
 4. List it under each runtime secret it reads in [config/runtime-secrets.config.ts](config/runtime-secrets.config.ts).
-5. Ship a Docker image that answers the health path of [lib/health-contract.ts](lib/health-contract.ts) with its release.
+5. Ship a Docker image that answers the health path of the engine's [health contract](https://github.com/cellajs/cella-cli/blob/main/src/infra/lib/health-contract.ts) with its release.
 6. Run its migrations, if any, in a one-shot `release` step at its machine's boot.
 
-[tests/unit/app-config-registry.test.ts](tests/unit/app-config-registry.test.ts) fails when the registry and the shared config disagree.
+[tests/app-config-registry.test.ts](tests/app-config-registry.test.ts) fails when the registry and the shared config disagree.
 
 To add a store:
 
-1. Write a provisioner file in [resources/stores/](resources/stores/) beside `postgres-managed.ts`.
-2. Export it from `catalog.ts`.
-3. Add an entry to [config/stores.config.ts](config/stores.config.ts).
+1. A new kind of store is engine code: a provisioner in the engine's [resources/stores/](https://github.com/cellajs/cella-cli/tree/main/src/infra/resources/stores), exported from its catalog and from `@cellajs/cli/infra`.
+2. Add an entry to [config/stores.config.ts](config/stores.config.ts).
 
 Either change deploys after an apply, since every registry is part of the applied description.
 
@@ -139,16 +138,13 @@ Either change deploys after an apply, since every registry is part of the applie
 | Path | Holds |
 | --- | --- |
 | [config/](config/) | The registries: services, general settings, runtime secrets, managed keys, stores, env suppliers and the frontend CSP. Also engine-config.ts, where the engine reads the app's config |
-| [cli/](cli/) | The menu and its actions |
-| [resources/](resources/) | The Pulumi program: the foundation, no machine |
-| [tasks/](tasks/README.md) | The deploy's steps and the operator tasks |
-| [lib/](lib/) | What they share |
-| [compose/](compose/) | The Compose model, assembled from the service registry into `compose.gen.yml` |
-| [agent/](agent/) | The agent every machine runs |
-| [caddy/](caddy/) | The frontend's Caddy image and its Caddyfile |
-| [Dockerfile](Dockerfile) | The engine image an apply builds |
-| [tests/](tests/README.md) | Tests that span modules, and their helpers |
 | [environments](environments) | What each environment deploys |
+| `Pulumi.yaml`, `Pulumi.<mode>.yaml` | The Pulumi project and each environment's stack file |
+| [program.mjs](program.mjs) | The line Pulumi runs, which hands over to the engine's program |
+| `compose.gen.yml` | The Compose file the engine writes from the service registry, which a deploy reads |
+| [tests/](tests/) | The app's checks of its own files against the engine: env schemas, docs, workflows, shared copies |
+
+The engine's own files (the CLI, the Pulumi program, the deploy, the agent, the frontend proxy, the engine image) are in [cella-cli](https://github.com/cellajs/cella-cli/tree/main/src/infra/).
 
 ## Vocabulary
 
@@ -177,7 +173,7 @@ One name per concept across code and docs:
 | **slot** | `a` or `b`: one of a routed role's two reserved addresses, which its pools list for good. A deploy boots on the slot that does not serve. |
 | **switch** | Moving a role to its new machine: boot on the idle slot, wait until its pools serve it, record it, drain the old one, delete it. |
 | **drain** | The order in a machine's manifest that makes its agent fail the load balancer's check, keeps its connections for the role's drain seconds, and stops its containers. |
-| **agent** | `infra-agent`, the Compose service every machine runs ([agent/](agent/)): boots the release, answers the load balancer's check per service, drains. It replaces every secret value it handled, and any URL userinfo, in its output and its boot account. |
+| **agent** | `infra-agent`, the Compose service every machine runs ([agent/](https://github.com/cellajs/cella-cli/tree/main/src/infra/agent)): boots the release, answers the load balancer's check per service, drains. It replaces every secret value it handled, and any URL userinfo, in its output and its boot account. |
 | **live record** | `control/<mode>/live.json` in the boot-diag bucket: per role the slot that serves, its machine, its commit, and the retry counter and rotation it was booted under. |
 | **lease** | `control/<mode>/lock.json` beside it: one deploy or operator action at a time. |
 | **setup / bootstrap** | The first-ever `pnpm cella infra` run for a stack: state storage, identities, base infrastructure. Not a machine's boot. |

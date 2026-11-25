@@ -1,48 +1,37 @@
 {
   "name": "infra",
-  "description": "Pulumi program and CLI that set up and deploy the app on Scaleway",
+  "description": "The app's part of infra: its config, stack files and environment records, which the engine in @cellajs/cli deploys",
   "type": "module",
   "exports": {
-    "./config/*": "./config/*.ts"
+    "./config/*": "./config/*.ts",
+    "./package.json": "./package.json"
   },
   "scripts": {
-    "cli": "tsx cli/infra-cli.ts",
-    "builder-script": "tsx tasks/print-builder-script.ts",
     "test": "vitest run",
-    "ensure-state-bucket": "tsx tasks/ensure-state-bucket.ts",
-    "deploy": "tsx tasks/deploy.ts",
-    "main-job": "tsx tasks/main-job.ts",
-    "description-hash": "tsx tasks/description-hash.ts",
-    "privileged-footprint": "tsx tasks/privileged-footprint.ts",
-    "privileged-check": "tsx tasks/privileged-check.ts",
-    "release-applied-check": "tsx tasks/release-applied-check.ts",
-    "status": "tsx tasks/status.ts",
-    "repair-certs": "tsx tasks/repair-certs.ts",
-    "agent:build": "rm -rf agent/dist && tsc --noEmit -p agent/tsconfig.json && rolldown agent/src/entry.ts --format cjs --platform node --file agent/dist/entry.cjs",
-    "agent:image": "pnpm run agent:build && docker build --build-arg NODE_VERSION=$(node -p \"require('../package.json').engines.node\") -t ${AGENT_IMAGE:-infra-agent:dev} agent",
-    "compose:generate": "tsx compose/synth.ts",
-    "compose:check": "tsx compose/synth.ts --check",
     "ts": "cd .. && tsgo -p infra/tsconfig.json --pretty",
-    "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
+    "main-job": "cella infra main-job",
+    "deploy": "cella infra deploy",
+    "description-hash": "cella infra description-hash",
+    "privileged-footprint": "cella infra privileged-footprint",
+    "privileged-check": "cella infra privileged-check",
+    "release-applied-check": "cella infra release-applied-check",
+    "builder-script": "cella infra builder-script",
+    "compose:generate": "cella infra compose-generate",
+    "compose:check": "cella infra compose-check",
+    "ensure-state-bucket": "cella infra ensure-state-bucket",
+    "repair-certs": "cella infra repair-certs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1176.0",
     "@aws-sdk/s3-request-presigner": "^3.1176.0",
-    "@inquirer/core": "^12.1.1",
-    "@inquirer/prompts": "^8.8.1",
+    "@cellajs/cli": "^0.9.0",
     "@pulumi/pulumi": "^3.277.0",
     "@pulumiverse/scaleway": "^1.62.1",
-    "picocolors": "^1.1.1",
-    "shared": "workspace:*",
-    "tsx": "^4.23.15"
+    "shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
-    "ajv": "^8.20.0",
-    "rolldown": "~1.3.3",
-    "typescript": "6.0.3",
-    "vitest": "^5.1.1",
-    "yaml": "^2.9.1"
+    "vitest": "^5.1.1"
   }
 }

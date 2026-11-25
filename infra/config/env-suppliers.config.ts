@@ -1,5 +1,5 @@
-import { defineEnvSuppliers } from '../lib/env-suppliers';
-import { embedFrameAncestors, frontendCsp, frontendPermissionsPolicy } from './frontend-csp.config';
+import { defineEnvSuppliers } from '@cellajs/cli/infra';
+import { embedFrameAncestors, frontendCsp, frontendPermissionsPolicy } from './frontend-csp.config.ts';
 
 /** Suppliers for app-wide compose `${VAR}` placeholders that are not service-to-service bindings, which are declared as `bindings` on the service registry entry. */
 export const appEnvSuppliers = defineEnvSuppliers({

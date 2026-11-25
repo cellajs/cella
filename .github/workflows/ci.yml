@@ -61,7 +61,7 @@ jobs:
         run: pnpm unused
 
       # compose.gen.yml is a committed artifact read at deploy time
-      # (the switch step of infra/tasks/deploy-run.ts), so a stale copy must fail the PR.
+      # (the switch step of cella-cli:src/infra/tasks/deploy-run.ts), so a stale copy must fail the PR.
       - name: Check compose model artifact is committed
         run: pnpm --filter infra compose:check
 
@@ -127,7 +127,7 @@ jobs:
           echo "Raise appConfig.clientCacheVersion by one (e.g. 46 → 47) in $CFG and use a 'feat!' PR title so clients wipe stale cache."
           exit 1
 
-      # What merging owes an operator, said without a key (infra/tasks/privileged-check.ts): the base and the head each render, under mocks, the
+      # What merging owes an operator, said without a key (cella-cli:src/infra/tasks/privileged-check.ts): the base and the head each render, under mocks, the
       # identities and the privileged resources they declare, and the job summary lists what an Owner moment or an apply must write before the
       # next deploy. It holds no secret and passes either way; a head the render cannot read fails it, and `ci-passed` with it. Last in the
       # job: the base checkout lands inside the workspace the checks above scan.
@@ -148,7 +148,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: pnpm --silent --filter infra privileged-check --base "$GITHUB_WORKSPACE/.base"
 
-  # The frontend as the builder machine builds it at a deploy: the builder's own script (infra/lib/builder/builder-machine.ts), in the
+  # The frontend as the builder machine builds it at a deploy: the builder's own script (cella-cli:src/infra/lib/builder/builder-machine.ts), in the
   # deployed mode, which generates the environment's OpenAPI spec from the example env first and then builds. Runs on every PR (~2 min),
   # so a break only a deploy would meet (an env value a deployed mode requires that the example env lost, a repo-doc import the MDX
   # include regex refuses, a broken relative import in a docs wrapper) fails here and not at the release deploy, which builds from the tag.
@@ -308,7 +308,7 @@ jobs:
         if: steps.scope.outputs.targets != ''
         run: docker run --rm manifests-check pnpm --version
 
-  # Whether merging the release deploys (infra/tasks/release-applied-check.ts), on the release PR alone: the head's description of the app,
+  # Whether merging the release deploys (cella-cli:src/infra/tasks/release-applied-check.ts), on the release PR alone: the head's description of the app,
   # per environment that follows the releases, against the hash that environment's last apply published as a repository variable. It holds
   # no secret. Equal, merging deploys. Otherwise the deploy would end at apply needed: the job fails, and `ci-passed` with it, until the
   # apply from main publishes the hash and runs this job again once the run has ended.
