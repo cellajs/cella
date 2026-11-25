@@ -1,5 +1,5 @@
 import { DownloadIcon, SlidersHorizontalIcon } from 'lucide-react';
-import { type Dispatch, Fragment, type ReactNode, type SetStateAction, useEffect, useId, useRef } from 'react';
+import { type Dispatch, Fragment, type ReactNode, type SetStateAction, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCurrentBreakpoint } from '~/hooks/use-breakpoints';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -72,14 +72,27 @@ export function ViewMenu<TRow extends object>({ sort, columns, setColumns, expor
   const columnsShown = setColumns && toggleable.length > 1;
   const hasHidden = columnsShown && toggleable.some((column) => column.hidden);
 
+  // One export at a time: while one reads its pages the export items wait, and a second press does nothing
+  const [isExporting, setIsExporting] = useState(false);
+  const exportingRef = useRef(false);
+
   const download = (format: ExportFormat, rows: TRow[]) => {
     if (!columns || !exportOptions) return;
     const file = `${exportOptions.filename}.${format}`;
     if (format === 'csv') return exportToCsv(columns, rows, file);
     return exportToPdf(columns, rows, file, getRouter().state.location.pathname, uiStore.getState().mode);
   };
-  const downloadAll = async (format: ExportFormat) => {
-    if (exportOptions) download(format, await fetchAllRows(exportOptions.fetchRows));
+  // A promise chain: the React Compiler refuses a `try` without `catch`
+  const downloadAll = (format: ExportFormat) => {
+    if (!exportOptions || exportingRef.current) return;
+    exportingRef.current = true;
+    setIsExporting(true);
+    return fetchAllRows(exportOptions.fetchRows)
+      .then((rows) => download(format, rows))
+      .finally(() => {
+        exportingRef.current = false;
+        setIsExporting(false);
+      });
   };
 
   // Only online menus offer the full export and the PDF, so neither handler checks the connection
@@ -134,7 +147,7 @@ export function ViewMenu<TRow extends object>({ sort, columns, setColumns, expor
       'export',
       <DropdownActionGroup key="export" label={t('c:export')}>
         {exportRows.map(({ format, note, onSelect }) => (
-          <DropdownActionItem key={`${format}-${note}`} icon={DownloadIcon} onSelect={onSelect}>
+          <DropdownActionItem key={`${format}-${note}`} icon={DownloadIcon} onSelect={onSelect} loading={isExporting}>
             <span>{format.toUpperCase()}</span>
             <span className="text-muted-foreground text-xs">{note}</span>
           </DropdownActionItem>
