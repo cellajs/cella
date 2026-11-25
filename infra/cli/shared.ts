@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import type { EngineConfig } from '../config/engine-config';
+import type { EngineConfig } from 'infra/config/engine-config';
 import { deriveInfra } from '../lib/naming';
 import { actionCommand, menuPath, type OperatorActionId } from '../lib/operator-actions';
 import { allPrincipalNames } from '../lib/scaleway/principals';

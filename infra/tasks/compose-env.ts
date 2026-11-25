@@ -1,5 +1,5 @@
 import { writeFile } from 'node:fs/promises';
-import type { EngineConfig } from '../config/engine-config';
+import type { EngineConfig } from 'infra/config/engine-config';
 import { BOOT_ACCOUNTS_PREFIX } from '../lib/deploy/boot-accounts';
 import { MAIN_JOB_EXIT } from '../lib/deploy/main-job';
 import { envObjectKey, releaseMachine } from '../lib/deploy/release-archives';
@@ -111,7 +111,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const out = getFlag(argv, '--out');
   const { accessKey, secretKey } = deployS3Key();
   if (!projectId || !secretKey) throw new Error('Required: SCW_SECRET_KEY, --project-id, and --check or --sha with --out');
-  const { engineConfig: appConfig } = await import('../config/engine-config');
+  const { engineConfig: appConfig } = await import('infra/config/engine-config');
   const { naming, region } = deriveInfra(appConfig);
   const machines = machineEnvEntries(appConfig);
 

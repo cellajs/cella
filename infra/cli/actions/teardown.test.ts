@@ -1,5 +1,5 @@
+import { engineConfig as appConfig } from 'infra/config/engine-config';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { engineConfig as appConfig } from '../../config/engine-config';
 import type { InfraContext } from '../shared';
 
 const input = vi.fn();

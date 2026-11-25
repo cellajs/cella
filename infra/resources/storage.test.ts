@@ -1,5 +1,5 @@
+import type { EngineConfig } from 'infra/config/engine-config';
 import { beforeAll, describe, expect, it } from 'vitest';
-import type { EngineConfig } from '../config/engine-config';
 import { appPrincipalNames } from '../lib/scaleway/principals';
 import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
@@ -9,7 +9,7 @@ let appConfig: EngineConfig;
 beforeAll(async () => {
   // The mock IAM API supplies the application IDs normally absent from stack config.
   h = await installPulumiMocks();
-  ({ engineConfig: appConfig } = await import('../config/engine-config'));
+  ({ engineConfig: appConfig } = await import('infra/config/engine-config'));
   await import('./storage');
   await h.settle();
 });

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { EngineConfig } from 'infra/config/engine-config';
 import { supportedImageContract, supportedSchemaVersion } from '../../agent/src/plan';
-import type { EngineConfig } from '../../config/engine-config';
 import { infraDir } from '../utils/paths';
 import { descriptionHash } from './applied-engine';
 import { supplierContext } from './static-env';
@@ -52,14 +52,14 @@ export async function appDescription(root = join(infraDir, '..')): Promise<Recor
     { healthContract },
     { appEnvSuppliers },
   ] = await Promise.all([
-    import('../../config/engine-config'),
+    import('infra/config/engine-config'),
     import('../runtime-secrets'),
     import('../managed-keys'),
-    import('../../config/stores.config'),
-    import('../../config/services.config'),
-    import('../../config/general.config'),
-    import('../../config/health.config'),
-    import('../../config/env-suppliers.config'),
+    import('infra/config/stores.config'),
+    import('infra/config/services.config'),
+    import('infra/config/general.config'),
+    import('../health-contract'),
+    import('infra/config/env-suppliers.config'),
   ]);
   const context = supplierContext(config);
   const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {

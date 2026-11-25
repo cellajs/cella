@@ -1,7 +1,7 @@
+import { appServices } from 'infra/config/services.config';
 import { describe, expect, it } from 'vitest';
 import { composeConfig } from '../../compose/compose';
 import { defineServices } from '../../compose/infrastructure';
-import { appServices } from '../../config/services.config';
 import { internalLbPort } from '../../lib/machine-roles';
 import { services } from '../../lib/services';
 import { fakeService as base } from '../helpers/fake-config';

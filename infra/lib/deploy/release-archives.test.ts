@@ -1,5 +1,5 @@
+import { appServices } from 'infra/config/services.config';
 import { describe, expect, it } from 'vitest';
-import { appServices } from '../../config/services.config';
 import { imageRepositoryOf } from './release-archives';
 
 describe('imageRepositoryOf', () => {

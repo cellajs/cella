@@ -1,4 +1,4 @@
-import type { EngineConfig } from '../config/engine-config';
+import type { EngineConfig } from 'infra/config/engine-config';
 import { machineRoles } from '../lib/machine-roles';
 import { deriveInfra, redirectedApexOrigin } from '../lib/naming';
 import { appStorageNeeds, enabledServices, serviceEndpoints } from '../lib/services';

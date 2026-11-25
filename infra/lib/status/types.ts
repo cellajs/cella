@@ -77,7 +77,7 @@ export interface ScalewayFacts {
 /** Everything a provider's `gather` may draw on: stack context, the probe key, and the memoized control-object read the providers share. */
 export interface ProbeSession {
   mode: string;
-  appConfig: import('../../config/engine-config').EngineConfig;
+  appConfig: import('infra/config/engine-config').EngineConfig;
   stackState: StackState;
   stackYaml?: string;
   projectId?: string;

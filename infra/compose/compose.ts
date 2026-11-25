@@ -1,4 +1,4 @@
-import { appServices, processIdentityEnv } from '../config/services.config';
+import { appServices, processIdentityEnv } from 'infra/config/services.config';
 import { assembleCompose } from './infrastructure';
 import type { ServiceMeta } from './types';
 

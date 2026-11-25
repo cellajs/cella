@@ -47,7 +47,7 @@ describe('config boundary sweep', () => {
 
   // The export is read once, when the module first loads: a static import outside the Pulumi program could load it before APP_MODE is set.
   it('only the Pulumi program imports the engine config statically; every other module imports its type or loads it dynamically', () => {
-    const staticImport = /^import (?!type )[^;]*from '(?:\.\.?\/)+(?:config\/)?engine-config';/m;
+    const staticImport = /^import (?!type )[^;]*from '(?:(?:\.\.?\/)+(?:config\/)?|infra\/config\/)engine-config';/m;
     const scanned = [
       ...sources(join(infraRoot, 'lib')),
       ...sources(join(infraRoot, 'compose')),

@@ -1,4 +1,4 @@
-import { managedKeysConfig } from '../config/managed-keys.config';
+import { managedKeysConfig } from 'infra/config/managed-keys.config';
 import type { ManagedKeyConfig, MintedKeyField } from './managed-keys-config';
 import { type RuntimeSecretId, runtimeSecrets } from './runtime-secrets';
 

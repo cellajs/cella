@@ -1,5 +1,5 @@
 import * as scaleway from '@pulumiverse/scaleway';
-import { engineConfig as appConfig } from '../config/engine-config';
+import { engineConfig as appConfig } from 'infra/config/engine-config';
 import { dnsZone } from '../pulumi-context';
 
 // CAA records restrict which CAs may issue certs for this zone, and admit the LB's Let's Encrypt certificates. Zone-wide policy, so only the stack serving `www.<zone>` owns them.

@@ -1,4 +1,4 @@
-import type { EngineConfig } from '../config/engine-config';
+import type { EngineConfig } from 'infra/config/engine-config';
 import { deriveInfra } from '../lib/naming';
 import { expectedDbPrivileges } from '../lib/scaleway/db-privileges';
 import { createRdbClient } from '../lib/scaleway/scaleway-rdb';

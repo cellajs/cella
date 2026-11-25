@@ -1,7 +1,7 @@
-import type { EngineConfig } from '../../../config/engine-config';
-import { healthContract } from '../../../config/health.config';
+import type { EngineConfig } from 'infra/config/engine-config';
 import { createFetchProbe } from '../../../tasks/wait-for-version';
 import type { LiveRecord } from '../../deploy/live-record';
+import { healthContract } from '../../health-contract';
 import { roleOf } from '../../machine-roles';
 import { enabledServices, serviceEndpoints } from '../../services';
 import { check, deployAction, diagAction } from '../check';

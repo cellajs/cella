@@ -1,14 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { appServices } from 'infra/config/services.config';
 import { config } from 'shared/config/config.default';
 import { signYjsToken, verifyYjsToken, yjsTokenSigningKey, yjsTokenVerifyKey } from 'shared/utils/yjs-token';
 import { describe, expect, it } from 'vitest';
 import { serviceSecrets } from '../../../backend/src/env-service-secrets';
-import { appServices } from '../../config/services.config';
 import { runtimeSecretConsumers, runtimeSecrets, runtimeSecretsForConsumer } from '../../lib/runtime-secrets';
 
 // The config module and lib/runtime-secrets form an import cycle, so it must be entered from the lib side; a static import sorts alphabetically ahead of the lib import.
-const { runtimeSecretsConfig } = await import('../../config/runtime-secrets.config');
+const { runtimeSecretsConfig } = await import('infra/config/runtime-secrets.config');
 
 const backendEnvSource = readFileSync(resolve(__dirname, '../../../backend/src/env.ts'), 'utf-8');
 const cdcEnvSource = readFileSync(resolve(__dirname, '../../../cdc/src/env.ts'), 'utf-8');

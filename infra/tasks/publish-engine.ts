@@ -2,7 +2,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import type { EngineConfig } from '../config/engine-config';
+import type { EngineConfig } from 'infra/config/engine-config';
 import { appDescription, appDescriptionHash } from '../lib/deploy/app-description';
 import {
   type AppliedEngine,

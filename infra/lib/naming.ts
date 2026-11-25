@@ -1,4 +1,4 @@
-import type { EngineConfig } from '../config/engine-config';
+import type { EngineConfig } from 'infra/config/engine-config';
 import { enabledServices } from './services';
 import { stateBucket } from './stack/control-store';
 

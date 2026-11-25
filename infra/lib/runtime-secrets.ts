@@ -1,6 +1,6 @@
+import { runtimeSecretsConfig } from 'infra/config/runtime-secrets.config';
+import { appStores } from 'infra/config/stores.config';
 import type { ServiceName } from '../compose/compose';
-import { runtimeSecretsConfig } from '../config/runtime-secrets.config';
-import { appStores } from '../config/stores.config';
 import type { RuntimeSecretDerivation, RuntimeSecretGeneration, RuntimeSecretValueSource } from './runtime-secrets-config';
 import { type ServiceDefinition, serviceNames } from './services';
 import type { DatabaseRole, StoreProvisioner } from './stores';

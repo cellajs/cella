@@ -1,5 +1,5 @@
+import type { EngineConfig } from 'infra/config/engine-config';
 import { beforeAll, describe, expect, it } from 'vitest';
-import type { EngineConfig } from '../config/engine-config';
 import { appPrincipalNames, principalNames } from '../lib/scaleway/principals';
 import { checkpointKey } from '../lib/stack/pending-operations';
 import { escapeRegExp } from '../lib/utils/escape-regexp';
@@ -10,7 +10,7 @@ let appConfig: EngineConfig;
 
 beforeAll(async () => {
   h = await installPulumiMocks();
-  ({ engineConfig: appConfig } = await import('../config/engine-config'));
+  ({ engineConfig: appConfig } = await import('infra/config/engine-config'));
   await import('./state-bucket-policy');
   await h.settle();
 });

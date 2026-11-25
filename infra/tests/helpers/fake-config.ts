@@ -1,4 +1,4 @@
-import type { EngineConfig } from '../../config/engine-config';
+import type { EngineConfig } from 'infra/config/engine-config';
 
 /** Minimal cella-shaped EngineConfig fixture for pure derivation tests. */
 export function fakeConfig(overrides: Partial<EngineConfig> = {}): EngineConfig {

@@ -1,5 +1,5 @@
 import type { ImportResource } from '@pulumi/pulumi/automation';
-import type { EngineConfig } from '../../config/engine-config';
+import type { EngineConfig } from 'infra/config/engine-config';
 import { deriveInfra } from '../naming';
 import { protectsStoredData, type RuntimeSecretDefinition, runtimeSecrets } from '../runtime-secrets';
 import type { SecretManagerSecret } from '../scaleway/scaleway-secret-manager';

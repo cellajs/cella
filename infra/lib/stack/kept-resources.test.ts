@@ -13,7 +13,7 @@ beforeAll(async () => {
   await import('../../resources/state-bucket-policy');
   await h.settle();
   mod = await import('./kept-resources');
-  const { engineConfig } = await import('../../config/engine-config');
+  const { engineConfig } = await import('infra/config/engine-config');
   kept = mod.keptResources(engineConfig);
 });
 

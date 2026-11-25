@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { generalConfig } from '../../config/general.config';
+import { generalConfig } from 'infra/config/general.config';
 import { resolvePerMode } from '../general-config';
 import { ENGINE_FOLDER } from '../scaleway/secret-paths';
 import { infraDir } from '../utils/paths';

@@ -1,4 +1,4 @@
-import { healthContract } from '../config/health.config';
+import { healthContract } from '../lib/health-contract';
 import type { AppServiceConfig, AppServices, ComposeFile, ComposeService, HealthCheck, ServiceMeta } from './types';
 
 /**

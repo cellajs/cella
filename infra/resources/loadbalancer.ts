@@ -1,7 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
+import { engineConfig as appConfig } from 'infra/config/engine-config';
 import type { ServiceName } from '../compose/compose';
-import { engineConfig as appConfig } from '../config/engine-config';
 import { agentHealthPath, agentPort, internalLbPort } from '../lib/machine-roles';
 import { apexHostIssue, redirectedApexOrigin, routedHostIssue } from '../lib/naming';
 import { enabledServices, type ServiceDefinition } from '../lib/services';

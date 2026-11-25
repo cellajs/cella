@@ -15,7 +15,7 @@ The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in on
 - **Agent:** runs on every machine.
 - **CLI:** an operator runs it on their own machine.
 
-The engine names no app. What an app deploys lives in the registries under [config/](config/), which an upgrade merges like every other template file.
+The engine names no app. What an app deploys lives in the registries under [config/](config/), which an upgrade merges like every other template file. They are the app's part of infra: engine code reads them only as `infra/config/<file>`, the package's one export, and an app changes them without editing engine code.
 
 ## How a release flows
 
@@ -121,7 +121,7 @@ To add a service:
 2. Set its `enabled` flag and ports under `services` in [shared/config/config.default.ts](../shared/config/config.default.ts).
 3. Set its path prefix in [shared/src/config-builder/service-paths.ts](../shared/src/config-builder/service-paths.ts).
 4. List it under each runtime secret it reads in [config/runtime-secrets.config.ts](config/runtime-secrets.config.ts).
-5. Ship a Docker image that answers the health path of [config/health.config.ts](config/health.config.ts) with its release.
+5. Ship a Docker image that answers the health path of [lib/health-contract.ts](lib/health-contract.ts) with its release.
 6. Run its migrations, if any, in a one-shot `release` step at its machine's boot.
 
 [tests/unit/app-config-registry.test.ts](tests/unit/app-config-registry.test.ts) fails when the registry and the shared config disagree.
@@ -138,7 +138,7 @@ Either change deploys after an apply, since every registry is part of the applie
 
 | Path | Holds |
 | --- | --- |
-| [config/](config/) | The registries: services, general settings, runtime secrets, managed keys, stores, env suppliers, health and the frontend CSP. Also engine-config.ts, where the engine reads the app's config |
+| [config/](config/) | The registries: services, general settings, runtime secrets, managed keys, stores, env suppliers and the frontend CSP. Also engine-config.ts, where the engine reads the app's config |
 | [cli/](cli/) | The menu and its actions |
 | [resources/](resources/) | The Pulumi program: the foundation, no machine |
 | [tasks/](tasks/README.md) | The deploy's steps and the operator tasks |
