@@ -1,5 +1,6 @@
 import type { SSEStreamingApi } from 'hono/streaming';
 import { appConfig, type EntityRole } from 'shared';
+import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ActivityRow } from '#/lib/activity-bus';
 import { dispatchChange } from '#/modules/entities/helpers/dispatch-to-stream';
@@ -79,6 +80,8 @@ afterEach(() => {
 });
 
 describe('dispatch mirror: org membership, live snapshots, events of several rows', () => {
+  assumeMemberAttachmentPolicy({ read: 'own' });
+
   it('pings org members; a subscriber whose membership is gone gets nothing despite its topic registration', async () => {
     const member = fakeSubscriber([membership(orgA, memberRole, 'member-user')], 'member-user', [orgA], orgA);
     const admin = fakeSubscriber([membership(orgA, 'admin', 'admin-user')], 'admin-user', [orgA], orgA);
