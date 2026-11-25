@@ -12,7 +12,7 @@
       {
         "key": "x-enabled-by",
         "id": "xEnabledBy",
-        "description": "Config switch the endpoint belongs to: a service, a feature flag, a sign-in method or an OAuth provider; refused before the guards while it is off",
+        "description": "Config switch the endpoint belongs to: a service, a feature flag, a product, a sign-in method or an OAuth provider; refused before the guards while it is off",
         "required": false,
         "kind": "metadata"
       },
@@ -4849,6 +4849,9 @@
             "in": "query"
           }
         ],
+        "x-enabled-by": {
+          "product": "attachment"
+        },
         "x-tool": {
           "description": "List attachments of the organization with optional search, sorting and paging. Returns metadata and the description as text.",
           "approvalRequired": false,
@@ -5046,6 +5049,9 @@
         "tags": ["attachments", "cella", "product"],
         "summary": "Get presigned URLs",
         "description": "Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.",
+        "x-enabled-by": {
+          "product": "attachment"
+        },
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["serviceBurstLimiter", "presignedUrlLimiter"],
         "parameters": [
@@ -5263,6 +5269,9 @@
             "in": "path"
           }
         ],
+        "x-enabled-by": {
+          "product": "attachment"
+        },
         "x-tool": {
           "description": "Read one attachment: its metadata and the description as text.",
           "approvalRequired": false,
@@ -5374,6 +5383,9 @@
             "in": "path"
           }
         ],
+        "x-enabled-by": {
+          "product": "attachment"
+        },
         "x-tool": {
           "description": "Rename an attachment or replace its description.",
           "approvalRequired": true,
@@ -5485,6 +5497,9 @@
         "tags": ["attachments", "cella", "product"],
         "summary": "Create attachments",
         "description": "Registers one or more new attachments after client side upload. Includes metadata like name, content type, size and storage keys. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.",
+        "x-enabled-by": {
+          "product": "attachment"
+        },
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
         "parameters": [
@@ -5902,6 +5917,9 @@
         "tags": ["attachments", "cella", "product"],
         "summary": "Update attachments",
         "description": "Updates up to 50 attachments in one transaction. A row the caller may not update is listed in `rejectedIds`, and a row whose ops change nothing is answered as stored. Takes no `If-Match`: send a conditional update to the single route.",
+        "x-enabled-by": {
+          "product": "attachment"
+        },
         "x-tool": {
           "description": "Rename several attachments in one call, each with its own ops.",
           "approvalRequired": true,
@@ -6189,6 +6207,9 @@
             "in": "path"
           }
         ],
+        "x-enabled-by": {
+          "product": "attachment"
+        },
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
         "requestBody": {
@@ -6295,6 +6316,9 @@
         "tags": ["attachments", "cella", "product"],
         "summary": "Delete attachments",
         "description": "Deletes one or more attachments by ID. Their stored files are kept for the deleted-items period, then deleted when the retention procedure removes the rows.",
+        "x-enabled-by": {
+          "product": "attachment"
+        },
         "x-tool": {
           "description": "Delete attachments by id. Their stored files are kept for the deleted-items period, then deleted with the rows.",
           "approvalRequired": true,
@@ -6434,6 +6458,9 @@
         "tags": ["attachments", "cella", "product"],
         "summary": "Get presigned URLs as a visitor",
         "description": "Signs download URLs for up to 50 attachment files of the organization that a reader without a sign-in may read: rows whose public flag is set, on an entity type the app opened with publicRead(). Missing and denied ids come back in one rejectedIds list, and the call succeeds even when every item is rejected; an app without public read on attachments rejects every id.",
+        "x-enabled-by": {
+          "product": "attachment"
+        },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["presignedUrlLimiter"],
         "parameters": [
@@ -6565,6 +6592,9 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"

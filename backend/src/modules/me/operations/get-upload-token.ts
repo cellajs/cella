@@ -1,6 +1,6 @@
 import { and, count, eq, isNull } from 'drizzle-orm';
 import type { UploadTemplateId } from 'shared';
-import { buildSubject, checkAccessBatch } from 'shared';
+import { buildSubject, checkAccessBatch, isSwitchOn } from 'shared';
 import { isSystemUploadTemplate, maxFilesPerUpload, systemUploadPrefix, uploadStorage } from 'shared/utils/upload-visibility';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -37,6 +37,8 @@ const assertMayUploadAttachments = (ctx: UserContext, organizationId?: string) =
   if (!organizationId) {
     throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment', meta: { reason: 'organization_required' } });
   }
+  // With attachments switched off no row can name the files.
+  if (!isSwitchOn({ product: 'attachment' })) throw new AppError(403, 'forbidden', 'warn', { entityType: 'attachment' });
   if (ctx.var.isSystemAdmin) return;
   // A membership row holds its channel's id and the ids above it: the scope of an attachment homed in that channel.
   const homes = ctx.var.memberships

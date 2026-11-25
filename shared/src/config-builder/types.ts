@@ -382,6 +382,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   surfaces: Partial<Record<SlotOf<T['channelEntityTypes'][number] & string>, SurfaceArrangement>>;
   attachmentUploadTargets: readonly (T['channelEntityTypes'][number] & string)[];
   memberStatProductTypes: readonly (T['productEntityTypes'][number] & string)[];
+  /** Product types the app does not offer: a route that names one in `xEnabledBy` answers 404. */
+  switchedOffProductTypes: readonly (T['productEntityTypes'][number] & string)[];
   /** Product types numbered per home channel, each with the lowercase letter its share links carry: `/{code}/a7`. */
   numberedProducts: { readonly [K in T['productEntityTypes'][number] & string]?: string };
   defaultRestrictions: {

@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { UsersIcon } from 'lucide-react';
 import { createContext, type ReactNode, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig, type EntityRole, hierarchy, isUnpublishedDraft } from 'shared';
+import { appConfig, type EntityRole, hierarchy, isSwitchOn, isUnpublishedDraft } from 'shared';
 import { getMemberStatIcon } from '~/lib/entity-modules';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
@@ -156,12 +156,12 @@ function TileCount({ icon: Icon, count, resource }: TileCountProps) {
   );
 }
 
-/** Compact stats: posts per `memberStatProductTypes` entry, then the latest post date (or the creation date). */
+/** Compact stats: posts per `memberStatProductTypes` entry whose product is on, then the latest post date (or the creation date). */
 export function ChannelTileStats() {
   const { t } = useTranslation();
   const entity = useTileEntity();
   const counts = entity.included?.counts;
-  const postTypes = appConfig.memberStatProductTypes.filter((type) => counts?.entities?.[type] !== undefined);
+  const postTypes = appConfig.memberStatProductTypes.filter((type) => isSwitchOn({ product: type }) && counts?.entities?.[type] !== undefined);
   const lastPostedAt = counts?.activity?.[appConfig.memberStatProductTypes[0]]?.created ?? null;
   const shownDate = lastPostedAt ? new Date(lastPostedAt) : entity.createdAt;
   const dateLabel = t(lastPostedAt ? 'c:last_post_on' : 'c:created_on', { date: dateFull(shownDate) });

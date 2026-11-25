@@ -178,7 +178,7 @@ const pickShared = <C extends ErrorCode>(codes: Iterable<C>): Pick<typeof shared
 
 /**
  * The error statuses a route's chain answers with before its handler, each with what answers it. The switch gate
- * answers 404 for a service or a feature flag and 400 for a sign-in method.
+ * answers 400 for a sign-in method and 404 for any other switch.
  */
 const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], preconditioned: boolean, gated: boolean): Map<ErrorCode, string> => {
   const owners = new Map<ErrorCode, string>();
@@ -190,7 +190,7 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], p
     claim(413, 'the body limit');
     claim(415, 'request validation');
   }
-  if (config.xEnabledBy) claim('service' in config.xEnabledBy || 'feature' in config.xEnabledBy ? 404 : 400, 'xEnabledBy');
+  if (config.xEnabledBy) claim('strategy' in config.xEnabledBy ? 400 : 404, 'xEnabledBy');
   if (preconditioned) for (const code of [400, 412] as const) claim(code, 'the preconditions');
   for (const mw of xMiddlewares) for (const code of mw.__errors ?? []) claim(code, mw.name);
   if (gated) claim(403, 'the anonymous gate');

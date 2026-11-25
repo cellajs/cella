@@ -1821,6 +1821,10 @@ export type PresignPublicAttachmentUrlsErrors = {
    */
   400: BadRequestError;
   /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
    * Payload too large
    */
   413: PayloadTooLargeError;

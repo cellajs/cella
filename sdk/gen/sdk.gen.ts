@@ -832,7 +832,7 @@ export const batchDeleteAttachments = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {object[]} options.body.items - `object[]`
- * @returns Possible status codes: 200, 400, 413, 415, 429
+ * @returns Possible status codes: 200, 400, 404, 413, 415, 429
  */
 export const presignPublicAttachmentUrls = <ThrowOnError extends boolean = true>(
   options: Options<PresignPublicAttachmentUrlsData, ThrowOnError>,

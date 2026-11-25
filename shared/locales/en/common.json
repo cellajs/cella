@@ -263,6 +263,7 @@
   "docs.success_response": "Success response",
   "docs.switched_off": "Off",
   "docs.switched_off_feature": "Switched off on this server: it needs the {{name}} feature.",
+  "docs.switched_off_product": "Switched off on this server: it does not offer {{resource, lowercase}}.",
   "docs.switched_off_provider": "Switched off on this server: it needs {{name}} sign-in.",
   "docs.switched_off_service": "Switched off on this server: it needs the {{name}} service.",
   "docs.switched_off_strategy": "Switched off on this server: it needs {{name, lowercase}} sign-in.",

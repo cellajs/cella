@@ -1,6 +1,6 @@
 import { type OpenAPIHono, type RouteConfig, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
-import { type AccessScope, type AccessScopedEntityType, accessScopes, type EntityActionType } from 'shared';
+import { type AccessScope, type AccessScopedEntityType, accessScopes, type ConfigSwitch, type EntityActionType } from 'shared';
 import type { Env } from '#/core/context';
 import { toolAction, type XTool } from '#/core/openapi-extensions';
 import { createServerStx, createServerStxStamping } from '#/core/stx/create-server-stx';
@@ -25,6 +25,8 @@ export interface McpTool {
   entity: AccessScopedEntityType;
   action: EntityActionType;
   scope: AccessScope;
+  /** The route's config switch (`x-enabled-by`): while it is off the server lists no such tool. */
+  enabledBy?: ConfigSwitch;
   descriptor: McpToolDescriptor;
   /**
    * Validates the arguments against the route's own schemas (a `ZodError` refuses them), rebuilds the sync
@@ -96,7 +98,7 @@ async function toOutcome(response: Response): Promise<McpToolOutcome> {
   return { ok: false, type: error.type ?? 'error', detail: error.detail ?? response.statusText };
 }
 
-function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpTool {
+function buildTool(app: OpenAPIHono<Env>, route: RouteConfig & { 'x-enabled-by'?: ConfigSwitch }, spec: XTool): McpTool {
   const name = route.operationId;
   if (!name) throw new Error(`[MCP] The tool route ${route.method} ${route.path} has no operationId`);
 
@@ -133,6 +135,7 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
     entity: spec.entity,
     action,
     scope,
+    enabledBy: route['x-enabled-by'],
     descriptor: {
       name,
       description: spec.description,
@@ -187,7 +190,7 @@ export function buildMcpTools(app: OpenAPIHono<Env>): McpTool[] {
   const tools: McpTool[] = [];
   for (const definition of app.openAPIRegistry.definitions) {
     if (definition.type !== 'route') continue;
-    const route = definition.route as RouteConfig & { 'x-tool'?: XTool };
+    const route = definition.route as RouteConfig & { 'x-tool'?: XTool; 'x-enabled-by'?: ConfigSwitch };
     const spec = route['x-tool'];
     if (!spec) continue;
     const tool = buildTool(app, route, spec);

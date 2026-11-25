@@ -1,14 +1,17 @@
+import type { ProductEntityType } from '../../types.ts';
 import { appConfig } from './app-config.ts';
 import type { BaseAuthStrategies, BaseOAuthProviders, HasFlagsConfig } from './types.ts';
 
 /**
- * A config switch a route belongs to: a service in `appConfig.services`, a feature flag in `has`, a sign-in method in
- * `enabledAuthStrategies`, or one OAuth provider, which also needs the `oauth` method on. Routes name it in
- * `xEnabledBy`; the API refuses the route while it is off and the docs mark the route as off.
+ * A config switch a route belongs to: a service in `appConfig.services`, a feature flag in `has`, a product outside
+ * `switchedOffProductTypes`, a sign-in method in `enabledAuthStrategies`, or one OAuth provider, which also needs the
+ * `oauth` method on. Routes name it in `xEnabledBy`; the API refuses the route while it is off and the docs mark the
+ * route as off.
  */
 export type ConfigSwitch =
   | { service: keyof typeof appConfig.services }
   | { feature: keyof HasFlagsConfig }
+  | { product: ProductEntityType }
   | { strategy: BaseAuthStrategies; provider?: never }
   | { strategy: 'oauth'; provider: BaseOAuthProviders };
 
@@ -22,6 +25,7 @@ export const isStrategyEnabled = (strategy: BaseAuthStrategies): boolean => appC
 export const isSwitchOn = (on: ConfigSwitch): boolean => {
   if ('service' in on) return appConfig.services[on.service].enabled;
   if ('feature' in on) return appConfig.has[on.feature];
+  if ('product' in on) return !appConfig.switchedOffProductTypes.some((type) => type === on.product);
   if (!isStrategyEnabled(on.strategy)) return false;
   const { provider } = on;
   return !provider || appConfig.enabledOAuthProviders.some((enabled) => enabled === provider);
