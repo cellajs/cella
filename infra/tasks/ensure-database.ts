@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto';
 import { formatPostgresUrl } from '../lib/postgres-url';
 import { databaseRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets';
 import { expectedDbPrivileges, POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-privileges';
-import { createRdbClient, type RdbUser } from '../lib/scaleway/scaleway-rdb';
+import { createRdbClient, type RdbPrivilege, type RdbUser } from '../lib/scaleway/scaleway-rdb';
 import { createSecretManagerClient, type SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
 import { ENGINE_FOLDER, RUNTIME_FOLDER } from '../lib/scaleway/secret-paths';
 import { readDatabaseOutputs } from '../lib/stack/store-outputs';
@@ -13,6 +13,7 @@ export interface EnsureDatabaseRdb {
   listUsers(instanceId: string): Promise<RdbUser[]>;
   createUser(instanceId: string, user: { name: string; password: string; isAdmin: boolean }): Promise<unknown>;
   setUserPassword(instanceId: string, name: string, password: string): Promise<void>;
+  listPrivileges(instanceId: string, databaseName: string): Promise<RdbPrivilege[]>;
   setPrivilege(instanceId: string, databaseName: string, userName: string, permission: 'all'): Promise<void>;
 }
 
@@ -68,8 +69,8 @@ export type PasswordSource = 'stored' | 'generated';
  * Make the database roles, their passwords and privileges, and the connection strings, through the database API and Secret Manager, so no
  * password passes through the Pulumi state.
  * - A role's password is the one kept in the engine folder; failing that, a fresh one, which is kept there.
- * - A missing role is created with its password. A role that exists gets a fresh password only when none could be found. Every role's
- *   privileges are set.
+ * - A missing role is created with its password. A role that exists gets a fresh password only when none could be found. A role that holds
+ *   no privilege on the database is granted one.
  * - A connection string is written when it is missing or names another endpoint or password.
  */
 export async function ensureDatabase(opts: {
@@ -103,6 +104,9 @@ export async function ensureDatabase(opts: {
   }
 
   const live = new Set((await opts.rdb.listUsers(instanceId)).map((user) => user.name));
+  const granted = new Set(
+    (await opts.rdb.listPrivileges(instanceId, databaseName)).filter((entry) => entry.permission !== 'none').map((entry) => entry.user_name),
+  );
   const created: string[] = [];
   for (const role of ROLES) {
     const name = POSTGRES_ROLE_NAMES[role];
@@ -114,9 +118,10 @@ export async function ensureDatabase(opts: {
       await opts.rdb.setUserPassword(instanceId, name, passwords[role]);
       log(`[ensure-database] ${name} given the fresh password`);
     }
-    // Set on every run: a database made again (a reset, a refresh after a delete) holds no privilege of a role that outlived it.
-    for (const privilege of expectedDbPrivileges(databaseName).filter((entry) => entry.user === name)) {
+    // On a database with tables, `all` grants every privilege on each of them over the migrations' grants: a role that holds one keeps it.
+    for (const privilege of expectedDbPrivileges(databaseName).filter((entry) => entry.user === name && !granted.has(name))) {
       await opts.rdb.setPrivilege(instanceId, privilege.database, name, 'all');
+      log(`[ensure-database] ${name} granted on ${privilege.database}`);
     }
   }
 
