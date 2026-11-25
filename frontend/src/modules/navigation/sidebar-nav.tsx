@@ -105,17 +105,20 @@ export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavPr
               <Suspense>
                 <DebugDropdown className="mx-2" />
               </Suspense>
-              <SidebarMenu className="gap-1">
-                {footerNavItems.map((navItem) => (
-                  <SidebarNavItemButton
-                    key={navItem.id}
-                    navItem={navItem}
-                    isActive={navSheetOpen === navItem.id}
-                    isCollapsed={!isExpanded}
-                    onClick={onNavItemClick}
-                  />
-                ))}
-              </SidebarMenu>
+              {/* An empty list would still take its padding and a gap */}
+              {footerNavItems.length > 0 && (
+                <SidebarMenu className="gap-1">
+                  {footerNavItems.map((navItem) => (
+                    <SidebarNavItemButton
+                      key={navItem.id}
+                      navItem={navItem}
+                      isActive={navSheetOpen === navItem.id}
+                      isCollapsed={!isExpanded}
+                      onClick={onNavItemClick}
+                    />
+                  ))}
+                </SidebarMenu>
+              )}
               <FocusBridge direction="to-sheet" className="focus:m-2" />
             </SidebarFooter>
           </div>
