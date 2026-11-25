@@ -103,7 +103,10 @@ ${rlsTables.map((t) => `    ALTER TABLE ${t} OWNER TO admin_role;`).join('\n')}
 
 ${rlsTables.map((t) => `    ALTER TABLE ${t} ENABLE ROW LEVEL SECURITY;\n    ALTER TABLE ${t} NO FORCE ROW LEVEL SECURITY;`).join('\n')}
 
-    -- Grants: runtime_role (subject to RLS)
+    -- Grants: runtime_role (subject to RLS), from none. A grant made outside the migrations, such as a
+    -- provider's database privilege on every table, ends here.
+    REVOKE ALL ON ALL TABLES IN SCHEMA public FROM runtime_role;
+    REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM runtime_role;
 ${rlsTables.map((t) => `    GRANT SELECT, INSERT, UPDATE, DELETE ON ${t} TO runtime_role;`).join('\n')}
 ${fullCrudTables.map((t) => `    GRANT SELECT, INSERT, UPDATE, DELETE ON ${t} TO runtime_role;`).join('\n')}
 ${readOnlyTables.map((t) => `    GRANT SELECT ON ${t} TO runtime_role;`).join('\n')}

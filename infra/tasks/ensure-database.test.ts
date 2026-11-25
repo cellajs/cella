@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { formatPostgresUrl } from '../lib/postgres-url';
 import type { RuntimeSecretDefinition } from '../lib/runtime-secrets';
 import { POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-privileges';
+import type { RdbPrivilege } from '../lib/scaleway/scaleway-rdb';
 import type { SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
 import { ENGINE_FOLDER } from '../lib/scaleway/secret-paths';
 import { type EnsureDatabaseRdb, type EnsureDatabaseSecrets, ensureDatabase, generateRolePassword } from './ensure-database';
@@ -40,11 +41,12 @@ function fakeSecrets(store: Record<string, string | undefined>) {
   return { secrets, writes };
 }
 
-/** The database API as a fake: the users that exist; every call recorded. */
-function fakeRdb(users: string[]) {
+/** The database API as a fake: the users that exist and the privileges they hold; every call recorded. */
+function fakeRdb(users: string[], privileges: RdbPrivilege[] = []) {
   const calls: string[] = [];
   const rdb: EnsureDatabaseRdb = {
     listUsers: async () => users.map((name) => ({ name })),
+    listPrivileges: async () => privileges,
     createUser: async (_instance, user) => {
       calls.push(`create ${user.name} admin=${user.isAdmin}`);
     },
@@ -80,6 +82,19 @@ describe('ensureDatabase', () => {
 
     expect(writes['/runtime/database-url-runtime']).toBe(dsn('runtime', 'fresh'));
     expect(writes['/runtime/database-url-cdc']).toBe(dsn('admin', 'fresh'));
+  });
+
+  it('must not grant a role that holds a privilege: on a migrated database `all` gives runtime_role every table', async () => {
+    const { secrets } = fakeSecrets({ [adminKept]: 'adm-pw', [runtimeKept]: 'run-pw' });
+    const { rdb, calls } = fakeRdb(
+      [POSTGRES_ROLE_NAMES.admin, POSTGRES_ROLE_NAMES.runtime],
+      [
+        { database_name: 'app', user_name: POSTGRES_ROLE_NAMES.admin, permission: 'none' },
+        { database_name: 'app', user_name: POSTGRES_ROLE_NAMES.runtime, permission: 'custom' },
+      ],
+    );
+    await run(rdb, secrets);
+    expect(calls.filter((call) => call.startsWith('privilege'))).toEqual([`privilege ${POSTGRES_ROLE_NAMES.admin} app all`]);
   });
 
   it('rewrites a connection string that names another endpoint', async () => {
