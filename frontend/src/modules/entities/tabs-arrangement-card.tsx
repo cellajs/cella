@@ -237,6 +237,7 @@ function TabsArrangement({ entity, parentRouteId, onPersist, lti, children }: Ta
         hasNextPage={false}
         hideEndMarker
         enableVirtualization={false}
+        enableStickyHeader={false}
       />
       {children}
     </ToolCard>

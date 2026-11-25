@@ -53,7 +53,7 @@ interface TagTableProps<T> {
   onPrerender?: () => void;
 }
 
-/** Static read-only table of one tag's operations or schemas. */
+/** Static read-only table of one tag's operations or schemas, short enough that its header scrolls away with it. */
 export function TagTable<T>({ rows, columns, rowKeyGetter, hideHeader, onPrerender }: TagTableProps<T>) {
   return (
     <div onMouseEnter={onPrerender} onFocus={onPrerender}>
@@ -63,6 +63,7 @@ export function TagTable<T>({ rows, columns, rowKeyGetter, hideHeader, onPrerend
         hasNextPage={false}
         rowHeight={36}
         enableVirtualization={false}
+        enableStickyHeader={false}
         hideEndMarker
       />
     </div>
