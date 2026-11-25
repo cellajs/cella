@@ -109,8 +109,8 @@ describe('the builder machine', () => {
       [hash, undefined],
     ] as const) {
       const dir = mkdtempSync(join(tmpdir(), 'builder-'));
-      mkdirSync(join(dir, 'build/infra/tasks'), { recursive: true });
-      writeFileSync(join(dir, 'build/infra/tasks/description-hash.ts'), '');
+      mkdirSync(join(dir, 'build/infra'), { recursive: true });
+      writeFileSync(join(dir, 'build/infra/package.json'), JSON.stringify({ scripts: { 'description-hash': 'tsx tasks/description-hash.ts' } }));
       writeFileSync(join(dir, 'hash'), `${hash}\n`);
       writeFileSync(join(dir, 'json'), `${printed}\n`);
       const script = [

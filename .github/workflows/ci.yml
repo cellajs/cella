@@ -146,7 +146,7 @@ jobs:
 
       - name: Say what the change owes
         if: ${{ !cancelled() }}
-        run: pnpm --silent --filter infra exec tsx tasks/privileged-check.ts --base "$GITHUB_WORKSPACE/.base"
+        run: pnpm --silent --filter infra privileged-check --base "$GITHUB_WORKSPACE/.base"
 
   # The frontend as the builder machine builds it at a deploy: the builder's own script (infra/lib/builder/builder-machine.ts), in the
   # deployed mode, which generates the environment's OpenAPI spec from the example env first and then builds. Runs on every PR (~2 min),
@@ -332,7 +332,7 @@ jobs:
       - name: Compare the release with the last apply
         env:
           REPOSITORY_VARIABLES: ${{ toJSON(vars) }}
-        run: pnpm --silent --filter infra exec tsx tasks/release-applied-check.ts
+        run: pnpm --silent --filter infra release-applied-check
 
   # The `main` ruleset requires this job and `pr-title`, so a job of this workflow joins the merge gate by joining
   # `needs`. A skipped job passes (the heavy suites skip on feature PRs); a failed or cancelled one fails the check.

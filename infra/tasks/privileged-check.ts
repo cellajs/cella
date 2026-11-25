@@ -9,11 +9,23 @@ import { errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 
-const RENDER = join('tasks', 'privileged-footprint.ts');
+const RENDER_SCRIPT = 'privileged-footprint';
+const RENDER_FILE = join('tasks', 'privileged-footprint.ts');
+
+/**
+ * How a checkout's `infra/` renders its footprint: by its script, else by the file a base from before the script names.
+ * @returns undefined when the checkout can do neither
+ */
+function renderCommand(dir: string): string[] | undefined {
+  const manifest: { scripts?: Record<string, string> } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+  if (manifest.scripts?.[RENDER_SCRIPT]) return ['--silent', 'run', RENDER_SCRIPT];
+  if (existsSync(join(dir, RENDER_FILE))) return ['--silent', 'exec', 'tsx', RENDER_FILE];
+  return undefined;
+}
 
 /** Render one environment's footprint in a checkout's `infra/` directory, in a process of its own: the program's modules hold its state. */
-function render(dir: string, mode: string, out: string): PrivilegedFootprint {
-  const run = spawnSync('pnpm', ['--silent', 'exec', 'tsx', RENDER, '--mode', mode, '--out', out], { cwd: dir, encoding: 'utf8' });
+function render(dir: string, command: string[], mode: string, out: string): PrivilegedFootprint {
+  const run = spawnSync('pnpm', [...command, '--mode', mode, '--out', out], { cwd: dir, encoding: 'utf8' });
   if (run.status !== 0) throw new Error(`the keyless render of ${mode} in ${dir} failed:\n${run.stderr.trim().split('\n').slice(-12).join('\n')}`);
   return JSON.parse(readFileSync(out, 'utf8')) as PrivilegedFootprint;
 }
@@ -32,16 +44,18 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const lines: string[] = ['### Privileged changes', ''];
   let owes = false;
   let uncompared = false;
+  const headCommand = ['--silent', 'run', RENDER_SCRIPT];
+  const baseCommand = renderCommand(baseInfra);
   for (const mode of environments.filter((mode) => existsSync(stackFilePath(mode)))) {
-    const head = render(infraDir, mode, join(work, `head-${mode}.json`));
-    if (!existsSync(join(baseInfra, RENDER))) {
+    const head = render(infraDir, headCommand, mode, join(work, `head-${mode}.json`));
+    if (!baseCommand) {
       lines.push(`**${mode}:** the base cannot render what it declares without a key, so there is nothing to compare with.`, '');
       uncompared = true;
       continue;
     }
     let base: PrivilegedFootprint;
     try {
-      base = render(baseInfra, mode, join(work, `base-${mode}.json`));
+      base = render(baseInfra, baseCommand, mode, join(work, `base-${mode}.json`));
     } catch (error) {
       lines.push(`**${mode}:** the base did not render, so there is nothing to compare with.`, '');
       console.error(errorMessage(error));
