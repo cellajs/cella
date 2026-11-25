@@ -1,5 +1,5 @@
+import type { EngineConfig } from 'infra/config/engine-config';
 import { describe, expect, it } from 'vitest';
-import type { EngineConfig } from '../config/engine-config';
 import { expectedDbPrivileges, POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-privileges';
 import type { FetchLike } from '../lib/utils/fetch-like';
 import { verifyAfterApply } from './verify-after-apply';

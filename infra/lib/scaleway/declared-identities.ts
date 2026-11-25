@@ -1,4 +1,4 @@
-import type { EngineConfig } from '../../config/engine-config';
+import type { EngineConfig } from 'infra/config/engine-config';
 import { appStorageNeeds, services } from '../services';
 import { deployPolicy } from './deploy-policy';
 import { UPLOADS_PERMISSION_SETS } from './permissions';

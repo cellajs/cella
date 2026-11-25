@@ -1,5 +1,5 @@
 import { GetBucketPolicyCommand } from '@aws-sdk/client-s3';
-import type { EngineConfig } from '../../config/engine-config';
+import type { EngineConfig } from 'infra/config/engine-config';
 import { deriveInfra } from '../naming';
 import { stateBucket } from '../stack/control-store';
 import type { KeyPair } from './operator-identity';

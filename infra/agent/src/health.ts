@@ -1,5 +1,5 @@
 import { createServer, type Server } from 'node:http';
-import { healthContract } from '../../config/health.config';
+import { healthContract } from '../../lib/health-contract';
 import type { AgentPort } from './plan';
 
 /** Where the agent stands: booted once the release started, draining once its manifest said so. */

@@ -346,7 +346,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     throw new Error('Required: SCW_ACCESS_KEY, SCW_SECRET_KEY, --sha, --mode, --project-id, --build-images-json, --services-json, --manifest-out');
   }
   process.env.APP_MODE = mode;
-  const { engineConfig: appConfig } = await import('../config/engine-config');
+  const { engineConfig: appConfig } = await import('infra/config/engine-config');
   const { naming, region, zones } = deriveInfra(appConfig);
   const rootPackage = JSON.parse(await readFile(join(infraDir, '..', 'package.json'), 'utf8')) as {
     packageManager?: string;

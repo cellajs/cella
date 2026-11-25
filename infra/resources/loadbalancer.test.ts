@@ -18,7 +18,7 @@ vi.mock('./dns-cert-gates', async () => {
 });
 
 // Split mode with the path-routed WebSocket relay enabled, so a pool with WebSocket timeouts and an internal-listener consumer both render.
-vi.mock('../config/engine-config', async () => {
+vi.mock('infra/config/engine-config', async () => {
   const { fakeConfig } = await import('../tests/helpers/fake-config');
   const { services } = fakeConfig();
   return { engineConfig: fakeConfig({ services: { ...services, yjs: { ...services.yjs, enabled: true } } }) };

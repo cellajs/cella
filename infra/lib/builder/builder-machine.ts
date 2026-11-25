@@ -102,15 +102,16 @@ if [ -n "$FRONTEND" ]; then
 fi
 wait "$SERVICES"
 wait "$AGENT"
-# The release's own description of the app, which the deploy holds against the applied engine's: the target's script, in a keyless
-# container on the engine workspace the agent bundle installed. A commit older than the script reports none. Beside the hash goes the
+# The release's own description of the app, which the deploy holds against the applied engine's: the target's description-hash
+# script by name, which npm runs as the image has no pnpm, in a keyless container on the engine workspace the agent bundle installed.
+# A commit older than the script reports none. Beside the hash goes the
 # description itself only as the text the hash was taken of: a commit older than --json prints its hash again, and no field goes in.
 DESCRIPTION_FIELD=''
-if [ -f /build/infra/tasks/description-hash.ts ]; then
-  DESCRIPTION=$(docker run --rm -e APP_MODE -v /build:/build:ro -w /build/infra "$NODE_IMAGE" node_modules/.bin/tsx tasks/description-hash.ts)
+if grep -q '"description-hash"' /build/infra/package.json; then
+  DESCRIPTION=$(docker run --rm -e APP_MODE -v /build:/build:ro -w /build/infra "$NODE_IMAGE" npm run --silent description-hash)
   printf '%s' "$DESCRIPTION" | grep -Eqx '[0-9a-f]{64}' || { echo "the release's description hash is no hash: $DESCRIPTION"; false; }
   DESCRIPTION_FIELD=",\"description\":\"$DESCRIPTION\""
-  DESCRIBES=$(docker run --rm -e APP_MODE -v /build:/build:ro -w /build/infra "$NODE_IMAGE" node_modules/.bin/tsx tasks/description-hash.ts --json)
+  DESCRIBES=$(docker run --rm -e APP_MODE -v /build:/build:ro -w /build/infra "$NODE_IMAGE" npm run --silent description-hash -- --json)
   if [ "$(printf '%s' "$DESCRIBES" | sha256sum | cut -d ' ' -f 1)" = "$DESCRIPTION" ]; then
     DESCRIPTION_FIELD="$DESCRIPTION_FIELD,\"describes\":$DESCRIBES"
   fi

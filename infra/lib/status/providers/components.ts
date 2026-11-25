@@ -1,6 +1,6 @@
-import { healthContract } from '../../../config/health.config';
 import { createFetchGet } from '../../../tasks/smoke';
 import { type ComponentIssue, componentSeverity, formatComponentIssues, unhealthyComponents } from '../../health-components';
+import { healthContract } from '../../health-contract';
 import { deployedServices, serviceEndpoints } from '../../services';
 import { check, diagAction } from '../check';
 import type { Check, StatusProvider } from '../types';

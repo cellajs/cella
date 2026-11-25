@@ -1,5 +1,5 @@
+import { generalConfig } from 'infra/config/general.config';
 import { composeConfig } from '../compose/compose';
-import { generalConfig } from '../config/general.config';
 import { accountFailed } from '../lib/deploy/boot-accounts';
 import type { DeployTarget, LiveRecord, LiveRole } from '../lib/deploy/live-record';
 import { MANIFEST_KEY, renderMachineUserData, renderManifest } from '../lib/deploy/machine-user-data';

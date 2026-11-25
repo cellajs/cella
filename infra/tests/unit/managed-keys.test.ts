@@ -3,7 +3,7 @@ import { managedKeyById, managedKeys } from '../../lib/managed-keys';
 import { runtimeSecrets } from '../../lib/runtime-secrets';
 
 // The config module and lib/managed-keys form an import cycle, so it must be entered from the lib side; a static import sorts alphabetically ahead of the lib imports.
-const { managedKeysConfig } = await import('../../config/managed-keys.config');
+const { managedKeysConfig } = await import('infra/config/managed-keys.config');
 
 describe('managed key registry', () => {
   it('derives managedKeys from the app config, keyed by id, preserving order', () => {

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { EngineConfig } from '../../config/engine-config';
+import type { EngineConfig } from 'infra/config/engine-config';
 import { loadModeEnvFile, loadObserverKey, ownProjectId, sharedFileProjectId } from '../utils/env-files';
 import { infraDir } from '../utils/paths';
 import { detectStackState, type Environment, type StackState } from './bootstrap-stack-state';
@@ -32,7 +32,7 @@ export async function loadStackContext(environment: Environment, log?: (message:
   const stackYaml = existsSync(stackPath) ? readFileSync(stackPath, 'utf8') : undefined;
   const state = detectStackState({ yamlText: stackYaml });
   process.env.APP_MODE = environment;
-  const { engineConfig: appConfig } = await import('../../config/engine-config');
+  const { engineConfig: appConfig } = await import('infra/config/engine-config');
   if (appConfig.mode !== environment) throw new Error(`Mode mismatch: requested "${environment}" but loaded config is "${appConfig.mode}"`);
   envWarnings.push(...loadObserverKey(appConfig.appSlug, environments));
   const project = resolveModeProject({

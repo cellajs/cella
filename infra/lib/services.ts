@@ -1,6 +1,6 @@
+import type { EngineConfig, EngineServiceEndpoint } from 'infra/config/engine-config';
 import { services as composeServices, type ServiceName } from '../compose/compose';
 import type { ServiceMeta } from '../compose/types';
-import type { EngineConfig, EngineServiceEndpoint } from '../config/engine-config';
 
 /** One deployable service: the Compose model's `x-service` (`ServiceMeta`) narrowed to this app's slug. Field meanings live on `ServiceMeta` in `../compose/types.ts`. */
 export interface ServiceDefinition extends ServiceMeta {

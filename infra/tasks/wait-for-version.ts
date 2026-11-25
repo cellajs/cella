@@ -1,4 +1,4 @@
-import { healthContract } from '../config/health.config';
+import { healthContract } from '../lib/health-contract';
 import { type ScwAuth, scwFetch } from '../lib/scaleway/scw-fetch';
 import { sleep as defaultSleep } from '../lib/utils/sleep';
 

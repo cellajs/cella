@@ -1,7 +1,7 @@
+import { appServices } from 'infra/config/services.config';
 import { config } from 'shared/config/config.default';
 import { servicePaths } from 'shared/config-builder/service-paths';
 import { describe, expect, it } from 'vitest';
-import { appServices } from '../../config/services.config';
 
 /**
  * The engine reads config only through engine-config, so the registry repeats what the shared config

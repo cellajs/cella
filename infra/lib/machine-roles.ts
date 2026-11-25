@@ -1,7 +1,7 @@
+import type { EngineConfig } from 'infra/config/engine-config';
 import type { ServiceName } from '../compose/compose';
 import { AGENT_PORT_OFFSET } from '../compose/infrastructure';
 import type { ReplacementStrategy } from '../compose/types';
-import type { EngineConfig } from '../config/engine-config';
 import type { PerMode } from './general-config';
 import { carriedServices, deployedServices, type ServiceDefinition, services } from './services';
 import type { Environment } from './stack/bootstrap-stack-state';

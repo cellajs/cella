@@ -1,5 +1,5 @@
+import type { EngineConfig } from 'infra/config/engine-config';
 import { composeConfig, type ServiceName } from '../../compose/compose';
-import type { EngineConfig } from '../../config/engine-config';
 import type { EnvSupplier, EnvSupplierContext } from '../env-suppliers';
 import { internalLbPort, type MachineRole } from '../machine-roles';
 import { deriveInfra } from '../naming';
