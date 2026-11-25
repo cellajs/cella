@@ -96,7 +96,8 @@ const cases: [string, RunRecord, Pick<FailureClass, 'side' | 'retryLikely'>, str
   ],
 ];
 
-const advice = 'Store an operator value with `pnpm infra env`, which starts this target again; a generated value is made by `pnpm infra apply`.';
+const advice =
+  'Store an operator value with `pnpm cella infra env`, which starts this target again; a generated value is made by `pnpm cella infra apply`.';
 
 describe('blockedValues', () => {
   it.each([

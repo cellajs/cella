@@ -57,7 +57,7 @@ export function startMenuSession(): void {
   session.menu = true;
 }
 
-/** True once the run shows the menu; false for `pnpm infra <action>`, `--once` and a first setup. */
+/** True once the run shows the menu; false for `pnpm cella infra <action>`, `--once` and a first setup. */
 export function inMenuSession(): boolean {
   return session.menu === true;
 }

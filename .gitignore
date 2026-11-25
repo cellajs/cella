@@ -85,7 +85,7 @@ coverage/
 *.lcov
 .nyc_output/
 
-# infra operator debug captures (pnpm infra --debug-provider)
+# infra operator debug captures (pnpm cella infra --debug-provider)
 infra/.debug/
 
 # infra state exports the Unlock action saves before it edits the Pulumi state (rollback copies)

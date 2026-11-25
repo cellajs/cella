@@ -183,7 +183,7 @@ describe('nextAction priority (lifecycle order)', () => {
       stackState: 'fresh',
       projectId: undefined,
     });
-    expect(report.nextAction?.command).toBe('pnpm infra');
+    expect(report.nextAction?.command).toBe('pnpm cella infra');
     expect(find(report.checks, 'config.stackState')?.status).toBe('missing');
   });
 

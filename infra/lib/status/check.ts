@@ -3,7 +3,10 @@ import { actionCommand, menuPath } from '../operator-actions';
 import type { Check, CheckStatus, KeyTier, NextAction } from './types';
 
 /** The local setup/manage entrypoint. */
-export const runSetup: NextAction = { description: 'Run the infra CLI (setup on a fresh stack, operator menu otherwise)', command: 'pnpm infra' };
+export const runSetup: NextAction = {
+  description: 'Run the infra CLI (setup on a fresh stack, operator menu otherwise)',
+  command: 'pnpm cella infra',
+};
 export const manageSecrets: NextAction = {
   description: `Set the missing runtime secret(s) via "${menuPath('env')}"`,
   command: actionCommand('env'),

@@ -87,7 +87,7 @@ export async function offerFirstDeploy(context: InfraContext): Promise<void> {
   const target = releases ? newestReleaseTag() : environmentsTarget(environment)?.replace(/^branch:/, '');
   if (releases && !target) {
     console.info(
-      `\n${checkMark} ${environment} is set up. Publish your first release: merge the release PR; the first scheduled run deploys it within a minute, and ${pc.cyan('pnpm infra')} shows how it went.`,
+      `\n${checkMark} ${environment} is set up. Publish your first release: merge the release PR; the first scheduled run deploys it within a minute, and ${pc.cyan('pnpm cella infra')} shows how it went.`,
     );
   } else if (target && (await confirmOrDefault({ message: `Deploy ${target} now and follow it?`, default: true }))) {
     try {

@@ -14,7 +14,7 @@ import { startBlockedTarget } from './start-deploy';
 /**
  * Publish the engine image of this checkout, plan, ask, then one `pulumi up` with the operator key in SCW_* env, for changes to privileged
  * resources (DB, VPC, private network, buckets, DNS, the main job and its engine) the read-only CI key cannot make.
- * The declared applications and their policies are IAM, written by `pnpm infra identities` with an Owner API key, never by this apply.
+ * The declared applications and their policies are IAM, written by `pnpm cella infra identities` with an Owner API key, never by this apply.
  * The plan is made before the lease is taken, so it is taken only for a plan the operator said yes to.
  * It runs against a bootstrapped stack, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
  */
@@ -60,7 +60,7 @@ export async function runApply(context: InfraContext): Promise<void> {
   console.warn(`${pc.yellow(pc.bold('⚠  Keep this terminal open.'))} ${pc.dim('If it stops, run it again.')}`);
 
   // An established stack recovers from an interruption by running the apply again; the first-provisioning marker is the setup's alone.
-  // `pnpm infra --debug-provider` (or INFRA_DEBUG_PROVIDER=true) keeps the engine and provider log of the up under infra/.debug/ for a post-mortem.
+  // `pnpm cella infra --debug-provider` (or INFRA_DEBUG_PROVIDER=true) keeps the engine and provider log of the up under infra/.debug/ for a post-mortem.
   const debugProvider = process.argv.includes('--debug-provider') || process.env.INFRA_DEBUG_PROVIDER === 'true';
   const { completed, verified, declined } = await runOperatorApply(context, {
     operation: 'apply',

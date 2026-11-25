@@ -8,7 +8,7 @@ export interface OperatorAction {
 }
 
 /**
- * Every operator action of the infra CLI, keyed by the id that also runs it: `pnpm infra <id>`. A message that sends the operator to an
+ * Every operator action of the infra CLI, keyed by the id that also runs it: `pnpm cella infra <id>`. A message that sends the operator to an
  * action names it through {@link actionLabel}, {@link menuPath} or {@link actionCommand}, so an action has one name wherever it is mentioned.
  */
 export const OPERATOR_ACTIONS = {
@@ -145,7 +145,7 @@ function actionRow(id: OperatorActionId): MenuRow {
 }
 
 /**
- * The rows of the `pnpm infra` menu, in menu order: the daily ones by how often a person comes for them, then More with the rest.
+ * The rows of the `pnpm cella infra` menu, in menu order: the daily ones by how often a person comes for them, then More with the rest.
  * `db-open` and `db-close` share one place: the menu lists the one that applies. No action is reached by its command alone: each has a row.
  */
 export const MENU_ROWS = {
@@ -197,7 +197,7 @@ export function actionLabel(id: OperatorActionId): string {
 
 /** The command that runs an action without the menu. */
 export function actionCommand(id: OperatorActionId): string {
-  return `pnpm infra ${id}`;
+  return `pnpm cella infra ${id}`;
 }
 
 /**

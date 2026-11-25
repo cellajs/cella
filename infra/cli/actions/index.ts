@@ -29,7 +29,7 @@ import { runUnlock } from './unlock';
 
 type ActionRunners = Record<OperatorActionId, (context: InfraContext) => Promise<unknown>>;
 
-/** The function behind every operator action: the menu and `pnpm infra <action>` both run an action through this table. */
+/** The function behind every operator action: the menu and `pnpm cella infra <action>` both run an action through this table. */
 export const ACTION_RUNNERS: ActionRunners = {
   // The status task reads config while its module loads, so it is imported once the context has loaded the config.
   status: async (context) => (await import('../../tasks/status')).runStatus({ ...context, operatorKey: rememberedOperatorKey() }),

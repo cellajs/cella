@@ -66,11 +66,11 @@ describe('failWithHint', () => {
     const exit = vi.spyOn(process, 'exit').mockImplementation((code) => {
       throw new Error(`exit:${code}`);
     });
-    expect(() => failWithHint('boom', { command: 'pnpm infra', description: 'why it broke' }, 3)).toThrow('exit:3');
+    expect(() => failWithHint('boom', { command: 'pnpm cella infra', description: 'why it broke' }, 3)).toThrow('exit:3');
     expect(exit).toHaveBeenCalledWith(3);
     const joined = errors.join('\n');
     expect(joined).toContain('boom');
-    expect(joined).toContain('pnpm infra');
+    expect(joined).toContain('pnpm cella infra');
     expect(joined).toContain('why it broke');
   });
 });

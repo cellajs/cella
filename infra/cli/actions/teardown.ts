@@ -229,7 +229,7 @@ async function sweepAfterDestroy(context: InfraContext, owner: OwnerKey, kept: r
 
   console.info(`\n${pc.bold('Kept, with their contents:')} ${keptNames(context, kept)}.`);
   if (dump) console.info(`${pc.bold('Final dump:')} ${naming.bootDiagBucket}/${dump} ${pc.dim('(RUNBOOKS.md, "Restore the final dump")')}`);
-  console.info(pc.dim(`A setup again (\`pnpm infra --mode ${context.environment}\`) adopts them, in project ${projectId}.`));
+  console.info(pc.dim(`A setup again (\`pnpm cella infra --mode ${context.environment}\`) adopts them, in project ${projectId}.`));
   return true;
 }
 

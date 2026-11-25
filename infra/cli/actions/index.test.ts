@@ -73,7 +73,7 @@ describe('runAction', () => {
     await expect(runAction('apply', context, { runners: held, log: (line) => lines.push(stripVTControlCharacters(line)) })).resolves.toEqual({
       code: 1,
     });
-    expect(lines).toEqual(['  Unlock: pnpm infra unlock']);
+    expect(lines).toEqual(['  Unlock: pnpm cella infra unlock']);
   });
 });
 

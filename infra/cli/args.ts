@@ -1,8 +1,8 @@
 import { isOperatorActionId, type OperatorActionId } from '../lib/operator-actions';
 
-/** What the command line of `pnpm infra` asks for. */
+/** What the command line of `pnpm cella infra` asks for. */
 export interface CliArgs {
-  /** The action to run without the menu: `pnpm infra <action>`. */
+  /** The action to run without the menu: `pnpm cella infra <action>`. */
   action?: OperatorActionId;
   /** A first word that names no action; the CLI lists the ones that exist. */
   unknownAction?: string;

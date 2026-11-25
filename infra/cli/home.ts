@@ -125,7 +125,7 @@ function securityFindings(report: StatusReport): Check[] {
  */
 export function upNextOf(report: StatusReport, refs?: readonly RemoteRef[]): UpNext | undefined {
   const next = report.nextAction;
-  const word = next ? /^pnpm infra ([a-z][a-z-]*)/.exec(next.command)?.[1] : undefined;
+  const word = next ? /^pnpm cella infra ([a-z][a-z-]*)/.exec(next.command)?.[1] : undefined;
   const last = report.checks.find((entry) => entry.id === 'runs.last');
   if (next && word && isOperatorActionId(word)) {
     const name = word === 'logs' && last?.subject && needsPerson(last) ? commitName(refs, last.subject) : undefined;

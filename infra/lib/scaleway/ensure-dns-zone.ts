@@ -96,7 +96,7 @@ export async function ensureDnsZone(opts: {
   while (true) {
     const action = await confirm({ message: 'Recheck DNS zone status now? (No = skip and continue)', default: true });
     if (!action) {
-      console.info(`  ${warningMark} Skipped. Pulumi will fail on DNS records until validation completes: re-run pnpm infra to retry.`);
+      console.info(`  ${warningMark} Skipped. Pulumi will fail on DNS records until validation completes: re-run pnpm cella infra to retry.`);
       return { status: 'skipped' };
     }
     const freshZones = await listZones(secretKey, projectId, domain);

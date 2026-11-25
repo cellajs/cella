@@ -40,7 +40,7 @@ const args = parseCliArgs(process.argv.slice(2));
 function printHelp(): void {
   const ids = Object.keys(OPERATOR_ACTIONS) as OperatorActionId[];
   const width = Math.max(...ids.map((id) => id.length));
-  console.info('Usage: pnpm infra [action] [--mode production|staging] [--once] [--defaults]\n');
+  console.info('Usage: pnpm cella infra [action] [--mode production|staging] [--once] [--defaults]\n');
   console.info('Without an action the menu opens on the home screen; an action runs alone and exits with its result.\n');
   for (const id of ids) console.info(`  ${pc.cyan(id.padEnd(width))}  ${actionLabel(id)}`);
   console.info(`\n  ${pc.dim('--once      leave after the first action chosen in the menu')}`);
@@ -259,7 +259,7 @@ if (droppedFromEnv.length > 0) {
   );
 }
 
-// `pnpm infra <action>`: one action, no menu. An action the stack cannot run now says why, as its menu entry does.
+// `pnpm cella infra <action>`: one action, no menu. An action the stack cannot run now says why, as its menu entry does.
 if (args.action) {
   const reason = disabledReason(args.action, menuState(context));
   if (reason) {

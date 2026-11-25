@@ -138,7 +138,7 @@ describe('buildRelease', () => {
 
   it('names the repository read key when the builder could not fetch the commit: a private repository answers as if it were not there', async () => {
     const { fx } = fake({ result: 'failed', step: 'clone' });
-    await expect(buildRelease(options(), fx)).rejects.toThrow(/failed at 'clone'[\s\S]*pnpm infra repository-key/);
+    await expect(buildRelease(options(), fx)).rejects.toThrow(/failed at 'clone'[\s\S]*pnpm cella infra repository-key/);
     await expect(buildRelease(options(), fake({ result: 'failed' }).fx)).rejects.not.toThrow(/repository-key/);
   });
 

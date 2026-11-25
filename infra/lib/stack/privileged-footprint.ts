@@ -60,13 +60,13 @@ export function owedWorkLines(owed: OwedWork): string[] {
   return [
     ...(owed.ownerMoment.length > 0
       ? [
-          `**${owed.environment} needs an Owner moment** (\`pnpm infra identities\`, with an Owner API key) before its next deploy:`,
+          `**${owed.environment} needs an Owner moment** (\`pnpm cella infra identities\`, with an Owner API key) before its next deploy:`,
           ...owed.ownerMoment.map((line) => `- \`${line}\``),
         ]
       : []),
     ...(owed.apply.length > 0
       ? [
-          `**${owed.environment} needs an apply** (\`pnpm infra apply\`, on the operator key) before its next deploy:`,
+          `**${owed.environment} needs an apply** (\`pnpm cella infra apply\`, on the operator key) before its next deploy:`,
           ...owed.apply.map((line) => `- \`${line}\``),
         ]
       : []),

@@ -167,7 +167,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       () => true,
       () => false,
     );
-    if (!found) throw new Error(`The Pulumi state bucket '${bucketName}' is not there: the setup makes it (pnpm infra).`);
+    if (!found) throw new Error(`The Pulumi state bucket '${bucketName}' is not there: the setup makes it (pnpm cella infra).`);
     if (expectedProjectId) await assertBucketProject(s3, bucketName, expectedProjectId);
     console.info(`Pulumi state bucket: s3://${bucketName} (${region})`);
     return;

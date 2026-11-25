@@ -32,7 +32,7 @@ function releaseLine(mode: string, release: string, applied: unknown): { line: s
       : 'GitHub holds no description from its last apply';
   return {
     deploys: false,
-    line: `**${mode} owes an apply before this release merges:** ${state}. \`pnpm infra apply --mode ${mode}\` from main publishes main's description and runs this check again.`,
+    line: `**${mode} owes an apply before this release merges:** ${state}. \`pnpm cella infra apply --mode ${mode}\` from main publishes main's description and runs this check again.`,
   };
 }
 

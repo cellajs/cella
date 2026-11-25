@@ -11,7 +11,7 @@ system message it cannot take goes out by mail.
 
 ## Debug a failed deploy
 
-**Deploy now** ends a run that did not deploy with one sentence on whose side the failure is, then the release your users still get. **Deploy logs** (`pnpm infra logs`, adding `--mode staging` for staging) shows the same sentence under a run's header, with the step that failed and a failed machine's boot error. The home's **Last deploy** line says it too. The sentence names one of four sides:
+**Deploy now** ends a run that did not deploy with one sentence on whose side the failure is, then the release your users still get. **Deploy logs** (`pnpm cella infra logs`, adding `--mode staging` for staging) shows the same sentence under a run's header, with the step that failed and a failed machine's boot error. The home's **Last deploy** line says it too. The sentence names one of four sides:
 
 - **Scaleway's side:** its API failed under the deploy, it had no machine of that type in stock, or a machine booted slower than its links lasted. Your code never ran there. **Deploy now** offers a retry, which usually passes. Raise a reached quota in the console at Organization → Quotas.
 - **The release's side:** its build failed, a new machine crashed at boot, or the smoke tests failed on it. The sentence names the report to read.
@@ -22,7 +22,7 @@ A switch that times out waiting for the new machine means its agent never answer
 
 The deploy deleted the new machine where the old one kept serving; a stop-first role keeps its failed machine. A role that switched before the failure serves the target. The next run of the same target switches only the rest.
 
-1. **Read the boot accounts first.** `pnpm infra logs --sha <sha>` prints each machine's boot account of that release with the builder's report, a crashed container's output included. "No account" means the agent never finished its boot. The machine's serial console then shows how far it got: Scaleway console → Instances → the machine → Console. A deleted machine's console is gone with it. For a boot that never reports, start the same target with a raised retry counter and read the console while the deploy waits.
+1. **Read the boot accounts first.** `pnpm cella infra logs --sha <sha>` prints each machine's boot account of that release with the builder's report, a crashed container's output included. "No account" means the agent never finished its boot. The machine's serial console then shows how far it got: Scaleway console → Instances → the machine → Console. A deleted machine's console is gone with it. For a boot that never reports, start the same target with a raised retry counter and read the console while the deploy waits.
 2. **Reproduce locally.** Build the image at the release's commit, or `docker load` its archive from `releases/<sha>/images/` in the boot-diag bucket. `docker run` it with a minimal valid environment. A failing import such as `ERR_MODULE_NOT_FOUND` shows in seconds.
 3. **Check the usual causes:**
    - a package the image lacks: `pnpm boot:check` catches one missing from `dependencies`
@@ -35,8 +35,8 @@ The deploy deleted the new machine where the old one kept serving; a stop-first 
 
 The running release stays: a blocked run booted no machine of the release. **Deploy now**, **Deploy logs** and the home's **Last deploy** line name the value it waits for. What stores it depends on its kind:
 
-- **An operator value:** **Env vars & secrets** (`pnpm infra env`) says above its table which deploy waits for which values, and lists each first as `missing · required`. Pick its row and set it. Storing it starts the target again.
-- **A generated or database value:** **Review & apply changes** (`pnpm infra apply`).
+- **An operator value:** **Env vars & secrets** (`pnpm cella infra env`) says above its table which deploy waits for which values, and lists each first as `missing · required`. Pick its row and set it. Storing it starts the target again.
+- **A generated or database value:** **Review & apply changes** (`pnpm cella infra apply`).
 - **The uploads key:** **Update identities**.
 
 No scheduled run starts a blocked target again. Storing the value or the apply does.
@@ -45,7 +45,7 @@ No scheduled run starts a blocked target again. Storing the value or the apply d
 
 A run ends **apply needed** when its target describes the app otherwise than the engine the last apply published ([What needs an apply](./CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). The running release stays: the run stopped before it read a runtime value or booted a machine of the release. **Deploy logs** names the fields that differ, such as `services.search added`. For a release built without its description, it shows the two hashes.
 
-1. Check out the target's commit, for production its release tag. Run **Review & apply changes** (`pnpm infra apply --mode <env>`). Before it builds, it compares this checkout's description with the waiting release's. When they differ, it names the fields and stops with the command that checks out the release, `git switch --detach <tag>`. From the right checkout it publishes that checkout's engine and starts the target again at its end.
+1. Check out the target's commit, for production its release tag. Run **Review & apply changes** (`pnpm cella infra apply --mode <env>`). Before it builds, it compares this checkout's description with the waiting release's. When they differ, it names the fields and stops with the command that checks out the release, `git switch --detach <tag>`. From the right checkout it publishes that checkout's engine and starts the target again at its end.
 2. "did not start from the engine image an apply publishes" means the run started on a definition older than the applied engine. The apply in step 1 rewrites it.
 3. "reports no description" means the target is older than the applied engine, which cannot deploy it. Deploy a newer release, or roll forward.
 4. "The image describes … the apply as …" during the apply's build has two causes. The apply's shell overrides a config value such as `APP_ORIGIN`, or the description needs a file git does not track. Unset the override or `git add` the file, then apply again.
@@ -54,7 +54,7 @@ A run ends **apply needed** when its target describes the app otherwise than the
 
 ## Roll back
 
-No old machine is kept to switch back to: a rollback deploys an earlier release on the same forward path. `pnpm infra` → **Releases & roll back** (`pnpm infra releases`) lists the last ten releases, newest first. Each shows when it merged, how its deploy ended and whether it serves.
+No old machine is kept to switch back to: a rollback deploys an earlier release on the same forward path. `pnpm cella infra` → **Releases & roll back** (`pnpm cella infra releases`) lists the last ten releases, newest first. Each shows when it merged, how its deploy ended and whether it serves.
 
 1. Pick an earlier release. With your operator key it says whether the release's build is kept for the deploy to reuse, and whether the release describes the app as the applied engine does. One that does not needs an apply from a checkout at that release first ([Apply needed](#apply-needed)). One older than the applied engine cannot be deployed: roll forward then.
 2. Confirm, and it deploys the release and follows it as **Deploy now** does.
@@ -65,13 +65,13 @@ A rotation of keys or secrets keeps the rollback: it deploys the live release ag
 
 ## A stale lease
 
-A deploy or an operator action that dies holds its lease until it lapses within minutes. The next run waits for it, and `pnpm infra status` reports it.
+A deploy or an operator action that dies holds its lease until it lapses within minutes. The next run waits for it, and `pnpm cella infra status` reports it.
 
-1. `pnpm infra` → **More** → **Unlock** (`pnpm infra unlock`) removes an expired lease at once. It removes a live one only after you confirm. Check `pnpm infra logs` first, since a live lease most likely belongs to a run still going.
+1. `pnpm cella infra` → **More** → **Unlock** (`pnpm cella infra unlock`) removes an expired lease at once. It removes a live one only after you confirm. Check `pnpm cella infra logs` first, since a live lease most likely belongs to a run still going.
 2. A deploy that died mid-switch may have left a machine on the idle slot. You owe nothing for it: the next deploy drains and deletes it before it boots there.
 3. Unlock then lists the operations an interrupted apply left in the Pulumi state. When all of them are creates, it offers to drop them. It keeps a state export in `infra/.state-backups/` as the rollback. Check the Scaleway console for each resource first. A create that went through left a resource the state does not track.
 4. An interrupted update or delete stays. Run the `pulumi refresh` that Unlock prints, logged in with the operator key, with `PULUMI_CONFIG_PASSPHRASE` set and empty.
-5. An apply may fail to delete a resource the program no longer declares, as its live object is gone already. **Remove from state** (`pnpm infra state-remove`) takes its URN out of the state.
+5. An apply may fail to delete a resource the program no longer declares, as its live object is gone already. **Remove from state** (`pnpm cella infra state-remove`) takes its URN out of the state.
 
 ## A page stuck on the apex
 
@@ -83,7 +83,7 @@ The apex answers the worker script itself: that script replaces the kept worker 
 
 Sign-ins resolve the client IP to a country and network with DB-IP Lite data, under CC BY 4.0. The sessions list and the new sign-in notice show them. The image ships no data, and a refresh needs no release. Each API process downloads the data from the `geoip/` prefix of the public bucket at boot and checks for newer data.
 
-Every deploy refreshes stale data, and `pnpm infra deploy` of the live target runs that check again. A failed download or a bucket problem costs only the country line. Sign-ins never depend on it. `GEOIP_SOURCE_URL=off` disables the refresh, and another prefix or bucket as its value overrides the source.
+Every deploy refreshes stale data, and `pnpm cella infra deploy` of the live target runs that check again. A failed download or a bucket problem costs only the country line. Sign-ins never depend on it. `GEOIP_SOURCE_URL=off` disables the refresh, and another prefix or bucket as its value overrides the source.
 
 ## The system room
 
@@ -98,7 +98,7 @@ The system room is an optional Matrix room without encryption, in which a bot po
    A token copied from Element's settings can expire within minutes on such a server. This one lasts until the bot signs out.
 
 2. Create a room with encryption off and invite the bot. Element Web and Desktop show the switch when you create a room. Encryption cannot be switched off later.
-3. Set `matrix: { homeserverUrl, systemRoomId }` in the config of the mode, with the room id from the room's settings under **Advanced**. Store the token as `MATRIX_ACCESS_TOKEN`: in `.env` locally, and in a deployment as the runtime secret `matrix-access-token` in **Env vars & secrets** (`pnpm infra env`).
+3. Set `matrix: { homeserverUrl, systemRoomId }` in the config of the mode, with the room id from the room's settings under **Advanced**. Store the token as `MATRIX_ACCESS_TOKEN`: in `.env` locally, and in a deployment as the runtime secret `matrix-access-token` in **Env vars & secrets** (`pnpm cella infra env`).
 4. Start the app, or deploy a release with that config. The API joins the room and logs `System room connected as @bot:server`, or `System room not connected` with a reason from the table below. A token stored later reaches only the machines of the next deploy.
 
 A message the room does not take goes out by mail, which ends with "Sent by mail: the system room could not be reached (`<reason>`)." The log holds `System room send failed` with the same reason.
@@ -122,17 +122,17 @@ This is break-glass access from your laptop, for any operator task against the l
 1. Open it. The CLI prints the admin connection string:
 
    ```bash
-   pnpm infra db-open
+   pnpm cella infra db-open
    ```
 
 2. Run your task with that connection string.
-3. **Close it again.** A deploy does not close it. The menu offers the close while the endpoint is open, and `pnpm infra status` warns about it.
+3. **Close it again.** A deploy does not close it. The menu offers the close while the endpoint is open, and `pnpm cella infra status` warns about it.
 
    ```bash
-   pnpm infra db-close
+   pnpm cella infra db-close
    ```
 
-While it is open, **Review & apply changes** (`pnpm infra apply`) refuses to run. Close it first: the apply's plan would remove the ACL and keep the endpoint.
+While it is open, **Review & apply changes** (`pnpm cella infra apply`) refuses to run. Close it first: the apply's plan would remove the ACL and keep the endpoint.
 
 ## A stopped CDC worker
 
@@ -148,7 +148,7 @@ The worker makes a new slot when it starts again. Every client then refetches on
 
 Fix a wrong admin email in **Env vars & secrets** and take the deploy it offers, which replaces every machine. The new backend machine's boot seeds the admin while the users table is empty.
 
-On staging, **More** → **Seed database** (`pnpm infra db-seed`) seeds demo data with the admin. It opens the database, seeds and closes it in one go. It never runs on production. Elsewhere, [open the database](#open-the-database). The migrate companion seeds the admin on an empty users table. Build the backend and run it with the printed connection string:
+On staging, **More** → **Seed database** (`pnpm cella infra db-seed`) seeds demo data with the admin. It opens the database, seeds and closes it in one go. It never runs on production. Elsewhere, [open the database](#open-the-database). The migrate companion seeds the admin on an empty users table. Build the backend and run it with the printed connection string:
 
 ```bash
 pnpm --filter backend build
@@ -159,7 +159,7 @@ ADMIN_EMAIL=you@example.com DATABASE_ADMIN_URL='<printed connection string>' SER
 
 **Reset database** rebuilds the app's logical database from migrations plus the admin seed. **Pre-production only, or with services deliberately quiesced: a hard outage.**
 
-`pnpm infra` → **More** → **Reset database** takes a backup, deletes and recreates the logical database, and re-grants both roles. It runs on your operator key. A reset that stopped after its delete finishes when you run it again. Then reboot the backend machine: [Scaleway console](https://console.scaleway.com/instance/servers) → the machine → **Reboot**. Its boot migrates the empty database and seeds the admin.
+`pnpm cella infra` → **More** → **Reset database** takes a backup, deletes and recreates the logical database, and re-grants both roles. It runs on your operator key. A reset that stopped after its delete finishes when you run it again. Then reboot the backend machine: [Scaleway console](https://console.scaleway.com/instance/servers) → the machine → **Reboot**. Its boot migrates the empty database and seeds the admin.
 
 Verify that `curl https://<your-app>/api/health?depth=full` reports every component `healthy`. The CDC worker makes a new replication slot and, on a restored database, rebuilds its sync books ([Verify and rebuild](../../../cdc/README.md#verify-and-rebuild)).
 
@@ -194,7 +194,7 @@ UPDATE actors SET last_seen_at = NULL, last_sign_in_at = NULL WHERE id = ANY($1)
 
 ## Teardown
 
-`pnpm infra` → **More** → **Tear down** asks you to type `<slug>-<mode>`. It asks for one key and nothing else: an Owner API key that expires within a day. The one key deletes the resources and the identities, since the Owner key holds every right.
+`pnpm cella infra` → **More** → **Tear down** asks you to type `<slug>-<mode>`. It asks for one key and nothing else: an Owner API key that expires within a day. The one key deletes the resources and the identities, since the Owner key holds every right.
 
 Before it touches anything, it refuses a key the bucket policies do not name. Your user is named once it joins `<app>-operators` and the next **Review & apply changes** runs.
 
@@ -223,7 +223,7 @@ It keeps these, with their contents:
 
 Each kept bucket keeps its policy. Without the two kept keys, the dump's encrypted and hashed fields no longer read. The live record goes with the machines it named. A setup again asks for third-party keys, since they go with the other secrets.
 
-The project id stays in `infra/.env.<mode>`. Commit the deletion of `infra/Pulumi.<mode>.yaml`. A setup again (`pnpm infra --mode <mode>`) runs in the same project. Its first apply changes nothing about what the teardown kept: the setup adopts them before that apply.
+The project id stays in `infra/.env.<mode>`. Commit the deletion of `infra/Pulumi.<mode>.yaml`. A setup again (`pnpm cella infra --mode <mode>`) runs in the same project. Its first apply changes nothing about what the teardown kept: the setup adopts them before that apply.
 
 A destroy that stops halfway leaves what it had not reached in the state. Tear down again to finish.
 
@@ -246,4 +246,4 @@ To leave nothing of a torn-down environment, delete in the console what the tear
 3. The `SCW_DEFAULT_PROJECT_ID` line of `infra/.env.<mode>`. When nothing else lives in the project, delete it too.
 4. Revoke the Owner API key you pasted.
 
-The next `pnpm infra --mode <mode>` then sets the environment up from nothing.
+The next `pnpm cella infra --mode <mode>` then sets the environment up from nothing.

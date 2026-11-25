@@ -82,7 +82,7 @@ describe('operator action table', () => {
     for (const id of ids) expect(id).toMatch(/^[a-z]+(-[a-z]+)*$/);
     expect(isOperatorActionId('apply')).toBe(true);
     expect(isOperatorActionId('toString')).toBe(false);
-    expect(actionCommand('db-close')).toBe('pnpm infra db-close');
+    expect(actionCommand('db-close')).toBe('pnpm cella infra db-close');
   });
 });
 
@@ -132,13 +132,13 @@ describe('one name per action', () => {
     const unknown: string[] = [];
     for (const file of DOCS) {
       const text = readFileSync(path.join(repoRoot, file), 'utf8');
-      // `pnpm infra` → **Row** (→ **Action**), and the command form `pnpm infra <action>`.
-      for (const match of text.matchAll(/`pnpm infra` → \*\*([^*]+)\*\*(?: → \*\*([^*]+)\*\*)?/g)) {
+      // `pnpm cella infra` → **Row** (→ **Action**), and the command form `pnpm cella infra <action>`.
+      for (const match of text.matchAll(/`pnpm cella infra` → \*\*([^*]+)\*\*(?: → \*\*([^*]+)\*\*)?/g)) {
         for (const name of [match[1], match[2]]) if (name && !known.has(name)) unknown.push(`${file}: ${name}`);
       }
-      for (const match of text.matchAll(/pnpm infra ([a-z][a-z-]*)/g)) {
+      for (const match of text.matchAll(/pnpm cella infra ([a-z][a-z-]*)/g)) {
         const word = match[1] ?? '';
-        if (word !== 'help' && !isOperatorActionId(word)) unknown.push(`${file}: pnpm infra ${word}`);
+        if (word !== 'help' && !isOperatorActionId(word)) unknown.push(`${file}: pnpm cella infra ${word}`);
       }
     }
     expect(unknown).toEqual([]);

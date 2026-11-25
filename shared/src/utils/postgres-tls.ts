@@ -33,7 +33,7 @@ export const resolvePostgresSslCa = (ca: string | undefined, required: boolean):
     throw new Error(
       'FATAL: DATABASE_SSL_CA is required in a deployed mode for verified TLS to PostgreSQL. ' +
         'It is provisioned automatically by `pulumi up` (Scaleway RDB CA). Run ' +
-        '`pnpm infra apply`, or check the database-ssl-ca runtime secret.',
+        '`pnpm cella infra apply`, or check the database-ssl-ca runtime secret.',
     );
   }
   return Buffer.from(ca, 'base64').toString('utf-8');

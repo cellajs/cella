@@ -86,7 +86,7 @@ describe('formatHome', () => {
           ok('db.publicEndpoint', 'DB public endpoint', 'private only'),
           { ...ok('state.lock', 'Lease', ''), status: 'warn', detail: 'held by job:a6696b654e' },
         ],
-        { description: 'Read how it ended', command: 'pnpm infra logs' },
+        { description: 'Read how it ended', command: 'pnpm cella infra logs' },
       ),
     };
     expect(plain(formatHome(facts, { now: Date.parse('2026-11-08T10:00:00Z') }))).toEqual([
@@ -123,7 +123,7 @@ describe('formatHome', () => {
 
 describe('upNextOf', () => {
   it('maps a next action to the menu action its command names, and nothing else', () => {
-    expect(upNextOf(report([], { description: 'Read how it ended', command: 'pnpm infra logs --mode production' }))).toEqual({
+    expect(upNextOf(report([], { description: 'Read how it ended', command: 'pnpm cella infra logs --mode production' }))).toEqual({
       action: 'logs',
       description: 'Read how it ended',
     });
@@ -136,7 +136,7 @@ describe('upNextOf', () => {
     expect(upNextOf(deploying, refs)).toEqual({ action: 'deploy', description: 'Follow the deploy of 0.35.0' });
     const failed = report([{ ...deploying.checks[0]!, status: 'error', detail: 'a6696b654e failed' }], {
       description: 'Read how it ended',
-      command: 'pnpm infra logs',
+      command: 'pnpm cella infra logs',
     });
     expect(upNextOf(failed, refs)).toEqual({ action: 'logs', description: 'Read the boot log of 0.35.0' });
   });

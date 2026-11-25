@@ -290,7 +290,7 @@ describe('the run record', () => {
       expect(fake.records.at(-1)?.record).toMatchObject({ outcome: 'apply needed', failedStep: 'Check the engine' });
       expect(fake.records.at(-1)?.record.error).toMatch(/^apply needed: /);
       expect(fake.ops.some((op) => op.startsWith('task:'))).toBe(false);
-      expect(deployFailureHint(error, 'production')).toMatchObject({ command: 'pnpm infra apply --mode production' });
+      expect(deployFailureHint(error, 'production')).toMatchObject({ command: 'pnpm cella infra apply --mode production' });
     }
   });
 
@@ -301,7 +301,7 @@ describe('the run record', () => {
     expect(differs.records.at(-1)?.record).toMatchObject({ outcome: 'apply needed', failedStep: 'Check the description' });
     expect(differs.records.at(-1)?.record.error).toMatch(/^apply needed: /);
     expect(differs.ops).not.toContain('task:compose-env');
-    expect(deployFailureHint(error, 'production')).toMatchObject({ command: 'pnpm infra apply --mode production' });
+    expect(deployFailureHint(error, 'production')).toMatchObject({ command: 'pnpm cella infra apply --mode production' });
 
     // A builder that reported the description beside its hash: the error names what the target changes.
     const named = makeFake({ description: 'e'.repeat(64), describes: { services: { backend: {}, search: {} } } });
@@ -343,7 +343,7 @@ describe('deployFailureHint', () => {
     const switchError = await runDeploy(baseOpts, late.fx, fakeDeployEnv).catch((err: unknown) => err);
     expect(deployFailureHint(switchError, 'staging')).toMatchObject({
       description: expect.stringContaining('"Switch machines"'),
-      command: 'pnpm infra logs --mode staging',
+      command: 'pnpm cella infra logs --mode staging',
     });
   });
 });

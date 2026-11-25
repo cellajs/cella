@@ -52,7 +52,7 @@ function requirePrincipalId(
       return pulumi.unknown as unknown as string;
     }
     throw new Error(
-      `IAM application for ${label} not found: run the pnpm infra setup first, or \`${actionCommand('identities')}\` after a registry change.`,
+      `IAM application for ${label} not found: run the pnpm cella infra setup first, or \`${actionCommand('identities')}\` after a registry change.`,
     );
   });
 }
