@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zCreateRequestBody } from 'sdk/zod.gen';
+import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { ContactMethodRows } from '~/modules/common/contact-form/contact-methods';
@@ -18,6 +19,7 @@ import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button } from '~/modules/ui/button';
 import { DialogClose, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { Form } from '~/modules/ui/field';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { useUserStore } from '~/modules/user/user-store';
 import { formResolver } from '~/utils/form-resolver';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -40,6 +42,9 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const isLargeScreen = useBreakpointAbove('lg');
+  const hasMapStyle = useUIStore((state) => !!appConfig.mapStyleUrls[state.mode]);
+  // The map's panel shows only where the map renders: a style for the mode and a place to mark
+  const showMap = isLargeScreen && hasMapStyle && !!appConfig.company.address?.coordinates;
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
@@ -106,7 +111,7 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
     return (
       <div className="flex w-full gap-10">
         {contactForm}
-        {isLargeScreen && <div className="bg-accent w-full overflow-hidden rounded-md">{map}</div>}
+        {showMap && <div className="bg-accent w-full overflow-hidden rounded-md">{map}</div>}
       </div>
     );
 
@@ -116,7 +121,7 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
   return (
     <div className="grid lg:grid-cols-2">
       <div className="flex min-w-0 flex-col gap-4 lg:p-6">
-        <DialogHeader sticky closeButton={!isLargeScreen}>
+        <DialogHeader sticky closeButton={!showMap}>
           <DialogTitle className="h-6 min-w-0 truncate leading-6">
             <UnsavedBadge title={title} />
           </DialogTitle>
@@ -125,7 +130,9 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
         {contactForm}
         {!isLargeScreen && <ContactMethodRows className="mt-4" />}
       </div>
-      {isLargeScreen && (
+      {/* With no map, the contact methods take its column */}
+      {isLargeScreen && !showMap && <ContactMethodRows className="m-6 self-start" />}
+      {showMap && (
         <div className="bg-accent relative overflow-hidden rounded-r-lg">
           {map}
           <DialogClose render={<Button variant="outline" size="icon-xs" />} className="absolute top-3 right-3 rounded-full shadow-sm">
