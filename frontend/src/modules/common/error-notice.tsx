@@ -39,9 +39,9 @@ const errorDetailRows = (error: ApiError) =>
     ['c:resource_type', error.entityType],
     ['c:http_status', error.status],
     ['c:severity', error.severity],
-    // The server's full SHA cut to the page's short one, so a rollout mismatch reads at a glance
-    ['c:server_version', error.version?.slice(0, __APP_VERSION__.length)],
-    ['c:app_version', __APP_VERSION__],
+    // A rollout mismatch reads at a glance: both releases cut to the ten characters deploy logs print
+    ['c:server_version', error.version?.slice(0, 10)],
+    ['c:app_version', __APP_VERSION__.slice(0, 10)],
   ] as const;
 
 /**

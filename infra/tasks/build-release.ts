@@ -382,7 +382,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
             APP_MODE: mode,
           },
           links,
-          frontendEnv: frontendBucket ? frontendBuildEnv(mode, servicesJson) : {},
+          frontendEnv: frontendBucket ? frontendBuildEnv(mode, servicesJson, sha) : {},
           bake: bakeDefinition(rows, {
             registry: `rg.${region}.scw.cloud`,
             namespace: naming.registryNamespace,
