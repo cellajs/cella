@@ -55,6 +55,7 @@
   "archive_rejected.text": "Some of what is inside it stayed as it was: you may not change it.",
   "archive_resource": "Archive {{resource, lowercase}}",
   "archived": "Archived",
+  "archived_banner.text": "<strong>This {{resource, lowercase}} is archived:</strong> everyone can still read it, but nothing in it can change until it is unarchived.",
   "archived_notice.text": "<strong>{{name}}</strong> is archived: nothing in it can change until it is unarchived.",
   "asks_for": "Asks for",
   "attachment": "Attachment",

@@ -13,6 +13,7 @@ import { AccessCell, type AccessValue } from '~/modules/docs/operations/access-e
 import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { openOperationSheet } from '~/modules/docs/operations/operation-detail';
 import { openExamplesSheet } from '~/modules/docs/operations/operation-examples';
+import { ShortPath } from '~/modules/docs/operations/short-path';
 import { SwitchedOffBadge } from '~/modules/docs/operations/switched-off-badge';
 import { TagBadges } from '~/modules/docs/tag-table';
 import { Button } from '~/modules/ui/button';
@@ -125,8 +126,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         >
           {/* The underline sits on the path alone: on the button it would reach the badge too */}
           <CellLabel dir="rtl" className="min-w-0 flex-1 text-left">
-            &lrm;
-            <HighlightText text={row.path} />
+            <ShortPath path={row.path} />
           </CellLabel>
           <SwitchedOffBadge enabledBy={row.enabledBy} />
         </Button>

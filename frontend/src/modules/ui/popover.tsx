@@ -20,7 +20,7 @@ export function Popover<Payload = unknown>({ ...props }: PopoverPrimitive.Root.P
 }
 
 export function PopoverTrigger<Payload = unknown>({ ...props }: PopoverPrimitive.Trigger.Props<Payload>) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
+  return <PopoverPrimitive.Trigger data-slot="popover-trigger" data-open-on-hover={props.openOnHover || undefined} {...props} />;
 }
 
 export function PopoverContent({

@@ -29,7 +29,7 @@ const cardProps = {
   side: 'bottom',
   align: 'start',
   collisionPadding: 16,
-  className: 'flex w-75 max-w-[calc(100vw-2rem)] flex-col gap-3 p-3',
+  className: 'flex w-75 max-w-[calc(100vw-2rem)] flex-col gap-3 p-3 md:w-100',
 } as const;
 
 function Explanations({ items }: { items: AccessValue[] }) {

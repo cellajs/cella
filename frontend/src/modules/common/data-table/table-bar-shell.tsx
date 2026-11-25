@@ -52,6 +52,8 @@ export interface TableBarAction {
   icon: IconComponent;
   /** Translated, such as "Invite"; a phone row keeps it for screen readers only. */
   label: string;
+  /** Names the action for a screen reader where the label is short, such as a bare noun. */
+  ariaLabel?: string;
   /** Receives the button, which a dialog it opens returns focus to. */
   onClick: (triggerRef: TriggerRef) => void;
 }
@@ -59,10 +61,10 @@ export interface TableBarAction {
 /** A list's main action in its bar row: a phone has room for its icon only. */
 export function TableBarActionButton({ action }: { action: TableBarAction }) {
   const ref = useRef<HTMLButtonElement>(null);
-  const { icon: Icon, label, onClick } = action;
+  const { icon: Icon, label, ariaLabel, onClick } = action;
 
   return (
-    <Button ref={ref} onClick={() => onClick(ref)}>
+    <Button ref={ref} aria-label={ariaLabel} onClick={() => onClick(ref)}>
       <Icon />
       <span className="max-sm:sr-only">{label}</span>
     </Button>
