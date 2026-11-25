@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "roles": {
+    "backend": {
+      "slot": "a",
+      "machine": "11111111-2222-4333-8444-555555555555",
+      "commit": "0123456789abcdef0123456789abcdef01234567",
+      "retry": 1,
+      "rotation": 2
+    },
+    "cdc": {
+      "slot": "b",
+      "machine": "66666666-7777-4888-9999-000000000000",
+      "commit": "0123456789abcdef0123456789abcdef01234567",
+      "retry": 1,
+      "rotation": 2
+    }
+  },
+  "updatedAt": "2026-11-20T10:00:00.000Z",
+  "updatedBy": "job:0123456789"
+}

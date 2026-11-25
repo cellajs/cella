@@ -1,6 +1,6 @@
-import { chmodSync, existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { infraDir } from './paths';
+import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { infraDir, machineDir } from './paths';
 
 /**
  * The `KEY=VALUE` lines of a dotenv text in order, a repeated key included. A blank line, a `#` comment and any other line are skipped, an
@@ -50,7 +50,7 @@ export function removeModeProjectId(mode: string): void {
   if (readFileSync(path, 'utf8').trim() === '') rmSync(path);
 }
 
-/** Names a mode env file held for the admin application key, which is retired: never read, and removed when the observer key is written. */
+/** Names a mode env file held for the admin application key, which is retired: never read, and removed when the observer key leaves the file. */
 export const RETIRED_KEY_NAMES = [
   'SCW_ADMIN_ACCESS_KEY',
   'SCW_ADMIN_SECRET_KEY',
@@ -60,7 +60,7 @@ export const RETIRED_KEY_NAMES = [
   'SCW_STATE_SECRET_KEY',
 ] as const;
 
-/** Where the observer key lives in `infra/.env.<mode>`. */
+/** The names the observer key takes in its file and in the process. */
 export const OBSERVER_KEY_NAMES = { accessKey: 'SCW_OBSERVER_ACCESS_KEY', secretKey: 'SCW_OBSERVER_SECRET_KEY' } as const;
 
 /**
@@ -107,8 +107,8 @@ export function modeEnvValues(parsed: Record<string, string>, mode: string): { v
 }
 
 /**
- * Load `infra/.env.<mode>`, which overrides the ambient env so a staging run cannot inherit production values. The file holds a live secret key,
- * so it is tightened to 0600 on sight. Returns the warnings the file earned (superseded key names, values the CLI no longer reads).
+ * Load `infra/.env.<mode>`, which overrides the ambient env so a staging run cannot inherit production values. The file may hold a live
+ * secret key: it is tightened to 0600 on sight. Returns the warnings the file earned (superseded key names, values the CLI no longer reads).
  */
 export function loadModeEnvFile(mode: string, log: (message: string) => void = () => {}): string[] {
   // A bare infra/.env is never read; naming the file that is read saves a round of prompts for the values it holds.
@@ -119,7 +119,7 @@ export function loadModeEnvFile(mode: string, log: (message: string) => void = (
   const fileMode = statSync(modeEnvPath).mode;
   if ((fileMode & 0o077) !== 0) {
     chmodSync(modeEnvPath, 0o600);
-    log(`Tightened ${modeEnvPath} to 600 (was ${(fileMode & 0o777).toString(8)}): it carries a live secret key.`);
+    log(`Tightened ${modeEnvPath} to 600 (was ${(fileMode & 0o777).toString(8)}): it may carry a live secret key.`);
   }
   const { values, warnings } = modeEnvValues(parseEnvFile(modeEnvPath), mode);
   for (const [key, value] of Object.entries(values)) process.env[key] = value;
@@ -166,19 +166,8 @@ export function writeEnvValues(path: string, values: Record<string, string>, opt
   return removed;
 }
 
-/** Write values into `infra/.env.<mode>`, the file `loadModeEnvFile` reads; `remove` drops superseded names. */
-function writeModeEnvValues(
-  mode: string,
-  values: Record<string, string>,
-  opts: { remove?: readonly string[] } = {},
-): { path: string; removed: string[] } {
-  const path = modeEnvPath(mode);
-  return { path, removed: writeEnvValues(path, values, opts) };
-}
-
-/** The observer key a mode's env file holds, read from the file itself; undefined when it holds none. */
-export function observerKeyInModeFile(mode: string): { accessKey: string; secretKey: string } | undefined {
-  const path = modeEnvPath(mode);
+/** The observer key a dotenv file holds, read from the file itself; undefined when it holds none. */
+function observerKeyIn(path: string): { accessKey: string; secretKey: string } | undefined {
   if (!existsSync(path)) return undefined;
   const parsed = parseEnvFile(path);
   const accessKey = parsed[OBSERVER_KEY_NAMES.accessKey]?.trim();
@@ -186,12 +175,51 @@ export function observerKeyInModeFile(mode: string): { accessKey: string; secret
   return accessKey && secretKey ? { accessKey, secretKey } : undefined;
 }
 
+/** Where this machine keeps the app's observer key: one file for every environment, checkout and worktree. */
+export const observerKeyFile = (appSlug: string): string => join(machineDir(appSlug), 'observer.env');
+
+/** The observer key this machine holds for the app; undefined when it holds none. */
+export function storedObserverKey(appSlug: string): { accessKey: string; secretKey: string } | undefined {
+  return observerKeyIn(observerKeyFile(appSlug));
+}
+
+/** Write the observer key to this machine's file, in a folder only this user opens. Returns the file. */
+export function writeObserverKey(appSlug: string, pair: { accessKey: string; secretKey: string }): string {
+  mkdirSync(machineDir(appSlug), { recursive: true, mode: 0o700 });
+  const path = observerKeyFile(appSlug);
+  writeEnvValues(path, { [OBSERVER_KEY_NAMES.accessKey]: pair.accessKey, [OBSERVER_KEY_NAMES.secretKey]: pair.secretKey });
+  return path;
+}
+
 /**
- * Write the observer key to `mode`'s env file and to every other mode file in `modes` that holds one, so the one key of the app's observer
- * serves them all; the retired names leave each file written. Returns the files written.
+ * Load the app's observer key from this machine's file into the process, over the ambient env. A key an `infra/.env.<mode>` of this
+ * checkout holds moves to the machine's file when that holds none, and leaves the mode file with the retired names either way.
+ * @returns one line for each key that moved, and one for each key a mode file held beside the machine's, which works until it is deleted
+ * in the console
  */
-export function writeObserverKey(mode: string, pair: { accessKey: string; secretKey: string }, modes: readonly string[]): string[] {
-  const targets = [mode, ...modes.filter((other) => other !== mode && observerKeyInModeFile(other))];
-  const values = { [OBSERVER_KEY_NAMES.accessKey]: pair.accessKey, [OBSERVER_KEY_NAMES.secretKey]: pair.secretKey };
-  return targets.map((target) => writeModeEnvValues(target, values, { remove: RETIRED_KEY_NAMES }).path);
+export function loadObserverKey(appSlug: string, modes: readonly string[]): string[] {
+  const warnings: string[] = [];
+  for (const mode of modes) {
+    const path = modeEnvPath(mode);
+    const held = observerKeyIn(path);
+    if (!held) continue;
+    const stored = storedObserverKey(appSlug);
+    if (!stored) {
+      warnings.push(
+        `The observer key moved from infra/.env.${mode} to ${writeObserverKey(appSlug, held)}, which every checkout of the app here reads.`,
+      );
+    } else if (stored.accessKey !== held.accessKey) {
+      warnings.push(
+        `infra/.env.${mode} held another observer key (${held.accessKey}), which the CLI reads no more: delete it in the console (IAM → Applications → ${appSlug}-observer → API keys).`,
+      );
+    }
+    writeEnvValues(path, {}, { remove: [...Object.values(OBSERVER_KEY_NAMES), ...RETIRED_KEY_NAMES] });
+    if (readFileSync(path, 'utf8').trim() === '') rmSync(path);
+  }
+  const key = storedObserverKey(appSlug);
+  if (key) {
+    process.env[OBSERVER_KEY_NAMES.accessKey] = key.accessKey;
+    process.env[OBSERVER_KEY_NAMES.secretKey] = key.secretKey;
+  }
+  return warnings;
 }

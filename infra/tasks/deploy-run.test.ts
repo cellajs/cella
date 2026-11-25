@@ -215,7 +215,7 @@ describe('runDeploy sequencing', () => {
 
   it('must not change anything once another run took its lease: the next step stops the run', async () => {
     const { fx, ops } = makeFake({ leaseLost: true });
-    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/taken by another run/);
+    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/no longer holds the lease/);
     expect(ops.some((op) => op.startsWith('switch:'))).toBe(false);
   });
 });

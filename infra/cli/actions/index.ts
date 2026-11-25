@@ -1,6 +1,8 @@
+import { writeFileSync } from 'node:fs';
 import { actionCommand, actionLabel, menuPath, OPERATOR_ACTIONS, type OperatorActionId } from '../../lib/operator-actions';
-import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { crossMark, hasPerson, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
+import { debugFile } from '../../lib/utils/paths';
 import { isPromptAbort } from '../prompts/abort';
 import { PromptBack } from '../prompts/back';
 import { afterFirstSetup, backToMenu, keptKeyNote, LEAVE, leaveRow, QUIT, type WayOut, whatNow } from '../prompts/what-now';
@@ -69,6 +71,8 @@ type Try = 'done' | 'back' | 'stopped' | ActionEnded;
 export interface RunActionOptions {
   runners?: ActionRunners;
   log?: (line: string) => void;
+  /** Keeps the stack of a failure the action did not expect and answers the file's path; a test answers in its place. */
+  keep?: (id: OperatorActionId, error: unknown) => string | undefined;
   /** The action is a first setup, which has no menu to return to: a failure offers a retry of the step or quitting. */
   firstSetup?: boolean;
   /** Asks what to do after a failure; a test answers in its place. */
@@ -98,11 +102,32 @@ function waysOut(id: OperatorActionId, ended: ActionEnded, firstSetup: boolean):
 const RETRY = 'retry';
 
 /**
- * Try an action once and say how it ended. A failure the action did not expect is printed here in one line (the stack trace with
- * INFRA_DEBUG=true). A stack lease the action left held is released on every way out: under the menu it would renew for as long as the CLI
+ * Keep an unexpected failure's stack in a file: a half-done apply may not fail the same way on a second run.
+ * @returns the file's path, or undefined when the failure has no stack or the folder takes no write
+ */
+function keepStack(id: OperatorActionId, error: unknown): string | undefined {
+  if (!(error instanceof Error) || !error.stack) return undefined;
+  try {
+    const path = debugFile(id, 'stack.txt');
+    writeFileSync(path, `${error.stack}\n`);
+    return path;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Try an action once and say how it ended. A failure the action did not expect is printed here in one line, with the file that keeps its
+ * stack trace. A stack lease the action left held is released on every way out: under the menu it would renew for as long as the CLI
  * stays open.
  */
-async function tryAction(id: OperatorActionId, context: InfraContext, runners: ActionRunners, log: (line: string) => void): Promise<Try> {
+async function tryAction(
+  id: OperatorActionId,
+  context: InfraContext,
+  runners: ActionRunners,
+  log: (line: string) => void,
+  keep: NonNullable<RunActionOptions['keep']>,
+): Promise<Try> {
   try {
     await runners[id](context);
     return 'done';
@@ -114,8 +139,8 @@ async function tryAction(id: OperatorActionId, context: InfraContext, runners: A
     }
     if (error instanceof ActionEnded) return error;
     log(`\n${crossMark} ${actionLabel(id)} failed: ${errorMessage(error)}`);
-    if (process.env.INFRA_DEBUG === 'true' && error instanceof Error && error.stack) log(pc.dim(error.stack));
-    else log(pc.dim('  Set INFRA_DEBUG=true for the stack trace.'));
+    const kept = keep(id, error);
+    if (kept) log(pc.dim(`  Its stack trace: ${kept}`));
     return new ActionEnded(1);
   } finally {
     const leftover = await releaseHeldLocks();
@@ -133,6 +158,7 @@ export async function runAction(id: OperatorActionId, context: InfraContext, opt
   const {
     runners = ACTION_RUNNERS,
     log = (line: string) => console.error(line),
+    keep = keepStack,
     firstSetup = false,
     choose = whatNow,
     close = afterFirstSetup,
@@ -140,9 +166,9 @@ export async function runAction(id: OperatorActionId, context: InfraContext, opt
   } = opts;
   try {
     for (;;) {
-      const ended = await tryAction(id, context, runners, log);
+      const ended = await tryAction(id, context, runners, log, keep);
       if (ended === 'done' || (ended instanceof ActionEnded && ended.exitCode === 0 && !ended.left)) {
-        if (!inMenuSession() && !(firstSetup && process.stdin.isTTY)) return { code: 0 };
+        if (!inMenuSession() && !(firstSetup && hasPerson())) return { code: 0 };
         onEnded?.();
         const way = firstSetup ? await close() : await backToMenu();
         return way === QUIT ? { code: 0, quit: true } : { code: 0 };

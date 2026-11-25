@@ -1,27 +1,33 @@
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const dir = mkdtempSync(join(tmpdir(), 'observer-key-'));
-vi.mock('./paths', () => ({ infraDir: dir }));
-const { observerKeyInModeFile, writeObserverKey } = await import('./env-files');
+vi.mock('./paths', () => ({ infraDir: dir, machineDir: (appSlug: string) => join(dir, 'home', appSlug) }));
+const { loadObserverKey, observerKeyFile, storedObserverKey } = await import('./env-files');
 
-describe('writeObserverKey', () => {
-  it("writes one key into the environment's file and every other file that holds one, and drops the retired names there", () => {
+afterEach(() => vi.unstubAllEnvs());
+
+describe('loadObserverKey', () => {
+  it("moves a checkout's observer key to the machine's file, loads it, and names a second key to delete", () => {
+    vi.stubEnv('SCW_OBSERVER_ACCESS_KEY', 'SCWAMBIENT');
+    vi.stubEnv('SCW_OBSERVER_SECRET_KEY', 'ambient');
     writeFileSync(
       join(dir, '.env.production'),
-      'SCW_DEFAULT_PROJECT_ID=p\nSCW_OBSERVER_ACCESS_KEY=OLD\nSCW_OBSERVER_SECRET_KEY=o\nSCW_ADMIN_ACCESS_KEY=A\nSCW_ADMIN_SECRET_KEY=a\n',
+      'SCW_DEFAULT_PROJECT_ID=p\nSCW_OBSERVER_ACCESS_KEY=SCWONE\nSCW_OBSERVER_SECRET_KEY=one\nSCW_ADMIN_ACCESS_KEY=A\nSCW_ADMIN_SECRET_KEY=a\n',
     );
-    writeFileSync(join(dir, '.env.staging'), 'SCW_DEFAULT_PROJECT_ID=s\n');
+    writeFileSync(join(dir, '.env.staging'), 'SCW_OBSERVER_ACCESS_KEY=SCWTWO\nSCW_OBSERVER_SECRET_KEY=two\n');
 
-    const written = writeObserverKey('staging', { accessKey: 'SCWNEW', secretKey: 'n' }, ['production', 'staging', 'preview']);
+    const warnings = loadObserverKey('acme', ['production', 'staging', 'preview']);
 
-    expect(written).toEqual([join(dir, '.env.staging'), join(dir, '.env.production')]);
-    expect(observerKeyInModeFile('staging')).toEqual({ accessKey: 'SCWNEW', secretKey: 'n' });
-    expect(readFileSync(join(dir, '.env.production'), 'utf8')).toBe(
-      'SCW_DEFAULT_PROJECT_ID=p\nSCW_OBSERVER_ACCESS_KEY=SCWNEW\nSCW_OBSERVER_SECRET_KEY=n\n',
-    );
-    expect(observerKeyInModeFile('preview')).toBeUndefined();
+    expect(storedObserverKey('acme')).toEqual({ accessKey: 'SCWONE', secretKey: 'one' });
+    expect(statSync(observerKeyFile('acme')).mode & 0o777).toBe(0o600);
+    expect(readFileSync(join(dir, '.env.production'), 'utf8')).toBe('SCW_DEFAULT_PROJECT_ID=p\n');
+    expect(existsSync(join(dir, '.env.staging'))).toBe(false);
+    expect(warnings).toHaveLength(2);
+    expect(warnings[0]).toContain(observerKeyFile('acme'));
+    expect(warnings[1]).toContain('SCWTWO');
+    expect(process.env.SCW_OBSERVER_SECRET_KEY).toBe('one');
   });
 });

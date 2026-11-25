@@ -8,7 +8,7 @@ import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
 import { detectComputeDeferred, type Environment, pickStackShort } from '../lib/stack/bootstrap-stack-state';
 import { environments, writeStackFileProjectId } from '../lib/stack/project-per-mode';
 import { loadStackContext } from '../lib/stack/stack-context';
-import { crossMark, pc, printFailureHint, warningMark, withSpinner } from '../lib/utils/cli-output';
+import { crossMark, hasPerson, pc, printFailureHint, warningMark, withSpinner } from '../lib/utils/cli-output';
 import { dropPromptOnlyEnv, loadRootEnvFile, removeModeProjectId } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
@@ -275,7 +275,7 @@ if (args.action) {
 if (context.state === 'fresh') {
   if (!pulumiReady('resume')) process.exit(1);
   const { code, quit } = await runAction('resume', context, { firstSetup: true, ...(args.once ? { close: async () => LEAVE } : {}) });
-  if (code !== 0 || quit || args.once || !process.stdin.isTTY) process.exit(code);
+  if (code !== 0 || quit || args.once || !hasPerson()) process.exit(code);
   context = await loadContext(environment);
   if (context.state === 'fresh') process.exit(0);
   printStackNotices(context);

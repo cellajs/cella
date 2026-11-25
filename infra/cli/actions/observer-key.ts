@@ -3,9 +3,8 @@ import { createApiKey, resolveApplicationIdByName } from '../../lib/scaleway/iam
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
 import { readPolicy } from '../../lib/scaleway/policy-reach';
 import { appPrincipalNames } from '../../lib/scaleway/principals';
-import { environments } from '../../lib/stack/project-per-mode';
 import { changeMark, checkMark } from '../../lib/utils/cli-output';
-import { OBSERVER_KEY_NAMES, observerKeyInModeFile, writeObserverKey } from '../../lib/utils/env-files';
+import { OBSERVER_KEY_NAMES, storedObserverKey, writeObserverKey } from '../../lib/utils/env-files';
 import { writeDeclaredPolicies } from '../../tasks/declared-policies';
 import { observerPolicy, observerReach, setupObserverApp } from '../../tasks/setup-observer-app';
 import { operatorPolicyReach } from '../../tasks/setup-operators';
@@ -15,23 +14,18 @@ import type { OwnerKey } from './owner-key';
 /** What the app's observer needs at an Owner moment for one environment on this machine, beside the rules of its policy. */
 export type ObserverStep = 'create' | 'key' | 'none';
 
-/** The observer key this machine holds: the environment's own file first, else any other environment's, as the one key serves them all. */
-function observerKeyHere(mode: string): KeyPair | undefined {
-  return observerKeyInModeFile(mode) ?? environments.map(observerKeyInModeFile).find(Boolean);
-}
-
 /** The observer's step on this machine: `create` when the app has none, `key` when this machine holds none of its keys. */
-export function observerStep(exists: boolean, mode: string): ObserverStep {
+export function observerStep(exists: boolean, appSlug: string): ObserverStep {
   if (!exists) return 'create';
-  return observerKeyHere(mode) ? 'none' : 'key';
+  return storedObserverKey(appSlug) ? 'none' : 'key';
 }
 
-/** Put the observer key on this machine: the environment's file and every other environment's file that holds one, and this process. */
-function storeObserverKey(mode: string, pair: KeyPair): void {
-  const paths = writeObserverKey(mode, pair, environments);
+/** Put the observer key on this machine, in its file and in this process. */
+function storeObserverKey(appSlug: string, pair: KeyPair): void {
+  const path = writeObserverKey(appSlug, pair);
   process.env[OBSERVER_KEY_NAMES.accessKey] = pair.accessKey;
   process.env[OBSERVER_KEY_NAMES.secretKey] = pair.secretKey;
-  console.info(`  ${checkMark} Observer key written to ${paths.join(', ')} (SCW_OBSERVER_ACCESS_KEY / SCW_OBSERVER_SECRET_KEY)`);
+  console.info(`  ${checkMark} Observer key written to ${path}, which every checkout of the app on this machine reads.`);
 }
 
 /**
@@ -52,7 +46,7 @@ export async function ensureObserverForEnvironment(context: InfraContext, ownerK
     const projectIds = [...new Set([...(operators ? operatorPolicyReach(operators.rules).projectIds : []), projectId])];
     const key = await setupObserverApp({ callerSecretKey: ownerKey.secretKey, organizationId, projectId, projectIds, slug });
     console.info(`  ${changeMark} '${names.observer}' created.`);
-    storeObserverKey(mode, key);
+    storeObserverKey(slug, key);
     return;
   }
 
@@ -61,11 +55,7 @@ export async function ensureObserverForEnvironment(context: InfraContext, ownerK
   if (written?.change === 'update') console.info(`  ${changeMark} The rules of ${policy.name} are replaced; its keys are unchanged.`);
   else console.info(`  ${checkMark} '${names.observer}' reaches ${mode} as declared.`);
 
-  const here = observerKeyHere(mode);
-  if (here) {
-    storeObserverKey(mode, here);
-    return;
-  }
+  if (storedObserverKey(slug)) return;
   const applicationId = await resolveApplicationIdByName(auth, organizationId, names.observer);
   if (!applicationId) throw new Error(`'${names.observer}' has a policy but no application`);
   const created = await createApiKey(auth, {
@@ -74,5 +64,5 @@ export async function ensureObserverForEnvironment(context: InfraContext, ownerK
     defaultProjectId: projectId,
   });
   console.info(`  ${changeMark} A key of '${names.observer}' for this machine.`);
-  storeObserverKey(mode, { accessKey: created.access_key, secretKey: created.secret_key });
+  storeObserverKey(slug, { accessKey: created.access_key, secretKey: created.secret_key });
 }

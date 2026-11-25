@@ -29,7 +29,7 @@ import { deployedServices } from '../../lib/services';
 import { type LockInfo, leaseHeldByRun, lockKey, makeControlClient, peekLock } from '../../lib/stack/control-store';
 import { runOverrides } from '../../lib/status/providers/runs';
 import { getFlag } from '../../lib/utils/args';
-import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { crossMark, hasPerson, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { BACK, RULE } from '../menu';
 import { PromptBack } from '../prompts/back';
@@ -287,7 +287,7 @@ export async function runRuns(context: InfraContext): Promise<void> {
   const lock = await peekLock(control, naming.bootDiagBucket, lockKey(context.environment)).catch(() => undefined);
   console.info(pc.dim(`\n${actionLabel('logs')} of ${context.environment}, newest first:\n`));
   await showRuns(bucketRunStore(s3, naming.bootDiagBucket), {
-    pick: Boolean(process.stdin.isTTY) && !autoAcceptDefaults(),
+    pick: hasPerson() && !autoAcceptDefaults(),
     jobRuns,
     definition,
     environment: context.environment,

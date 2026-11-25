@@ -80,6 +80,47 @@ describe('acquireLease', () => {
     if (!res.acquired) expect(res.held.owner).toBe('ci:run-9');
   });
 
+  it('reads as lost once its own end has passed, until a renewal finds the lock still its own', async () => {
+    const { s3 } = makeLockS3();
+    let clock = T0;
+    const res = await acquireLease({
+      s3,
+      bucket: 'b',
+      key: 'k',
+      owner: 'operator:a',
+      operation: 'apply',
+      ttlMs: 60_000,
+      renewEveryMs: 10_000,
+      now: () => clock,
+    });
+    if (!res.acquired) throw new Error('expected acquire');
+    // The machine slept through the lifetime: the clock moved and no renewal ran.
+    clock = T0 + 60_000;
+    expect(res.lease.lost).toBe(true);
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(res.lease.lost).toBe(false);
+    await res.lease.release();
+  });
+
+  it("never renews or releases the lock of a second session under the same owner, which took it after this one's ended", async () => {
+    const { s3, currentInfo } = makeLockS3();
+    let clock = T0;
+    const session = () =>
+      acquireLease({ s3, bucket: 'b', key: 'k', owner: 'operator:a', operation: 'apply', ttlMs: 60_000, renewEveryMs: 10_000, now: () => clock });
+    const first = await session();
+    // The first session's machine slept past its lifetime, and a second session of the same person took the lease.
+    clock = T0 + 120_000;
+    const second = await session();
+    if (!first.acquired || !second.acquired) throw new Error('expected both to acquire');
+    const held = currentInfo();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(first.lease.lost).toBe(true);
+    await first.lease.release();
+    expect(currentInfo()).toEqual(held);
+    await second.lease.release();
+    expect(currentInfo()).toBeUndefined();
+  });
+
   it('marks the lease lost when a renewal finds another owner, and then never deletes their lock', async () => {
     const { s3, currentInfo, overwrite } = makeLockS3();
     const reasons: string[] = [];

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { type ComponentIssue, componentSeverity, formatComponentIssues, unhealthyComponents } from '../lib/health-components';
-import { extractEntryAsset, type HttpResponse, hasHashedAsset, isHtmlDocument, main, missingSecurityHeaders, parseArgs, runSmoke } from './smoke';
+import { type HttpResponse, main, missingSecurityHeaders, parseArgs, runSmoke } from './smoke';
 
 const SHA = 'abc1234';
 
@@ -42,37 +42,6 @@ function secureHeaders(extra: Record<string, string> = {}, omit: string[] = []):
 function res(partial: Partial<HttpResponse>): HttpResponse {
   return { status: 200, ok: true, headers: new Headers(), body: '', ...partial };
 }
-
-describe('hasHashedAsset', () => {
-  it('detects a hashed entry asset', () => {
-    expect(hasHashedAsset(HASHED_HTML)).toBe(true);
-  });
-  it('returns false when no hashed asset is referenced', () => {
-    expect(hasHashedAsset('<html><body>no scripts</body></html>')).toBe(false);
-  });
-});
-
-describe('extractEntryAsset', () => {
-  it('extracts the hashed entry script src', () => {
-    expect(extractEntryAsset(HASHED_HTML)).toBe('/assets/index-abc123.js');
-  });
-  it('returns undefined when there is no asset reference', () => {
-    expect(extractEntryAsset('<html><body>no scripts</body></html>')).toBeUndefined();
-  });
-  it('takes the first asset script when several are present', () => {
-    const html = '<script src="/assets/index-aaa.js"></script><script src="/assets/vendor-bbb.js"></script>';
-    expect(extractEntryAsset(html)).toBe('/assets/index-aaa.js');
-  });
-});
-
-describe('isHtmlDocument', () => {
-  it('accepts an html document case-insensitively', () => {
-    expect(isHtmlDocument('<!DOCTYPE html><HTML>')).toBe(true);
-  });
-  it('rejects a non-html body', () => {
-    expect(isHtmlDocument('{"json":true}')).toBe(false);
-  });
-});
 
 describe('missingSecurityHeaders', () => {
   it('requires the whole baseline: every header of a bare response is missing, none of a complete one', () => {

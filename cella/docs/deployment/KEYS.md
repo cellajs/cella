@@ -78,7 +78,7 @@ The manifest holds no secret: only the role, the release and the drain order the
 
 The Pulumi state holds no machine and no secret value, and only the operator reads it. Every stack takes Pulumi's empty passphrase, as the state bucket's policy is what guards the state. Nothing is left to store or to lose.
 
-Nothing on an operator machine changes infrastructure with nobody at the prompt. Its `infra/.env.<mode>` holds the observer key and nothing a change needs. The CLI reads no privileged key from a file or the environment.
+Nothing on an operator machine changes infrastructure with nobody at the prompt. Its `~/.config/<app>/observer.env` holds the observer key and nothing a change needs. The CLI reads no privileged key from a file or the environment.
 
 ### Secret folders
 
@@ -180,7 +180,7 @@ Transloadit stores each uploaded file in an upload bucket with a key of the `<ap
 
 ## A stolen laptop
 
-The laptop holds the observer key in `infra/.env.<mode>` and nothing else. A one-day operator key pasted that day dies by itself.
+The laptop holds the observer key in `~/.config/<app>/observer.env` and nothing else. A one-day operator key pasted that day dies by itself.
 
 1. Delete the laptop's observer key in the console ([Someone leaves](#someone-leaves)).
 2. When an operator key was made that day, revoke it in the console: IAM → Applications → `<app>-operator` → API keys, or your user's keys.

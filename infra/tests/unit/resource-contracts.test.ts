@@ -6,11 +6,14 @@ const read = (resource: string) => readFileSync(resolve(__dirname, '../../resour
 
 // Resource options never reach a mock render (resources/*.test.ts assert the rendered inputs), so the ones that keep live resources alive are pinned on the source.
 describe('resource options', () => {
-  it('protects no resource: the typed name and the Owner key guard a teardown, whose destroy a protected resource would stop', () => {
+  it('protects the database instance and its database alone: a replace deletes their data before a successor exists, and a teardown lifts every protection before its destroy', () => {
+    const database = 'stores/postgres-managed.ts';
     const sources = readdirSync(resolve(__dirname, '../../resources'), { recursive: true, encoding: 'utf-8' }).filter(
-      (file) => file.endsWith('.ts') && !file.endsWith('.test.ts'),
+      (file) => file.endsWith('.ts') && !file.endsWith('.test.ts') && file !== database,
     );
     for (const file of sources) expect(read(file), file).not.toMatch(/\bprotect:/);
+    expect(read(database).match(/\bprotect: true/g)).toHaveLength(2);
+    expect(readFileSync(resolve(__dirname, '../../cli/actions/teardown.ts'), 'utf-8')).toMatch(/'state', 'unprotect', '--all'/);
   });
 
   it('leaves what a teardown keeps live through a destroy by hand: the upload and boot-diag buckets with their policies, the state bucket policy, the keys that protect stored data', () => {

@@ -5,9 +5,17 @@ import { parseLsRemote, type RemoteRef } from './target.ts';
 
 const execFileAsync = promisify(execFile);
 
-/** git's options that send a repository read key with one command, as a header: the key is in no URL, no remote and no file. */
-export function gitKeyOptions(key: string | undefined): string[] {
-  return key ? ['-c', `http.extraHeader=Authorization: Basic ${Buffer.from(`x-access-token:${key}`).toString('base64')}`] : [];
+/**
+ * The environment that sends a repository read key with one git command, as a header: the key is in no URL, no remote, no file and no
+ * argument, which the process list shows to every user of the machine. git reads these variables from 2.31 on.
+ */
+export function gitKeyEnv(key: string | undefined): Record<string, string> {
+  if (!key) return {};
+  return {
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: 'http.extraHeader',
+    GIT_CONFIG_VALUE_0: `Authorization: Basic ${Buffer.from(`x-access-token:${key}`).toString('base64')}`,
+  };
 }
 
 /**
@@ -17,9 +25,9 @@ export function gitKeyOptions(key: string | undefined): string[] {
  */
 export async function git(key: string | undefined, args: string[], opts: { timeoutMs?: number } = {}): Promise<string> {
   try {
-    const { stdout } = await execFileAsync('git', [...gitKeyOptions(key), ...args], {
+    const { stdout } = await execFileAsync('git', args, {
       encoding: 'utf8',
-      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0', ...gitKeyEnv(key) },
       timeout: opts.timeoutMs,
       maxBuffer: 16 * 1024 * 1024,
     });

@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { gitKeyOptions } from './git-remote';
+import { gitKeyEnv } from './git-remote';
 import { readRepositoryKey, repositoryUrl } from './repository-key';
 
 const secrets = (stored?: { value: string; versions?: number }) => ({
@@ -18,11 +18,13 @@ describe('the repository read key', () => {
     expect(await readRepositoryKey(secrets({ value: 'x', versions: 0 }))).toBeUndefined();
   });
 
-  it('goes with one git command as a header, never in the URL', () => {
-    const options = gitKeyOptions('github_pat_x');
-    expect(options[0]).toBe('-c');
-    expect(options[1]).toBe(`http.extraHeader=Authorization: Basic ${Buffer.from('x-access-token:github_pat_x').toString('base64')}`);
-    expect(gitKeyOptions(undefined)).toEqual([]);
+  it('goes with one git command as a header in its environment, never in the URL or the arguments', () => {
+    expect(gitKeyEnv('github_pat_x')).toEqual({
+      GIT_CONFIG_COUNT: '1',
+      GIT_CONFIG_KEY_0: 'http.extraHeader',
+      GIT_CONFIG_VALUE_0: `Authorization: Basic ${Buffer.from('x-access-token:github_pat_x').toString('base64')}`,
+    });
+    expect(gitKeyEnv(undefined)).toEqual({});
   });
 
   it('is used for the repository the root package.json names, as git reads it', () => {

@@ -246,7 +246,7 @@ function liveEffects(): MainJobEffects {
           return result.acquired ? undefined : result.held;
         },
         handOverLease: (from, to, operation) => handOverLock(control, bucket, lockKey(mode), { from, to, operation, ttlMs }),
-        releaseLease: (owner) => releaseLock(control, bucket, lockKey(mode), owner),
+        releaseLease: (owner) => releaseLock(control, bucket, lockKey(mode), { owner }),
         environmentsFile: async () =>
           readEnvironmentsFile({ repository, key: await repositoryKey(), dir: await mkdtemp(join(tmpdir(), 'environments-')) }),
         listRemote: async (patterns) => listRemoteRefs(repository, await repositoryKey())(patterns),

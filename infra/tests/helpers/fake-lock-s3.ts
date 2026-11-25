@@ -32,7 +32,7 @@ export function makeLockS3(initial?: LockInfo) {
     /** The stored lock, parsed. */
     currentInfo: () => (obj ? (JSON.parse(obj.body) as LockInfo) : undefined),
     /** Replace the object behind the holder's back, as another writer would. */
-    overwrite: (info: LockInfo) => {
+    overwrite: (info: object) => {
       obj = { body: JSON.stringify(info), etag: `"e${++counter}"` };
     },
   };

@@ -13,7 +13,7 @@ import { actionLabel, menuPath, type OperatorActionId } from '../../lib/operator
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { type LockInfo, leaseDeploys, leaseHeldByRun, lockKey, makeControlClient, peekLock } from '../../lib/stack/control-store';
-import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { checkMark, crossMark, hasPerson, pc, warningMark } from '../../lib/utils/cli-output';
 import { sleep } from '../../lib/utils/sleep';
 import { Interrupted, untilInterrupt } from '../prompts/abort';
 import { confirm } from '../prompts/back';
@@ -192,7 +192,7 @@ export async function deployAndFollow(
     const outcome = mainJobOutcome(run);
     const unended = `The run ended ${run.state} before ${record ? 'its record did' : 'it wrote a record'}${run.error_message ? `: ${run.error_message}` : '.'}`;
     const verdict = await reportEnd(context, key, store, outcome, commit.sha, record, unended);
-    const offer = verdict?.retryLikely && tries < MAX_TRIES && Boolean(process.stdin.isTTY) && !autoAcceptDefaults();
+    const offer = verdict?.retryLikely && tries < MAX_TRIES && hasPerson() && !autoAcceptDefaults();
     if (!offer || !(await confirm({ message: 'Retry now?', default: true }))) return outcome;
   }
 }

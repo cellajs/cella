@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { type ScwAuth, scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
+import { type ScwAuth, scwErrorStatus, scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
 import { getFlag } from '../lib/utils/args';
 import { isMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
@@ -74,7 +74,7 @@ async function liveStatus(auth: ScwAuth, id: string): Promise<LiveCertStatus> {
     );
     return { status: cert.status, statusDetails: cert.status_details };
   } catch (error) {
-    if (error instanceof Error && error.message.includes('404')) return 'missing';
+    if (scwErrorStatus(error) === 404) return 'missing';
     throw error;
   }
 }

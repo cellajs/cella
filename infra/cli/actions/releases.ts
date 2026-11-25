@@ -17,7 +17,7 @@ import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operat
 import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { makeControlClient, readObjectText, type S3Like } from '../../lib/stack/control-store';
 import { accessDenied } from '../../lib/status/providers/runs';
-import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { checkMark, crossMark, hasPerson, pc, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
 import { BACK, RULE } from '../menu';
 import { PromptBack } from '../prompts/back';
@@ -173,7 +173,7 @@ export async function runReleases(context: InfraContext): Promise<void> {
     console.info(`  ${row.tag.padEnd(width)}${row.merged.padEnd(8)}${deployText(row)}${serves(row) ? `  ${pc.green('● serving')}` : ''}`);
   }
   const earlier = rows.filter((row) => !serves(row));
-  if (autoAcceptDefaults() || !process.stdin.isTTY || earlier.length === 0) return;
+  if (autoAcceptDefaults() || !hasPerson() || earlier.length === 0) return;
 
   console.info('');
   const tag = await menuSelect({

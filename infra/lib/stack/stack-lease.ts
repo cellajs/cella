@@ -30,7 +30,7 @@ export interface LeaseOptions {
   sleep?: (ms: number) => Promise<void>;
 }
 
-/** A held lease: release it exactly once; `lost` turns true when a renewal found the lock taken by someone else. */
+/** A held lease: release it exactly once. `lost` is true once a renewal found the lock another holder's or gone, and while its own end has passed unrenewed. */
 export interface StackLease {
   readonly info: LockInfo;
   readonly lost: boolean;
@@ -66,7 +66,7 @@ export async function acquireLease(opts: LeaseOptions): Promise<LeaseResult> {
   const timer = setInterval(async () => {
     if (released || lost) return;
     try {
-      const renewal = await renewLock(opts.s3, opts.bucket, opts.key, opts.owner, ttlMs, now());
+      const renewal = await renewLock(opts.s3, opts.bucket, opts.key, info, ttlMs, now());
       if (renewal.renewed) info = renewal.info;
       else {
         lost = true;
@@ -85,13 +85,14 @@ export async function acquireLease(opts: LeaseOptions): Promise<LeaseResult> {
       return info;
     },
     get lost() {
-      return lost;
+      // Past its own end another run may hold the lease, whatever the last renewal answered: a machine that slept, or renewals that threw.
+      return lost || now() >= Date.parse(info.expiresAt);
     },
     async release() {
       if (released) return;
       released = true;
       clearInterval(timer);
-      if (!lost) await releaseLock(opts.s3, opts.bucket, opts.key, opts.owner);
+      if (!lost) await releaseLock(opts.s3, opts.bucket, opts.key, info);
     },
   };
   return { acquired: true, lease };

@@ -1,4 +1,4 @@
-import { pc } from '../../lib/utils/cli-output';
+import { hasPerson, pc } from '../../lib/utils/cli-output';
 import { inMenuSession, rememberedOperatorKey } from '../session';
 import { isPromptAbort } from './abort';
 import { ESCAPED, menuSelect } from './menu-select';
@@ -39,7 +39,7 @@ export const QUIT = 'quit';
 export async function whatNow<T extends string>(rows: ReadonlyArray<WayOut<T>>, note?: string): Promise<T> {
   const leave = rows.find((row) => row.value === LEAVE) ?? rows.at(-1);
   if (!leave) throw new Error('a failure needs a way out');
-  if (!process.stdin.isTTY) return leave.value;
+  if (!hasPerson()) return leave.value;
   const width = Math.max(...rows.map((row) => row.label.length));
   const picked = await menuSelect<T>({
     message: 'What now?',
@@ -68,7 +68,7 @@ export async function afterFirstSetup(): Promise<typeof LEAVE | typeof QUIT> {
  * to the menu, with a blank line between the row and the output.
  */
 export async function backToMenu(): Promise<typeof LEAVE> {
-  if (!process.stdin.isTTY) return LEAVE;
+  if (!hasPerson()) return LEAVE;
   await menuSelect({ message: '', items: [{ group: '' }, { name: BACK_LABEL, value: LEAVE }] }).catch((error: unknown) => {
     if (!isPromptAbort(error)) throw error;
   });
