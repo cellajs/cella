@@ -110,4 +110,4 @@ export const getAuthCookie = (ctx: Context, name: CookieName) => {
 
 /** Deletes an auth cookie: the attributes must mirror the set ones (prefix implies Path=/, Secure, no Domain), or the browser keeps it. */
 export const deleteAuthCookie = (ctx: Context, name: CookieName) =>
-  deleteCookie(ctx, versionedCookieName(name), { path: '/', prefix, ...cookieAttributes(name) });
+  deleteCookie(ctx, versionedCookieName(name), { path: '/', prefix, httpOnly: true, ...cookieAttributes(name) });
