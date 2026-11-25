@@ -9,6 +9,8 @@ export const otel: OtelSDK = createOtelSDK({
   serviceVersion: env.RELEASE_SHA,
   sink: resolveOtlpSink(env),
   autoInstrumentations: false,
+  // The relay pool's connections.
+  pool: { name: 'yjs', load: async () => (await import('../data/db')).db.$client },
 });
 
 const meter = otel.meterProvider.getMeter('yjs-health');

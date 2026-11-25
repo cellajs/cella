@@ -20,6 +20,8 @@ export const otel: OtelSDK = createOtelSDK({
   sink: resolveOtlpSink(env),
   autoInstrumentations: false,
   spanProcessors: [debugProcessor],
+  // The worker pool's connections; the replication connection is no pool's.
+  pool: { name: 'cdc', load: async () => (await import('./db')).cdcDb.$client },
 });
 
 /** The value `cdc.replication.status` reports for each status. */
