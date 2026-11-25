@@ -9,7 +9,7 @@ import { spawn } from 'node:child_process';
  */
 export function runDrizzleGenerate(args: readonly string[] = []): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn('tsx', ['node_modules/drizzle-kit/bin.cjs', 'generate', '--config', 'drizzle.config.ts', ...args], {
+    const child = spawn('tsx', ['node_modules/drizzle-kit/bin.js', 'generate', '--config', 'drizzle.config.ts', ...args], {
       cwd: process.cwd(),
       stdio: 'inherit',
     });

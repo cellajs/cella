@@ -33,7 +33,7 @@ type EntityScopeRow = Partial<ChannelIdColumns> & {
   organizationId: string;
   createdBy?: string | null;
   /** Set on a soft-deleted row, which a read that includes deleted rows returns. */
-  deletedAt?: string | null;
+  deletedAt?: Date | null;
 };
 
 /**

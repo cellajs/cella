@@ -1,6 +1,6 @@
 {
   "type": "diff",
-  "version": "9",
+  "version": "10",
   "dialect": "postgres",
   "id": "23ac2dc4-d83e-4955-9d66-aab0fa3ca151",
   "prevIds": [
@@ -83,7 +83,6 @@
         "where": "\"deleted_at\" is not null and \"purged_at\" is null",
         "with": "",
         "method": "btree",
-        "concurrently": false,
         "entityType": "indexes"
       }
     }

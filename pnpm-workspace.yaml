@@ -17,9 +17,6 @@ ignoredOptionalDependencies:
   - html2canvas
 # A version installs a day after its publish (supply-chain guard), so a release that needs a new create-cella waits for it
 minimumReleaseAge: 1440
-minimumReleaseAgeExclude:
-  # Only the CLI version a release needs before its day is up: the entry is removed, or bumped when a release needs another.
-  - '@cellajs/cli@0.8.3'
 overrides:
   # BlockNote's shadcn kit asks for lucide-react 0.525; with the app's copy its few icons follow LucideProvider's stroke.
   '@blocknote/shadcn>lucide-react': ^1.59.0
@@ -38,7 +35,6 @@ overrides:
   postcss-selector-parser@<6.1.5: ^6.1.5
   # react-scan's CLI linter (eslint, oxlint, a second TypeScript), declared as "latest"; the app imports only the runtime.
   react-scan>react-doctor: '-'
-  zod@<4.6.6: ^4.6.6
 packages:
   - backend
   - cdc

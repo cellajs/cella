@@ -238,8 +238,8 @@ export const findChangedEntityDeltaIds = async (
   // Drafts are outside the sync engine, so their seq bumps must not yield ids to sync back.
   const published = publishedRowsPredicate(table);
 
-  // pg returns an int8 `seq` as text.
-  const result = await ctx.var.db.execute<{ id: string; deletedAt: string | null; seq: string }>(sql`
+  // pg returns an int8 `seq` as text and a timestamptz as a Date.
+  const result = await ctx.var.db.execute<{ id: string; deletedAt: Date | null; seq: string }>(sql`
     SELECT id, ${deletedAtSelect} AS "deletedAt", seq
     FROM ${table}
     WHERE seq > ${afterSeq} AND organization_id = ${organizationId}${published ? sql` AND ${published}` : sql``}${readWhere ? sql` AND ${readWhere}` : sql``}

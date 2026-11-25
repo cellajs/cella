@@ -47,7 +47,7 @@ const startDrizzleStudio = async () => {
   }
 
   // Use tsx to run drizzle-kit so path aliases (#/) are resolved
-  const cmd = `pnpm tsx node_modules/drizzle-kit/bin.cjs studio --config drizzle.config.ts --port ${STUDIO_PORT}`;
+  const cmd = `pnpm tsx node_modules/drizzle-kit/bin.js studio --config drizzle.config.ts --port ${STUDIO_PORT}`;
   const studioProcess = spawn(cmd, { cwd: parentDir, stdio: 'inherit', shell: true });
 
   console.info(' ');
