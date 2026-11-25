@@ -109,11 +109,11 @@ const tagline = (() => {
 const devPort = frontendDevPort();
 const isTunneled = frontendUrl.hostname !== 'localhost';
 
-// Release identifier for error/replay tagging (Maple serviceVersion). Git SHA
-// when available (local/CI builds), 'unknown' otherwise (e.g. sourceless container).
-const gitSha = (() => {
+// The release the bundle reports, as the images report it: the builder's RELEASE_SHA, else the checkout's commit, else 'unknown'
+const releaseSha = (() => {
+  if (process.env.RELEASE_SHA) return process.env.RELEASE_SHA;
   try {
-    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+    return execSync('git rev-parse HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
       .toString()
       .trim();
   } catch {
@@ -490,7 +490,7 @@ const viteConfig = {
     __FRONTEND_URL__: JSON.stringify(appConfig.frontendUrl),
     __APP_MODE__: JSON.stringify(appConfig.mode),
     // Release identifier for observability (lib/maple.ts serviceVersion)
-    __APP_VERSION__: JSON.stringify(gitSha),
+    __APP_VERSION__: JSON.stringify(releaseSha),
     // Root release version, shown on the docs landing page and in the info panel
     __PKG_VERSION__: JSON.stringify(rootPkg.version),
     // Devtools gate. A literal, so rolldown folds the branch away and the react-scan
