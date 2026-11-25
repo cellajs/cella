@@ -67,13 +67,13 @@
     "@biomejs/biome": "^2.6.4",
     "@cellajs/cli": "^0.8.3",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
-    "@vitest/coverage-v8": "^5.1.0",
+    "@vitest/coverage-v8": "^5.1.1",
     "cross-env": "^10.1.0",
-    "knip": "^6.45.1",
+    "knip": "^6.48.0",
     "lefthook": "^2.2.2",
     "tsx": "^4.23.15",
     "typescript": "6.0.3",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   },
-  "packageManager": "pnpm@11.28.11"
+  "packageManager": "pnpm@11.29.0"
 }

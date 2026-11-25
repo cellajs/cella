@@ -206,7 +206,7 @@ export async function createProvider(): Promise<Provider> {
       // The guards verify no DPoP proof, so nothing advertises one or binds a token to a key.
       dPoP: { enabled: false },
       clientCredentials: { enabled: true },
-      clientIdMetadataDocument: { enabled: true, ack: 'draft-02', allowFetch: allowClientMetadataFetch, allowClient },
+      clientIdMetadataDocument: { enabled: true, ack: 'draft-03', allowFetch: allowClientMetadataFetch, allowClient },
       resourceIndicators: {
         enabled: true,
         // Every token names its resource. An authorization request without one is answered `invalid_target` on the

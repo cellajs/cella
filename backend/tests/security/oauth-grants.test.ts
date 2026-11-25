@@ -779,7 +779,7 @@ describe('OAuth grants', async () => {
         { scope: 'organization:write', resource },
       );
       expect(refused.status).toBe(400);
-      expect(refused.body.error).toBe('invalid_request');
+      expect(refused.body.error).toBe('unauthorized_client');
 
       // Positive control: a service account's key still mints one.
       const admin = await createFactorOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
@@ -832,7 +832,7 @@ describe('OAuth grants', async () => {
       const claimed = await mint(SERVICE_CLAIM_ID);
       expect(claimed.status).toBe(400);
       expect(claimed.body).toMatchObject({
-        error: 'invalid_client_metadata',
+        error: 'invalid_client',
         error_description: 'client_id metadata document must not set client_kind',
       });
     });

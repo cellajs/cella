@@ -1,6 +1,6 @@
 {
   "type": "diff",
-  "version": "9",
+  "version": "10",
   "dialect": "postgres",
   "id": "61e3d8c4-1221-4b93-aeb9-64702abc7bfa",
   "prevIds": [
@@ -56,7 +56,6 @@
         "where": "\"type\" in ('waitlist', 'newsletter')",
         "with": "",
         "method": "btree",
-        "concurrently": false,
         "entityType": "indexes"
       }
     }

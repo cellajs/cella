@@ -1,6 +1,6 @@
 {
   "type": "diff",
-  "version": "9",
+  "version": "10",
   "dialect": "postgres",
   "id": "4a5418f9-1db6-455c-a334-6c1100c916e3",
   "prevIds": [
@@ -237,7 +237,6 @@
         "where": "\"deleted_at\" is not null",
         "with": "",
         "method": "btree",
-        "concurrently": false,
         "entityType": "indexes"
       }
     },
