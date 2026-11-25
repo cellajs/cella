@@ -2,6 +2,7 @@ import type { GenOperationSummary } from 'sdk/docs-types';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
+import { ShortPath } from '~/modules/docs/operations/short-path';
 import { TagHashLink, TagTable } from '~/modules/docs/tag-table';
 
 interface TagOperationsTableProps {
@@ -23,8 +24,7 @@ const operationColumns = (tagName: string): ColumnOrColumnGroup<GenOperationSumm
     minWidth: 200,
     renderCell: ({ row, tabIndex }) => (
       <TagHashLink tagParam="operationTag" tagName={tagName} hash={row.hash} tabIndex={tabIndex} title={row.path} dir="rtl">
-        &lrm;
-        <HighlightText text={row.path} />
+        <ShortPath path={row.path} />
       </TagHashLink>
     ),
   },

@@ -1,8 +1,8 @@
 import { useRef } from 'react';
 import { useEventListener } from '~/hooks/use-event-listener';
 
-// Whoever carries one of these already explains itself on hover
-const ownHoverText = '[title], [data-tooltip="true"], [data-slot="tooltip-trigger"]';
+// Whoever carries one of these already explains itself on hover; Base UI marks no hover-opened popover, so PopoverTrigger adds data-open-on-hover
+const ownHoverText = '[title], [data-tooltip="true"], [data-slot="tooltip-trigger"], [data-slot="hover-card-trigger"], [data-open-on-hover]';
 
 const isCut = (element: Element) => {
   const style = getComputedStyle(element);
