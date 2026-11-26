@@ -5,6 +5,7 @@ import { AuthHeader } from '~/modules/auth/auth-header';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useEmailCategoryMutation } from '~/modules/notification/query';
 import { Button, buttonVariants } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 const route = getRouteApi('/_public/auth/unsubscribe');
 
@@ -22,7 +23,8 @@ export function UnsubscribePage() {
   const resubscribed = isSuccess && variables?.enabled === true;
 
   const settingsLink = (
-    <Link to="/account" hash="notifications" className={buttonVariants({ variant: 'glass', size: 'block' })}>
+    // Merged: the glass variant's edge color replaces the base's transparent border
+    <Link to="/account" hash="notifications" className={cn(buttonVariants({ variant: 'glass', size: 'block' }))}>
       {t('c:notification_settings')}
     </Link>
   );

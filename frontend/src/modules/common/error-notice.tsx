@@ -107,7 +107,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
       <div className="error-notice container flex min-h-[calc(100svh-10rem)] flex-col items-center">
         <div className="mx-auto my-auto">
           <Card className="mt-8 w-[80vw] max-w-[80vw] border-none bg-transparent sm:w-160">
-            <CardHeader className="px-0 text-center">
+            <CardHeader className="px-0 text-center sm:px-0">
               <CardTitle level={1} className="mb-2 justify-center text-2xl font-normal">
                 {title}
               </CardTitle>
@@ -120,7 +120,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
               </CardDescription>
             </CardHeader>
             {apiError?.type && (
-              <CardContent className="text-destructive px-0 py-4 font-mono whitespace-pre-wrap">
+              <CardContent className="text-destructive px-0 py-4 font-mono whitespace-pre-wrap sm:px-0">
                 <Button
                   variant="link"
                   size="sm"
@@ -147,7 +147,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                 </AnimatePresence>
               </CardContent>
             )}
-            <CardFooter className="mt-8 flex-wrap justify-center gap-2 px-0 max-sm:flex-col max-sm:items-stretch">
+            <CardFooter className="mt-8 flex-wrap justify-center gap-2 px-0 max-sm:flex-col max-sm:items-stretch sm:px-0">
               {typeof ssoConnectionId === 'string' && (
                 <Button
                   render={<Link to="/auth/sso/$connectionId" params={{ connectionId: ssoConnectionId }} search={{ redirect: location.pathname }} />}

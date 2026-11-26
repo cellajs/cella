@@ -70,7 +70,8 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     if (isDirty) {
       const values = form.getValues();
       const keys = changedKeys(values, form.formState.defaultValues).filter((key) => values[key] !== undefined);
-      if (keys.length > 0) setDraftForm(formId, Object.fromEntries(keys.map((key) => [key, values[key]])));
+      // A copy: the draft store freezes what it keeps, and a frozen array of the form's own refuses its next edit
+      if (keys.length > 0) setDraftForm(formId, structuredClone(Object.fromEntries(keys.map((key) => [key, values[key]]))));
     } else {
       resetDraftForm(formId);
     }

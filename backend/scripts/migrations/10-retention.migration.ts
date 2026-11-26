@@ -215,6 +215,16 @@ function generateTablePartitionSql(config: PartitionConfig): string {
     SELECT COALESCE(array_agg(pg_get_triggerdef(t.oid)), '{}') INTO trg_defs
       FROM pg_trigger t
       WHERE t.tgrelid = 'public.${config.name}'::regclass AND NOT t.tgisinternal;
+    -- An RLS table's policies, which neither LIKE nor the steps above carry
+    SELECT COALESCE(array_agg(format('CREATE POLICY %I ON public.${config.name} AS %s FOR %s TO %s%s%s', p.polname,
+        CASE WHEN p.polpermissive THEN 'PERMISSIVE' ELSE 'RESTRICTIVE' END,
+        CASE p.polcmd WHEN 'r' THEN 'SELECT' WHEN 'a' THEN 'INSERT' WHEN 'w' THEN 'UPDATE' WHEN 'd' THEN 'DELETE' ELSE 'ALL' END,
+        CASE WHEN p.polroles = '{0}' THEN 'public' ELSE (SELECT string_agg(quote_ident(r.rolname), ', ') FROM pg_roles r WHERE r.oid = ANY(p.polroles)) END,
+        CASE WHEN p.polqual IS NOT NULL THEN ' USING (' || pg_get_expr(p.polqual, p.polrelid) || ')' ELSE '' END,
+        CASE WHEN p.polwithcheck IS NOT NULL THEN ' WITH CHECK (' || pg_get_expr(p.polwithcheck, p.polrelid) || ')' ELSE '' END)), '{}')
+      INTO pol_defs
+      FROM pg_policy p
+      WHERE p.polrelid = 'public.${config.name}'::regclass;
 
     -- 3. Move the original aside and create the partitioned table directly under the
     --    final name, so child partitions get clean names (${config.name}_p...).
@@ -228,13 +238,14 @@ function generateTablePartitionSql(config: PartitionConfig): string {
     --    apply_retention() below creates the current ranges and moves rows over
     EXECUTE 'INSERT INTO ${config.name} SELECT * FROM ${config.name}_old';
 
-    -- 5. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
+    -- 5. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers + policies
     DROP TABLE ${config.name}_old;
 
     EXECUTE format('ALTER TABLE public.${config.name} ADD %s', pk_def);
     FOREACH ddl IN ARRAY fk_defs LOOP EXECUTE ddl; END LOOP;
     FOREACH ddl IN ARRAY idx_defs LOOP EXECUTE ddl; END LOOP;
     FOREACH ddl IN ARRAY trg_defs LOOP EXECUTE ddl; END LOOP;
+    FOREACH ddl IN ARRAY pol_defs LOOP EXECUTE ddl; END LOOP;
 
     RAISE NOTICE '${config.name} converted to partitioned';
   END IF;
@@ -368,6 +379,7 @@ DECLARE
   idx_defs text[];
   fk_defs text[];
   trg_defs text[];
+  pol_defs text[];
 BEGIN
 ${tableSetupSql}
   -- Inside the migration's transaction, where a COMMIT is refused.
