@@ -1,6 +1,9 @@
 import type { EngineConfig } from '@cellajs/cli/infra';
 import { appServices } from './services.config.ts';
 
+/** The engine config with the app's own monitoring DSN, which the engine passes on beside its contract's fields. */
+type CspConfig = EngineConfig & { monitoring?: { dsn: string } };
+
 /**
  * Who may frame a document under `/embed/`: the LTI platforms `ltiFrameAncestors` names, nobody while it names none.
  * @throws when an entry is no bare origin: a path or a `;` would change the policy.
@@ -13,10 +16,11 @@ export function embedFrameAncestors(appConfig: EngineConfig): string {
 }
 
 /**
- * The frontend's Content-Security-Policy for one environment's config: the app origin, the services off it, the buckets
- * and the map styles. A document under `/embed/` passes `embedFrameAncestors`; every other one is framed by the app alone.
+ * The frontend's Content-Security-Policy for one environment's config: the app origin, the services off it, the buckets,
+ * the map styles and the monitoring DSN. A document under `/embed/` passes `embedFrameAncestors`; every other one is
+ * framed by the app alone.
  */
-export function frontendCsp(appConfig: EngineConfig, frameAncestors = "'self'"): string {
+export function frontendCsp(appConfig: CspConfig, frameAncestors = "'self'"): string {
   const enabledServiceSlugs = new Set(Object.keys(appServices).filter((slug) => appConfig.services[slug]?.enabled !== false));
   const serviceUrls = appConfig.services as Record<string, { publicUrl?: string }>;
   const servicePublicUrl = (slug: string): string => {
@@ -41,6 +45,8 @@ export function frontendCsp(appConfig: EngineConfig, frameAncestors = "'self'"):
     s3Buckets: appConfig.s3.host ? `https://*.${appConfig.s3.host}` : '',
     s3Public: appConfig.s3.publicCDNUrl,
     s3Private: appConfig.s3.privateCDNUrl,
+    // The browser posts its error and session reports to the DSN's origin.
+    monitoring: appConfig.monitoring?.dsn ? originUnlessSelf(appConfig.monitoring.dsn) : '',
     // The contact map fetches its style, tiles, fonts and icons from each style URL's origin.
     maps: [
       ...new Set(
@@ -61,12 +67,12 @@ export function frontendCsp(appConfig: EngineConfig, frameAncestors = "'self'"):
     cspOrigins.s3Public,
     cspOrigins.s3Private,
     cspOrigins.maps,
+    cspOrigins.monitoring,
     'https://*.transloadit.com',
     'wss://*.transloadit.com',
     'https://transloaditstatus.com',
     '*.gleap.io',
     'wss://ws.gleap.io',
-    'ingest.maple.dev',
     '*.onedollarstats.com',
   ]
     .filter(Boolean)
