@@ -86,8 +86,8 @@ export function PrivacyText() {
                 app's release, with your user id when you are signed in. When something fails it also sends, with your user id, the error, the page's
                 address and the one you came from without their secrets, your browser's language and time zone, and the steps before it: pages, the
                 elements you clicked or typed in (not what you typed), requests and the app's console warnings and errors. It asks the monitoring
-                service not to keep your IP address. Most requests to our servers carry the page load's random id, which the records our servers
-                report of them keep.
+                service not to keep your IP address. Most requests to our servers carry the page load's random id, and the records our servers report
+                of those requests keep it.
               </li>
             )}
             {appConfig.has.chatSupport && <li>The support chat by Gleap sets its own cookies.</li>}
