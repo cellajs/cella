@@ -34,7 +34,7 @@ beforeAll(async () => {
   await seedOrg(admin, tenantId, organizationId, 'yjs-revoke');
   await seedEntityHierarchy(admin, plan, tenantId, member, 'yjs-revoke');
   // A plain member, who may edit what they created: the attachment is theirs.
-  await seedMembership(admin, tenantId, organizationId, member, hierarchy.getLeastPrivilegedRole('organization'));
+  await seedMembership(admin, tenantId, organizationId, member, hierarchy.getDefaultRole('organization'));
   await joinAttachmentHome(admin, tenantId, organizationId, plan, member);
   await seedAttachment(admin, attachmentId, tenantId, plan, member);
 });

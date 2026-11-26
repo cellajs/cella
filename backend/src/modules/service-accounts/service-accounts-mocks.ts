@@ -10,7 +10,7 @@ import { mockActorRef } from '#/schemas/entity-base-mocks';
 export const mockServiceAccountResponse = (
   key = 'serviceAccount:default',
 ): WithActorRefs<ServiceAccountWithActivity> & { role: OrganizationRole } => {
-  const role = hierarchy.getLeastPrivilegedRole('organization');
+  const role = hierarchy.getDefaultRole('organization');
   const account = withFakerSeed<Omit<ServiceAccountWithActivity, 'createdBy' | 'updatedBy'>>(key, () => {
     const organizationId = mockUuid();
     const createdAt = mockPastIsoDate();

@@ -1,5 +1,13 @@
-import { type AccessMembership, getAllDecisions, hierarchy, mayGrantRole } from 'shared';
-import { configureWidePermissions, type WideRole, wideHierarchy, wideMembership, wideOverrides, wideSubject } from 'shared/testing/wide-fixture';
+import { type AccessMembership, createEntityHierarchy, getAllDecisions, hierarchy, mayGrantRole } from 'shared';
+import {
+  configureWidePermissions,
+  type WideRole,
+  wideHierarchy,
+  wideMembership,
+  wideOverrides,
+  wideRoles,
+  wideSubject,
+} from 'shared/testing/wide-fixture';
 import { describe, expect, it } from 'vitest';
 import { membershipsBroughtAlong, resolveAssociatedMembershipRole, resolveOrganizationMembershipRole } from './membership-helpers';
 
@@ -82,5 +90,28 @@ describe("must not create an organization or parent-channel role above the invit
     expect(refusedOn([organization('admin')], 'admin')).toEqual([]);
     expect(refusedOn([organization('member'), workspace('member'), inProject('member')], 'guest')).toEqual([]);
     expect(refusedOn([], 'admin', true)).toEqual([]);
+  });
+});
+
+/**
+ * Every inviter may hand out the least role, and no default role above it. The organization starts people at `member`
+ * and declares `guest` last; the guest inviting here may update the organization, the cell an app sets to let guests
+ * invite.
+ */
+describe('must not hand out the default role through the least role every inviter may give', () => {
+  const startsAtMember = createEntityHierarchy(wideRoles).user().organization({ roles: wideRoles.all, defaultRole: 'member' }).build();
+  const subject = wideSubject({ entityType: 'organization', id: 'org-1', channelIds: {} });
+  // The inviter's own membership is all they hold: nothing reaches the organization from above.
+  const noAncestorGrant = () => false;
+  const mayGrant = (role: WideRole, inviterRole: WideRole) =>
+    mayGrantRole([wideMembership('organization', 'org-1', inviterRole)], { subject, role, action: 'update' }, noAncestorGrant, {
+      hierarchy: startsAtMember,
+    });
+
+  it('refuses a guest who invites at the default role, and lets the guest give the least role and a member the default (rightful)', () => {
+    expect(startsAtMember.getDefaultRole('organization')).toBe('member');
+    expect(mayGrant('member', 'guest')).toBe(false);
+    expect(mayGrant('guest', 'guest')).toBe(true);
+    expect(mayGrant('member', 'member')).toBe(true);
   });
 });

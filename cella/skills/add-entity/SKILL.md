@@ -20,7 +20,7 @@ Ask the user what the request leaves open. These are costly to change once rows 
 | Is | Content in a channel: syncs live, works offline, inherits access from its channel | A place with members and roles: plain CRUD, no offline queue |
 | Name | Singular camelCase (`task`, `courseSection`): becomes the `<name>Id` column, the `<name>s` table and path, the locale keys | Same |
 | Parent | Its home channel. `nullableAncestors` lets a row live higher up the chain, `relatedChannels` links a channel outside it | The organization or a channel below it |
-| Roles | None of its own: the policy matrix grants per channel role | `roles` from the registry, most privileged first, plus `organizationRoles`; optional `elevated` and `drafts` |
+| Roles | None of its own: the policy matrix grants per channel role | `roles` from the registry, most privileged first, plus `organizationRoles`; optional `elevated`, `drafts` and `defaultRole` |
 | Reference | `attachment` | `organization` (step 5 lists what a channel below it adds) |
 
 Then ask which opt-ins it needs (step 6): a collaborative description, drafts, public read,

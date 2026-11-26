@@ -93,6 +93,8 @@ setTestConfig({ enabledAuthStrategies: ['passkey', 'lti'] });
 overrideConfig(appConfig.has, { ltiPlatform: true });
 
 assumeMembersReadPeople();
+// The import reads people through the platform side's installed tool, at the least privileged role its tab gives.
+assumeMembersReadPeople(hierarchy.getLeastPrivilegedRole('organization'));
 
 const loopback = async () => [{ address: '127.0.0.1', family: 4 }];
 

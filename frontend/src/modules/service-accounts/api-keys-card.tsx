@@ -29,7 +29,7 @@ import { formResolver } from '~/utils/form-resolver';
 const createApiKeyDialogId = 'create-api-key';
 
 // Narrowed to the organization roles the create body accepts: the hierarchy can type a role registry-wide.
-const keyRole = hierarchy.getLeastPrivilegedRole('organization') as CreateServiceAccountData['body']['role'];
+const keyRole = hierarchy.getDefaultRole('organization') as CreateServiceAccountData['body']['role'];
 
 const formSchema = zCreateServiceAccountBody.pick({ name: true });
 
@@ -38,7 +38,7 @@ type FormValues = z.infer<typeof formSchema>;
 /** A key as the create response carries it: the one time it comes with its plaintext. */
 type CreatedApiKey = NonNullable<CreateServiceAccountResponse['apiKey']>;
 
-/** Creating a key makes a service account named after it, bound to this organization with its least privileged role. */
+/** Creating a key makes a service account named after it, bound to this organization with its default role. */
 function CreateApiKeyForm({ path, onCreated }: { path: QueryOrgContext; onCreated: (apiKey: CreatedApiKey) => void }) {
   const { t } = useTranslation();
   const { mutateAsync: create, isPending } = useCreateServiceAccountMutation();

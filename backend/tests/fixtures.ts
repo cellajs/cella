@@ -6,11 +6,11 @@ export const defaultHeaders = { 'Content-Type': 'application/json', 'x-forwarded
 export const signUpUser = { email: 'test-user@example.com' };
 
 /**
- * The organization's most and least privileged roles, read from the hierarchy: `admin` and `member` in the template,
- * so an app with other role names runs every test unchanged.
+ * The organization's most privileged role and the plain member's, its default role, read from the hierarchy: `admin`
+ * and `member` in the template. An app with other role names runs every test unchanged.
  */
 export const adminRole = hierarchy.getMostPrivilegedRole('organization');
-export const memberRole = hierarchy.getLeastPrivilegedRole('organization');
+export const memberRole = hierarchy.getDefaultRole('organization');
 
 /** A config value as a test may set it: the literal types `satisfies` gives the defaults are widened. */
 type Settable<T> = T extends string

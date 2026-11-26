@@ -38,6 +38,7 @@ interface ChannelEntry<R extends string = string> {
   organizationRoles?: Readonly<Record<string, string>>;
   elevated?: readonly string[];
   drafts?: ChannelDrafts;
+  defaultRole?: string;
 }
 interface ChannelDrafts<R extends string = string> {
   prepareRoles: readonly R[];
@@ -94,6 +95,8 @@ class EntityHierarchyBuilder<
     elevated?: readonly RO[number][];
     /** Lets an organization start as a draft; see {@link channel}. */
     drafts?: ChannelDrafts<RO[number]>;
+    /** The role a person or an API key's account starts at when nobody picks one, and the `role` column default; see {@link channel}. */
+    defaultRole?: RO[number];
   }): EntityHierarchyBuilder<
     TRoles,
     TChannels | 'organization',
@@ -107,6 +110,7 @@ class EntityHierarchyBuilder<
     this.validateRoles('organization', options.roles);
     this.validateElevated('organization', options.roles, options.elevated);
     this.validateDrafts('organization', options.roles, options.drafts);
+    this.validateDefaultRole('organization', options.roles, options.defaultRole);
     return new EntityHierarchyBuilder<
       TRoles,
       TChannels | 'organization',
@@ -123,6 +127,7 @@ class EntityHierarchyBuilder<
         roles: options.roles,
         elevated: options.elevated,
         drafts: options.drafts,
+        defaultRole: options.defaultRole,
       }),
     );
   }
@@ -151,6 +156,12 @@ class EntityHierarchyBuilder<
        * people can set it up; the rest wait until it is published.
        */
       drafts?: ChannelDrafts<RO[number]>;
+      /**
+       * The role a person starts at when nobody picks one, such as the invite form's preselection. Undeclared, it is the
+       * least privileged role. It opens no grant: the least privileged role stays the one every inviter may hand out.
+       * Read through {@link EntityHierarchy.getDefaultRole}.
+       */
+      defaultRole?: RO[number];
     },
   ): EntityHierarchyBuilder<
     TRoles,
@@ -171,6 +182,7 @@ class EntityHierarchyBuilder<
     this.validateOrganizationRoles(name, options.roles, options.organizationRoles);
     this.validateElevated(name, options.roles, options.elevated);
     this.validateDrafts(name, options.roles, options.drafts);
+    this.validateDefaultRole(name, options.roles, options.defaultRole);
     return new EntityHierarchyBuilder<
       TRoles,
       TChannels | N,
@@ -189,8 +201,15 @@ class EntityHierarchyBuilder<
         organizationRoles: options.organizationRoles,
         elevated: options.elevated,
         drafts: options.drafts,
+        defaultRole: options.defaultRole,
       }),
     );
+  }
+
+  /** The default role must be one of the channel's own roles. */
+  private validateDefaultRole(name: string, roles: readonly string[], defaultRole?: string): void {
+    if (defaultRole === undefined || roles.includes(defaultRole)) return;
+    throw new Error(`EntityHierarchy: channel "${name}" names unknown default role "${defaultRole}". Own roles: ${roles.join(', ')}`);
   }
 
   /** At least one prepare role, each one of the channel's own: a draft nobody can be invited to prepare stays empty. */
@@ -485,15 +504,26 @@ export class EntityHierarchy<
   };
 
   /**
-   * Roles are declared most to least privileged, so the last role is a channel's least-privileged one: the invite
-   * default, the auto-created associated-membership fallback and the membership column default. Apps with other
-   * vocabularies (`guest`, `student`) get their own; throws for non-channels.
+   * The last declared role: roles are declared most to least privileged, and this one opens least. Security rules
+   * read it: the role every inviter may hand out (`mayGrantRole`), a brought-along membership's fallback and an LTI
+   * admission's. Where a person starts when nobody picks a role is {@link getDefaultRole}. Throws for non-channels.
    */
   readonly getLeastPrivilegedRole = <T extends string>(channelType: T): ChannelRole<TRoleMap, TRoles, T> => {
     const roles = this.getRoles(channelType);
     const role = roles[roles.length - 1];
     if (!role) throw new Error(`Entity type '${channelType}' is not a channel or declares no roles`);
     return role;
+  };
+
+  /**
+   * The role a person or an API key's account starts at when nobody picks one: the channel's `defaultRole`, else its
+   * least privileged role. It is the invite form's preselection, an institution sign-in's role and the `role` column
+   * default; no permission rule reads it. Throws for non-channels.
+   */
+  readonly getDefaultRole = <T extends string>(channelType: T): ChannelRole<TRoleMap, TRoles, T> => {
+    const entry = this.entities.get(channelType);
+    const declared = entry?.kind === 'channel' ? entry.defaultRole : undefined;
+    return declared === undefined ? this.getLeastPrivilegedRole(channelType) : (declared as ChannelRole<TRoleMap, TRoles, T>);
   };
 
   /** The first declared role of a channel; see {@link getLeastPrivilegedRole} for the ordering rule. */

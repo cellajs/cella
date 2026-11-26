@@ -4,8 +4,8 @@ import { hierarchy } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Member } from '~/modules/memberships/types';
 
-// The organization's least privileged role, whatever the app calls it.
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
+// A plain member's organization role, the default one, whatever the app calls it.
+const memberRole = hierarchy.getDefaultRole('organization');
 
 // The hooks return their options, so each lifecycle callback runs without rendering.
 vi.mock('@tanstack/react-query', async (importOriginal) => ({

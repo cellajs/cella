@@ -8,9 +8,10 @@ export const roles = createRoleRegistry(['admin', 'member'] as const);
  * the only parentless entity); parents before children, and order sets the ancestor chain. Products
  * may add `relatedChannels` (non-ancestor channel refs, nullable id columns). Public readability is
  * a permission concern, not declared here. Channels may add `elevated` (roles whose product grants
- * cover the whole subtree, compiled into `hierarchy.elevatedGrants`) and `drafts` (the channel can
- * start unpublished; `prepareRoles` are invited at once, the rest when it is published); channels below
- * the organization may add `organizationRoles` (the complete escalation map for auto-created
+ * cover the whole subtree, compiled into `hierarchy.elevatedGrants`), `drafts` (the channel can
+ * start unpublished; `prepareRoles` are invited at once, the rest when it is published) and
+ * `defaultRole` (the role people start at when nobody picks one, the least privileged without it);
+ * channels below the organization may add `organizationRoles` (the complete escalation map for auto-created
  * organization membership rows). Declared apart from config.default.ts so its types are inferred before the config
  * object is built.
  *

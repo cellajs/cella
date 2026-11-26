@@ -23,7 +23,7 @@ can read every member's email address. The backend now refuses to start while th
 
 Apps with `lti` on and channels below the organization whose brought-along role grants on people or channels: their
 backend no longer starts, and every backend test fails. Products homed at the organization are not judged. No lens or
-`clientCacheVersion` bump; `pnpm generate` only when the least role changes.
+`clientCacheVersion` bump; `pnpm generate` only when the default role changes.
 
 ## Run
 
@@ -33,9 +33,9 @@ No script: manual.
 
 1. Name an organization role that `permissions-config.ts` gives no grant on `user` and on the channel types below the organization, and that is not in the organization's `elevated`, or add one to the organization's roles in `hierarchy-config.ts`.
 2. Map every role of every channel below the organization to it in `organizationRoles`.
-3. Declare it last in the organization's roles, as the least privileged.
-4. Run `pnpm generate`: the `role` column default of `memberships` and `invitations` follows the least organization role.
-5. Check what else takes the least organization role as its default: the invite form (`invite-submit.tsx`), an institution sign-in (`role-from-claims.ts`), an API key's service account (`api-keys-card.tsx`) and the service accounts of an LTI connection and an LTI tool installation (`connection-service-account.ts`, `lti-platform-queries.ts`).
+3. Declare it last in the organization's roles, as the least privileged, and name the role people start at as the organization's `defaultRole`, such as `member` (`20261125T2136-default-role`).
+4. Run `pnpm generate`: the `role` column default of `memberships` and `invitations` follows the default role, so a `defaultRole` that names the role declared last before changes nothing.
+5. Check that the places a person or an account starts at read the default role: the invite form (`invite-submit.tsx`), an API key's service account (`api-keys-card.tsx`) and an institution sign-in in the pinned `role-from-claims.ts`, which calls `hierarchy.getDefaultRole('organization')`. The service accounts of an LTI connection and an LTI tool installation (`connection-service-account.ts`, `lti-platform-queries.ts`) keep the least role.
 6. An app that carries its own helper for a least organization role that reads no one, such as `assumeMembersReadPeople`, deletes it and the lines it marked in template tests: those tests now call `assumeMembersReadPeople` from `backend/tests/members-read-people.ts` themselves. Take each of those test files from the template whole and compare it with the template's: a merge without a conflict can keep the app's call beside the template's, and the typecheck reports only a doubled import.
 
 ## Verify

@@ -16,10 +16,10 @@ export interface SsoRoleFacts {
 /**
  * The role of the membership an institution sign-in grants in the connection's organization. The app fills this
  * pinned file: it maps what the institution asserts, such as `eduperson_affiliation`, to its own organization roles.
- * The default is the least-privileged role.
+ * The default is the organization's default role (`defaultRole` in the hierarchy, else its least privileged one).
  *
  * Consulted once, when the membership is created: on a first sign-in, or when a user connects their institution
  * account and holds no membership there yet. Later sign-ins never change a role, and an invitation to the
  * organization names its own role, so it never reaches this function.
  */
-export const roleFromClaims = (_facts: SsoRoleFacts): MembershipModel['role'] => hierarchy.getLeastPrivilegedRole('organization');
+export const roleFromClaims = (_facts: SsoRoleFacts): MembershipModel['role'] => hierarchy.getDefaultRole('organization');

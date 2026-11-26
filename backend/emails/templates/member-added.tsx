@@ -19,7 +19,7 @@ const previewStatics: MemberAddedStatic = {
   senderName: 'John Doe',
   senderEmail: 'john.doe@acme.example',
   entityName: 'Acme',
-  role: hierarchy.getLeastPrivilegedRole('organization'),
+  role: hierarchy.getDefaultRole('organization'),
 };
 const previewRecipient = { name: 'Emily', entityLink: 'https://example.com/acme' };
 

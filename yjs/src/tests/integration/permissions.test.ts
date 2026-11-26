@@ -61,7 +61,7 @@ describe('Local entity authorization (authorizeDocument)', () => {
 
     await seedMembership(admin, tenantA, orgA, userA);
     await seedMembership(admin, tenantB, orgC, userB);
-    await seedMembership(admin, tenantA, orgA, memberA, hierarchy.getLeastPrivilegedRole('organization'));
+    await seedMembership(admin, tenantA, orgA, memberA, hierarchy.getDefaultRole('organization'));
     await joinAttachmentHome(admin, tenantA, orgA, hierarchyA, memberA);
 
     await seedAttachment(admin, attachmentA, tenantA, hierarchyA, userA);

@@ -4,8 +4,8 @@ import { type EntityRole, hierarchy } from 'shared';
 import { expect, spyOn, userEvent, waitFor } from 'storybook/test';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 
-/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
+/** The organization's default role, which the invite form preselects: `member` in cella, whatever the app calls it. */
+const memberRole = hierarchy.getDefaultRole('organization');
 
 const meta = { title: 'common/SelectRoleRadio', component: SelectRoleRadio, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta<
   typeof SelectRoleRadio

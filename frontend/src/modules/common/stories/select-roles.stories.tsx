@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { type EntityRole, hierarchy } from 'shared';
 import { SelectRoles } from '~/modules/common/form-fields/select-roles';
 
-/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
+/** A plain member's organization role, the default one: `member` in cella; apps with other vocabularies run this file unchanged. */
+const memberRole = hierarchy.getDefaultRole('organization');
 
 const meta = { title: 'common/SelectRoles', component: SelectRoles, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta<
   typeof SelectRoles

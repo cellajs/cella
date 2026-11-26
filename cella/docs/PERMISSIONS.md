@@ -135,6 +135,8 @@ A channel declares its roles from most to least privileged. That order decides w
 
 An invitation is checked when it is sent, since its accept has no inviter to ask.
 
+A channel may name a `defaultRole`: the role a person or an API key's account starts at when nobody picks one, such as the invite form's first choice and the `role` column default. Without it the default is the least role. It changes none of the rules above: the least role stays the one anyone may give.
+
 ## The permission returned
 
 The **`checkAccess*` family** is what every tier calls:

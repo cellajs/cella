@@ -301,4 +301,23 @@ describe('EntityHierarchyBuilder', () => {
       );
     });
   });
+
+  // Contract: an app that names no default role starts people at the least privileged role, as before the option.
+  describe('defaultRole', () => {
+    it('is the declared role, the least privileged one when none is declared, and refuses a role of another channel', () => {
+      const h = createEntityHierarchy(roles)
+        .user()
+        .organization({ roles: roles.all, defaultRole: 'member' })
+        .channel('workspace', { parent: 'organization', roles: ['member', 'guest'] })
+        .build();
+      expect([h.getDefaultRole('organization'), h.getLeastPrivilegedRole('organization')]).toEqual(['member', 'guest']);
+      expect(h.getDefaultRole('workspace')).toBe('guest');
+      expect(() =>
+        createEntityHierarchy(roles)
+          .user()
+          .organization({ roles: roles.all })
+          .channel('workspace', { parent: 'organization', roles: ['member'], defaultRole: 'admin' as any }),
+      ).toThrow('unknown default role "admin"');
+    });
+  });
 });

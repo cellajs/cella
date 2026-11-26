@@ -51,7 +51,7 @@ const sendMagicLink = () =>
   ]);
 
 const sendInvite = () =>
-  mailer.sendEmails(memberInviteEmail, { senderName: 'John', entityName: 'Acme', role: hierarchy.getLeastPrivilegedRole('organization') }, [
+  mailer.sendEmails(memberInviteEmail, { senderName: 'John', entityName: 'Acme', role: hierarchy.getDefaultRole('organization') }, [
     { email: 'emily@example.test', lng: 'en', name: 'Emily', memberInviteLink: 'https://app.example.test/acme' },
   ]);
 

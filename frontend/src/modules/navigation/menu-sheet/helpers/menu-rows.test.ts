@@ -21,7 +21,7 @@ const row = (id: string, displayOrder: number, hidden: boolean, archived: boolea
     channelId: id,
     organizationId: id,
     userId: 'user-1',
-    role: hierarchy.getLeastPrivilegedRole('organization'),
+    role: hierarchy.getDefaultRole('organization'),
     hidden,
     muted: false,
     displayOrder,
