@@ -2,7 +2,9 @@
 
 ## Observability
 
-With a DSN, `monitoring.ts` sends errors and one session per page load to it through Sentry's browser SDK, in the Sentry envelope protocol any compatible receiver accepts. A deployed mode names its DSN in its config (`monitoring.dsn`); development reads `VITE_MONITORING_DSN` from `frontend/.env`, and without one the page sends nothing. It names the signed-in user by id alone, and an error at any React boundary is unhandled. No span and no web vital leaves the browser.
+With a DSN, `monitoring.ts` sends errors and one session per page load to it through Sentry's browser SDK, in the Sentry envelope protocol any compatible receiver accepts. It names the signed-in user by id alone, and an error at any React boundary is unhandled. No span and no web vital leaves the browser.
+
+The mode's config names the DSN (`monitoring.dsn`), and on this machine a portless `localhost` one takes the app's origin. In development and tunnel `VITE_MONITORING_DSN` from `frontend/.env` wins; without either the page sends nothing.
 
 The SDK sends the trace headers of every API request, and `monitoring.ts` adds the session's id to the `baggage` of each request the generated client makes. `otel.ts` keeps a local tracer in every mode for the span helpers and the sync devtools; it sends the trace headers itself only when no DSN is set.
 
