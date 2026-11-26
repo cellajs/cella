@@ -1,4 +1,5 @@
 import { getOrganization } from 'sdk';
+import { channelSlotConfig } from '~/lib/placements';
 import { guardNavTabs } from '~/modules/common/page/tab-nav';
 import { loadChannelTabGrants } from '~/modules/entities/use-channel-tab-options';
 import { findOrganizationByIdOrSlug, organizationQueryOptions } from '~/modules/organization/query';
@@ -37,7 +38,7 @@ type OrganizationTabsBeforeLoadArgs = {
 /** Opens the first tab the organization's bar resolves and forwards away from disabled tabs and the ones the user's grants lack. */
 export const organizationTabsBeforeLoad = async ({ context, matches }: OrganizationTabsBeforeLoadArgs): Promise<void> => {
   guardNavTabs(matches, '/_app/$tenantId/$organizationSlug/organization', {
-    slotConfig: context.organization.toolsConfig['organization.tabs'],
+    slotConfig: channelSlotConfig(context.organization, 'organization.tabs'),
     grants: await loadChannelTabGrants(context.organization),
   });
 };

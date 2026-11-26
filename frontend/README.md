@@ -40,7 +40,9 @@ A feature folder in `src/modules/<name>/` registers itself in `<name>-module.ts`
 
 **Arrangement.** The app's `appConfig.surfaces` comes first: per slot, `order` puts the ids it names first and `hidden` takes tools off, `locked` ones included. The other tools follow in their declared order. An id that names no tool or tab is skipped: a misspelled or renamed one shows on the page as a tab out of place or one left visible.
 
-Then the channel row's `toolsConfig` applies the channel's own order and hidden ids. It is reconciled fail-closed: an unknown id drops, a new tool joins at its default order, and a `locked` tool cannot be hidden by a channel.
+Then the channels above the row apply what they store for the slot, the organization first, and the row's own `toolsConfig` comes last. Hidden ids add up: a channel cannot show a tool that one above it hides. The narrowest order leads, and each broader one places the ids it leaves out. Every layer is reconciled fail-closed: an unknown id drops, a new tool joins at its default order, and a `locked` tool cannot be hidden by a channel.
+
+A channel stores its own slots and those of the channel types below it: an organization arranges the tabs of every project inside it with a `TabsArrangementCard` given that slot. A channel response below the organization carries the layers above it in `included.inheritedToolsConfig`, because its reader may read none of those channels.
 
 **Page tabs.** A layout route names its tabs slot in `staticData.tabsSlot`, and its bar merges child routes that declare `staticData.navTab` with that slot's tools, rendered through a one-line `$tool` route. An entity link targets the layout route without a tab: the layout redirects to the first visible tab, and so does a navigation to a hidden one.
 

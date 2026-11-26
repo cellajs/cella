@@ -6,7 +6,7 @@ import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import { invalidateArchivedChannel } from '~/query/realtime/channel-archived';
+import { invalidateChannelsInside } from '~/query/realtime/membership-ops';
 
 /** The channel types the archive route takes: those below the organization, none in an app without them. */
 type ArchivableChannelType = ArchiveChannelData['body']['channelType'];
@@ -34,7 +34,7 @@ export const useArchiveChannelMutation = () =>
       return archived ? archiveChannel({ path, body }) : unarchiveChannel({ path, body });
     },
     onSuccess: ({ rejectedIds }, { channel, archived }) => {
-      invalidateArchivedChannel(channel.id);
+      invalidateChannelsInside(channel.id);
       const resource = i18n.t(`c:${channel.entityType}`);
       toaster.success(i18n.t(archived ? 'c:success.archive_resource' : 'c:success.unarchive_resource', { resource }));
       if (rejectedIds.length) toaster.warning(i18n.t('c:archive_rejected.text'));

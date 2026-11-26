@@ -18,12 +18,25 @@ export interface SlotToolsConfig {
 }
 
 /**
- * Channel-persisted tool arrangement, keyed by one of that channel's own slots. Stored sparse on the channel row
- * (`toolsConfig` jsonb): a missing slot key means the slot renders what the app's `surfaces` config
- * and the module manifests give it. Unknown tool ids reconcile fail-closed: they are dropped, never
- * widened, and an unknown slot key is refused at the wire.
+ * Channel-persisted tool arrangement, keyed by the row's storable slots (`storableSlots`): its own, and those of the
+ * channel types below it, which the rows inside it inherit. Stored sparse on the channel row (`toolsConfig` jsonb): a
+ * missing slot key means the slot renders what the app's `surfaces` config, the channels above and the module manifests
+ * give it. Unknown tool ids reconcile fail-closed: they are dropped, never widened, and a slot key the row may not store
+ * is refused at the wire.
  */
 export type ToolsConfig = Partial<Record<ChannelSlot, SlotToolsConfig>>;
+
+/**
+ * One slot's channel layers as one, `layers` broadest first: `hidden` is every layer's, since a narrower layer cannot show
+ * what a broader one hides, and `order` lists the narrowest layer's ids, then each broader layer's that it leaves out.
+ * Undefined when no layer names an id.
+ */
+export function stackSlotConfigs(...layers: (SlotToolsConfig | undefined)[]): SlotToolsConfig | undefined {
+  const hidden = new Set(layers.flatMap((layer) => layer?.hidden ?? []));
+  const order = new Set(layers.toReversed().flatMap((layer) => layer?.order ?? []));
+  if (!hidden.size && !order.size) return undefined;
+  return { order: [...order], hidden: [...hidden] };
+}
 
 /**
  * The id of an LTI tool's tab in a channel's tabs slot, its `$tool` route param too. It names the installation, of

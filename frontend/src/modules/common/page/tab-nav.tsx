@@ -45,7 +45,7 @@ const getChildRoutes = (route: AnyRoute): AnyRoute[] => (Array.isArray(route.chi
 const getTabsSlot = (parentRouteId: string): Slot | undefined => getRoutesById()[parentRouteId]?.options?.staticData?.tabsSlot;
 
 /** The layout route whose bar shows `slot`'s tabs. */
-function getTabsRouteId(slot: Slot): string | undefined {
+export function getTabsRouteId(slot: Slot): string | undefined {
   const routesById = getRoutesById();
   return Object.keys(routesById).find((routeId) => routesById[routeId].options?.staticData?.tabsSlot === slot);
 }

@@ -333,7 +333,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Holds:**
   - `request-bodies`: every array and record in the OpenAPI document has a size bound (a record with a million keys).
   - Zod 4 drops `__proto__` from record and object input.
-  - Enum-keyed records: `toolsConfigSchema` keys must be a channel slot (`backend/src/schemas/tools-config.ts`); quota keys must be in `quotaKeys` (`tenants-schema.ts`); flag objects are `z.object` over config keys (`organization-schema.ts`, `user-schema.ts`).
+  - Enum-keyed records: `channelToolsConfigSchema` keys must be a storable slot of the row's type (`backend/src/schemas/tools-config.ts`); quota keys must be in `quotaKeys` (`tenants-schema.ts`); flag objects are `z.object` over config keys (`organization-schema.ts`, `user-schema.ts`).
   - `applyMergePatch` merges the parsed patch into the stored value and skips `__proto__`, `constructor` and `prototype` keys on top of Zod dropping `__proto__`.
   - The persisted sync store saves `generation`, `caughtUpAt`, `refetchDueAt` and the keyed `orgs` map; `contrast`, `publicAlertsSeen` and `hintsSeen` belong to `ui-store.ts`.
   - `Object.fromEntries` in `auth/sso/helpers/transform-sso-claims.ts` uses config-listed keys (`federation.snapshotClaims`).

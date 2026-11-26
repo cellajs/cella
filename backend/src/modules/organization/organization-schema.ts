@@ -29,7 +29,7 @@ import { setupConfigSchema } from '#/schemas/app-schemas';
 import { channelIncludedSchema } from '#/schemas/channel-included';
 import { auditShape } from '#/schemas/entity-base';
 import { mergePatchSchema } from '#/schemas/merge-patch-schema';
-import { toolsConfigSchema } from '#/schemas/tools-config';
+import { channelToolsConfigSchema } from '#/schemas/tools-config';
 
 const organizationIncludedSchema = channelIncludedSchema('organization');
 
@@ -44,7 +44,7 @@ export const organizationSchema = z
     languageCodes: z.array(languageSchema).min(1),
     organizationFlags: organizationFlagsSchema,
     setupConfig: setupConfigSchema,
-    toolsConfig: toolsConfigSchema,
+    toolsConfig: channelToolsConfigSchema('organization'),
     included: organizationIncludedSchema,
   })
   .openapi('Organization', {
@@ -83,7 +83,7 @@ export const organizationContract = evolutionContract.channel('organization', {
     welcomeText: z.string().max(maxLength.html).nullable(),
     organizationFlags: mergePatchSchema(organizationFlagsSchema),
     setupConfig: mergePatchSchema(setupConfigSchema),
-    toolsConfig: mergePatchSchema(toolsConfigSchema),
+    toolsConfig: mergePatchSchema(channelToolsConfigSchema('organization')),
   })
     .pick({
       slug: true,
