@@ -22,6 +22,7 @@ import { invalidateOnMembershipChange } from '~/query/basic/invalidation-helpers
 import { forEachListQuery, getQueryItems, getSimilarQueries, isInfiniteQueryData, mapListItems } from '~/query/basic/mutate-query';
 import { findMembership, getCachedMemberships } from '~/query/enrichment/helpers';
 import { queryClient } from '~/query/query-client';
+import { noteOwnMembershipWrite } from '~/query/realtime/membership-ops';
 import type { QueryData } from '~/query/types';
 
 const getMembershipChannelKey = (membership: Pick<MembershipBase, 'tenantId' | 'userId' | 'channelType' | 'channelId'>) =>
@@ -45,7 +46,11 @@ const writeMyMemberships = (write: (items: MembershipBase[]) => MembershipBase[]
 const updateMyMembershipCache = (updatedMembership: Partial<MembershipBase> & { id: string }) =>
   writeMyMemberships((items) => items.map((item) => (item.id === updatedMembership.id ? { ...item, ...updatedMembership } : item)), true);
 
-export const addMyMembershipCache = (newMembership: MembershipBase) => writeMyMemberships((items) => [...items, newMembership]);
+/** Adds the membership a create answered with. Its echo on the stream refetches nothing: the create puts its channel in the lists. */
+export const addMyMembershipCache = (newMembership: MembershipBase) => {
+  noteOwnMembershipWrite(newMembership.id);
+  writeMyMemberships((items) => [...items, newMembership]);
+};
 
 /**
  * Matches on channel identity, not on membership id.
@@ -156,6 +161,7 @@ export const useMemberUpdateMutation = () =>
       return context;
     },
     onSuccess: async (updatedMembership, { channelId, channelType, path: { tenantId, organizationId } }, { toastMessage }) => {
+      noteOwnMembershipWrite(updatedMembership.id);
       updateMyMembershipCache(updatedMembership);
       // A memberships read still running may predate this write and undo it on landing. A fresh read replaces it, and catchup, which awaits it, gets the fresh one.
       if (queryClient.getQueryState(meKeys.memberships)?.fetchStatus === 'fetching') {
