@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import type { UserBase } from 'sdk';
 import { type ChannelEntityType, type EntityActionType, hierarchy } from 'shared';
-import { type Slot, surfaceArrangement } from 'shared/placements';
-import type { ContextRole, SlotToolsConfig } from 'shared/tools-config';
+import { type ChannelSlot, type Slot, surfaceArrangement } from 'shared/placements';
+import { type ContextRole, type SlotToolsConfig, stackSlotConfigs, type ToolsConfig } from 'shared/tools-config';
 import type { TKey } from '~/lib/i18n-locales';
 import { onFrontendModuleRegister } from '~/lib/module';
 import type { EnrichedChannel } from '~/modules/entities/types';
@@ -180,6 +180,20 @@ export interface ResolvePlacementOptions {
   /** Channel-stored arrangement for this slot (order + hidden), reconciled fail-closed. */
   slotConfig?: SlotToolsConfig;
 }
+
+/** A channel row as its arrangement reads it: its own layer, and below the organization the layer of the channels above it. */
+export interface ArrangedChannel {
+  toolsConfig?: ToolsConfig;
+  /** Open to every other field: an `included` without the inherited layer, the organization's, shares no field with it. */
+  included?: { inheritedToolsConfig?: ToolsConfig; [field: string]: unknown };
+}
+
+/**
+ * A channel row's arrangement of `slot`: the layer the channels above it store, with its own on top. A row without the
+ * inherited layer, such as one cached before it or built by an optimistic create, resolves with its own until refetched.
+ */
+export const channelSlotConfig = (channel: ArrangedChannel, slot: ChannelSlot): SlotToolsConfig | undefined =>
+  stackSlotConfigs(channel.included?.inheritedToolsConfig?.[slot], channel.toolsConfig?.[slot]);
 
 /** Hiding only, no `requires`/`visibleTo` gating: the app's `surfaces` entry hides the id, or the channel's stored config hides an unlocked one. */
 export function isPlacementHidden(slot: Slot, item: Arrangeable, options: Pick<ResolvePlacementOptions, 'slotConfig'> = {}): boolean {

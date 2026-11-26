@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { type ReactNode, Suspense } from 'react';
 import { appConfig, type ChannelEntityType } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
-import { type ChannelEntityContext, getTools, type PlacementDescriptor, resolvePlacementList } from '~/lib/placements';
+import { type ChannelEntityContext, channelSlotConfig, getTools, type PlacementDescriptor, resolvePlacementList } from '~/lib/placements';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { PageAside } from '~/modules/common/page/aside';
 import { heldContextRoles } from '~/modules/entities/context-roles';
@@ -17,7 +17,7 @@ type ChannelSettingsSection<C extends ChannelEntityType> = PlacementDescriptor &
 };
 
 /**
- * The `${channelType}.settings` tools, ordered by the app config and the row's `toolsConfig`, gated on grants and
+ * The `${channelType}.settings` tools, ordered by the app config and the row's arrangement, gated on grants and
  * context-role pairs. On an archived channel `update` is no grant: the tools that need it hide, and those that need
  * `archive` or `delete` stay.
  * @public
@@ -39,7 +39,7 @@ export function useChannelSettingsSections<C extends ChannelEntityType>(entity: 
   // Cast: registered settings tools carry a render the descriptor type erases
   const tools = getTools(slot) as ChannelSettingsSection<C>[];
 
-  return resolvePlacementList(slot, tools, { grants, pairs, slotConfig: entity.toolsConfig[slot] });
+  return resolvePlacementList(slot, tools, { grants, pairs, slotConfig: channelSlotConfig(entity, slot) });
 }
 
 interface ChannelSettingsPageProps<C extends ChannelEntityType> {

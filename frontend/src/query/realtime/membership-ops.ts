@@ -1,4 +1,5 @@
-import { appConfig, type ChannelEntityType } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
+import { isRecord } from 'shared/utils/as-record';
 import { meKeys, myMembershipsQueryOptions } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import { isFilterSegment } from '~/query/basic/create-query-keys';
@@ -47,6 +48,23 @@ export function invalidateChannelDetails(organizationId: string | null): void {
     queryClient.invalidateQueries({
       queryKey: getEntityQueryKeys(channelType).detail.base,
       predicate: ({ state }) => !organizationId || isInOrganization(state.data, organizationId),
+      refetchType: 'active',
+    });
+  }
+}
+
+/**
+ * Refetches where shown, else marks, the channel lists and the details of a channel and of the channels inside it, after
+ * a change that reaches into them, such as an archive or an arrangement of their pages.
+ */
+export function invalidateChannelsInside(channelId: string): void {
+  for (const channelType of hierarchy.channelTypes) {
+    if (channelType === 'organization') continue;
+    invalidateChannelList(channelType);
+    if (!hasEntityQueryKeys(channelType)) continue;
+    queryClient.invalidateQueries({
+      queryKey: getEntityQueryKeys(channelType).detail.base,
+      predicate: ({ state }) => isRecord(state.data) && hierarchy.isAtOrInside(channelType, state.data, channelId),
       refetchType: 'active',
     });
   }

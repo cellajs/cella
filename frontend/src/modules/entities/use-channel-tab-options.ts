@@ -2,8 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createElement } from 'react';
 import type { ActorRef } from 'sdk';
 import type { EntityActionType, EntityType } from 'shared';
-import type { ToolsConfig } from 'shared/tools-config';
-import type { PlacementGrant } from '~/lib/placements';
+import { type ArrangedChannel, channelSlotConfig, type PlacementGrant } from '~/lib/placements';
 import type { NavTabOptions } from '~/modules/common/page/tab-nav';
 import { heldContextRoles } from '~/modules/entities/context-roles';
 import type { EnrichedChannel } from '~/modules/entities/types';
@@ -31,7 +30,7 @@ export async function loadChannelTabGrants(channel: CanRow): Promise<PlacementGr
 }
 
 /** A channel as its tabs gate on it; a list row may come without its writer or its stored arrangement. */
-type TabsChannel = EnrichedChannel & { createdBy?: ActorRef | null; toolsConfig?: ToolsConfig };
+type TabsChannel = EnrichedChannel & ArrangedChannel & { createdBy?: ActorRef | null };
 
 /**
  * What a channel's page tabs resolve with, on its page bar and in the menu alike: its grants, the context roles held over
@@ -45,7 +44,7 @@ export function useChannelTabOptions(channel: TabsChannel): NavTabOptions {
   return {
     grants: channelTabGrants(can, channel),
     pairs: heldContextRoles(channel, myMemberships?.results ?? []),
-    slotConfig: channel.toolsConfig?.[`${channel.entityType}.tabs`],
+    slotConfig: channelSlotConfig(channel, `${channel.entityType}.tabs`),
     dataTabs: tabs,
     addTabControl: createElement(AddLtiTab, { channel }),
   };

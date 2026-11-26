@@ -49,12 +49,11 @@ export function OrganizationDetailsCard({ organization }: OrganizationCardProps)
 }
 
 export function OrganizationTabsCard({ organization }: OrganizationCardProps) {
-  const { mutate } = useOrganizationUpdateMutation();
+  const { mutateAsync } = useOrganizationUpdateMutation();
   return (
     <TabsArrangementCard
       entity={organization}
-      parentRouteId="/_app/$tenantId/$organizationSlug/organization"
-      onPersist={(toolsConfig) => mutate({ path: { tenantId: organization.tenantId, organizationId: organization.id }, body: { toolsConfig } })}
+      onPersist={(toolsConfig) => mutateAsync({ path: { tenantId: organization.tenantId, organizationId: organization.id }, body: { toolsConfig } })}
     />
   );
 }
