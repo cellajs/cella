@@ -82,6 +82,8 @@ COPY shared/package.json ./shared/
 COPY sdk/package.json ./sdk/
 COPY cdc/package.json ./cdc/
 COPY yjs/package.json ./yjs/
+# The root links `infra` for @cellajs/cli's peer, and a frozen install refuses a missing linked workspace package.
+COPY infra/package.json ./infra/
 
 # =============================================================================
 # backend: Hono API server
