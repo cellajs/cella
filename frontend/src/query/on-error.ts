@@ -51,7 +51,7 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
   // A /me probe without a valid session shows no error: it is how a guard learns that nobody is signed in.
   const probe = path === '/me' && status === 401;
 
-  // The console line with the request id is for developers; Maple's fetch span already records the status and joins the backend trace.
+  // The console line with the request id is for developers. The server reports its own error, in the trace this request carried.
   if (status >= 500) console.error('[api]', type ?? 'server_error', { instance, path, status });
 
   // A query or mutation with a local toast opts out through `meta`.

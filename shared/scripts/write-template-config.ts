@@ -58,11 +58,6 @@ export const templateLeaves: readonly TemplateLeaf[] = [
     comment:
       "MapLibre style URL per color mode for the contact map; empty hides the map. OpenFreeMap needs no key: light 'https://tiles.openfreemap.org/styles/positron', dark 'https://tiles.openfreemap.org/styles/dark'. The CSP allows each style's origin; tiles, fonts and icons must come from that same origin.",
   },
-  {
-    path: 'maplePublicIngestKey',
-    value: "''",
-    comment: 'Maple.dev public ingest key, safe to embed in the frontend bundle; empty turns frontend export off.',
-  },
   { path: 'company', value: `{ name: '${name}', email: 'info@${domain}' }` },
 ];
 

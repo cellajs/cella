@@ -1,9 +1,9 @@
-import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import mdx from '@mdx-js/rollup';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { serwist } from '@serwist/vite';
 import rehypeShiki from '@shikijs/rehype';
 import tailwindcss from '@tailwindcss/vite';
@@ -19,6 +19,7 @@ import svgr from 'vite-plugin-svgr';
 import rootPkg from '../package.json' with { type: 'json' };
 import { appConfig, originEnvName, servicePaths } from '../shared/index.ts';
 import { shareLinkPath } from '../shared/src/share-link.ts';
+import { checkoutRelease } from '../shared/src/utils/checkout-release.ts';
 import { frontendDevPort } from '../shared/src/utils/tool-ports.ts';
 import { codeTheme } from './src/utils/code-theme.ts';
 import { docsEditor } from './vite/docs-editor.ts';
@@ -49,11 +50,7 @@ const FEATURE_LIBS: [name: string, packages: RegExp][] = [
   ['react-scan', /^react-scan$/],
   ['maps', /^maplibre-gl$/],
   ['uppy', /^(@uppy|@transloadit)/],
-  ['replay', /^(rrweb|@rrweb\/[\w-]+|rrweb-snapshot)$/],
 ];
-
-/** The Maple SDK's session replay module: it imports rrweb, and the SDK reaches it by dynamic import only when replay is on. */
-const MAPLE_REPLAY = /[\\/]@maple-dev[\\/]browser[\\/]dist[\\/]replay-session-/;
 
 /** The npm package a module id belongs to, or undefined outside node_modules. */
 const packageOf = (id: string) => {
@@ -110,16 +107,7 @@ const devPort = frontendDevPort();
 const isTunneled = frontendUrl.hostname !== 'localhost';
 
 // The release the bundle reports, as the images report it: the builder's RELEASE_SHA, else the checkout's commit, else 'unknown'
-const releaseSha = (() => {
-  if (process.env.RELEASE_SHA) return process.env.RELEASE_SHA;
-  try {
-    return execSync('git rev-parse HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
-      .toString()
-      .trim();
-  } catch {
-    return 'unknown';
-  }
-})();
+const releaseSha = process.env.RELEASE_SHA || checkoutRelease();
 
 /**
  * OAuth metadata asked for at its RFC 8414 or RFC 9728 location (the well-known name before the issuer or resource
@@ -224,6 +212,8 @@ const viteConfig = {
             { name: 'forms', test: /node_modules[\\/](react-hook-form|@hookform)[\\/]/, minSize: 0 },
             // Tracing initialises during boot, so it is on the boot path by design.
             { name: 'otel', test: /node_modules[\\/]@opentelemetry[\\/]/, minSize: 0 },
+            // The monitoring SDK starts first at boot; one chunk for its packages.
+            { name: 'monitoring', test: /node_modules[\\/]@sentry[\\/]/, minSize: 0 },
             // Curated list of tiny ubiquitous libraries that belong in one shared chunk. Each is on
             // the boot path already; grouping them costs no laziness and saves a request apiece,
             // which the per-package backstop below would otherwise spend on a few hundred bytes.
@@ -237,15 +227,14 @@ const viteConfig = {
               // keeps the lifecycle of whatever imports it. It runs before the feature libraries so
               // that a shared package cannot be captured into one of them: react-dom landed inside
               // the editor chunk that way, and every module needing React then booted the editor.
-              // The feature packages are excluded so the groups below still claim them, and the Maple
-              // replay module so it forms its own lazy chunk with rrweb.
+              // The feature packages are excluded so the groups below still claim them.
               name: (id: string) => {
                 const pkg = packageOf(id);
                 return pkg ? `v-${pkg.replace(/[^\w-]/g, '-')}` : null;
               },
               test: (id: string) => {
                 const pkg = packageOf(id);
-                return Boolean(pkg) && !MAPLE_REPLAY.test(id) && !FEATURE_LIBS.some(([, packages]) => packages.test(pkg as string));
+                return Boolean(pkg) && !FEATURE_LIBS.some(([, packages]) => packages.test(pkg as string));
               },
               minSize: 0,
             },
@@ -347,9 +336,8 @@ const viteConfig = {
         },
       },
     },
-    // Production source maps are public by choice (open-source frontend): Maple has no
-    // sourcemap upload/symbolication, so public maps are what make minified stacks in error
-    // events and session replays readable. Switch to 'hidden' if the frontend ever closes source.
+    // Production source maps are public by choice (open-source frontend): they make a minified stack readable.
+    // Switch to 'hidden' if the frontend ever closes source.
     sourcemap: !isDev,
     manifest: true,
     minify: isDev ? false : 'oxc',
@@ -455,6 +443,15 @@ const viteConfig = {
       thumbnailUrl,
       thumbnailAlt: `${appConfig.name}: ${tagline}`,
     }),
+    // An event names the map of each frame: a debug id in every bundle and its map, and the registration the monitoring
+    // SDK reads (`_sentryDebugIds`). A build given an upload token and a URL uploads its maps to that URL alone.
+    ...(isDev || isStorybook
+      ? []
+      : sentryVitePlugin({
+          telemetry: false,
+          release: { name: releaseSha, inject: false, create: false, finalize: false, setCommits: false },
+          sourcemaps: { injectDebugIds: true, upload: !!(process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_URL) },
+        })),
     ...(isAnalyze ? [visualizer({ filename: 'stats/bundle.html', template: 'treemap', gzipSize: true, brotliSize: true }) as Plugin] : []),
     ...(isStorybook ? [] : [precompress()]),
   ],
@@ -489,7 +486,7 @@ const viteConfig = {
     // Injected into lib/sw.ts, which serves frontendUrl alone and leaves any other host it finds itself on
     __FRONTEND_URL__: JSON.stringify(appConfig.frontendUrl),
     __APP_MODE__: JSON.stringify(appConfig.mode),
-    // Release identifier for observability (lib/maple.ts serviceVersion)
+    // The release the monitoring SDK reports (lib/monitoring.ts)
     __APP_VERSION__: JSON.stringify(releaseSha),
     // Root release version, shown on the docs landing page and in the info panel
     __PKG_VERSION__: JSON.stringify(rootPkg.version),
@@ -536,11 +533,10 @@ if (appConfig.has.pwa && !isStorybook) {
       globDirectory: path.resolve(import.meta.dirname, 'dist'),
       // `mjs` holds the pdf.js worker, which renders a stored PDF attachment offline.
       globPatterns: ['**/*.{js,mjs,css,html,svg,png,ico,woff2,webmanifest}'],
-      // `replay-*` is Maple's session replay with rrweb, loaded only when replay is on.
       // `gleap-*` (support chat) and `maps-*` (map tiles) need the network to do anything.
       // The `grammars-*` chunks are precached, so code blocks and the docs code view highlight offline.
       // Inter's Latin Extended file loads only for a page that uses its glyphs, so installs skip it.
-      globIgnores: ['**/replay-*.js', '**/gleap-*.js', '**/maps-*.{js,css}', '**/static/common/flags/**/*', '**/static/ui/inter-latin-ext-*'],
+      globIgnores: ['**/gleap-*.js', '**/maps-*.{js,css}', '**/static/common/flags/**/*', '**/static/ui/inter-latin-ext-*'],
       maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
     }),
   );
