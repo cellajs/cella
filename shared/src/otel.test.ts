@@ -19,7 +19,7 @@ describe('createOtelSDK', () => {
     propagation.disable();
   });
 
-  it('creates the trace pipeline when spanProcessors are provided (no Maple key)', () => {
+  it('creates the trace pipeline when spanProcessors are provided without an export', () => {
     const mockProcessor = {
       onStart: vi.fn(),
       onEnd: vi.fn(),
@@ -36,7 +36,7 @@ describe('createOtelSDK', () => {
     expect(() =>
       createOtelSDK({
         serviceName: 'test-service',
-        sink: resolveOtlpSink({ MAPLE_SECRET_INGEST_KEY: 'test-key' }),
+        sink: resolveOtlpSink({ OTEL_EXPORTER_OTLP_ENDPOINT: 'http://collector:4318' }),
         metricIntervalMs: 1,
         autoInstrumentations: false,
       }),

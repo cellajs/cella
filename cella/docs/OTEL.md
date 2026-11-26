@@ -5,7 +5,7 @@ This document explains how [OpenTelemetry](https://opentelemetry.io/docs/) trace
 ### TL;DR
 
 Every Node service uses one setup for [OpenTelemetry](https://opentelemetry.io/) traces, metrics,
-and logs. They go to [Maple.dev](https://maple.dev) or to any OTLP endpoint. One trace
+and logs. They go to any OTLP endpoint. One trace
 follows a request from a browser click through the backend. A second follows a database change from
 the database-change worker into the backend.
 
@@ -21,22 +21,17 @@ the database-change worker into the backend.
           │                      │                      │
           └──────────────────────┼──────────────────────┘
                                  ▼
-               OTLP sink: Maple.dev or any OTLP endpoint
+               OTLP sink: any OTLP endpoint
 
     frontend: Maple's browser SDK, a local tracer in development
           └── traceparent on API calls ──▶ backend
 ```
 
-Each service names itself `{slug}-<name>`, such as `{slug}-api` or `{slug}-cdc`. The backend image takes its process mode as the name. Every span, metric and log record carries that name, the release it runs and the environment.
+Each service names itself `{slug}-<name>`, such as `{slug}-api` or `{slug}-cdc`. The backend image takes its process mode as the name. Every span, metric and log record carries that name, the release it runs and the environment. The release is `RELEASE_SHA`, or a checkout's commit, and the browser bundle reports the same one. Its spans and metrics also carry `service.instance.id`, one id per process, which tells two machines of one service apart.
 
 ## Destination
 
-A process exports when one of two variables is set. With neither, telemetry stays in the process.
-
-| Variable | Effect |
-| --- | --- |
-| `MAPLE_SECRET_INGEST_KEY` | All three signals go to Maple.dev. |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | All three signals go to this OTLP base URL, as JSON over HTTP. The Maple key is then ignored. |
+A process exports when `OTEL_EXPORTER_OTLP_ENDPOINT` is set: all three signals go to this OTLP base URL, as JSON over HTTP, gzipped unless `OTEL_EXPORTER_OTLP_COMPRESSION` says otherwise. The destination's key travels in `OTEL_EXPORTER_OTLP_HEADERS`. Without the endpoint, telemetry stays in the process.
 
 ```sh
 # .env: a local Collector, or any backend that takes OTLP over HTTP
@@ -44,8 +39,9 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer <key>
 ```
 
-The other standard `OTEL_*` variables apply too, such as a per-signal endpoint or the trace sampler. A deployed machine receives only the variables its runtime secrets and its service's `env` declare. Declare a secret one beside the
-Maple key in [runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts). Declare any other in the service's `env` in [services.config.ts](../../infra/config/services.config.ts).
+The other standard `OTEL_*` variables apply too, such as a per-signal endpoint or the trace sampler. Without `OTEL_TRACES_SAMPLER`, a service records every request it serves, also one whose caller flags its trace as not sampled; any other span keeps its remote sender's choice.
+
+A deployed machine receives only the variables its runtime secrets and its service's `env` declare. The endpoint and its headers are the runtime secrets `otlp-endpoint` and `otlp-headers`, which an operator sets ([runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts)). Declare any other in the service's `env` in [services.config.ts](../../infra/config/services.config.ts).
 
 The browser reports to Maple through Maple's own SDK and has no OTLP export. It sends errors, traces and web vitals ([maple.ts](../../frontend/src/lib/maple.ts)). It sends no
 session replay, cookies or user id. The privacy policy relies on that. In development a local tracer keeps the spans for the devtools.
@@ -63,6 +59,14 @@ Every worker needs the parts below. CDC is the reference:
 
 Use observable gauges for runtime state, and counters or histograms for request-scoped measurements. Name a metric without its unit and pass the unit as `unit`, such as `lens.transform.duration` with `unit: 'ms'`.
 
+A service started on its own reports its runtime, its process and its database pool once a minute, every 5 seconds in development. `OTEL_METRIC_EXPORT_INTERVAL` sets another interval in milliseconds. A worker passes its main pool to `createOtelSDK` as `pool`.
+
+Under `singleVM` the API reports the runtime and the process once, under its own name, and its own pool alone. The workers folded into it report neither, and their pools go unreported.
+
+An observable gauge exports only what its last callback observed: a value no callback reports any more is gone from the next export. A callback that reads elsewhere, such as the database, fits its read in `otel.callbackTimeoutMs`.
+
+An idle event loop reads a delay of about 10 ms: the delay is sampled every 10 ms and includes that interval.
+
 ## Add tracing
 
 ### Manual spans
@@ -78,13 +82,16 @@ Span names are constants in [span-names.ts](../../shared/src/tracing/span-names.
 | Family | Service | What it shows |
 | --- | --- | --- |
 | HTTP server, outbound fetch, Postgres query | Backend | Every request and query, by the OTel conventions |
+| `nodejs.eventloop.*`, `v8js.*`, `process.*` | Every service | Event loop delay and use, heap and garbage collection, resident memory against its limit, CPU, uptime |
+| `db.client.connection.*` | Every service | Its main pool's connections in use and idle, its maximum, requests waiting |
+| `postgresql.*` | Jobs worker | The server's sessions by state against its limit, the oldest transaction, lock waits, the database's size, commits, rollbacks, deadlocks, temporary files, transaction id age, the WAL its replication slots hold |
 | `sync.*` | Backend | A change arriving from the CDC worker and its fan-out to streams |
 | `lens.*`, `schema.*` | Backend | Schema evolution: transform time, warnings, client versions seen |
 | `cdc.*` | CDC | Each WAL message and recorded activity, replication status, the socket to the API |
 | `yjs.*` | Yjs | Open connections, documents and clients |
 | `sync.message.process`, `client.*` | Frontend | A sync message handled, a failure the app caught and continued from |
 
-A log record carries the trace and span it was written in. The fields of its log line become its attributes.
+A log record carries the trace and span it was written in. The fields of its log line become its attributes. A logged error also becomes `exception.type`, `exception.message` and `exception.stacktrace`, its type named as a span names it. The request log line's body is its method, route, status and duration, never the path.
 
 No service serves a Prometheus scrape target. Metrics leave over OTLP. `/public/metrics` holds only the public counts the website shows.
 
@@ -98,6 +105,8 @@ caller's IP address. A new token route adds its template to `secretPathTemplates
 ## Trace correlation
 
 A request is one trace. The frontend sends `traceparent` on API calls, and the backend's auto-instrumentation continues it. A database change is a second trace. CDC starts one per change and sends its context as `_trace` with the message. The backend's `sync.activitybus.receive` span continues it.
+
+A request span records who acted and where, as the guards resolve them: `tenant.id`, `tenant.name`, `tenant.kind`, `organization.id`, `organization.name` and `user.id`. It records an exception only for an answer of 500 or above. A service reads a caller's `baggage` and passes none on.
 
 The two are not joined. The change a request wrote starts a trace of its own, since the WAL carries no trace context. The client's `sync.message.process` span is a third, since a stream frame carries none either.
 

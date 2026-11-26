@@ -3,6 +3,7 @@ import process from 'node:process';
 import { parseEnv as parseDotenv } from 'node:util';
 import { appConfig, severityLevels } from 'shared';
 import { localDatabaseUrl } from 'shared/local-database';
+import { checkoutRelease } from 'shared/utils/checkout-release';
 import { envFlag, parseEnv } from 'shared/utils/parse-env';
 import { defaultCdcSlotName, loadRootEnv, nodeEnvs } from 'shared/utils/worker-env';
 import { z } from 'zod';
@@ -127,10 +128,10 @@ const envSchema = z
     S3_ACCESS_KEY_ID: z.string().optional(),
     S3_ACCESS_KEY_SECRET: z.string().optional(),
 
-    MAPLE_SECRET_INGEST_KEY: z.string().optional(),
-    // The standard OTLP destination; it wins over the Maple key. The OTel exporters read it and its sibling variables
-    // (OTEL_EXPORTER_OTLP_HEADERS, per-signal endpoints) from the environment themselves.
+    // Where telemetry goes and the headers each export sends. The OTel exporters read both from the environment
+    // themselves, the per-signal variables too.
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
+    OTEL_EXPORTER_OTLP_HEADERS: z.string().optional(),
 
     // Key material the Ed25519 key signing Yjs editor tokens derives from; the relay holds only the public half.
     YJS_TOKEN_PRIVATE_KEY: secretString('YJS_TOKEN_PRIVATE_KEY', 32).optional(),
@@ -163,7 +164,8 @@ const envSchema = z
       .default(appConfig.mode === 'test' ? 'silent' : appConfig.mode === 'production' ? 'info' : 'debug'),
 
     // Build-time git SHA baked into the image, reported by `/health` so a deploy can be verified against CI.
-    RELEASE_SHA: z.string().default('unknown'),
+    // A checkout without it runs its HEAD commit, the release its browser bundle reports.
+    RELEASE_SHA: z.string().default(checkoutRelease),
   })
   .superRefine((values, ctx) => {
     for (const name of missingServiceSecrets(values)) {

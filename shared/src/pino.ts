@@ -71,6 +71,8 @@ const redactSerializedError = (node: unknown, depth = 0): void => {
 /** Pino's `errWithCause` output ({ type, message, stack, cause }) without failed-query values or URL secrets. */
 const serializeError = (err: unknown): unknown => {
   const serialized: unknown = pino.stdSerializers.errWithCause(err as Error);
+  // The error's `name` beside its class (`type`): the OTLP log transport names the exception as a span does.
+  if (err instanceof Error && serialized && typeof serialized === 'object' && !('name' in serialized)) Object.assign(serialized, { name: err.name });
   redactSerializedError(serialized);
   return serialized;
 };

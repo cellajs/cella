@@ -1,4 +1,4 @@
-import { context, propagation, trace } from '@opentelemetry/api';
+import { context, propagation, SpanKind, trace } from '@opentelemetry/api';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createOtelSDK } from '../otel.ts';
@@ -157,7 +157,9 @@ describe('remoteParentContext', () => {
   const sender = { traceId: '0af7651916cd43dd8448eb211c80319c', spanId: 'b7ad6b7169203331' };
 
   /** Spans exported after starting one span per given parent, each in the context `remoteParentContext` builds. */
-  const exportChildrenOf = async (...parents: Parameters<typeof remoteParentContext>[0][]) => {
+  const exportChildrenOf = async (...parents: Parameters<typeof remoteParentContext>[0][]) => exportSpansOf(SpanKind.INTERNAL, parents);
+
+  const exportSpansOf = async (kind: SpanKind, parents: Parameters<typeof remoteParentContext>[0][]) => {
     const exported: ReadableSpan[] = [];
     const otel = createOtelSDK({
       serviceName: 'test-service',
@@ -166,7 +168,7 @@ describe('remoteParentContext', () => {
       flushOnShutdown: true,
     });
     otel.start();
-    for (const parent of parents) trace.getTracer('test').startSpan('receive', {}, remoteParentContext(parent)).end();
+    for (const parent of parents) trace.getTracer('test').startSpan('receive', { kind }, remoteParentContext(parent)).end();
     await otel.shutdown();
     return exported;
   };
@@ -183,5 +185,12 @@ describe('remoteParentContext', () => {
 
     // Positive control: the sampled sender's child is exported, so the missing one was dropped by the flag.
     expect(exported).toHaveLength(1);
+  });
+
+  // A browser SDK that records no traces flags every API request's trace not sampled.
+  it('records a request whose caller flags its trace not sampled: a caller cannot switch its records off', async () => {
+    const exported = await exportSpansOf(SpanKind.SERVER, [{ ...sender, traceFlags: 0 }]);
+
+    expect(exported.map((span) => span.spanContext().traceId)).toEqual([sender.traceId]);
   });
 });

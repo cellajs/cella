@@ -1,3 +1,4 @@
+import process from 'node:process';
 import type { Transform } from 'node:stream';
 import type { Attributes } from '@opentelemetry/api';
 import { context, trace } from '@opentelemetry/api';
@@ -22,6 +23,23 @@ interface PinoConfig {
 const severityNumbers: Record<number, number> = { 10: 1, 20: 5, 30: 9, 40: 13, 50: 17, 60: 21 };
 
 /**
+ * The `exception.*` attributes of a line's serialized `err` or `error`; none without one. The type follows a span's
+ * `recordException` (the error's `code`, else its `name`): one exception has one name on both signals.
+ */
+function exceptionAttributes(line: Record<string, unknown>): Attributes {
+  const error = line.err ?? line.error;
+  if (!error || typeof error !== 'object') return {};
+  const { code, name, type, message, stack } = error as Record<string, unknown>;
+  const exceptionType =
+    code !== undefined && code !== null && code !== '' ? String(code) : typeof name === 'string' ? name : typeof type === 'string' ? type : undefined;
+  return {
+    ...(exceptionType && { 'exception.type': exceptionType }),
+    ...(typeof message === 'string' && message && { 'exception.message': message }),
+    ...(typeof stack === 'string' && { 'exception.stacktrace': stack }),
+  };
+}
+
+/**
  * The OTel log record for one pino line: the message as body, the level as severity, the other fields as attributes.
  * `createLogger`'s mixin stamps the active span onto each line; with all three ids the record joins that trace.
  */
@@ -33,7 +51,7 @@ export function toLogRecord(line: Record<string, unknown>, { messageKey, levels 
     body: body as string,
     severityNumber: severityNumbers[level as number] ?? 0,
     severityText: levels.labels[level as number],
-    attributes: attributes as Attributes,
+    attributes: { ...(attributes as Attributes), ...exceptionAttributes(line) },
     context: linked
       ? trace.setSpanContext(context.active(), { traceId: trace_id, spanId: span_id, traceFlags: trace_flags, isRemote: true })
       : context.active(),
@@ -46,6 +64,9 @@ export function toLogRecord(line: Record<string, unknown>, { messageKey, levels 
  * its own bundle entry next to the service bundle.
  */
 export default async function otelLogTransport({ resourceAttributes, exporterOptions }: OtelLogTransportOptions) {
+  // Gzipped, as ./otel.ts sets it for traces and metrics.
+  // biome-ignore lint/style/noProcessEnv: the OTel exporter reads this env var itself; writing it is the only way to pass the setting through
+  process.env.OTEL_EXPORTER_OTLP_COMPRESSION ??= 'gzip';
   const provider = new LoggerProvider({
     resource: serviceResource(resourceAttributes),
     processors: [new BatchLogRecordProcessor({ exporter: new OTLPLogExporter(exporterOptions) })],

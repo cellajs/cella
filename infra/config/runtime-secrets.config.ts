@@ -134,15 +134,26 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     services: ['backend', 'mcp'],
     group: 'Scaleway AI',
   },
-  mapleSecretIngestKey: {
-    secretName: 'maple-secret-ingest-key',
-    description: 'Maple.dev observability secret ingest key (server-side traces, metrics, logs)',
-    envVar: 'MAPLE_SECRET_INGEST_KEY',
+  // The standard OTLP destination and its headers: one setting per protocol.
+  otlpEndpoint: {
+    secretName: 'otlp-endpoint',
+    description: 'OTLP/HTTP base URL every service exports its traces, metrics and logs to; unset, nothing is exported',
+    envVar: 'OTEL_EXPORTER_OTLP_ENDPOINT',
     required: false,
     valueSource: 'operator',
     generation: 'manual',
     services: ['backend', 'cdc', 'yjs', 'jobs'],
-    group: 'Maple monitoring',
+    group: 'Telemetry export',
+  },
+  otlpHeaders: {
+    secretName: 'otlp-headers',
+    description: "Headers every OTLP export sends, as `name=value` pairs joined by commas: the destination's key",
+    envVar: 'OTEL_EXPORTER_OTLP_HEADERS',
+    required: false,
+    valueSource: 'operator',
+    generation: 'manual',
+    services: ['backend', 'cdc', 'yjs', 'jobs'],
+    group: 'Telemetry export',
   },
   githubClientId: {
     secretName: 'github-client-id',

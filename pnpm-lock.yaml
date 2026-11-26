@@ -85,6 +85,9 @@ importers:
       '@opentelemetry/instrumentation-pg':
         specifier: ^0.78.0
         version: 0.78.0(@opentelemetry/api@1.10.0)
+      '@opentelemetry/instrumentation-runtime-node':
+        specifier: ^0.38.0
+        version: 0.38.0(@opentelemetry/api@1.10.0)
       '@opentelemetry/instrumentation-undici':
         specifier: ^0.35.1
         version: 0.35.1(@opentelemetry/api@1.10.0)
@@ -308,6 +311,9 @@ importers:
       '@opentelemetry/instrumentation-pg':
         specifier: ^0.78.0
         version: 0.78.0(@opentelemetry/api@1.10.0)
+      '@opentelemetry/instrumentation-runtime-node':
+        specifier: ^0.38.0
+        version: 0.38.0(@opentelemetry/api@1.10.0)
       '@opentelemetry/instrumentation-undici':
         specifier: ^0.35.1
         version: 0.35.1(@opentelemetry/api@1.10.0)
@@ -828,6 +834,9 @@ importers:
       '@opentelemetry/instrumentation-pg':
         specifier: ^0.78.0
         version: 0.78.0(@opentelemetry/api@1.10.0)
+      '@opentelemetry/instrumentation-runtime-node':
+        specifier: ^0.38.0
+        version: 0.38.0(@opentelemetry/api@1.10.0)
       '@opentelemetry/instrumentation-undici':
         specifier: ^0.35.1
         version: 0.35.1(@opentelemetry/api@1.10.0)
@@ -919,6 +928,9 @@ importers:
       '@opentelemetry/instrumentation-pg':
         specifier: ^0.78.0
         version: 0.78.0(@opentelemetry/api@1.10.0)
+      '@opentelemetry/instrumentation-runtime-node':
+        specifier: ^0.38.0
+        version: 0.38.0(@opentelemetry/api@1.10.0)
       '@opentelemetry/instrumentation-undici':
         specifier: ^0.35.1
         version: 0.35.1(@opentelemetry/api@1.10.0)
@@ -2086,6 +2098,12 @@ packages:
 
   '@opentelemetry/instrumentation-pg@0.78.0':
     resolution: {integrity: sha512-7EQRvcJ4uiNVwBMJ01y9y3QZJW+DCTKdjX1qvsEG+JCkNLG3DpTuab6fAnbOsUIKybdHFgLOytL/wB6VauBGxA==}
+    engines: {node: '>=22.15.0'}
+    peerDependencies:
+      '@opentelemetry/api': ^1.10.0
+
+  '@opentelemetry/instrumentation-runtime-node@0.38.0':
+    resolution: {integrity: sha512-+q1AaCRYNujeNz/cY4lcw8l+Tnw6O6jmJd8Y+wd/7DaJpwNypHfDN7ZCwPzZXf5KgEJIdgISy/nAamkD4shb8g==}
     engines: {node: '>=22.15.0'}
     peerDependencies:
       '@opentelemetry/api': ^1.10.0
@@ -9101,6 +9119,14 @@ snapshots:
       '@opentelemetry/instrumentation': 0.301.2(@opentelemetry/api@1.10.0)
       '@opentelemetry/semantic-conventions': 1.45.0
       '@opentelemetry/sql-common': 0.43.1(@opentelemetry/api@1.10.0)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@opentelemetry/instrumentation-runtime-node@0.38.0(@opentelemetry/api@1.10.0)':
+    dependencies:
+      '@opentelemetry/api': 1.10.0
+      '@opentelemetry/core': 3.1.1(@opentelemetry/api@1.10.0)
+      '@opentelemetry/instrumentation': 0.301.2(@opentelemetry/api@1.10.0)
     transitivePeerDependencies:
       - supports-color
 
