@@ -26,8 +26,8 @@ importers:
         specifier: ^2.6.4
         version: 2.6.4
       '@cellajs/cli':
-        specifier: ^0.9.0
-        version: 0.9.0(@aws-sdk/client-s3@3.1176.0)(@aws-sdk/s3-request-presigner@3.1176.0)(@pulumi/pulumi@3.277.0(typescript@6.0.3))(@pulumiverse/scaleway@1.62.1(typescript@6.0.3))(@shikijs/themes@4.6.0)(@types/node@26.6.6)(infra@infra)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^0.9.1
+        version: 0.9.1(@aws-sdk/client-s3@3.1176.0)(@aws-sdk/s3-request-presigner@3.1176.0)(@pulumi/pulumi@3.277.0(typescript@6.0.3))(@pulumiverse/scaleway@1.62.1(typescript@6.0.3))(@shikijs/themes@4.6.0)(@types/node@26.6.6)(infra@infra)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@typescript/native-preview':
         specifier: 7.0.0-dev.20260707.2
         version: 7.0.0-dev.20260707.2
@@ -749,8 +749,8 @@ importers:
         specifier: ^3.1176.0
         version: 3.1176.0
       '@cellajs/cli':
-        specifier: ^0.9.0
-        version: 0.9.0(@aws-sdk/client-s3@3.1176.0)(@aws-sdk/s3-request-presigner@3.1176.0)(@pulumi/pulumi@3.277.0(typescript@6.0.3))(@pulumiverse/scaleway@1.62.1(typescript@6.0.3))(@shikijs/themes@4.6.0)(@types/node@26.6.6)(infra@infra)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^0.9.1
+        version: 0.9.1(@aws-sdk/client-s3@3.1176.0)(@aws-sdk/s3-request-presigner@3.1176.0)(@pulumi/pulumi@3.277.0(typescript@6.0.3))(@pulumiverse/scaleway@1.62.1(typescript@6.0.3))(@shikijs/themes@4.6.0)(@types/node@26.6.6)(infra@infra)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@pulumi/pulumi':
         specifier: ^3.277.0
         version: 3.277.0(typescript@6.0.3)
@@ -1328,8 +1328,8 @@ packages:
       react-dom: ^18.0 || ^19.0 || >= 19.0.0-rc
       tailwindcss: ^4.1.12
 
-  '@cellajs/cli@0.9.0':
-    resolution: {integrity: sha512-fZQuCUXE++AZBYec/eZ3rS2ugCph56r0Ht/UiTWP/A2zJE6sTDYaOFWUhdbCNek/8t+mS6cxIiGlzVwKNJXjfg==}
+  '@cellajs/cli@0.9.1':
+    resolution: {integrity: sha512-V8rjp6PhImu5tUAMp3IuJ3uO9X2YX6FYp75iUnKPTpqlC2EeblJKmnqydW/kjMksrUtophTYvydNaK4WxNA3BQ==}
     engines: {node: '>=26'}
     os: [darwin, linux]
     hasBin: true
@@ -8403,7 +8403,7 @@ snapshots:
       - y-protocols
       - yjs
 
-  '@cellajs/cli@0.9.0(@aws-sdk/client-s3@3.1176.0)(@aws-sdk/s3-request-presigner@3.1176.0)(@pulumi/pulumi@3.277.0(typescript@6.0.3))(@pulumiverse/scaleway@1.62.1(typescript@6.0.3))(@shikijs/themes@4.6.0)(@types/node@26.6.6)(infra@infra)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@cellajs/cli@0.9.1(@aws-sdk/client-s3@3.1176.0)(@aws-sdk/s3-request-presigner@3.1176.0)(@pulumi/pulumi@3.277.0(typescript@6.0.3))(@pulumiverse/scaleway@1.62.1(typescript@6.0.3))(@shikijs/themes@4.6.0)(@types/node@26.6.6)(infra@infra)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@inquirer/core': 12.1.1(@types/node@26.6.6)
       '@inquirer/prompts': 8.8.1(@types/node@26.6.6)
