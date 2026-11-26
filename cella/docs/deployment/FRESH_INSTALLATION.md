@@ -10,11 +10,11 @@ It commits the stack file and ends at the first deploy or at your first release.
 
 ## How the CLI runs
 
-Without a local `Pulumi.<mode>.yaml`, `pnpm infra` runs the setup wizard. On a stack that is set up, `pnpm infra` opens on the home screen of the [Infra CLI](../../../infra/README.md).
+Without a local `Pulumi.<mode>.yaml`, `pnpm cella infra` runs the setup wizard. On a stack that is set up, `pnpm cella infra` opens on the home screen of the [Infra CLI](../../../infra/README.md).
 
-The wizard opens on the **launch checklist**: Tools, Repository, Domain, Sign in, Create, Connect, First release and First admin. Each step is ticked from what exists, and the first open one is marked. You can quit at any step: the next `pnpm infra` recommends **Resume setup**, which shows the checklist again and continues where the setup stopped.
+The wizard opens on the **launch checklist**: Tools, Repository, Domain, Sign in, Create, Connect, First release and First admin. Each step is ticked from what exists, and the first open one is marked. You can quit at any step: the next `pnpm cella infra` recommends **Resume setup**, which shows the checklist again and continues where the setup stopped.
 
-A fresh install defaults to **production**. Staging is optional and billed apart, through the same wizard with `pnpm infra --mode staging`. `--defaults` takes every optional default. The admin email then comes from `INFRA_ADMIN_EMAIL`, and the setup stops when that holds no email address.
+A fresh install defaults to **production**. Staging is optional and billed apart, through the same wizard with `pnpm cella infra --mode staging`. `--defaults` takes every optional default. The admin email then comes from `INFRA_ADMIN_EMAIL`, and the setup stops when that holds no email address.
 
 ## 1. Prerequisites
 
@@ -42,7 +42,7 @@ The key serves the setup's Owner moment, pasted once at the **Owner key** prompt
 ## 3. Run the infra CLI
 
 ```bash
-pnpm infra
+pnpm cella infra
 ```
 
 The first setup has two parts. The **Owner moment** runs on the Owner API key you paste:
@@ -69,9 +69,9 @@ The setup goes on to connect the repository and ends at the first deploy:
 1. **Connect.** It offers to commit `infra/Pulumi.<mode>.yaml` and push it, and prints each git command it runs. Other checkouts then see the stack set up, and a scheduled run reads `infra/environments` on the default branch. For staging, the same commit adds the line `staging branch:main` to `infra/environments`, naming your default branch. Without it no scheduled run deploys staging. Off the default branch, or when the push is refused, it says to open a pull request. The environment deploys once that merges.
 2. **First release.** Production deploys the newest release, and a new repository has none. The setup then ends by asking you to publish the first release ([Releases](../RELEASES.md#setup)). The next scheduled run deploys it. Production with a release, and staging, are offered **Deploy now**. The CLI follows that deploy step by step until the app serves, or says whose side a failure is on.
 
-A private repository needs its read key before any deploy ([Repository read key](./KEYS.md#repository-read-key)). Without it a run reads neither `infra/environments` nor the release tags. Decline the deploy, store the key with `pnpm infra repository-key`, then run **Deploy now**.
+A private repository needs its read key before any deploy ([Repository read key](./KEYS.md#repository-read-key)). Without it a run reads neither `infra/environments` nor the release tags. Decline the deploy, store the key with `pnpm cella infra repository-key`, then run **Deploy now**.
 
-A step you declined is done by hand: commit and push the stack file and staging's line, or run `pnpm infra deploy`. From then on the first scheduled run after each change deploys the environment's target. **Deploy logs** shows each run. Revoke the Owner API key at [IAM → API Keys](https://console.scaleway.com/iam/api-keys) if the Owner moment did not, and delete a temporary application. Later sittings make a one-day operator key in the console ([Operator key](./KEYS.md#operator-key)).
+A step you declined is done by hand: commit and push the stack file and staging's line, or run `pnpm cella infra deploy`. From then on the first scheduled run after each change deploys the environment's target. **Deploy logs** shows each run. Revoke the Owner API key at [IAM → API Keys](https://console.scaleway.com/iam/api-keys) if the Owner moment did not, and delete a temporary application. Later sittings make a one-day operator key in the console ([Operator key](./KEYS.md#operator-key)).
 
 ## 5. Sign in as first admin
 

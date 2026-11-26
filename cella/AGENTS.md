@@ -8,7 +8,7 @@ Base config: [shared/config/config.default.ts](../shared/config/config.default.t
 
 ## Before you finish
 
-**Always run `pnpm check` at the repo root after any code change, and only report the work done once it passes clean.** Also run `pnpm generate` if you touched DB schemas, and `pnpm --filter infra exec vitest run` if you touched `infra/`. If `pnpm check` fails, fix it or say so explicitly.
+**Always run `pnpm check` at the repo root after any code change, and only report the work done once it passes clean.** Also run `pnpm generate` if you touched DB schemas, and `pnpm --filter infra test` if you touched `infra/`. The deploy engine itself lives in [cella-cli](https://github.com/cellajs/cella-cli/tree/main/src/infra), with its tests. If `pnpm check` fails, fix it or say so explicitly.
 
 ## Routing
 
@@ -152,7 +152,7 @@ A deploy that never serves its new version almost always hit a boot-time crash, 
 - `pnpm check`: `sdk`, typecheck, `lens:check` and `lint:fix` (Biome, then the style check `pnpm cella style`, which takes paths to check a few files).
 - `pnpm generate`: Drizzle migrations from schema changes. `pnpm sdk`: the OpenAPI spec and the SDK.
 - `pnpm seed`: test data. `pnpm test`: the full suite with summary coverage.
-- `pnpm infra`: the deployment CLI ([Infra CLI](../infra/README.md)). `pnpm cella bench`: load tests ([Load testing](../backend/bench/README.md)).
+- `pnpm cella infra`: the deployment CLI ([Infra CLI](../infra/README.md)). `pnpm cella bench`: load tests ([Load testing](../backend/bench/README.md)).
 - `pnpm testbed`: a seeded copy of the app on a database and ports of its own, beside `pnpm dev`; `pnpm testbed -- <command>` runs a command against it, and ctrl-c or `pnpm testbed stop` ends it.
 - `pnpm cella pentest`: before a release, a cross-tenant access probe, Nuclei and ZAP against a throwaway testbed; `pnpm cella pentest report` prints the last run's findings.
 - `pnpm cella`: template upgrades and more (`@cellajs/cli`). `pnpm story`: Storybook. `pnpm studio`: Drizzle Studio.

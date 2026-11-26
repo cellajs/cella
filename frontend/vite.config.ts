@@ -123,7 +123,7 @@ const releaseSha = (() => {
 
 /**
  * OAuth metadata asked for at its RFC 8414 or RFC 9728 location (the well-known name before the issuer or resource
- * path), proxied to the path its service publishes it at. Production redirects there (`infra/caddy/Caddyfile`).
+ * path), proxied to the path its service publishes it at. Production redirects there (`cella-cli:src/infra/caddy/Caddyfile`).
  */
 const metadataProxy = (name: 'oauth-authorization-server' | 'oauth-protected-resource', prefix: string, port: number) => {
   const location = `/.well-known/${name}`;

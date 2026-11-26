@@ -1,4 +1,4 @@
-import type { EngineConfig } from 'infra/config/engine-config';
+import type { EngineConfig } from '@cellajs/cli/infra';
 
 /** Minimal cella-shaped EngineConfig fixture for pure derivation tests. */
 export function fakeConfig(overrides: Partial<EngineConfig> = {}): EngineConfig {
@@ -32,12 +32,3 @@ export function fakeConfig(overrides: Partial<EngineConfig> = {}): EngineConfig 
     ...overrides,
   };
 }
-
-/** A minimal valid `defineServices` entry to hang port and path variations on. */
-export const fakeService = {
-  image: 'r/x:latest',
-  port: 4000,
-  startPeriod: '10s',
-  replacementStrategy: 'start-first',
-  instanceType: 'DEV1-S',
-} as const;

@@ -41,8 +41,7 @@ export default defineConfig({
         'frontend/src/**/*.{ts,tsx}',
         'yjs/src/**/*.ts',
         'shared/**/*.ts',
-        'infra/{cli,compose,config,lib,reconciler,resources,tasks,tests}/**/*.ts',
-        'infra/*.ts',
+        'infra/config/**/*.ts',
         'sdk/src/**/*.ts',
       ],
       exclude: [

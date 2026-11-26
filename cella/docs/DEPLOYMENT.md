@@ -63,7 +63,7 @@ Resources and traffic flow:
 
 ## Deploys
 
-Every deploy is a run of the environment's [main job](#the-main-job) for its **target**, the commit the environment should run. A [scheduled run](#the-schedule) deploys it once the target moves. A rotation, an action that clears a block and `pnpm infra deploy` start one too.
+Every deploy is a run of the environment's [main job](#the-main-job) for its **target**, the commit the environment should run. A [scheduled run](#the-schedule) deploys it once the target moves. A rotation, an action that clears a block and `pnpm cella infra deploy` start one too.
 
 ### What a deploy deploys
 
@@ -90,7 +90,7 @@ Merging a line is not publishing a release. The file's rules:
 - **Default branch:** a change counts from its merge, since a scheduled run reads the file there.
 - **Unreadable file:** starts nothing.
 
-**Pausing staging.** Removing staging's line stops its deploys, not its cost. Its machines keep running. To stop the cost, tear staging down with `pnpm infra teardown --mode staging`.
+**Pausing staging.** Removing staging's line stops its deploys, not its cost. Its machines keep running. To stop the cost, tear staging down with `pnpm cella infra teardown --mode staging`.
 
 **Rollback.** No old machine is kept to switch back to, so a rollback deploys an earlier release on the same forward path ([Roll back](./deployment/RUNBOOKS.md#roll-back)).
 
@@ -108,7 +108,7 @@ Each environment has a Serverless Jobs definition, `<slug>-main`. Every run of i
 - the **engine image** its runs start from, by digest
 - the [schedule](#the-schedule) that starts them
 
-**Deploy now** (`pnpm infra deploy`) starts a run on your operator key and follows it step by step to its end. It reads the target from this checkout's `infra/environments`, not the default branch's.
+**Deploy now** (`pnpm cella infra deploy`) starts a run on your operator key and follows it step by step to its end. It reads the target from this checkout's `infra/environments`, not the default branch's.
 
 A run ends in one of five outcomes:
 
@@ -151,7 +151,7 @@ Every deploy writes one record to the environment's boot-diag bucket and updates
 
 Every new machine also uploads a **boot account** at the end of its first boot: its boot log and a crashed container's output. Both are scrubbed of secrets before upload. A failed switch's record names each new machine's account.
 
-**Deploy logs**, `pnpm infra logs` on the observer key, lists the last ten deploys and shows one in full. `--machines` shows each service's newest boot account. `--sha <sha>` shows every account of one release with the builder's report.
+**Deploy logs**, `pnpm cella infra logs` on the observer key, lists the last ten deploys and shows one in full. `--machines` shows each service's newest boot account. `--sha <sha>` shows every account of one release with the builder's report.
 
 Records, boot accounts and archives are kept for 60 days. The deploy key cannot erase a record, since the bucket keeps versions. Deploy logs flags three anomalies:
 
