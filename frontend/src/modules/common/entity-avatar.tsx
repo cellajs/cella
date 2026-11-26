@@ -39,7 +39,7 @@ export const EntityAvatar = memo(function EntityAvatar({ entity = {}, icon: Icon
       <AvatarFallback className={cn('@container transition-colors', avatarBackground)}>
         <span className="sr-only">{name}</span>
         {/* Trimmed to cap height and baseline, so the fallback centers the letters: Inter's line box sits them about 1px high */}
-        <div
+        <span
           aria-hidden
           className={cn(
             'more-contrast:text-black/85 text-[50cqi] leading-none font-semibold text-black/50 transition-colors [text-box:trim-both_cap_alphabetic]',
@@ -48,7 +48,7 @@ export const EntityAvatar = memo(function EntityAvatar({ entity = {}, icon: Icon
         >
           {initial ?? '-'}
           {isUser && secondInitial}
-        </div>
+        </span>
       </AvatarFallback>
     </Avatar>
   );

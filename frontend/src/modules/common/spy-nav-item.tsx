@@ -47,7 +47,7 @@ export function SpyNavItem({ id, isActive, layoutId, group, staticIndicator, cla
 
   return (
     <div className={cn(groupClassName.row, 'relative')} data-spy-link={id} data-active={isActive}>
-      {isActive && <IndicatorBar layoutId={layoutId} animate={!staticIndicator} className="top-2 bottom-2" />}
+      {isActive && <IndicatorBar layoutId={layoutId} animate={!staticIndicator} className="inset-y-2" />}
       <Button
         variant="nav"
         size="sm"

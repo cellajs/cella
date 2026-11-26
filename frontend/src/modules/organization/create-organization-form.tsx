@@ -100,9 +100,7 @@ function CreateOrganizationForm({ dialog: isDialog, callback }: CreateOrganizati
             render={({ field }) => (
               <FormItem name="draft" className="flex flex-row items-center gap-3">
                 <Switch checked={!!field.value} onCheckedChange={field.onChange} />
-                <div>
-                  <FormLabel help={t('c:start_as_draft.text', { prepareRoles: prepareRolesText('organization') })}>{t('c:start_as_draft')}</FormLabel>
-                </div>
+                <FormLabel help={t('c:start_as_draft.text', { prepareRoles: prepareRolesText('organization') })}>{t('c:start_as_draft')}</FormLabel>
               </FormItem>
             )}
           />

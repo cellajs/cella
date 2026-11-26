@@ -55,7 +55,7 @@ export const buttonVariants = cva(
         'icon-xs': 'size-8',
         'icon-sm': 'size-9',
         icon: 'size-10',
-        cell: 'h-full px-0 py-0',
+        cell: 'h-full p-0',
         auto: 'h-auto',
       },
     },
