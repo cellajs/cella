@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import pc from 'picocolors';
-import { appConfig } from 'shared';
+import { appConfig, isStrategyEnabled } from 'shared';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { registerOpenApiDocs, writeOpenApiCache } from '#/core/openapi-registration';
 import { baseDb } from '#/db/db';
@@ -12,12 +12,15 @@ import { serveApi, serveInternal } from '#/lib/listeners';
 import { stopPgBoss } from '#/lib/pg-boss';
 import { connectSystemRoom } from '#/lib/system-room';
 import { otel } from '#/lib/tracing';
+import { assertBroughtAlongRolesOpenNothing } from '#/modules/auth/flows/lti/operations/admit-lti-person';
 import { closeChangeBundles } from '#/modules/entities/stream/change-bundles';
 import { baseApp as app } from '#/routes';
 import { timestamp } from '#/utils/console';
 
 otel.start();
 otel.verifyConnection();
+
+if (isStrategyEnabled('lti')) assertBroughtAlongRolesOpenNothing();
 
 let server: ReturnType<typeof serveApi> | undefined;
 let internalListener: ReturnType<typeof serveInternal> | undefined;
