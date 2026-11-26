@@ -17,6 +17,11 @@ ignoredOptionalDependencies:
   - html2canvas
 # A version installs a day after its publish (supply-chain guard), so a release that needs a new create-cella waits for it
 minimumReleaseAge: 1440
+# The deploy engine ships in @cellajs/cli, and an engine fix should reach an app the hour it is released. Its releases
+# publish only from cella-cli's release workflow by OIDC trusted publishing; its prereleases carry the `next` dist-tag,
+# which no caret range matches.
+minimumReleaseAgeExclude:
+  - '@cellajs/cli'
 overrides:
   # BlockNote's shadcn kit asks for lucide-react 0.525; with the app's copy its few icons follow LucideProvider's stroke.
   '@blocknote/shadcn>lucide-react': ^1.59.0

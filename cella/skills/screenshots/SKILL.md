@@ -80,8 +80,8 @@ the product by: a half-loaded table or a stray tooltip is worth another run.
   of slides changes. `README.md` references two of the same files by path. A changed `format` leaves the files of the
   old one behind: delete them.
 - Replacing a file in place is enough for production: the deploy re-uploads a `static/` file whose content changed
-  (`infra/tasks/frontend-assets.ts`). `index.html` names the thumbnail with a hash of its content, so a link preview
-  fetches a re-shot one once the vendor reads the page again.
+  (`cella-cli:src/infra/tasks/frontend-assets.ts`). A link preview fetches a re-shot thumbnail once the vendor reads the page
+  again: `index.html` names it with a hash of its content.
 
 ## In an app built on cella
 

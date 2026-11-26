@@ -77,7 +77,7 @@ pnpm cella
 Sets up and deploys a full stack on Scaleway ([infra guide](../../infra/README.md)).
 
 ```bash
-pnpm infra
+pnpm cella infra
 ```
 
 ## Load tests

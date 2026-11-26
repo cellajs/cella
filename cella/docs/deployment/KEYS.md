@@ -107,7 +107,7 @@ On a shared host the services share their secrets: they read one env file.
 
 A privileged action runs on a key that ends within a day. It is a key of the `<app>-operator` application, or your own as a member of the `<app>-operators` group. It dies by itself. Nothing is stored, and nothing is revoked after.
 
-`pnpm infra` → **More** → **Set up operators** (`pnpm infra operators`) runs once per app with your Owner API key. A first setup runs it for you. It makes the `<app>-operator` application and the `<app>-operators` group, and writes one policy, the group's. The application is a member of the group, so it holds what every member holds. It makes no key.
+`pnpm cella infra` → **More** → **Set up operators** (`pnpm cella infra operators`) runs once per app with your Owner API key. A first setup runs it for you. It makes the `<app>-operator` application and the `<app>-operators` group, and writes one policy, the group's. The application is a member of the group, so it holds what every member holds. It makes no key.
 
 A key of either keeps working, since the policy is written in place. A new environment's setup adds its project to it. Staging and production share one set of operators, since the name is production's slug.
 
@@ -132,7 +132,7 @@ The inventory in **Full status** names a key of the operator application that ou
 The builder fetches the target commit from the repository the root `package.json` names. The main job reads the environments file and lists the release tags there, with the same key. A public repository needs nothing. A private one needs a read-only key in each environment before its first deploy:
 
 1. Make a fine-grained GitHub token with an expiry for that repository only. Give it **Contents: read** and nothing else.
-2. Run `pnpm infra repository-key` on your operator key. It checks that the repository answers to the token. Then it stores the token in the environment's runtime folder, where the next scheduled run reads it.
+2. Run `pnpm cella infra repository-key` on your operator key. It checks that the repository answers to the token. Then it stores the token in the environment's runtime folder, where the next scheduled run reads it.
 
 The token goes as a header with each fetch, in no URL and no file the build sees. Run the action again to replace it before it expires. An empty answer removes it.
 
@@ -146,7 +146,7 @@ A machine keeps the env file of its first boot, and a deploy of the release it r
 
 ### Rotate secrets
 
-**Rotate secrets** (`pnpm infra rotate-secrets`, operator key) sets a fresh password on every database role. It also sets a fresh value for every generated secret marked `rotatable` in [runtime-secrets.config.ts](../../../infra/config/runtime-secrets.config.ts). The running machines keep the old values in their env files until the deploy replaces them. Meanwhile the database refuses the new connections they open.
+**Rotate secrets** (`pnpm cella infra rotate-secrets`, operator key) sets a fresh password on every database role. It also sets a fresh value for every generated secret marked `rotatable` in [runtime-secrets.config.ts](../../../infra/config/runtime-secrets.config.ts). The running machines keep the old values in their env files until the deploy replaces them. Meanwhile the database refuses the new connections they open.
 
 **Env vars & secrets** lists the values infra makes as one row, with the date of the last rotation. That row opens **Rotate secrets**.
 
@@ -160,7 +160,7 @@ Third-party keys are pasted anew in **Env vars & secrets**.
 
 ### Rotate keys
 
-`pnpm infra` → **More** → **Rotate keys** replaces the deploy key and the uploads key, and deletes the old ones. It asks for your operator key first, then an Owner API key.
+`pnpm cella infra` → **More** → **Rotate keys** replaces the deploy key and the uploads key, and deletes the old ones. It asks for your operator key first, then an Owner API key.
 
 After a compromise, one **Rotate keys** per environment covers the deploy and uploads keys. The observer's reads no key, and the operators' end within the day. The inventory names a key an intruder added. Delete it in the console.
 

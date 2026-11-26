@@ -1,5 +1,5 @@
-import { enabledServices } from '../lib/services';
-import type { EngineConfig } from './engine-config';
+import type { EngineConfig } from '@cellajs/cli/infra';
+import { appServices } from './services.config.ts';
 
 /**
  * Who may frame a document under `/embed/`: the LTI platforms `ltiFrameAncestors` names, nobody while it names none.
@@ -17,7 +17,7 @@ export function embedFrameAncestors(appConfig: EngineConfig): string {
  * and the map styles. A document under `/embed/` passes `embedFrameAncestors`; every other one is framed by the app alone.
  */
 export function frontendCsp(appConfig: EngineConfig, frameAncestors = "'self'"): string {
-  const enabledServiceSlugs = new Set(enabledServices(appConfig.services).map((service) => service.slug));
+  const enabledServiceSlugs = new Set(Object.keys(appServices).filter((slug) => appConfig.services[slug]?.enabled !== false));
   const serviceUrls = appConfig.services as Record<string, { publicUrl?: string }>;
   const servicePublicUrl = (slug: string): string => {
     const url = serviceUrls[slug]?.publicUrl;

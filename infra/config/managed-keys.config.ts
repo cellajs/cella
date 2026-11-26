@@ -1,4 +1,4 @@
-import { defineManagedKeys } from '../lib/managed-keys-config';
+import { defineManagedKeys } from '@cellajs/cli/infra';
 
 /** Registry of scoped IAM keys the CLI can mint into operator runtime secrets. Every mint or rotation requires operator confirmation. */
 export const managedKeysConfig = defineManagedKeys({

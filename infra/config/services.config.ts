@@ -1,4 +1,4 @@
-import { defineServices } from '../compose/infrastructure';
+import { defineServices, frontendProxyDockerfile } from '@cellajs/cli/infra';
 
 /**
  * Registry synthesized into Compose and deployment resources: an entry controls the service's machine, routing, profile
@@ -122,9 +122,9 @@ export const appServices = defineServices({
   },
 
   frontend: {
-    // Production-only reverse proxy in front of the SPA bucket, built per release from infra/caddy/Dockerfile; its runtime knobs are ORIGIN_HOST and CSP.
+    // Production-only reverse proxy in front of the SPA bucket, built per release from the engine's proxy folder; its runtime knobs are ORIGIN_HOST and CSP.
     image: '${REGISTRY}/frontend:${FRONTEND_TAG:-latest}',
-    dockerfile: 'infra/caddy/Dockerfile',
+    dockerfile: frontendProxyDockerfile,
     port: 80,
     startPeriod: '10s',
     replacementStrategy: 'start-first',

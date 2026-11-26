@@ -311,7 +311,7 @@ services:
       instanceType: DEV1-S
       drainPolicy: requests
       lbRoute: default
-      dockerfile: infra/caddy/Dockerfile
+      dockerfile: /engine-assets/caddy/Dockerfile
       placement: host
   infra-agent:
     image: ${REGISTRY}/infra-agent:${AGENT_TAG}
