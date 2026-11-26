@@ -41,6 +41,13 @@ export function PrivacyText() {
           nothing else. Earlier versions of stored files are kept as long. What we remove is gone from every copy {appConfig.retention.backupDays}{' '}
           days later.
         </p>
+        <p>
+          When our servers report to a monitoring service, they send a record of each request they handle: its time, route, address without secrets,
+          status and duration, your browser, your user id, the id and name of your organization and of its workspace, and, when our error monitoring
+          runs in your browser, the random id of the page load that made it. Their log lines carry your user id, the id of your sign-in session, and
+          an error's message and stack. These records leave out your IP address, passwords and sign-in tokens, and the database queries in them carry
+          none of the values you entered.
+        </p>
       </LegalSection>
 
       <LegalSection subject="privacy" id="data-processing">
@@ -76,10 +83,11 @@ export function PrivacyText() {
             {monitoringEnabled && (
               <li>
                 Our error monitoring sets no cookies and stores nothing in your browser. For each page load it sends a random id, your browser and the
-                app's release, with your user id when you are signed in. When something fails it also sends the error, the page's address and the one
-                you came from without their secrets, your browser's language and time zone, and the steps before it: pages, the elements you clicked
-                or typed in (not what you typed), requests and the app's console warnings and errors. It asks the monitoring service not to keep your
-                IP address.
+                app's release, with your user id when you are signed in. When something fails it also sends, with your user id, the error, the page's
+                address and the one you came from without their secrets, your browser's language and time zone, and the steps before it: pages, the
+                elements you clicked or typed in (not what you typed), requests and the app's console warnings and errors. It asks the monitoring
+                service not to keep your IP address. Most requests to our servers carry the page load's random id, and the records our servers report
+                of those requests keep it.
               </li>
             )}
             {appConfig.has.chatSupport && <li>The support chat by Gleap sets its own cookies.</li>}
