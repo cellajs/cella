@@ -33,7 +33,6 @@
   "disabled": "Uitgeschakeld",
   "docs.api_reference": "API-referentie",
   "docs.entity_tag": "{{name}}-entiteit",
-  "docs.switched_off_feature": "Uitgeschakeld op deze server: het vereist de functie {{name}}.",
   "email.comment.subject": "{{actorName}} reageerde in {{channelName}}",
   "email.comment.title": "{{actorName}} reageerde",
   "email.digest_line.comment": "Nieuwe reactie op <strong>{{title}}</strong>",

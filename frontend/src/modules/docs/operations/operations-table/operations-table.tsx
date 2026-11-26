@@ -1,7 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary } from 'sdk/docs-types';
-import { isSwitchOn } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
 import type { SortColumn } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
@@ -81,8 +80,6 @@ export function OperationsTable() {
               rows={sortedOperations}
               hasNextPage={false}
               rowKeyGetter={(row) => row.hash}
-              // An operation whose config switch is off in this app dims: the API refuses it, the docs still list it
-              rowClass={(row) => (row.enabledBy && !isSwitchOn(row.enabledBy) ? 'opacity-60' : undefined)}
               isFiltered={!!q || !!filter}
               onResetFilters={() => setSearch({ q: '', filter: undefined })}
               rowHeight={42}

@@ -14,7 +14,7 @@ import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { openOperationSheet } from '~/modules/docs/operations/operation-detail';
 import { openExamplesSheet } from '~/modules/docs/operations/operation-examples';
 import { ShortPath } from '~/modules/docs/operations/short-path';
-import { SwitchedOffBadge } from '~/modules/docs/operations/switched-off-badge';
+import { isSwitchedOff, StruckText, SwitchedOffBadge } from '~/modules/docs/operations/switched-off-badge';
 import { TagBadges } from '~/modules/docs/tag-table';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
@@ -98,7 +98,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
       sortable: true,
       width: 80,
       minWidth: 80,
-      renderCell: ({ row }) => <MethodLabel method={row.method} />,
+      renderCell: ({ row }) => <MethodLabel method={row.method} off={isSwitchedOff(row.enabledBy)} />,
     },
     {
       key: 'path',
@@ -126,7 +126,9 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         >
           {/* The underline sits on the path alone: on the button it would reach the badge too */}
           <CellLabel dir="rtl" className="min-w-0 flex-1 text-left">
-            <ShortPath path={row.path} />
+            <StruckText struck={isSwitchedOff(row.enabledBy)}>
+              <ShortPath path={row.path} />
+            </StruckText>
           </CellLabel>
           <SwitchedOffBadge enabledBy={row.enabledBy} />
         </Button>

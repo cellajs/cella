@@ -7,6 +7,7 @@ import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import { operationLinkOptions } from '~/modules/docs/helpers/reference-links';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { filterOperations } from '~/modules/docs/operations/operations-filter';
+import { isSwitchedOff, StruckText } from '~/modules/docs/operations/switched-off-badge';
 import { nonEmptyTagsQueryOptions, operationsByTagQueryOptions, prefetchTagDetails } from '~/modules/docs/query';
 import { CollapsibleTagItem } from '~/modules/docs/sidebar/collapsible-tag-item';
 import { SidebarHashItem } from '~/modules/docs/sidebar/sidebar-hash-item';
@@ -22,11 +23,14 @@ function useOperationSearch(): OperationSearch {
 
 function OperationItemBase({ operation, isActive }: { operation: GenOperationSummary; isActive: boolean }) {
   const search = useOperationSearch();
+  const off = isSwitchedOff(operation.enabledBy);
 
   return (
     <SidebarHashItem link={operationLinkOptions(operation)} isActive={isActive} isHidden={!filterOperations([operation], search).length}>
-      <span className="flex-1 truncate">{operation.summary || operation.id}</span>
-      <MethodLabel method={operation.method} />
+      <span className="flex-1 truncate">
+        <StruckText struck={off}>{operation.summary || operation.id}</StruckText>
+      </span>
+      <MethodLabel method={operation.method} off={off} />
     </SidebarHashItem>
   );
 }
@@ -49,8 +53,9 @@ export function OperationsSidebar({ activeTag, isOnRoute }: { activeTag?: string
     <SidebarMenu className="no-focus-ring:gap-0 gap-1 p-0 pt-1 pb-4">
       {tags.map((tag) => {
         const isExpanded = activeTag === tag.name;
+        const allOperations = operationsByTag[tag.name] ?? [];
         // Only pass items for expanded tag to avoid mounting all operations upfront
-        const tagOperations = isExpanded ? (operationsByTag[tag.name] ?? []) : [];
+        const tagOperations = isExpanded ? allOperations : [];
         const isAtTag = hash === `tag/${tag.name}`;
         const isActive = isAtTag || hash.startsWith(`tag/${tag.name}/`);
         const activeOperationIndex = tagOperations.findIndex((op) => op.hash === hash);
@@ -61,7 +66,8 @@ export function OperationsSidebar({ activeTag, isOnRoute }: { activeTag?: string
             key={tag.name}
             items={tagOperations}
             {...{ tag, isExpanded, layoutId, isActive, isAtTag, isOnRoute, renderItem, itemKey }}
-            isHidden={!filterOperations(operationsByTag[tag.name] ?? [], search).length}
+            isHidden={!filterOperations(allOperations, search).length}
+            isOff={allOperations.length > 0 && allOperations.every((op) => isSwitchedOff(op.enabledBy))}
             activeItemIndex={activeOperationIndex}
             onPrerender={() => {
               prefetchTagDetails(tag.name);

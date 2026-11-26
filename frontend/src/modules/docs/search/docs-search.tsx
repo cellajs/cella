@@ -17,6 +17,7 @@ import { type HistoryEntry, SearchHistoryGroup } from '~/modules/common/search-h
 import { SearchRowIcon } from '~/modules/common/search-row-icon';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
+import { StruckText } from '~/modules/docs/operations/switched-off-badge';
 import { getDocsSearchClient } from '~/modules/docs/search/client';
 import { useDocsSearchStore } from '~/modules/docs/search/docs-search-store';
 import type { DocsSearchResult, DocsSearchScope } from '~/modules/docs/search/types';
@@ -223,14 +224,16 @@ function DocsSearchRow({ item }: { item: DocsSearchResult }) {
             ))}
           </span>
         )}
-        <span className={cn('truncate font-medium', item.deprecated && 'text-muted-foreground line-through')}>
-          <HighlightText text={item.title} />
+        <span className="truncate font-medium">
+          <StruckText struck={item.deprecated || item.switchedOff}>
+            <HighlightText text={item.title} />
+          </StruckText>
         </span>
       </div>
       {/* After the title: its width differs per method, and text keeps one column */}
       {item.method && (
         <span className="flex h-5 items-center">
-          <MethodLabel method={item.method} />
+          <MethodLabel method={item.method} off={item.switchedOff} />
         </span>
       )}
     </div>

@@ -2,6 +2,7 @@ import { components, create, insertMultiple, search, type Tokenizer } from '@ora
 import type { GenComponentSchema, GenOperationSummary } from 'sdk/docs-types';
 import { parseTerms, trimAroundMatch } from 'shared/utils/text-match';
 import { operationLinkOptions, schemaLinkOptions } from '~/modules/docs/helpers/reference-links';
+import { isSwitchedOff } from '~/modules/docs/operations/switched-off-badge';
 import type { DocsSearchResult, DocsSearchResultType, DocsSearchScope } from '~/modules/docs/search/types';
 
 /** Everything the engine indexes for one docs page. */
@@ -90,6 +91,7 @@ const operationDoc = (op: GenOperationSummary, labels: EngineLabels): SearchDoc 
   ...operationLinkOptions(op),
   method: op.method,
   deprecated: op.deprecated,
+  switchedOff: isSwitchedOff(op.enabledBy),
 });
 
 const schemaDoc = (schema: GenComponentSchema, labels: EngineLabels): SearchDoc => ({

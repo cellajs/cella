@@ -16,7 +16,7 @@ import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { OperationAccess } from '~/modules/docs/operations/operation-access';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
 import { OperationSection } from '~/modules/docs/operations/operation-section';
-import { SwitchedOffBadge } from '~/modules/docs/operations/switched-off-badge';
+import { isSwitchedOff, StruckText, SwitchedOffBadge } from '~/modules/docs/operations/switched-off-badge';
 import { tagDetailsQueryOptions, useDefinitionIndexes } from '~/modules/docs/query';
 import { useSchemaRefLink } from '~/modules/docs/schemas/schema-detail';
 import { SpecText } from '~/modules/docs/spec-text';
@@ -104,16 +104,18 @@ function OperationDetail({ operation, detail: detailProp, className }: Operation
       </CardHeader>
       <CardContent>
         <div className="mb-4 flex items-center gap-4 max-sm:flex-col max-sm:items-start max-sm:gap-1">
-          <MethodLabel method={operation.method} size="md" />
+          <MethodLabel method={operation.method} size="md" off={isSwitchedOff(operation.enabledBy)} />
           <code className="text-muted-foreground break-all sm:text-lg">
-            <HighlightText text={operation.path} />
+            <StruckText struck={isSwitchedOff(operation.enabledBy)}>
+              <HighlightText text={operation.path} />
+            </StruckText>
           </code>
           {operation.deprecated && (
             <Badge variant="outline" className="border-warning text-warning">
               {t('c:deprecated')}
             </Badge>
           )}
-          <SwitchedOffBadge enabledBy={operation.enabledBy} withReason />
+          <SwitchedOffBadge enabledBy={operation.enabledBy} />
         </div>
 
         <OperationAccess operation={operation} />

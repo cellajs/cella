@@ -4,6 +4,7 @@ import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { expandRowLinkClass, handleExpandKeys, RowExpandToggle } from '~/modules/common/row-expand-toggle';
 import { clearedOperationSearch } from '~/modules/docs/operations/operations-filter';
+import { StruckText } from '~/modules/docs/operations/switched-off-badge';
 import { ActiveIndicator } from '~/modules/docs/sidebar/active-indicator';
 import { SidebarRail } from '~/modules/docs/sidebar/docs-sidebar-section';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
@@ -34,6 +35,8 @@ interface CollapsibleTagItemProps<T> {
   isOnRoute: boolean;
   /** The page's search hides this tag: its link clears the search. */
   isHidden?: boolean;
+  /** Every operation under the tag is switched off. */
+  isOff?: boolean;
   activeItemIndex: number;
   layoutId: string;
   renderItem: (item: T, isActive: boolean) => ReactNode;
@@ -51,6 +54,7 @@ function CollapsibleTagItemBase<T>({
   isAtTag,
   isOnRoute,
   isHidden,
+  isOff,
   activeItemIndex,
   layoutId,
   renderItem,
@@ -88,7 +92,9 @@ function CollapsibleTagItemBase<T>({
           // Leaves the mobile sheet open, so expanding a tag shows its items
           onClick={() => requestAnimationFrame(() => scrollToSectionById(hash))}
         >
-          <span className="truncate">{tag.name}</span>
+          <span className="truncate">
+            <StruckText struck={isOff}>{tag.name}</StruckText>
+          </span>
           <span className="text-faint-foreground text-xs opacity-0 transition-opacity group-data-[expanded=true]/tag:hidden sm:group-hover/expand-row:opacity-100">
             {tag.count}
           </span>
@@ -114,6 +120,7 @@ const collapsibleTagItemEqual = <T,>(prev: CollapsibleTagItemProps<T>, next: Col
   prev.isAtTag === next.isAtTag &&
   prev.isOnRoute === next.isOnRoute &&
   prev.isHidden === next.isHidden &&
+  prev.isOff === next.isOff &&
   prev.isExpanded === next.isExpanded &&
   prev.activeItemIndex === next.activeItemIndex &&
   prev.tag === next.tag &&
