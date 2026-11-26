@@ -1,12 +1,16 @@
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { BookOpenIcon, ExternalLinkIcon, InfoIcon, LifeBuoyIcon, MailIcon } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { HealthStatus } from 'shared/health-status';
+import { useOnlineManager } from '~/hooks/use-online-manager';
+import type { TKey } from '~/lib/i18n-locales';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { askForHelp } from '~/modules/common/error-helpers';
+import { collapseMotion } from '~/modules/common/motion-presets';
 import { StatusDot, type StatusDotVariant } from '~/modules/common/status-dot';
 import { NavSheetDivider } from '~/modules/navigation/nav-sheet-divider';
 import { NavSheetRow } from '~/modules/navigation/nav-sheet-row';
@@ -15,6 +19,7 @@ import { type GradedStatusEntry, gradeStatusEntries, worstStatus } from '~/modul
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
+import { Skeleton } from '~/modules/ui/skeleton';
 
 const statusVariant: Record<HealthStatus, StatusDotVariant> = { healthy: 'success', degraded: 'warning', unhealthy: 'destructive' };
 
@@ -43,13 +48,14 @@ function StatusEntryCard({ graded: { entry, status, component, reason } }: { gra
   );
 }
 
-/** A dot after the closed info panel's label while a service is degraded or unhealthy, in that status's color. */
+/** A dot after the closed info panel's label while the server reports a service degraded or unhealthy, in that status's color. */
 export function InfoIndicator() {
   const { t } = useTranslation();
+  const isOnline = useOnlineManager();
   // Checks when the sheet opens and the last result is older than the poll interval; only the open panel polls
-  const { data: health } = useQuery({ ...healthQueryOptions(), refetchInterval: false });
+  const { data: health } = useQuery({ ...healthQueryOptions(), enabled: isOnline, refetchInterval: false });
 
-  const status = health === undefined ? 'healthy' : worstStatus(gradeStatusEntries(health));
+  const status = isOnline && health ? worstStatus(gradeStatusEntries(health)) : 'healthy';
   if (status === 'healthy') return null;
   return <StatusDot variant={statusVariant[status]} label={t(`c:${status}`)} />;
 }
@@ -75,25 +81,40 @@ export function InfoContent() {
   );
 }
 
-/** The worst status of the services with the app version; while one is not healthy, the entries follow in a grid. */
+/**
+ * The worst status of the services with the app version; while one is not healthy, the entries follow in a grid.
+ * Offline no check runs and the status reads unknown; online it is a skeleton until the first answer.
+ */
 function StatusTile() {
   const { t } = useTranslation();
-  const { data: health } = useSuspenseQuery(healthQueryOptions());
-  const statusEntries = gradeStatusEntries(health);
-  const status = worstStatus(statusEntries);
+  const isOnline = useOnlineManager();
+  const { data: health } = useQuery({ ...healthQueryOptions(), enabled: isOnline });
+  const statusEntries = isOnline && health ? gradeStatusEntries(health) : [];
+  const status = isOnline && health ? worstStatus(statusEntries) : undefined;
+  const statusText: TKey = !isOnline
+    ? 'c:status_unknown_offline'
+    : !status
+      ? 'c:status_unavailable'
+      : status === 'healthy'
+        ? 'c:all_systems_healthy'
+        : `c:${status}`;
 
   const hasStatusPage = !!appConfig.statusUrl.trim();
   const sourceUrl = appConfig.repositoryUrl;
 
   return (
     // Not a button, since its entries and status page link are; the transparent border keeps a NavSheetRow's box
-    <div className="flex flex-col gap-2 border border-transparent px-3 py-2.5">
+    <div className="flex flex-col border border-transparent px-3 py-2.5">
       <div className="flex min-h-6 items-center gap-2 text-sm">
         {/* The dot takes a NavSheetRow's 16px icon column, so the label lines up with the rows above */}
         <span className="flex size-4 shrink-0 items-center justify-center">
-          <StatusDot variant={statusVariant[status]} />
+          <StatusDot variant={status ? statusVariant[status] : 'muted'} pulse={!!status} />
         </span>
-        <span className="min-w-0 flex-1 truncate">{t(status === 'healthy' ? 'c:all_systems_healthy' : `c:${status}`)}</span>
+        {isOnline && health === undefined ? (
+          <Skeleton className="mr-auto h-3 w-36" />
+        ) : (
+          <span className="min-w-0 flex-1 truncate">{t(statusText)}</span>
+        )}
         <Badge
           variant="secondary"
           render={sourceUrl ? (props) => <a {...props} href={sourceUrl} target="_blank" rel="noreferrer" title={t('c:source_code')} /> : undefined}
@@ -113,13 +134,18 @@ function StatusTile() {
           </Button>
         )}
       </div>
-      {status !== 'healthy' && (
-        <div className="-mx-1 grid grid-cols-2 gap-1">
-          {statusEntries.map((graded) => (
-            <StatusEntryCard key={graded.entry.id} graded={graded} />
-          ))}
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {status && status !== 'healthy' && (
+          // The 4px beside and below hold an entry's focus ring, which the clip would cut
+          <motion.div {...collapseMotion} className="-mx-2 -mb-1 overflow-hidden px-1 pb-1">
+            <div className="grid grid-cols-2 gap-1 pt-2">
+              {statusEntries.map((graded) => (
+                <StatusEntryCard key={graded.entry.id} graded={graded} />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -172,6 +172,8 @@
   "sso_entry_pending.text": "{{institution}} heeft de toegang tot {{appName}} nog niet geactiveerd. Vraag het de beheerder van je instelling, of log op een andere manier in als je bent uitgenodigd.",
   "sso_entry.text": "Gebruik je {{institution}}-account. De eerste keer vraagt {{institution}} je te bevestigen dat je naam en e-mailadres met {{appName}} worden gedeeld.",
   "sso_recovery_send": "Mail mij een inloglink",
+  "status_unavailable": "Status niet beschikbaar",
+  "status_unknown_offline": "Offline · status onbekend",
   "success.factor_removed_mfa_off": "{{resource}} verwijderd. MFA staat uit voor dit account.",
   "switch_organization": "{{name}}, wissel van organisatie",
   "switch_organization_unseen": "{{name}}, wissel van organisatie. Andere organisaties hebben nieuwe inhoud.",

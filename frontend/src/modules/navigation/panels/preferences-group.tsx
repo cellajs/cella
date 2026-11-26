@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { NavSheetDivider } from '~/modules/navigation/nav-sheet-divider';
+import { Skeleton } from '~/modules/ui/skeleton';
 import { Switch } from '~/modules/ui/switch';
 import { cn } from '~/utils/cn';
 
@@ -16,6 +17,22 @@ export function PreferencesGroup({ title, children }: PreferencesGroupProps) {
       <NavSheetDivider className="mx-0 my-2 group-first/preferences:hidden" />
       <h3 className="sr-only">{title}</h3>
       {children}
+    </div>
+  );
+}
+
+/** A tool's group while its code or data loads, at the offline files group's heights: the panel keeps its height when the tool lands. */
+export function PreferencesGroupSkeleton() {
+  return (
+    <div className="group/preferences flex flex-col gap-4">
+      <NavSheetDivider className="mx-0 my-2 group-first/preferences:hidden" />
+      <div className="mount-fade grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-3 duration-300">
+        <Skeleton className="size-4 justify-self-center" />
+        <Skeleton className="h-3 w-32" />
+        <Skeleton className="h-8 w-20" />
+        {/* my-1 gives the meter line the height of its percent text */}
+        <Skeleton className="col-span-2 col-start-2 my-1 h-2 rounded-full" />
+      </div>
     </div>
   );
 }

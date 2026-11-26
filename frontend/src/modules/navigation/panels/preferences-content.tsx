@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { getTools, resolvePlacementList } from '~/lib/placements';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { PreferenceSwitch, PreferencesGroup } from '~/modules/navigation/panels/preferences-group';
+import { PreferenceSwitch, PreferencesGroup, PreferencesGroupSkeleton } from '~/modules/navigation/panels/preferences-group';
 import { SegmentedControl, SegmentedControlItem } from '~/modules/ui/segmented-control';
 import { useUIStore } from '~/modules/ui/ui-store';
 
@@ -77,7 +77,7 @@ export function PreferencesContent() {
       </PreferencesGroup>
 
       {tools.map((tool) => (
-        <Suspense key={tool.id} fallback={null}>
+        <Suspense key={tool.id} fallback={<PreferencesGroupSkeleton />}>
           {tool.render(undefined)}
         </Suspense>
       ))}

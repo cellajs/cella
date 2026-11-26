@@ -18,11 +18,9 @@ export interface GradedStatusEntry {
   reason?: string;
 }
 
-const appEntry: StatusEntry = { id: 'app', label: 'c:app', description: 'c:app_status.text', components: ['api', 'database'] };
-
 /** The info panel's status entries in display order: the one place to show, group or describe a service. */
 const statusEntries: readonly StatusEntry[] = [
-  appEntry,
+  { id: 'app', label: 'c:app', description: 'c:app_status.text', components: ['api', 'database'] },
   { id: 'live_updates', label: 'c:live_updates', description: 'c:live_updates_status.text', components: ['cdc'] },
   { id: 'collaboration', label: 'c:collaboration', description: 'c:collaboration_status.text', components: ['yjs'] },
   { id: 'ai_assistants', label: 'c:ai_assistants', description: 'c:ai_assistants_status.text', components: ['mcp'] },
@@ -33,13 +31,8 @@ const statusEntries: readonly StatusEntry[] = [
 export const worstStatus = (graded: GradedStatusEntry[]) =>
   graded.reduce<HealthStatus>((worst, { status }) => (statusRank[status] > statusRank[worst] ? status : worst), 'healthy');
 
-/**
- * Grades each entry by its worst component. An entry none of whose components the response carries (the service is
- * off) drops out; without a response the backend is unreachable, so only the app entry shows, unhealthy.
- */
-export function gradeStatusEntries(health: HealthResponse | null): GradedStatusEntry[] {
-  if (!health) return [{ entry: appEntry, status: 'unhealthy', component: 'api', reason: 'unreachable' }];
-
+/** Grades each entry by its worst component; an entry none of whose components the response carries (the service is off) drops out. */
+export function gradeStatusEntries(health: HealthResponse): GradedStatusEntry[] {
   return statusEntries.flatMap((entry) => {
     const present = entry.components.filter((name) => health.components[name]);
     if (!present.length) return [];
