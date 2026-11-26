@@ -4,7 +4,12 @@ import { defineServices, frontendProxyDockerfile } from '@cellajs/cli/infra';
  * Registry synthesized into Compose and deployment resources: an entry controls the service's machine, routing, profile
  * and release metadata. Run `pnpm --filter infra compose:generate` after editing. Each `port`,
  * `internalPort` and `pathPrefix` repeats `services` and `servicePaths` of the shared config, which the engine never
- * imports; `tests/unit/app-config-registry.test.ts` holds the two together.
+ * imports; `tests/app-config-registry.test.ts` holds the two together.
+ *
+ * A service's `env` sizes its database pool (`DATABASE_POOL_MAX`, `YJS_DATABASE_POOL_MAX`). Every pool's ceiling at
+ * rest, plus what the largest overlap of one deploy adds, stays within 87 connections with every service enabled,
+ * split or under `singleVM`: Postgres's default `max_connections` of 100, less its 3 reserved slots and 10 for
+ * operator sessions. A service of the app's own takes a size by the same rule.
  */
 export const appServices = defineServices({
   backend: {
@@ -29,7 +34,8 @@ export const appServices = defineServices({
     s3Access: true,
     // Per-service machine type (required on every service).
     instanceType: { production: 'DEV1-S', staging: 'DEV1-S' },
-    env: { APP_ORIGIN: '${APP_ORIGIN}' },
+    // Under `singleVM` this pool also serves the folded jobs, mcp and oauth workers.
+    env: { APP_ORIGIN: '${APP_ORIGIN}', DATABASE_POOL_MAX: '12' },
   },
 
   cdc: {
@@ -66,7 +72,7 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process; the LB still routes to the host machine.
     coHosted: true,
-    env: { APP_ORIGIN: '${APP_ORIGIN}', BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}' },
+    env: { APP_ORIGIN: '${APP_ORIGIN}', BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}', YJS_DATABASE_POOL_MAX: '5' },
     // Materialize calls go to the backend's internal listener through the LB's private internal frontend, never the public API.
     bindings: { BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}' },
   },
@@ -86,7 +92,7 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process; the LB still routes to the host machine.
     coHosted: true,
-    env: { SERVICE: 'mcp', APP_ORIGIN: '${APP_ORIGIN}' },
+    env: { SERVICE: 'mcp', APP_ORIGIN: '${APP_ORIGIN}', DATABASE_POOL_MAX: '5' },
   },
 
   oauth: {
@@ -104,7 +110,7 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process; the LB still routes to the host machine.
     coHosted: true,
-    env: { SERVICE: 'oauth', APP_ORIGIN: '${APP_ORIGIN}' },
+    env: { SERVICE: 'oauth', APP_ORIGIN: '${APP_ORIGIN}', DATABASE_POOL_MAX: '5' },
   },
 
   jobs: {
@@ -118,7 +124,7 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process, which then runs cron and the queue workers itself.
     coHosted: true,
-    env: { SERVICE: 'jobs', APP_ORIGIN: '${APP_ORIGIN}' },
+    env: { SERVICE: 'jobs', APP_ORIGIN: '${APP_ORIGIN}', DATABASE_POOL_MAX: '8' },
   },
 
   frontend: {
@@ -148,5 +154,8 @@ export const appServices = defineServices({
   },
 });
 
-/** Env keys selecting a container's process identity: which service of the backend image to boot, which also picks its port. Never folded from a co-hosted worker onto the host, which runs them under its own identity. */
-export const processIdentityEnv = ['SERVICE'] as const;
+/**
+ * Env keys a backend-image process reads as its own: which service it boots, which also picks its port, and the size of
+ * its runtime pool. Never folded from a co-hosted worker onto the host, which runs the worker under its own values.
+ */
+export const processIdentityEnv = ['SERVICE', 'DATABASE_POOL_MAX'] as const;

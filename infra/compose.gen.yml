@@ -33,7 +33,9 @@ services:
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
       APP_ORIGIN: ${APP_ORIGIN}
+      DATABASE_POOL_MAX: '12'
       BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL}
+      YJS_DATABASE_POOL_MAX: '5'
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4000/health']
       interval: '5s'
@@ -76,6 +78,7 @@ services:
       TZ: UTC
       SERVICE: migrate
       APP_ORIGIN: ${APP_ORIGIN}
+      DATABASE_POOL_MAX: '12'
   cdc:
     image: ${REGISTRY}/cdc:${CDC_TAG:-latest}
     pull_policy: never
@@ -138,6 +141,7 @@ services:
       TZ: UTC
       APP_ORIGIN: ${APP_ORIGIN}
       BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL}
+      YJS_DATABASE_POOL_MAX: '5'
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4002/health']
       interval: '5s'
@@ -182,6 +186,7 @@ services:
       TZ: UTC
       SERVICE: mcp
       APP_ORIGIN: ${APP_ORIGIN}
+      DATABASE_POOL_MAX: '5'
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4003/health']
       interval: '5s'
@@ -222,6 +227,7 @@ services:
       TZ: UTC
       SERVICE: oauth
       APP_ORIGIN: ${APP_ORIGIN}
+      DATABASE_POOL_MAX: '5'
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4004/health']
       interval: '5s'
@@ -262,6 +268,7 @@ services:
       TZ: UTC
       SERVICE: jobs
       APP_ORIGIN: ${APP_ORIGIN}
+      DATABASE_POOL_MAX: '8'
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4006/health']
       interval: '5s'
