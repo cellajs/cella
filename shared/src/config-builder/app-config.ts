@@ -36,7 +36,8 @@ type Config = Omit<BaseConfig, 's3' | 'services' | 'company' | 'repositoryUrl' |
   mcpUrl: string;
   oauthUrl: string;
 };
-const configModes = { development, tunnel, staging, production, test } satisfies Record<ConfigMode, DeepPartial<typeof defaultConfig>>;
+/** Each mode's overrides of the default config, before the builder merges the one `APP_MODE` names. */
+export const configModes = { development, tunnel, staging, production, test } satisfies Record<ConfigMode, DeepPartial<typeof defaultConfig>>;
 
 /**
  * The env variable that overrides the origin, for a build or a container whose public address the config does not name.

@@ -7,7 +7,6 @@ import {
   getEntityPolicies,
   getPolicyPermissions,
   hierarchy,
-  isStrategyEnabled,
   type OrganizationRole,
   type PolicyMatrix,
   policyMatrix,
@@ -32,10 +31,11 @@ import { accessFrom, membershipActorVars } from '#/permissions/access';
 import { log } from '#/utils/logger';
 
 /**
- * Refuses at load an organization role that a membership of a channel below the organization brings along, when it is
+ * Refuses an organization role that a membership of a channel below the organization brings along, when it is
  * elevated or grants anything at the organization on `user` or on a channel type below it: a launch there opens that
  * channel and nothing else of the organization. A product homed at the organization itself is not judged: that stays
- * the app's choice.
+ * the app's choice. The API runs it at boot with `lti` on, and a template test runs it when a mode of the app turns
+ * `lti` on.
  * @throws Error naming the channel type, its role, the organization role and each cell that grants.
  */
 export const assertBroughtAlongRolesOpenNothing = (entityHierarchy: EntityHierarchy = hierarchy, policies: PolicyMatrix = policyMatrix) => {
@@ -61,8 +61,6 @@ export const assertBroughtAlongRolesOpenNothing = (entityHierarchy: EntityHierar
     }
   }
 };
-
-if (isStrategyEnabled('lti')) assertBroughtAlongRolesOpenNothing();
 
 /** A person's organization membership, when they hold a seat. */
 type Seat = Pick<MembershipModel, 'id' | 'role'>;
