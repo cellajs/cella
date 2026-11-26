@@ -9,7 +9,7 @@ PostgreSQL is the source of truth. A Hono API defines validated OpenAPI routes a
 
 ## Overview
 
-Below is a typical production stack. Yjs, OAuth and MCP are optional. Every worker can be **cohosted on the backend machine** to reduce costs.
+Below is a typical production stack. Yjs, OAuth and MCP are optional. Every worker can be **cohosted on the backend machine** to reduce costs for staging or apps that don't have many users.
 
 ```
    ┌──────────────┐                          ┌──────────────────────────────┐
