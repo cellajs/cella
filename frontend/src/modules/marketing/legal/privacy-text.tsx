@@ -25,8 +25,8 @@ export function PrivacyText() {
         <p>
           We get personal data from you, from GitHub or your institution when you sign in through them, and from your use of the Service. To use the
           Service you need an email address. We process data to provide the Service to you and your organization (contract, Art. 6(1)(b) GDPR), or to
-          keep it secure and reliable and count its use (legitimate interest, Art. 6(1)(f)). We do not sell your data, use it for advertising or make
-          automated decisions about you.
+          keep it secure and reliable (legitimate interest, Art. 6(1)(f)). We do not sell your data, use it for advertising or make automated
+          decisions about you.
         </p>
         {appConfig.has.demos && (
           <p>
@@ -71,20 +71,21 @@ export function PrivacyText() {
           Our sign-in cookies keep you signed in and protect your account. One recognizes your browser for up to 400 days, so we can warn you about
           sign-ins from a new device. Your preferences and offline copies of your data stay in your browser's storage. We use no advertising cookies.
         </p>
-        <ul>
-          {monitoringEnabled && (
-            <li>
-              Our error monitoring sets no cookies and stores nothing in your browser. For each page load it sends a random id, your browser and the
-              app's release, with your user id when you are signed in. When something fails it also sends the error, the page's address and the one
-              you came from without their secrets, your browser's language and time zone, and the steps before it: pages, the elements you clicked or
-              typed in (not what you typed), requests and the app's console warnings and errors. It asks the monitoring service not to keep your IP
-              address.
-            </li>
-          )}
-          <li>We count page visits with One Dollar Stats, which sets no cookies.</li>
-          {appConfig.has.chatSupport && <li>The support chat by Gleap sets its own cookies.</li>}
-          {mapHost && <li>The map on our contact form loads from {mapHost}, which receives your IP address.</li>}
-        </ul>
+        {(monitoringEnabled || appConfig.has.chatSupport || mapHost) && (
+          <ul>
+            {monitoringEnabled && (
+              <li>
+                Our error monitoring sets no cookies and stores nothing in your browser. For each page load it sends a random id, your browser and the
+                app's release, with your user id when you are signed in. When something fails it also sends the error, the page's address and the one
+                you came from without their secrets, your browser's language and time zone, and the steps before it: pages, the elements you clicked
+                or typed in (not what you typed), requests and the app's console warnings and errors. It asks the monitoring service not to keep your
+                IP address.
+              </li>
+            )}
+            {appConfig.has.chatSupport && <li>The support chat by Gleap sets its own cookies.</li>}
+            {mapHost && <li>The map on our contact form loads from {mapHost}, which receives your IP address.</li>}
+          </ul>
+        )}
       </LegalSection>
 
       <LegalSection subject="privacy" id="security">

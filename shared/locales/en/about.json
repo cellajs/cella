@@ -77,7 +77,7 @@
   "features.gap_detection": "Gap detection",
   "features.gap_detection.text": "On reconnect, the client finds what changed while you were away and fetches it, including removals.",
   "features.gdpr_legal": "GDPR-ready legal pages",
-  "features.gdpr_legal.text": "A privacy policy and terms written for a B2B app under the GDPR, filled from one config. They list each kind of personal data, every processor and how long data is kept. Page visits are counted without cookies.",
+  "features.gdpr_legal.text": "A privacy policy and terms written for a B2B app under the GDPR, filled from one config. They list each kind of personal data, every processor and how long data is kept.",
   "features.guard_chain": "Defense in depth",
   "features.guard_chain.text": "Requests for tenant data pass layered checks for caller, tenant and membership before the handler runs. The database guards writes again with composite foreign keys and immutability triggers. No single layer is trusted alone.",
   "features.i18n": "Internationalisation",

@@ -109,18 +109,6 @@ export const subprocessors: Subprocessor[] = [
     dpa: { signed: true, effectiveDate: '2023-01-01', url: 'https://gleap.io/privacy-policy/' },
     optional: true,
   },
-  {
-    slug: 'onedollarstats',
-    name: 'One Dollar Stats',
-    legalName: 'One Dollar Stats',
-    website: 'https://onedollarstats.com/',
-    servicesProvided: ['Page visit statistics'],
-    processingActivities: ['Counting page visits without cookies'],
-    categoriesOfPersonalData: ['Hashed IP address and browser', 'pages visited'],
-    purposes: ['Counting visits to our pages'],
-    country: 'Ukraine (servers in Finland)',
-    dpa: { signed: false, effectiveDate: '', url: '' },
-  },
 ];
 
 /** Personal data we process as controller; content an organization controls is left out (we process it on its behalf). */
@@ -176,16 +164,6 @@ export const sharedDataTypes: SharedDataType[] = [
     dataSubjects: ['end users'],
     storageLocation: 'Primary database (EU)',
     retentionPeriod: [`${retention.activityDays} days`],
-  },
-  {
-    slug: 'page_visits',
-    name: 'Page visits',
-    purpose: 'Count visits to our pages.',
-    legalBasis: 'Legitimate interest',
-    dataCategories: ['pages visited', 'referrer', 'country', 'hash of IP address and browser'],
-    dataSubjects: ['visitors', 'end users'],
-    storageLocation: 'One Dollar Stats (Finland)',
-    retentionPeriod: ['The visitor hash changes daily'],
   },
   {
     slug: 'error_data',

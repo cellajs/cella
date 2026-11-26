@@ -73,7 +73,6 @@ export function frontendCsp(appConfig: CspConfig, frameAncestors = "'self'"): st
     'https://transloaditstatus.com',
     '*.gleap.io',
     'wss://ws.gleap.io',
-    '*.onedollarstats.com',
   ]
     .filter(Boolean)
     .join(' ');
