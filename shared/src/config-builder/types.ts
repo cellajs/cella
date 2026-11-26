@@ -471,7 +471,11 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   mapStyleUrls: { light: string; dark: string };
   /** MapLibre zoom of the contact map: 3 shows Europe, 14 a few streets. */
   mapZoom: number;
-  /** Where the browser reports errors and sessions: a Sentry envelope DSN, no secret, empty for none. Development and tunnel read `VITE_MONITORING_DSN`. */
+  /**
+   * Where the browser reports errors and sessions: a Sentry envelope DSN, no secret, empty for none. In a local mode one
+   * on `localhost` without a port names the app itself and takes the app's origin. `VITE_MONITORING_DSN` of the machine
+   * overrides it in development and tunnel.
+   */
   monitoring: { dsn: string };
   /** Hosts a Web Push subscription endpoint may name; `*.` matches any subdomain. */
   pushServiceHosts: readonly string[];

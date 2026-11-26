@@ -7,18 +7,21 @@ grep: maplePublicIngestKey, mapleEnabled, isMapleOptedIn, VITE_MAPLE, lib/maple,
 
 # The browser reports to a DSN through Sentry's browser SDK, and `maplePublicIngestKey` becomes `monitoring.dsn`
 
-Replace `maplePublicIngestKey` with `monitoring: { dsn: '' }` in `shared/config/config.default.ts`, and name a deployed
-mode's DSN in that mode's config file. Import `reportReactError`, `reportRejectedResponse` and `monitoringEnabled` from
-`~/lib/monitoring`, in place of `~/lib/maple` and `mapleEnabled` of `~/lib/otel`. Drop `VITE_MAPLE` from `frontend/.env`
-and rewrite privacy texts that name Maple. Apply every deployed environment before its next deploy.
+Replace `maplePublicIngestKey` with `monitoring: { dsn: '' }` in `shared/config/config.default.ts`, and name the DSN of
+each mode that reports in that mode's config file. Import `reportReactError`, `reportRejectedResponse` and
+`monitoringEnabled` from `~/lib/monitoring`, in place of `~/lib/maple` and `mapleEnabled` of `~/lib/otel`. Drop
+`VITE_MAPLE` from `frontend/.env` and rewrite privacy texts that name Maple. Apply every deployed environment before its
+next deploy.
 
 ## What & why
 
 `frontend/src/lib/maple.ts` and `@maple-dev/browser` are gone. `monitoring.ts` sends errors and one session per page
 load through `@sentry/browser`, in the Sentry envelope protocol that any compatible receiver takes, to
-`appConfig.monitoring.dsn`; development and tunnel read `VITE_MONITORING_DSN` from `frontend/.env`. The frontend CSP
-names the DSN's origin in place of `ingest.maple.dev`. `@sentry/vite-plugin` puts a debug id in every production bundle
-and map. No vendor key remains in config, env or the CSP.
+`appConfig.monitoring.dsn`, which `VITE_MONITORING_DSN` in `frontend/.env` overrides in development and tunnel. On a
+stack of this machine a config DSN on `localhost` without a port takes the app's origin
+(`shared/src/utils/monitoring-dsn.ts`), and one with a port is used as written. The frontend CSP names the DSN's origin
+in place of `ingest.maple.dev`. `@sentry/vite-plugin` puts a debug id in every production bundle and map. No vendor key
+remains in config, env or the CSP.
 
 ## Blast radius
 
@@ -32,10 +35,10 @@ No script: manual.
 
 ## Manual steps
 
-1. Caught by the compiler. `shared/config/config.default.ts`: `maplePublicIngestKey` becomes `monitoring: { dsn: '' }`, and a mode file that set the key drops it. A deployed mode that reports names its DSN in its own file, `monitoring: { dsn: 'https://<public key>@<host>/<project id>' }`. Development and tunnel never read the config's DSN.
+1. Caught by the compiler. `shared/config/config.default.ts`: `maplePublicIngestKey` becomes `monitoring: { dsn: '' }`, and a mode file that set the key drops it. A mode that reports names its DSN in its own file, `monitoring: { dsn: 'https://<public key>@<host>/<project id>' }`. An app that receives its own reports names `http://<public key>@localhost/<path>/<project id>` in its development file, without a port, and each checkout reports to its own origin. The template's `config.test.ts` spreads the development file: an app's that does sets `monitoring: { dsn: '' }`, or its unit tests start the SDK on that DSN.
 2. Caught by the compiler. An import of `~/lib/maple` becomes `~/lib/monitoring`; `mapleEnabled` of `~/lib/otel` becomes `monitoringEnabled` of `~/lib/monitoring`; `isMapleOptedIn` of `~/env` is gone. `reportReactError` takes the scope `'boundary'` or `'uncaught'` alone.
 3. `frontend/package.json` drops `@maple-dev/browser` and takes `@sentry/browser` and, as a dev dependency, `@sentry/vite-plugin`, both `^11.16.0`; then `pnpm install`.
-4. Not caught by the compiler. `VITE_MAPLE` leaves `frontend/.env`. A developer who runs a receiver sets `VITE_MONITORING_DSN` there, in the form `frontend/.env.example` shows; without it, development sends nothing.
+4. Not caught by the compiler. `VITE_MAPLE` leaves `frontend/.env`. A developer who runs a receiver sets `VITE_MONITORING_DSN` there, in the form `frontend/.env.example` shows; without it, development reports to its config's DSN, and to nothing while that is empty.
 5. Not caught by the compiler. An app's own privacy and legal texts that name Maple (a subprocessor row, a storage location, a cookie line) say what `monitoring.ts` sends to the app's own receiver, as cella's `privacy-text.tsx` and `legal-config.ts` do. One that read `maplePublicIngestKey` reads `monitoringEnabled`.
 6. Not caught by the compiler. Per deployed environment: `pnpm cella infra apply --mode <mode>`, then deploy. The CSP drops `ingest.maple.dev` and names the DSN's origin.
 7. No step: the browser exports no span. With a DSN the SDK sends the trace headers of API requests and `baggage: session.id=<id>`, which the backend records on request spans as `session.id` where it exports; without one, `otel.ts` sends `traceparent` as before.
@@ -47,8 +50,11 @@ No script: manual.
 
 ```sh
 pnpm --filter frontend exec vitest run --project unit src/lib/monitoring.test.ts
+pnpm --filter shared exec vitest run src/utils/monitoring-dsn.test.ts
 pnpm check
 ```
 
 By hand: start a receiver that accepts `POST /api/<project id>/envelope/`, set `VITE_MONITORING_DSN` to it, run
-`pnpm dev`, open a page and pick `crash-content` in the debug menu: a session and an event arrive.
+`pnpm dev`, open a page and pick `crash-content` in the debug menu: a session and an event arrive. Unset the variable
+and name `http://<public key>@localhost/<project id>` in the development config: the page posts its envelopes to the
+origin `pnpm dev` serves, in every checkout.

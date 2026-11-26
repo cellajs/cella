@@ -14,17 +14,18 @@ import { client } from 'sdk/client.gen';
 import { appConfig } from 'shared';
 import type { CleanSpanAttributes } from 'shared/tracing';
 import { escapeRegExp } from 'shared/utils/escape-regexp';
+import { monitoringDsn } from 'shared/utils/monitoring-dsn';
 import { scrubUrl } from 'shared/utils/scrub-url';
 import { env } from '~/env';
 import { ApiError } from '~/lib/api';
 import { useUserStore } from '~/modules/user/user-store';
 
 /**
- * The DSN this page reports its errors and sessions to, in the Sentry envelope protocol. Development and tunnel read
- * `VITE_MONITORING_DSN` from this machine; every other mode reads `monitoring.dsn` from its config. Empty, nothing is sent.
- * A test that mocks `shared` with a partial appConfig gets none.
+ * The DSN this page reports its errors and sessions to, in the Sentry envelope protocol. In development and tunnel
+ * `VITE_MONITORING_DSN` wins when this machine sets it; without it, and in every other mode, the mode's config names the
+ * DSN (`monitoringDsn`). A build machine's variable never redirects a deployed page. Empty, nothing is sent.
  */
-const dsn = appConfig.mode === 'development' || appConfig.mode === 'tunnel' ? (env.VITE_MONITORING_DSN ?? '') : (appConfig.monitoring?.dsn ?? '');
+const dsn = (appConfig.mode === 'development' || appConfig.mode === 'tunnel' ? env.VITE_MONITORING_DSN : undefined) ?? monitoringDsn;
 
 /** Whether the browser reports its errors and sessions. */
 export const monitoringEnabled = !!dsn;

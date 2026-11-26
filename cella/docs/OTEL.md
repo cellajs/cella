@@ -43,7 +43,9 @@ The other standard `OTEL_*` variables apply too, such as a per-signal endpoint o
 
 A deployed machine receives only the variables its runtime secrets and its service's `env` declare. The endpoint and its headers are the runtime secrets `otlp-endpoint` and `otlp-headers`, which an operator sets ([runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts)). Declare any other in the service's `env` in [services.config.ts](../../infra/config/services.config.ts).
 
-The browser has no OTLP export. It sends errors and one session per page load to a DSN, in the Sentry envelope protocol, through Sentry's browser SDK ([monitoring.ts](../../frontend/src/lib/monitoring.ts)). A deployed mode names the DSN in its config as `monitoring.dsn`, and the frontend CSP allows its origin. Development reads `VITE_MONITORING_DSN` from `frontend/.env`. Without a DSN the browser sends nothing.
+The browser has no OTLP export. It sends errors and one session per page load to a DSN, in the Sentry envelope protocol, through Sentry's browser SDK ([monitoring.ts](../../frontend/src/lib/monitoring.ts)). Without a DSN the browser sends nothing.
+
+Each mode names the DSN in its config as `monitoring.dsn`, and a deployed mode's CSP allows its origin. In development and tunnel `VITE_MONITORING_DSN` in `frontend/.env` wins. On a stack of this machine a config DSN on `localhost` without a port means the app itself: it takes the app's origin, through a tunnel too. A DSN with a port is used as written.
 
 An error that reaches any React boundary counts as unhandled, and a failure the app caught and continued from as handled. A session names the signed-in user by id alone. No span, web vital, replay or cookie leaves the browser, and the privacy policy says so. A local tracer keeps the spans for the devtools.
 
