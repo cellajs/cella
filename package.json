@@ -63,7 +63,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.4",
-    "@cellajs/cli": "^0.9.1",
+    "@cellajs/cli": "^0.10.0",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitest/coverage-v8": "^5.1.1",
     "cross-env": "^10.1.0",

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { deriveInfra, engineAssetsDir, SECURITY_HEADERS } from '@cellajs/cli/infra/contract';
+import { deriveInfra, engineAssetsDir, securityHeaders } from '@cellajs/cli/infra/contract';
 import { servicePaths } from 'shared';
 import { shareLinkPath } from 'shared/share-link';
 import { describe, expect, it } from 'vitest';
@@ -19,7 +19,7 @@ const headerValue = (name: string): string | undefined => caddyfile.match(new Re
 describe('frontend Caddyfile', () => {
   it('sets every header the deploy smoke check requires, with the values that lock the response down', () => {
     // Names only would pass a header emptied or weakened; the smoke check verifies presence on the live deployment, so the values are pinned here.
-    for (const header of SECURITY_HEADERS) expect(headerValue(header), header).toBeTruthy();
+    for (const header of securityHeaders) expect(headerValue(header), header).toBeTruthy();
     const hsts = headerValue('Strict-Transport-Security') ?? '';
     expect(Number(hsts.match(/max-age=(\d+)/)?.[1])).toBeGreaterThanOrEqual(31536000);
     expect(hsts).toContain('includeSubDomains');

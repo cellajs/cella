@@ -83,7 +83,7 @@ The apex answers the worker script itself: that script replaces the kept worker 
 
 Sign-ins resolve the client IP to a country and network with DB-IP Lite data, under CC BY 4.0. The sessions list and the new sign-in notice show them. The image ships no data, and a refresh needs no release. Each API process downloads the data from the `geoip/` prefix of the public bucket at boot and checks for newer data.
 
-Every deploy refreshes stale data, and `pnpm cella infra deploy` of the live target runs that check again. A failed download or a bucket problem costs only the country line. Sign-ins never depend on it. `GEOIP_SOURCE_URL=off` disables the refresh, and another prefix or bucket as its value overrides the source.
+Every deploy refreshes stale data, and `pnpm cella infra deploy-now` of the live target runs that check again. A failed download or a bucket problem costs only the country line. Sign-ins never depend on it. `GEOIP_SOURCE_URL=off` disables the refresh, and another prefix or bucket as its value overrides the source.
 
 ## The system room
 

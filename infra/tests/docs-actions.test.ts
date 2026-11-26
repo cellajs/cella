@@ -3,18 +3,18 @@ import path from 'node:path';
 import {
   actionLabel,
   isOperatorActionId,
-  MENU_ROWS,
   type MenuRowId,
   menuRow,
-  OPERATOR_ACTIONS,
+  menuRows,
   type OperatorActionId,
+  operatorActions,
 } from '@cellajs/cli/infra/contract';
 import { describe, expect, it } from 'vitest';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 
-const ids = Object.keys(OPERATOR_ACTIONS) as OperatorActionId[];
-const rowIds = Object.keys(MENU_ROWS) as MenuRowId[];
+const ids = Object.keys(operatorActions) as OperatorActionId[];
+const rowIds = Object.keys(menuRows) as MenuRowId[];
 const labels = ids.map(actionLabel);
 const rowLabels = rowIds.map((id) => menuRow(id).label);
 

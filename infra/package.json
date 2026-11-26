@@ -24,7 +24,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1176.0",
     "@aws-sdk/s3-request-presigner": "^3.1176.0",
-    "@cellajs/cli": "^0.9.1",
+    "@cellajs/cli": "^0.10.0",
     "@pulumi/pulumi": "^3.277.0",
     "@pulumiverse/scaleway": "^1.62.1",
     "shared": "workspace:*"

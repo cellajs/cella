@@ -71,7 +71,7 @@ The setup goes on to connect the repository and ends at the first deploy:
 
 A private repository needs its read key before any deploy ([Repository read key](./KEYS.md#repository-read-key)). Without it a run reads neither `infra/environments` nor the release tags. Decline the deploy, store the key with `pnpm cella infra repository-key`, then run **Deploy now**.
 
-A step you declined is done by hand: commit and push the stack file and staging's line, or run `pnpm cella infra deploy`. From then on the first scheduled run after each change deploys the environment's target. **Deploy logs** shows each run. Revoke the Owner API key at [IAM → API Keys](https://console.scaleway.com/iam/api-keys) if the Owner moment did not, and delete a temporary application. Later sittings make a one-day operator key in the console ([Operator key](./KEYS.md#operator-key)).
+A step you declined is done by hand: commit and push the stack file and staging's line, or run `pnpm cella infra deploy-now`. From then on the first scheduled run after each change deploys the environment's target. **Deploy logs** shows each run. Revoke the Owner API key at [IAM → API Keys](https://console.scaleway.com/iam/api-keys) if the Owner moment did not, and delete a temporary application. Later sittings make a one-day operator key in the console ([Operator key](./KEYS.md#operator-key)).
 
 ## 5. Sign in as first admin
 

@@ -63,7 +63,7 @@ Resources and traffic flow:
 
 ## Deploys
 
-Every deploy is a run of the environment's [main job](#the-main-job) for its **target**, the commit the environment should run. A [scheduled run](#the-schedule) deploys it once the target moves. A rotation, an action that clears a block and `pnpm cella infra deploy` start one too.
+Every deploy is a run of the environment's [main job](#the-main-job) for its **target**, the commit the environment should run. A [scheduled run](#the-schedule) deploys it once the target moves. A rotation, an action that clears a block and `pnpm cella infra deploy-now` start one too.
 
 ### What a deploy deploys
 
@@ -108,7 +108,7 @@ Each environment has a Serverless Jobs definition, `<slug>-main`. Every run of i
 - the **engine image** its runs start from, by digest
 - the [schedule](#the-schedule) that starts them
 
-**Deploy now** (`pnpm cella infra deploy`) starts a run on your operator key and follows it step by step to its end. It reads the target from this checkout's `infra/environments`, not the default branch's.
+**Deploy now** (`pnpm cella infra deploy-now`) starts a run on your operator key and follows it step by step to its end. It reads the target from this checkout's `infra/environments`, not the default branch's.
 
 A run ends in one of five outcomes:
 
