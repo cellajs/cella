@@ -324,7 +324,7 @@
   & [data-slot="avatar-fallback"] {
     background-color: var(--avatar-rest);
   }
-  & [data-slot="avatar-fallback"] > div {
+  & [data-slot="avatar-fallback"] > [aria-hidden] {
     color: var(--avatar-rest-foreground);
   }
   & [data-slot="avatar-image"] {
@@ -741,8 +741,8 @@
     --foreground: oklch(0.2067 0.01 285.49);
     /* Reading: running text, prose body and resting cards. */
     --foreground-soft: oklch(0.37 0.013 285.8);
-    /* Resting: a card in a long list (resting-text). It sits 1.7:1 under content in both modes, which is reading's
-       step here and below reading in dark, where reading lies closer to content. */
+    /* Resting: a card in a long list (resting-text), at reading's step in both modes. Lower in dark, a phone board read
+       grey: a touch screen has no hover to lift a card. */
     --foreground-rest: oklch(0.37 0.013 285.8);
     /* Support: group labels, column headers, keys, descriptions, metadata. */
     --muted-foreground: oklch(0.4571 0.0112 285.63);
@@ -835,7 +835,7 @@
     --background: oklch(0.1963 0.0092 285.53);
     --foreground: oklch(0.9627 0 0);
     --foreground-soft: oklch(0.871 0.006 286.3);
-    --foreground-rest: oklch(0.8 0.009 286);
+    --foreground-rest: oklch(0.871 0.006 286.3);
     --muted-foreground: oklch(0.72 0.0128 285.86);
     /* 4.5:1 on --muted, --secondary and --accent too, where a highlighted row puts a hint. */
     --faint-foreground: oklch(0.68 0.0128 285.86);

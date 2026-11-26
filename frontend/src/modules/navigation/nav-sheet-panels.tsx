@@ -1,6 +1,6 @@
 import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Activity, type KeyboardEvent, type ReactNode, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Activity, type KeyboardEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useEventListener } from '~/hooks/use-event-listener';
@@ -8,7 +8,6 @@ import type { TKey } from '~/lib/i18n-locales';
 import { FocusTrap } from '~/modules/common/focus-trap';
 import { collapseMotion, fadeMotion } from '~/modules/common/motion-presets';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
-import { Spinner } from '~/modules/common/spinner';
 import { NavSheetDivider } from '~/modules/navigation/nav-sheet-divider';
 import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
 import { InfoContent, InfoIndicator } from '~/modules/navigation/panels/info-content';
@@ -26,9 +25,8 @@ interface NavSheetPanelProps {
 }
 
 /**
- * A panel whose body renders hidden while it is closed, so what the body loads (a lazy tool, a suspense query) is in
- * place before it opens and the collapse animates to the body's full height. A hidden body runs no effects, so it polls
- * nothing, and what it reads in an effect arrives after the collapse measured it: a read that changes the body's height suspends.
+ * A panel whose body renders hidden while it is closed. A lazy tool is then in place before it opens, and the collapse
+ * animates to the body's full height. A hidden body runs no effects, so it polls nothing.
  */
 function NavSheetPanel({ id, label, indicator, children }: NavSheetPanelProps) {
   const { t } = useTranslation();
@@ -66,9 +64,7 @@ function NavSheetPanel({ id, label, indicator, children }: NavSheetPanelProps) {
         // The 4px either side holds the focus ring (offset plus ring) of full-width rows, which the clip would cut
         className="-mx-1 overflow-hidden px-1"
       >
-        <Activity mode={isBodyVisible ? 'visible' : 'hidden'}>
-          <Suspense fallback={null}>{children}</Suspense>
-        </Activity>
+        <Activity mode={isBodyVisible ? 'visible' : 'hidden'}>{children}</Activity>
       </motion.div>
     </div>
   );
@@ -80,12 +76,12 @@ function NavSheetPanelRow({ id, label, indicator, children }: NavSheetPanelProps
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const openDrawer = () =>
-    sheeter.getState().create(
-      <div className="px-3 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
-        <Suspense fallback={<Spinner />}>{children}</Suspense>
-      </div>,
-      { id: `${id}-panel`, triggerRef, title: t(label), side: 'bottom' },
-    );
+    sheeter.getState().create(<div className="px-3 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">{children}</div>, {
+      id: `${id}-panel`,
+      triggerRef,
+      title: t(label),
+      side: 'bottom',
+    });
 
   return (
     <Button ref={triggerRef} onClick={openDrawer} className="w-full justify-between border-0" variant="quiet">

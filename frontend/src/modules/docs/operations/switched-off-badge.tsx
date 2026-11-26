@@ -1,54 +1,25 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ConfigSwitch, isSwitchOn } from 'shared';
-import type { TKey } from '~/lib/i18n-locales';
 import { Badge } from '~/modules/ui/badge';
+import { cn } from '~/utils/cn';
 
-/** Sign-in methods as a sentence names them. */
-const strategyNames: Record<Extract<ConfigSwitch, { strategy: string }>['strategy'], TKey> = {
-  magic: 'c:magic',
-  passkey: 'c:passkey',
-  totp: 'c:totp',
-  oauth: 'c:docs.strategy_oauth',
-  sso: 'c:docs.strategy_sso',
-  lti: 'c:docs.strategy_lti',
-};
+/** An operation whose config switch is off in this app: the API refuses it, the docs still list it. */
+export const isSwitchedOff = (enabledBy?: ConfigSwitch) => !!enabledBy && !isSwitchOn(enabledBy);
 
-/** Spelled as the services' own names; an app's service shows its config key. */
-const serviceNames: Record<string, string> = { oauth: 'OAuth', mcp: 'MCP', yjs: 'Yjs' };
-
-interface SwitchedOffBadgeProps {
-  enabledBy?: ConfigSwitch;
-  /** Without it, the reason is the badge's tooltip. */
-  withReason?: boolean;
-}
-
-/** Marks an operation whose config switch is off in this app, naming the service, feature flag, product, sign-in method or provider. */
-export function SwitchedOffBadge({ enabledBy, withReason }: SwitchedOffBadgeProps) {
+/** Marks an operation whose config switch is off. */
+export function SwitchedOffBadge({ enabledBy, className }: { enabledBy?: ConfigSwitch; className?: string }) {
   const { t } = useTranslation();
-  if (!enabledBy || isSwitchOn(enabledBy)) return null;
-
-  const reason =
-    'service' in enabledBy
-      ? t('c:docs.switched_off_service', { name: serviceNames[enabledBy.service] ?? enabledBy.service })
-      : 'feature' in enabledBy
-        ? t('c:docs.switched_off_feature', { name: enabledBy.feature })
-        : 'product' in enabledBy
-          ? t('c:docs.switched_off_product', { resource: t(`c:${enabledBy.product}`, { count: 2, defaultValue: enabledBy.product }) })
-          : enabledBy.provider
-            ? t('c:docs.switched_off_provider', { name: t(`c:${enabledBy.provider}`) })
-            : t('c:docs.switched_off_strategy', { name: t(strategyNames[enabledBy.strategy]) });
+  if (!isSwitchedOff(enabledBy)) return null;
 
   return (
-    <>
-      <Badge
-        variant="outline"
-        className="text-muted-foreground"
-        data-tooltip={withReason ? undefined : 'true'}
-        data-tooltip-content={withReason ? undefined : reason}
-      >
-        {t('c:docs.switched_off')}
-      </Badge>
-      {withReason && <span className="text-muted-foreground text-sm">{reason}</span>}
-    </>
+    <Badge variant="outline" className={cn('text-muted-foreground', className)}>
+      {t('c:docs.switched_off')}
+    </Badge>
   );
+}
+
+/** The name or path of an operation a reader cannot call: switched off, or deprecated in search. */
+export function StruckText({ struck, children }: { struck?: boolean; children: ReactNode }) {
+  return <span className={cn(struck && 'text-muted-foreground line-through')}>{children}</span>;
 }

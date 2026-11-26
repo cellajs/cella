@@ -17,6 +17,7 @@ export type DocsSearchResult = {
   hash?: string;
   method?: string;
   deprecated?: boolean;
+  switchedOff?: boolean;
 };
 
 /** Scope chip filter: everything, docs pages only, or API reference only. */

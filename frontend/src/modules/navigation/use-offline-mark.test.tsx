@@ -3,11 +3,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-const { recheckNow } = vi.hoisted(() => ({ recheckNow: vi.fn(async () => false) }));
-vi.mock('~/query/offline/connectivity', () => ({ recheckNow }));
-
-const { useOfflineAlert } = await import('~/modules/common/alerter/use-offline-alert');
+import { useOfflineMark } from '~/modules/navigation/use-offline-mark';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -15,7 +11,7 @@ const { useOfflineAlert } = await import('~/modules/common/alerter/use-offline-a
 const frames: boolean[] = [];
 
 function Probe() {
-  frames.push(useOfflineAlert().isShown);
+  frames.push(useOfflineMark());
   return null;
 }
 
@@ -27,8 +23,8 @@ const setVisible = (visible: boolean) =>
 
 let root: Root;
 
-// The blink after resume: no frame shows an alert decided before the tab was visible again, and an outage over by the last probe shows none.
-describe('useOfflineAlert', () => {
+// The blink after resume: no frame shows a mark decided before the tab was visible again, nor one within the resume grace.
+describe('useOfflineMark', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     onlineManager.setOnline(true);
@@ -42,32 +38,28 @@ describe('useOfflineAlert', () => {
     vi.useRealTimers();
   });
 
-  it('shows once a visible tab stays offline past the delay and one more probe fails, and never on the first frame after resume', async () => {
+  it('shows once a visible tab stays offline past the delay, and never within the grace after resume', async () => {
     act(() => onlineManager.setOnline(false));
     await act(() => vi.advanceTimersByTimeAsync(1999));
     expect(frames.at(-1)).toBe(false);
     await act(() => vi.advanceTimersByTimeAsync(1));
     expect(frames.at(-1)).toBe(true);
 
-    // Still offline across a hide and a resume: no frame shows the alert until the delay has run again.
+    // Still offline across a hide and a resume: no frame shows the mark until the grace has run.
     setVisible(false);
     expect(frames.at(-1)).toBe(false);
     const resumedAt = frames.length;
     setVisible(true);
-    await act(() => vi.advanceTimersByTimeAsync(1999));
+    await act(() => vi.advanceTimersByTimeAsync(9999));
     expect(frames.slice(resumedAt)).not.toContain(true);
     await act(() => vi.advanceTimersByTimeAsync(1));
     expect(frames.at(-1)).toBe(true);
 
-    // An outage whose last probe reaches the API ends without the alert: the probe brings the app online.
+    // Back online hides it at once; an outage once the grace is over waits the delay alone.
     act(() => onlineManager.setOnline(true));
-    recheckNow.mockImplementationOnce(async () => {
-      onlineManager.setOnline(true);
-      return true;
-    });
-    const outageAt = frames.length;
+    expect(frames.at(-1)).toBe(false);
     act(() => onlineManager.setOnline(false));
-    await act(() => vi.advanceTimersByTimeAsync(5000));
-    expect(frames.slice(outageAt)).not.toContain(true);
+    await act(() => vi.advanceTimersByTimeAsync(2000));
+    expect(frames.at(-1)).toBe(true);
   });
 });

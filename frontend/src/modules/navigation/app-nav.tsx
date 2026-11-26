@@ -159,8 +159,10 @@ export function AppNav() {
   if (isMobile) {
     for (const direction of ['left', 'right'] as const) {
       for (const id of floatingNavConfig[direction]) {
-        const navItem = navItems.find((item) => item.id === id);
-        if (navItem) floatingItems.push({ id, icon: navItem.icon, ariaLabel: t(`c:${id}`), onClick: () => triggerNavItem(id), direction });
+        const navItem: NavItem | undefined = navItems.find((item) => item.id === id);
+        if (!navItem) continue;
+        const mark = navItem.mark && <navItem.mark className="right-0 bottom-0" />;
+        floatingItems.push({ id, icon: navItem.icon, ariaLabel: t(`c:${id}`), onClick: () => triggerNavItem(id), direction, mark });
       }
     }
   }

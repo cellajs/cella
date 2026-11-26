@@ -138,10 +138,10 @@ function SlashMenuList({ items, loadingState, selectedIndex, onItemClick, origin
             onClick={() => onItemClick?.(item)}
             tabIndex={-1}
           >
-            <div className="mr-2 flex items-center gap-3 text-sm">
+            <span className="mr-2 flex items-center gap-3 text-sm">
               {item.icon}
               {item.title}
-            </div>
+            </span>
             {hasDigitShortcuts && index < indexedItemCount && (
               <span className="text-faint-foreground flex min-w-4 py-0.5 pl-1 text-[0.8rem]">{index + 1}</span>
             )}

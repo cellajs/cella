@@ -4,16 +4,19 @@ import type { HealthResponse } from 'shared/health-status';
 
 const healthUrl = `${appConfig.backendUrl}/health?depth=full`;
 const healthPollMs = 30_000;
+const healthTimeoutMs = 8000;
 
-/** Null when the backend cannot be reached: the info panel suspends on this query, so a failure must resolve, not throw. */
-async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse | null> {
+/**
+ * Null without a usable answer within the timeout, which the info panel reads as unavailable. It takes no query signal:
+ * query-core aborts a fetch that read its signal once the last observer unmounts, as the indicator does when the panel opens.
+ */
+async function fetchHealth(): Promise<HealthResponse | null> {
   try {
-    const response = await fetch(healthUrl, { cache: 'no-store', signal });
+    const response = await fetch(healthUrl, { cache: 'no-store', signal: AbortSignal.timeout(healthTimeoutMs) });
     // A 503 still carries the diagnostics: it names which component is down.
     if (!response.ok && response.status !== 503) return null;
     return (await response.json()) as HealthResponse;
-  } catch (error) {
-    if (signal?.aborted) throw error;
+  } catch {
     return null;
   }
 }
@@ -22,7 +25,7 @@ async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse | null>
 export const healthQueryOptions = () =>
   queryOptions({
     queryKey: ['health'],
-    queryFn: ({ signal }) => fetchHealth(signal),
+    queryFn: fetchHealth,
     refetchInterval: healthPollMs,
     staleTime: healthPollMs,
     // Transient health data: not persisted to IDB.

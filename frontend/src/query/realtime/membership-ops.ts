@@ -6,6 +6,27 @@ import { isFilterSegment } from '~/query/basic/create-query-keys';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { defaultStaleTime, queryClient } from '~/query/query-client';
 
+/** Memberships the caller's own requests answered with, each until the time its echo on the stream stops counting. */
+const ownWrites = new Map<string, number>();
+// An echo arrives within a second or two; a later signal may be someone else's change to the same membership
+const ownWriteMs = 10_000;
+
+/** Notes a membership the caller's own request answered with and put in the cache: its echo on the stream refetches nothing. */
+export function noteOwnMembershipWrite(id: string): void {
+  const now = Date.now();
+  for (const [noted, until] of ownWrites) {
+    if (until <= now) ownWrites.delete(noted);
+  }
+  ownWrites.set(id, now + ownWriteMs);
+}
+
+/** Whether a signal about membership `id` echoes the caller's own write; a write matches one signal. */
+export function isOwnMembershipEcho(id: string): boolean {
+  const until = ownWrites.get(id);
+  ownWrites.delete(id);
+  return until !== undefined && until > Date.now();
+}
+
 function invalidateAllChannelDetails(): void {
   for (const channelType of appConfig.channelEntityTypes) {
     queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === channelType && query.queryKey[1] === 'detail', refetchType: 'none' });

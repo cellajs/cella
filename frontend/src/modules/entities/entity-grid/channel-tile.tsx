@@ -95,8 +95,7 @@ export function ChannelTileBanner({ overlay, children }: { overlay?: ReactNode; 
           className={cn('relative flex aspect-9/4 flex-col bg-cover bg-center sm:aspect-5/2', !entity.bannerUrl && placeholderCoverClass(entity.id))}
           style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}
         >
-          <div className="grow" />
-          <div className="bg-background/50 group-hover/tile-link:bg-background/70 dark:bg-background/75 dark:group-hover/tile-link:bg-background/85 flex min-h-14 items-center gap-3 px-4 py-2 backdrop-blur-xs transition-colors">
+          <div className="bg-background/50 group-hover/tile-link:bg-background/70 dark:bg-background/75 dark:group-hover/tile-link:bg-background/85 mt-auto flex min-h-14 items-center gap-3 px-4 py-2 backdrop-blur-xs transition-colors">
             {children ?? <ChannelTileHeading />}
           </div>
         </div>

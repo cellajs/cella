@@ -91,9 +91,9 @@ function MenuSheetHiddenToggle({
           dropAction && 'bg-muted aria-expanded:bg-muted ring-primary ring-2',
         )}
       >
-        <div className="flex w-14 items-center justify-center py-2">
+        <span className="flex w-14 items-center justify-center py-2">
           <Icon className="group-data-[submenu=true]/hidden:size-3.5" />
-        </div>
+        </span>
         <span className="text-md min-w-0 grow truncate py-2 pr-2 pl-1 text-left leading-5 font-medium group-data-[compact=true]/hidden:text-sm group-data-[compact=true]/hidden:font-normal">
           {label}
         </span>

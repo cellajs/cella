@@ -39,7 +39,7 @@ interface AvatarGroupContextValue {
 
 const AvatarGroupContext = React.createContext<AvatarGroupContextValue>({});
 
-export interface AvatarGroupProps extends React.ComponentProps<'div'> {
+export interface AvatarGroupProps extends React.ComponentProps<'span'> {
   /** Most items shown, the overflow pill included. */
   limit?: number;
 }
@@ -49,9 +49,9 @@ export function AvatarGroup({ children, className, limit, ...props }: AvatarGrou
 
   return (
     <AvatarGroupContext.Provider value={{ count, setCount, limit }}>
-      <div className={cn('relative flex items-center justify-end -space-x-2', className)} {...props}>
+      <span className={cn('relative flex items-center justify-end -space-x-2', className)} {...props}>
         {children}
-      </div>
+      </span>
     </AvatarGroupContext.Provider>
   );
 }

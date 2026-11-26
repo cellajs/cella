@@ -14,10 +14,11 @@ interface MethodLabelProps {
   /** Lowercase; CSS uppercases it. */
   method: string;
   size?: keyof typeof sizes;
+  /** The operation is switched off: the method drops its color. */
+  off?: boolean;
 }
 
-export function MethodLabel({ method, size = 'sm' }: MethodLabelProps) {
-  return (
-    <span className={cn('shrink-0 font-mono font-medium uppercase', methodColors[method] ?? 'text-muted-foreground', sizes[size])}>{method}</span>
-  );
+export function MethodLabel({ method, size = 'sm', off }: MethodLabelProps) {
+  const color = off ? 'text-faint-foreground' : (methodColors[method] ?? 'text-muted-foreground');
+  return <span className={cn('shrink-0 font-mono font-medium uppercase', color, sizes[size])}>{method}</span>;
 }

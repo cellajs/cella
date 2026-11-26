@@ -69,8 +69,7 @@ function SearchResultBlock({ results, entityType, label, hideSeparator, collapse
         >
           {label ?? t(entityType)}
           <span className="text-faint-foreground ml-3 font-normal group-aria-expanded/toggle:hidden">{results.length}</span>
-          <span className="grow" />
-          <ChevronDownIcon className="size-4 transition-transform group-aria-expanded/toggle:rotate-180" />
+          <ChevronDownIcon className="ml-auto size-4 transition-transform group-aria-expanded/toggle:rotate-180" />
         </button>
         {results.map((item) => {
           const membership = isChannelType ? findMembership(myMemberships?.results ?? [], item.id) : null;

@@ -50,7 +50,7 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
               draggable={false}
               className="group/organization-link group/chevron-host focus-effect focus-inset hover:bg-hover flex h-12 items-center rounded-md px-3 transition-colors"
             >
-              <span className="flex min-w-0 grow flex-col gap-0.5">
+              <div className="flex min-w-0 grow flex-col gap-0.5">
                 <h2 className="truncate text-base leading-5 font-semibold">{organization.name}</h2>
                 <span className="text-muted-foreground grid overflow-hidden text-xs font-medium">
                   <span className="truncate transition [grid-area:1/1] group-hover/organization-link:-translate-y-2 group-hover/organization-link:opacity-0 group-hover/organization-link:delay-300 group-focus-visible/organization-link:-translate-y-2 group-focus-visible/organization-link:opacity-0">
@@ -60,7 +60,7 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
                     {t('c:go_to_organization_page')}
                   </span>
                 </span>
-              </span>
+              </div>
               {badge}
               <FoldingChevron icon={ChevronRightIcon} folded={unseenCount > 0} className="ml-3 size-4" />
             </Link>
