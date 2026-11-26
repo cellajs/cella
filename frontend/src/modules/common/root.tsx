@@ -1,6 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { HeadContent, Outlet, useRouter } from '@tanstack/react-router';
-import { configure } from 'onedollarstats';
 import { Suspense, useEffect } from 'react';
 import { appConfig } from 'shared';
 import { useCutTextTitle } from '~/hooks/use-cut-text-title';
@@ -41,8 +40,6 @@ export function Root() {
     'GleapSupport',
     5000,
   );
-
-  useEffect(() => configure({ trackLocalhostAs: null }), []);
 
   return (
     <TooltipProvider delay={300} timeout={400}>
