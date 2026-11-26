@@ -11,6 +11,7 @@ import { OrganizationSwitcher } from '~/modules/navigation/menu-sheet/organizati
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { OfflineMenuAlert } from '~/modules/navigation/offline-mark';
 import { useUserStore } from '~/modules/user/user-store';
 
 const { navBar, menu: menuMode } = appConfig.navigation;
@@ -50,6 +51,8 @@ export function MenuSheet() {
     // The open page's row takes the hover fill until another control in the sheet has the pointer: one fill at a time
     <NavSheetFrame panels className="group/menu-sheet">
       <MenuSheetHeader />
+      {/* Not in the header, which hides from sm up when the nav bar goes home */}
+      <OfflineMenuAlert />
       {organization && !hasOrganizationButtons && <OrganizationSwitcher organization={organization} />}
       <ContentKeyTransition contentKey={organization?.id ?? 'all'}>
         {organization ? <MenuSheetOrganization organization={organization} menu={menu} hasSwitcher={!hasOrganizationButtons} /> : renderedSections}

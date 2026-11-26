@@ -32,6 +32,8 @@ export type NavItem = {
   iconOverride?: ComponentType<{ className?: string; icon: IconComponent }>;
   /** Renders over the button (e.g. an unseen counter). */
   badge?: ComponentType<NavBadgeProps>;
+  /** Renders at the button's bottom right (e.g. the offline mark); receives position classes per bar. */
+  mark?: ComponentType<{ className?: string }>;
 };
 
 export type EntityRoute = { to: LinkComponentProps['to']; params: LinkComponentProps['params']; search: LinkComponentProps['search'] };

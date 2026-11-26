@@ -4,6 +4,7 @@ import { AccountNavIcon } from '~/modules/navigation/account-nav-icon';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { AppIcon, AppNavLoader } from '~/modules/navigation/app-nav-loader';
 import { MenuSheet } from '~/modules/navigation/menu-sheet/menu-sheet';
+import { OfflineNavMark } from '~/modules/navigation/offline-mark';
 import { startSearchAction } from '~/modules/navigation/start-search-action';
 import { NotificationsSheet } from '~/modules/notification/notifications-sheet';
 import { UnreadNavBadge } from '~/modules/notification/unread-nav-badge';
@@ -23,6 +24,7 @@ export const navItems = [
     sheet: () => <MenuSheet />,
     iconOverride: AppNavLoader,
     badge: appConfig.navigation.menu === 'all' ? UnseenNavBadge : undefined,
+    mark: OfflineNavMark,
   },
   { id: 'search', type: 'base', icon: SearchIcon, action: startSearchAction },
   // Mentions and addressed activity; ambient posts stay on the menu badge above.

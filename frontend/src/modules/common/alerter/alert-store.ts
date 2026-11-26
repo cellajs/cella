@@ -6,9 +6,9 @@ import { isDebugMode } from '~/env';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface AlertStoreState {
-  /** Ids of the banners the user dismissed, which stay hidden. */
+  /** Ids of the banners and explainers the user dismissed, which stay hidden. */
   alertsSeen: string[];
-  /** Whether the last word from the server is that it is down; the offline alert follows the connection, in `useOfflineAlert`. */
+  /** Whether the last word from the server is that it is down; the offline mark follows the connection, in `useOfflineMark`. */
   downAlert: boolean;
 
   /** Adds one id to `alertsSeen`. */

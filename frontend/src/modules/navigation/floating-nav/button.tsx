@@ -19,6 +19,8 @@ export interface FloatingNavItem {
   /** Shown after the icon while `labelVisible`, widening the circle into a pill. */
   label?: string;
   labelVisible?: boolean;
+  /** Drawn over the button's edge, such as the offline mark. */
+  mark?: ReactNode;
 }
 
 interface FloatingNavButtonProps extends Omit<FloatingNavItem, 'visible' | 'ariaLabel'> {
@@ -31,7 +33,6 @@ interface FloatingNavButtonProps extends Omit<FloatingNavItem, 'visible' | 'aria
   concealed?: boolean;
   tabIndex?: number;
   ref?: Ref<HTMLButtonElement>;
-  children?: ReactNode;
 }
 
 export function FloatingNavButton({
@@ -47,7 +48,7 @@ export function FloatingNavButton({
   labelVisible,
   variant = 'secondary',
   ref,
-  children,
+  mark,
 }: FloatingNavButtonProps) {
   // A tap that interrupts a momentum scroll cancels the fling, and the browser suppresses its click,
   // so touch taps run on touchend. preventDefault there stops the synthesized click entirely, since
@@ -123,7 +124,7 @@ export function FloatingNavButton({
           </span>
         </span>
       )}
-      {children}
+      {mark}
     </Button>
   );
 }

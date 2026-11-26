@@ -12,6 +12,7 @@ import { Sheeter } from '~/modules/common/sheeter/provider';
 import { Spotlighter } from '~/modules/common/spotlighter/provider';
 import { AppNav } from '~/modules/navigation/app-nav';
 import { BackToStart, focusTargets, SkipLink } from '~/modules/navigation/focus-bridge';
+import { OfflineExplainer } from '~/modules/navigation/offline-mark';
 import { SeenTracker } from '~/modules/seen/seen-tracker';
 import { SidebarWrapper } from '~/modules/ui/sidebar';
 import { UserSheetHandler } from '~/modules/user/user-sheet-handler';
@@ -95,6 +96,7 @@ export function AppLayout() {
         <Sheeter />
         <Spotlighter />
         <DownAlert />
+        <OfflineExplainer />
         <Dropdowner />
       </ErrorBoundary>
       {appConfig.navigation.navBar && <BackToStart />}

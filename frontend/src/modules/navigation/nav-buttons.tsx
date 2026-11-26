@@ -114,7 +114,12 @@ export function SidebarNavItemButton({
       {...{ label, isCollapsed, isActive, itemClassName }}
       onClick={() => onClick(navItem.id, buttonRef)}
       className="relative"
-      badge={<NavItemBadge navItem={navItem} isActive={isActive} className="top-2 left-8" />}
+      badge={
+        <>
+          <NavItemBadge navItem={navItem} isActive={isActive} className="top-2 left-8" />
+          {navItem.mark && <navItem.mark className="bottom-2 left-8" />}
+        </>
+      }
     >
       <NavItemIcon navItem={navItem} />
     </SidebarNavButton>
@@ -137,6 +142,7 @@ export function BottomBarNavItemButton({ navItem, isActive, onClick }: Omit<NavI
       <NavItemIcon navItem={navItem} />
       <span className="sr-only">{t(`c:${navItem.id}`)}</span>
       <NavItemBadge navItem={navItem} isActive={isActive} className="top-1 right-1" />
+      {navItem.mark && <navItem.mark className="right-1 bottom-1" />}
     </button>
   );
 }
