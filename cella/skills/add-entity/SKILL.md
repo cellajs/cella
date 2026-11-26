@@ -208,7 +208,9 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
 - A lazy getter in `backend/src/db/channel-tables.ts`.
 - `<name>-schema.ts`: `evolutionContract.channel('<name>', { createItem, updateBody })`. App counts
   on its `included.counts` go in `appChannelCountFields` in `backend/src/schemas/app-schemas.ts`; the
-  operation that reads the channel fills them.
+  operation that reads the channel fills them. Its `toolsConfig` is `channelToolsConfigSchema('<name>')`
+  and its `included` is `channelIncludedSchema('<name>')`, whose `inheritedToolsConfig` every operation
+  that answers with the channel fills from `getInheritedToolsConfigs`, a list for all its rows at once.
 - Routes (`organization-routes.ts`): create at `/~batch-create` with `[userGuard, tenantGuard, orgGuard]`
   and `insertEntityLock` before the limiter; read and update (`patch`) at `/{<name>Id}` with
   `[actorGuard, tenantGuard, orgGuard]` and `xScope: '<name>:read'` or `'<name>:write'`, all mounted at
@@ -245,9 +247,9 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
 - `shared/config/config.default.ts`: an entry in `menuStructure`, and `surfaces['<name>.tabs']` when
   its tabs need an `order` other than their declared one, or a template tab is `hidden`.
 - Routes under `frontend/src/routes/_app/$tenantId.$organizationSlug/<name>.$slug/`, built like the
-  `organization/` folder: `route.tsx` with `tabsSlot: '<name>.tabs'` and `guardNavTabs` in its
-  `beforeLoad`, which also resolves the channel from the slug (`resolveChannelBySlug`) into the route
-  context; `members.tsx`, `settings.tsx` (`<ChannelSettingsPage entity={…} />`, with a
+  `organization/` folder: `route.tsx` with `tabsSlot: '<name>.tabs'` and a `beforeLoad` that resolves
+  the channel from the slug (`resolveChannelBySlug`) into the route context and calls `guardNavTabs`
+  with `slotConfig: channelSlotConfig(<name>, '<name>.tabs')`; `members.tsx`, `settings.tsx` (`<ChannelSettingsPage entity={…} />`, with a
   `settings-tools.tsx` built from the `*ToolBase` helpers) and `$tool.tsx` for slot tabs. Logic and
   components go in the module's `route-logic.ts` and `route-components.tsx`.
 - `frontend/src/entity-sync-queries.ts`: a `case '<name>'` that calls `addMembersQuery('<name>')`
