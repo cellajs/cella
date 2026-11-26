@@ -84,7 +84,7 @@ Span names are constants in [span-names.ts](../../shared/src/tracing/span-names.
 
 | Family | Service | What it shows |
 | --- | --- | --- |
-| HTTP server, outbound fetch, Postgres query | Backend | Every request and query, by the OTel conventions |
+| HTTP server, outbound fetch, Postgres query | Backend | Every request and query, by the OTel conventions: a request's method, route, path and query, status and the caller's user agent, and a query's text without its values |
 | `nodejs.eventloop.*`, `v8js.*`, `process.*` | Every service | Event loop delay and use, heap and garbage collection, resident memory against its limit, CPU, uptime |
 | `db.client.connection.*` | Every service | Its main pool's connections in use and idle, its maximum, requests waiting |
 | `postgresql.*` | Jobs worker | The server's sessions by state against its limit, the oldest transaction, lock waits, the database's size, commits, rollbacks, deadlocks, temporary files, transaction id age, the WAL its replication slots hold |
@@ -94,7 +94,7 @@ Span names are constants in [span-names.ts](../../shared/src/tracing/span-names.
 | `yjs.*` | Yjs | Open connections, documents and clients |
 | `sync.message.process`, `client.*` | Frontend, devtools only | A sync message handled, a failure the app caught and continued from, which the browser also reports as a handled error |
 
-A log record carries the trace and span it was written in. The fields of its log line become its attributes. A logged error also becomes `exception.type`, `exception.message` and `exception.stacktrace`, its type named as a span names it. The request log line's body is its method, route, status and duration, never the path.
+A log record carries the trace and span it was written in. The fields of its log line become its attributes. A logged error also becomes `exception.type`, `exception.message` and `exception.stacktrace`, its type named as a span names it. The request log line's body is its method, route, status and duration, never the path; the path and query, without secrets, are an attribute beside the user id and the sign-in session's id.
 
 No service serves a Prometheus scrape target. Metrics leave over OTLP. `/public/metrics` holds only the public counts the website shows.
 
