@@ -5,7 +5,7 @@ This document explains how [OpenTelemetry](https://opentelemetry.io/docs/) trace
 ### TL;DR
 
 Every Node service uses one setup for [OpenTelemetry](https://opentelemetry.io/) traces, metrics,
-and logs. They go to any OTLP endpoint. One trace
+and logs. They go to any OTLP endpoint. The browser reports errors and sessions to a DSN. One trace
 follows a request from a browser click through the backend. A second follows a database change from
 the database-change worker into the backend.
 
@@ -23,8 +23,8 @@ the database-change worker into the backend.
                                  ▼
                OTLP sink: any OTLP endpoint
 
-    frontend: Maple's browser SDK, a local tracer in development
-          └── traceparent on API calls ──▶ backend
+    frontend: errors and sessions to a DSN, a local tracer for the devtools
+          └── traceparent and session.id on API calls ──▶ backend
 ```
 
 Each service names itself `{slug}-<name>`, such as `{slug}-api` or `{slug}-cdc`. The backend image takes its process mode as the name. Every span, metric and log record carries that name, the release it runs and the environment. The release is `RELEASE_SHA`, or a checkout's commit, and the browser bundle reports the same one. Its spans and metrics also carry `service.instance.id`, one id per process, which tells two machines of one service apart.
@@ -43,8 +43,9 @@ The other standard `OTEL_*` variables apply too, such as a per-signal endpoint o
 
 A deployed machine receives only the variables its runtime secrets and its service's `env` declare. The endpoint and its headers are the runtime secrets `otlp-endpoint` and `otlp-headers`, which an operator sets ([runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts)). Declare any other in the service's `env` in [services.config.ts](../../infra/config/services.config.ts).
 
-The browser reports to Maple through Maple's own SDK and has no OTLP export. It sends errors, traces and web vitals ([maple.ts](../../frontend/src/lib/maple.ts)). It sends no
-session replay, cookies or user id. The privacy policy relies on that. In development a local tracer keeps the spans for the devtools.
+The browser has no OTLP export. It sends errors and one session per page load to a DSN, in the Sentry envelope protocol, through Sentry's browser SDK ([monitoring.ts](../../frontend/src/lib/monitoring.ts)). A deployed mode names the DSN in its config as `monitoring.dsn`, and the frontend CSP allows its origin. Development reads `VITE_MONITORING_DSN` from `frontend/.env`. Without a DSN the browser sends nothing.
+
+An error that reaches any React boundary counts as unhandled, and a failure the app caught and continued from as handled. A session names the signed-in user by id alone. No span, web vital, replay or cookie leaves the browser, and the privacy policy says so. A local tracer keeps the spans for the devtools.
 
 ## Add a worker
 
@@ -89,7 +90,7 @@ Span names are constants in [span-names.ts](../../shared/src/tracing/span-names.
 | `lens.*`, `schema.*` | Backend | Schema evolution: transform time, warnings, client versions seen |
 | `cdc.*` | CDC | Each WAL message and recorded activity, replication status, the socket to the API |
 | `yjs.*` | Yjs | Open connections, documents and clients |
-| `sync.message.process`, `client.*` | Frontend | A sync message handled, a failure the app caught and continued from |
+| `sync.message.process`, `client.*` | Frontend, devtools only | A sync message handled, a failure the app caught and continued from, which the browser also reports as a handled error |
 
 A log record carries the trace and span it was written in. The fields of its log line become its attributes. A logged error also becomes `exception.type`, `exception.message` and `exception.stacktrace`, its type named as a span names it. The request log line's body is its method, route, status and duration, never the path.
 
@@ -98,7 +99,7 @@ No service serves a Prometheus scrape target. Metrics leave over OTLP. `/public/
 ## Redaction
 
 Tokens travel in request URLs, such as magic-link paths and OAuth callbacks. One function,
-`scrubUrl` in [scrub-url.ts](../../shared/src/utils/scrub-url.ts), removes them from spans and logs alike. The span processor in
+`scrubUrl` in [scrub-url.ts](../../shared/src/utils/scrub-url.ts), removes them from spans, logs and the browser's reports alike. The span processor in
 [redacting-span-processor.ts](../../shared/src/tracing/redacting-span-processor.ts) runs before every exporter. It also drops the
 caller's IP address. A new token route adds its template to `secretPathTemplates` in scrub-url.ts. A new token query key goes in `sensitiveQueryKeys`.
 
@@ -106,7 +107,7 @@ caller's IP address. A new token route adds its template to `secretPathTemplates
 
 A request is one trace. The frontend sends `traceparent` on API calls, and the backend's auto-instrumentation continues it. A database change is a second trace. CDC starts one per change and sends its context as `_trace` with the message. The backend's `sync.activitybus.receive` span continues it.
 
-A request span records who acted and where, as the guards resolve them: `tenant.id`, `tenant.name`, `tenant.kind`, `organization.id`, `organization.name` and `user.id`. It records an exception only for an answer of 500 or above. A service reads a caller's `baggage` and passes none on.
+A request span records the page's session as `session.id`, from the request's `baggage`, and who acted and where, as the guards resolve them: `tenant.id`, `tenant.name`, `tenant.kind`, `organization.id`, `organization.name` and `user.id`. It records an exception only for an answer of 500 or above. A service reads a caller's `baggage` and passes none on.
 
 The two are not joined. The change a request wrote starts a trace of its own, since the WAL carries no trace context. The client's `sync.message.process` span is a third, since a stream frame carries none either.
 

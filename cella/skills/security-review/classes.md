@@ -374,7 +374,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Downloads: no `Content-Disposition` in `backend/src`, `frontend/src`, `shared/src` or `infra`; downloads are a client `<a download>` of a blob (`frontend/src/lib/export.ts`) or a presigned or CDN URL (`attachment-render.tsx`, `attachments-carousel.tsx`).
   - Awareness: `frontend/src/modules/common/blocknote/collaborative-blocknote.tsx` (sets `user: { name, color }`); peers render with BlockNote `YCursorPlugin`; the relay (`yjs/src/sync/relay.ts`, `yjs/src/constants.ts`) checks awareness client-id ownership, rate and entry counts.
   - Response headers: the app origin is served by Caddy with a CSP (`cella-cli:src/infra/caddy/Caddyfile`, built in `infra/config/frontend-csp.config.ts`, bound in `infra/config/env-suppliers.config.ts`, asserted by `cella-cli:src/infra/tasks/smoke.ts` and `infra/tests/caddyfile.test.ts`), plus HSTS, `X-Frame-Options DENY`, `nosniff`, referrer, permissions and COOP. The API sets Hono `secureHeaders` (`backend/src/middlewares/app.ts`, `shared/src/health-app.ts`) with no CSP of its own; the bucket and CDN set none in `infra/`.
-  - CSP shape: `script-src 'self' *.gleap.io` (no `unsafe-inline`, no `unsafe-eval`), `style-src 'self' 'unsafe-inline'`, `img-src 'self' blob: https: data:`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `connect-src` lists the API, Yjs, S3, maps, Transloadit, gleap, maple and onedollarstats.
+  - CSP shape: `script-src 'self' *.gleap.io` (no `unsafe-inline`, no `unsafe-eval`), `style-src 'self' 'unsafe-inline'`, `img-src 'self' blob: https: data:`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `connect-src` lists the API, Yjs, S3, maps, Transloadit, gleap, the monitoring DSN's origin and onedollarstats.
 - **Holds:**
   - `tests/emails/email-escaping`: a sender, org, actor or context name cannot inject a link into invite, mention and digest mail; button text cannot inject markup into the Outlook fallback; subject and preview stay unescaped while the rendered mail escapes once.
   - `tests/emails/brevo-send`: a name cannot open a Brevo template tag, no `|safe` on an undeclared key, typed placeholder text is not filled, digest user text is neither markup nor Brevo syntax.
@@ -619,7 +619,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### F1 Supply chain and build integrity
 - **Gain:** secret exposure, code execution.
-- **Merges:** `minimumReleaseAge: 1440`, `blockExoticSubdeps`, `allowBuilds`, the lockfile, `pnpm cella audit`, overrides hygiene, third-party scripts in the browser (Gleap, onedollarstats, Maple), locale and font loading, subresource integrity, base images by digest (infra G12), CI tokens, lefthook.
+- **Merges:** `minimumReleaseAge: 1440`, `blockExoticSubdeps`, `allowBuilds`, the lockfile, `pnpm cella audit`, overrides hygiene, third-party scripts in the browser (Gleap, onedollarstats, Sentry's browser SDK), locale and font loading, subresource integrity, base images by digest (infra G12), CI tokens, lefthook.
 - **Advisories:** 10 (the 2026 `@tanstack/*` malware release, playwright downloads without certificate verification, otel module generation).
 - **Files:**
   - `pnpm-workspace.yaml`: `allowBuilds`, `blockExoticSubdeps`, `minimumReleaseAge` (with an exclude for `@cellajs/cli`), `overrides`, `updateConfig.ignoreDependencies`. No `trustPolicy`, `onlyBuiltDependencies` or `.npmrc`.
@@ -634,7 +634,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Exotic transitive sources (git, tarball URLs): `blockExoticSubdeps`.
   - Install scripts: only esbuild and lefthook may build; images install with `--ignore-scripts` and `--frozen-lockfile`.
   - CI: `permissions: {}` at the top; jobs `contents: read`; every third-party `uses:` is a 40-character SHA with a tag comment; the trigger is `pull_request` only (no `pull_request_target`); heavy jobs run only for same-repo branches; the privileged-changes step of `lint` and `release-applied` hold no secret.
-  - Browser: `script-src 'self' *.gleap.io`, no `unsafe-inline` for scripts, `object-src 'none'`, `font-src 'self' data:`. Fonts are self-hosted (`frontend/index.html`). Gleap, onedollarstats and Maple are npm packages bundled by Vite (`frontend/src/modules/common/gleap-support.ts`, `root.tsx`, `frontend/src/lib/maple.ts`), so they carry lockfile integrity, not a script tag.
+  - Browser: `script-src 'self' *.gleap.io`, no `unsafe-inline` for scripts, `object-src 'none'`, `font-src 'self' data:`. Fonts are self-hosted (`frontend/index.html`). Gleap, onedollarstats and Sentry's browser SDK are npm packages bundled by Vite (`frontend/src/modules/common/gleap-support.ts`, `root.tsx`, `frontend/src/lib/monitoring.ts`). They carry lockfile integrity, not a script tag.
   - The infra review (`INFRA_ADVERSARIAL_REVIEW.md`: the F2 line on a compromised build dependency, which reaches a builder that holds no key; G1; G12), cited and not redone.
   - The workspace settings, the audit and cella#1549.
 - **Asks:** an inventory of code that runs from the network at install, build, CI and in the browser, and what a compromised package in each tier reaches (the infra review's F2 line).
