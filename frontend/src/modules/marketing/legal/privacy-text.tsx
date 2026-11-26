@@ -1,4 +1,5 @@
 import { appConfig } from 'shared';
+import { monitoringEnabled } from '~/lib/monitoring';
 import { LegalContact, SupportEmailLink } from '~/modules/marketing/legal/legal-contact';
 import { LegalSection } from '~/modules/marketing/legal/legal-section';
 import { ProcessedDataTypes, Subprocessors } from '~/modules/marketing/legal/legal-tables';
@@ -10,7 +11,7 @@ export function PrivacyText() {
 
   return (
     <div id="privacy-content">
-      <LegalSection subject="privacy" id="overview" lastUpdated="November 16, 2026">
+      <LegalSection subject="privacy" id="overview" lastUpdated="November 26, 2026">
         <p>
           {company} ("we") runs {appName} (the "Service") for organizations. This policy explains how we handle personal data under the EU General
           Data Protection Regulation (GDPR). We are the controller of your account data. Content your organization puts in the Service, such as files,
@@ -71,7 +72,15 @@ export function PrivacyText() {
           sign-ins from a new device. Your preferences and offline copies of your data stay in your browser's storage. We use no advertising cookies.
         </p>
         <ul>
-          {appConfig.maplePublicIngestKey && <li>Maple, our error monitoring, sets no cookies and keeps a session id only for the open tab.</li>}
+          {monitoringEnabled && (
+            <li>
+              Our error monitoring sets no cookies and stores nothing in your browser. For each page load it sends a random id, your browser and the
+              app's release, with your user id when you are signed in. When something fails it also sends the error, the page's address and the one
+              you came from without their secrets, your browser's language and time zone, and the steps before it: pages, the elements you clicked or
+              typed in (not what you typed), requests and the app's console warnings and errors. It asks the monitoring service not to keep your IP
+              address.
+            </li>
+          )}
           <li>We count page visits with One Dollar Stats, which sets no cookies.</li>
           {appConfig.has.chatSupport && <li>The support chat by Gleap sets its own cookies.</li>}
           {mapHost && <li>The map on our contact form loads from {mapHost}, which receives your IP address.</li>}

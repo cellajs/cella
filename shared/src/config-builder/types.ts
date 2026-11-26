@@ -471,7 +471,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   mapStyleUrls: { light: string; dark: string };
   /** MapLibre zoom of the contact map: 3 shows Europe, 14 a few streets. */
   mapZoom: number;
-  maplePublicIngestKey: string;
+  /** Where the browser reports errors and sessions: a Sentry envelope DSN, no secret, empty for none. Development and tunnel read `VITE_MONITORING_DSN`. */
+  monitoring: { dsn: string };
   /** Hosts a Web Push subscription endpoint may name; `*.` matches any subdomain. */
   pushServiceHosts: readonly string[];
 

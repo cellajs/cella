@@ -390,7 +390,8 @@ export const config = {
   // OpenFreeMap: free, no key, no cookies. Any MapLibre style URL works; its origin is added to the CSP.
   mapStyleUrls: { light: 'https://tiles.openfreemap.org/styles/positron', dark: 'https://tiles.openfreemap.org/styles/dark' },
   mapZoom: 3,
-  maplePublicIngestKey: 'maple_pk_LnUSK6-_5j3orVrlZ1Hv6I1pxzDh3SJ5',
+  // None here: a deployed mode names its DSN in its own config file.
+  monitoring: { dsn: '' },
   /**
    * Hosts a Web Push subscription endpoint may name: the push services of Chrome and most Chromium browsers (FCM),
    * Firefox, Safari and Edge (WNS). `*.` matches any subdomain; entries compare lowercased, without one trailing dot.

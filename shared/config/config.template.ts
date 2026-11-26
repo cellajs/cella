@@ -375,8 +375,8 @@ export const config = {
    */
   mapStyleUrls: { light: '', dark: '' },
   mapZoom: 3,
-  /** Maple.dev public ingest key, safe to embed in the frontend bundle; empty turns frontend export off. */
-  maplePublicIngestKey: '',
+  // None here: a deployed mode names its DSN in its own config file.
+  monitoring: { dsn: '' },
   /**
    * Hosts a Web Push subscription endpoint may name: the push services of Chrome and most Chromium browsers (FCM),
    * Firefox, Safari and Edge (WNS). `*.` matches any subdomain; entries compare lowercased, without one trailing dot.

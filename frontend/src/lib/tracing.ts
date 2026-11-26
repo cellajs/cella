@@ -1,6 +1,7 @@
 import { type Span, SpanStatusCode } from '@opentelemetry/api';
 import type { CleanSpanAttributes, SpanData, TraceContext } from 'shared/tracing';
 import { isDebugMode } from '~/env';
+import { reportHandledError } from '~/lib/monitoring';
 import { spanStore, tracer } from '~/lib/otel';
 import { settleWithin } from '~/utils/wait-for';
 
@@ -70,12 +71,13 @@ export const startSyncSpan = (name: string, attributes: CleanSpanAttributes = {}
   return span;
 };
 
-/** Record a swallowed critical failure as an immediate error span for Maple alerting. */
+/** Records a swallowed critical failure as an error span for the devtools and reports it as a handled error. */
 export const reportCriticalError = (name: string, error: unknown, attributes: CleanSpanAttributes = {}): void => {
   const span = tracer.startSpan(`client.${name}`);
   applyAttributes(span, attributes);
   failSpan(span, error);
   span.end();
+  reportHandledError(name, error, attributes);
 };
 
 /** Logs a step that did not answer in time and records it as an error span naming the step. */

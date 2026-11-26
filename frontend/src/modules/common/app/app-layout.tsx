@@ -25,6 +25,8 @@ import { getSkipPageEnter } from '~/utils/nav-transition';
 // Both render null until something opens them, so each loads with that interaction.
 const AttachmentDialogHandler = lazyNamed(() => import('~/modules/attachment/dialog/attachment-dialog-handler'), 'AttachmentDialogHandler');
 const Uploader = lazyNamed(() => import('~/modules/common/uploader/uploader'), 'Uploader');
+// The debug menu's crash under each boundary of this layout, outside production.
+const DebugCrash = __DEV_TOOLS__ ? lazyNamed(() => import('~/modules/common/devtools/debug-crash'), 'DebugCrash') : () => null;
 
 /** Composite key for the route's deepest channel, undefined outside channels. Stable across tab changes. */
 const usePageChannelKey = (): string | undefined => {
@@ -51,6 +53,9 @@ function AppContent() {
         <main id={focusTargets.content} tabIndex={-1} className="focus-view-scope flex flex-1 flex-col focus:outline-hidden">
           <Alerter mode="app" />
           <Outlet />
+          <Suspense fallback={null}>
+            <DebugCrash site="content" />
+          </Suspense>
         </main>
         {showCurtain && <div key={channelKey} className="page-enter-curtain" aria-hidden />}
       </div>
@@ -78,6 +83,9 @@ export function AppLayout() {
         <SeenTracker />
         <Suspense fallback={null}>
           <Uploader />
+        </Suspense>
+        <Suspense fallback={null}>
+          <DebugCrash site="layout" />
         </Suspense>
         <Dialoger />
         <UserSheetHandler />

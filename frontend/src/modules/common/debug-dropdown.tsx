@@ -1,5 +1,6 @@
 import { appConfig } from 'shared';
 import { drizzleStudioPort, storybookPort } from 'shared/utils/tool-ports';
+import { crashAt } from '~/modules/common/devtools/debug-crash';
 import { toggleReactScan, toggleSyncDevtools } from '~/modules/common/devtools/devtools';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -23,6 +24,9 @@ const debugOptions = [
   { id: 'react-scan', icon: '⏱️', onSelect: toggleReactScan },
   { id: 'sync-devtools', icon: '⚡', onSelect: toggleSyncDevtools },
   { id: 'reset-local', icon: '🧹', onSelect: resetLocal },
+  // An error under a React boundary, as the monitoring SDK reports a user's
+  { id: 'crash-content', icon: '💥', onSelect: () => crashAt('content') },
+  { id: 'crash-layout', icon: '🧨', onSelect: () => crashAt('layout') },
 ];
 
 /** 🐞 menu that toggles the panels mounted by `Devtools` and links to local dev tools. */

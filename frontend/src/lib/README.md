@@ -2,11 +2,13 @@
 
 ## Observability
 
-Maple owns browser observability outside development; `maple.ts` lists what it collects. Its SDK registers the global tracing provider when enabled. In development, or with Maple disabled, `otel.ts` registers a local WebTracerProvider so span helpers and sync devtools keep working without exporting spans.
+With a DSN, `monitoring.ts` sends errors and one session per page load to it through Sentry's browser SDK, in the Sentry envelope protocol any compatible receiver accepts. A deployed mode names its DSN in its config (`monitoring.dsn`); development reads `VITE_MONITORING_DSN` from `frontend/.env`, and without one the page sends nothing. It names the signed-in user by id alone, and an error at any React boundary is unhandled. No span and no web vital leaves the browser.
+
+The SDK sends the trace headers of every API request, and `monitoring.ts` adds the session's id to the `baggage` of each request the generated client makes. `otel.ts` keeps a local tracer in every mode for the span helpers and the sync devtools; it sends the trace headers itself only when no DSN is set.
 
 ## History wrappers
 
-`history-bind.ts` must load before observability, Maple, and the router. TanStack History and Maple both wrap `history.pushState` and `history.replaceState`, and TanStack can invoke the active replacement detached from `history`. Binding the native methods first keeps every wrapper order receiver-safe and stops navigation from leaving the address bar stale.
+`history-bind.ts` must load before monitoring and the router. TanStack History and the monitoring SDK both wrap `history.pushState` and `history.replaceState`, and TanStack can invoke the active replacement detached from `history`. Binding the native methods first keeps every wrapper order receiver-safe and stops navigation from leaving the address bar stale.
 
 ## Zod under the CSP
 

@@ -1,5 +1,5 @@
 /// <reference types="vite-plugin-svgr/client" />
-/** Release identifier (git SHA, or 'unknown') used as Maple serviceVersion. */
+/** The release the servers report too: `RELEASE_SHA`, else the checkout's commit, else 'unknown'; the monitoring SDK's `release`. */
 declare const __APP_VERSION__: string;
 
 /** Root package.json version (release-please), shown on the docs landing page and in the info panel. */

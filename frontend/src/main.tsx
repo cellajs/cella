@@ -1,5 +1,6 @@
 import '~/lib/zod-config'; // Must run before shared and sdk build their schemas: zod reads jitless as a schema is built
-import '~/lib/history-bind'; // Must run before otel/maple/router: they all patch history
+import '~/lib/history-bind'; // Must run before monitoring and the router: they all patch history
+import '~/lib/monitoring'; // Next, so an error while the app boots is reported
 import '~/lib/embedded-context'; // Must run before the router: it takes a launch's handoff code out of the address
 import { LucideProvider } from 'lucide-react';
 import { MotionConfig } from 'motion/react';
@@ -15,7 +16,7 @@ import { appConfig } from 'shared';
 import { ApiError } from '~/lib/api';
 import { createClientConfig } from '~/lib/api-client';
 import { isEmbedded } from '~/lib/embedded-context';
-import { reportReactError, reportRejectedResponse } from '~/lib/maple';
+import { reportReactError, reportRejectedResponse } from '~/lib/monitoring';
 import { AppRouter } from '~/modules/common/app/app-router';
 import { ReloadPrompt } from '~/modules/common/reload-prompt';
 import { ToasterProvider } from '~/modules/common/toaster/toaster-provider';

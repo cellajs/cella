@@ -8,32 +8,27 @@ import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { appConfig } from 'shared';
 import { createSpanStore, createSpanStoreProcessor } from 'shared/tracing';
 import { escapeRegExp } from 'shared/utils/escape-regexp';
-import { isMapleOptedIn } from '~/env';
+import { monitoringEnabled } from '~/lib/monitoring';
 
-// The OpenTelemetry packages here follow the line @maple-dev/browser depends on (package.json), so the boot bundle
-// carries one copy of each, shared with Maple's.
-
-/** Select Maple tracing or the development tracer so exactly one provider registers. */
-export const mapleEnabled = !!appConfig.maplePublicIngestKey && (appConfig.mode !== 'development' || isMapleOptedIn);
-
-/** Devtools ring of completed frontend tracing spans. Only fed when Maple tracing is disabled. */
+/** Devtools ring of completed frontend tracing spans. */
 export const spanStore = createSpanStore({ maxSpans: 500 });
 
-if (!mapleEnabled) {
-  const provider = new TracerProvider({
-    resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: `${appConfig.slug}-frontend`, 'deployment.environment.name': appConfig.mode }),
-    spanProcessors: [createSpanStoreProcessor({ store: spanStore })],
-  });
+// The local tracer feeds the devtools in every mode and exports nothing. The monitoring SDK, when on, sends the trace
+// headers of API requests.
+const provider = new TracerProvider({
+  resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: `${appConfig.slug}-frontend`, 'deployment.environment.name': appConfig.mode }),
+  spanProcessors: [createSpanStoreProcessor({ store: spanStore })],
+});
 
-  trace.setGlobalTracerProvider(provider);
+trace.setGlobalTracerProvider(provider);
+context.setGlobalContextManager(new StackContextManager().enable());
+
+// Without the monitoring SDK an API request still carries the page's trace for the backend to continue. Guarded for
+// test environments where appConfig is partially mocked.
+if (!monitoringEnabled && appConfig.backendUrl) {
   propagation.setGlobalPropagator(new CompositePropagator({ propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()] }));
-  context.setGlobalContextManager(new StackContextManager().enable());
-
-  // Guarded for test environments where appConfig is partially mocked.
-  if (appConfig.backendUrl) {
-    const backendOrigin = new RegExp(`^${escapeRegExp(appConfig.backendUrl)}(/|$)`);
-    registerInstrumentations({ instrumentations: [new FetchInstrumentation({ propagateTraceHeaderCorsUrls: [backendOrigin] })] });
-  }
+  const backendOrigin = new RegExp(`^${escapeRegExp(appConfig.backendUrl)}(/|$)`);
+  registerInstrumentations({ instrumentations: [new FetchInstrumentation({ propagateTraceHeaderCorsUrls: [backendOrigin] })] });
 }
 
 /** Active frontend tracer from the provider registered for the current environment. */
