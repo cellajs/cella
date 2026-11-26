@@ -33,7 +33,7 @@ No script: manual.
 ## Manual steps
 
 1. Not caught by the compiler. Each `.env` or CI secret that sets `MAPLE_SECRET_INGEST_KEY` sets the same destination in the standard variables, for Maple `OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.maple.dev` and `OTEL_EXPORTER_OTLP_HEADERS=x-maple-ingest-key=<key>`, and drops the key.
-2. Not caught by the compiler. Per deployed environment: copy the value of `maple-secret-ingest-key`, run `pnpm infra apply` (it deletes that container and makes `otlp-endpoint` and `otlp-headers`), store both values in **Env vars & secrets**, then deploy. Until then the services export nothing.
+2. Not caught by the compiler. Per deployed environment: copy the value of `maple-secret-ingest-key`, run `pnpm cella infra apply` (it deletes that container and makes `otlp-endpoint` and `otlp-headers`), store both values in **Env vars & secrets**, then deploy. Until then the services export nothing.
 3. Caught by the compiler. Code or a mock that builds an `OtelSDK` without `createOtelSDK` adds `callbackTimeoutMs`; a call of `resolveOtlpSink` or a read of `env` that names `MAPLE_SECRET_INGEST_KEY` drops it.
 4. An app's own worker with a database pool passes it to `createOtelSDK` as `pool: { name, load }`, as `cdc/src/lib/tracing.ts` does: `start()` then reports its connections.
 5. Not caught by the compiler. Request spans carry `tenant.name`, `organization.name` and `user.id` to the destination: an app whose privacy text lists what its monitoring receives names them.
