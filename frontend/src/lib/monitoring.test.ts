@@ -14,10 +14,7 @@ vi.mock('@sentry/browser', () => ({
 }));
 
 // The test mode's config names no DSN: this one turns reporting on, and the mocked SDK sends nothing.
-vi.mock('shared', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('shared')>();
-  return { ...actual, appConfig: { ...actual.appConfig, monitoring: { dsn: 'http://public@localhost:9/1' } } };
-});
+vi.mock('shared/utils/monitoring-dsn', () => ({ monitoringDsn: 'http://public@localhost:9/1' }));
 
 // The build defines the release; the module reads it as it starts the SDK.
 vi.stubGlobal('__APP_VERSION__', 'test');
