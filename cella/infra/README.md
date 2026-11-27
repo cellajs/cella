@@ -23,10 +23,10 @@ The engine names no app. This folder is the app's part: its [description](#the-d
 
 **Apply** (`pnpm cella infra apply`) changes the foundation and publishes the **engine image**. That image holds the engine built from your checkout, with the **applied description** of the app. Every run of the main job starts from it.
 
-**Deploy**: the main job's schedule starts a run at the cadence `general.schedule` in [description.yml](description.yml) sets per environment. When the environment's target has no run yet, that run deploys it with one command of the engine image:
+**Deploy**: the main job's schedule starts a run at the cadence `general.schedule` in [description.yml](description.yml) sets per environment. When the environment's target has no run yet, that run deploys it with the engine's `deploy` task, which the engine image starts by the engine's bin, from the app root it holds:
 
 ```
-cella infra deploy --mode <production|staging> --sha <sha> --retry <n>
+cella/node_modules/.bin/cella infra deploy --mode <production|staging> --sha <sha> --retry <n>
 ```
 
 It builds a release not built yet, switches every role to a machine of the release and deletes the old ones. A release whose own description of the app differs from the applied one ends **apply needed** and names the fields that differ. The apply from its checkout starts it again.

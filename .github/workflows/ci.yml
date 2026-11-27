@@ -134,10 +134,11 @@ jobs:
           path: .base
           persist-credentials: false
 
+      # `infra...` selects the engine's packages of a base from before the move to cella/infra/, where the package `cella-tools` is missing.
       - name: Install the base
         if: ${{ !cancelled() }}
         working-directory: .base
-        run: pnpm install --frozen-lockfile --filter cella-tools... --filter shared...
+        run: pnpm install --frozen-lockfile --filter cella-tools... --filter infra... --filter shared...
 
       - name: Say what the change owes
         if: ${{ !cancelled() }}

@@ -90,3 +90,8 @@ cella/infra/.debug/
 
 # infra state exports the Unlock action saves before it edits the Pulumi state (rollback copies)
 cella/infra/.state-backups/
+
+# The same files in infra/: an operator's from before the move to cella/infra/, until they move them
+infra/Pulumi.*.exposure.yaml
+infra/.debug/
+infra/.state-backups/
