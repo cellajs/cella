@@ -7,10 +7,11 @@
     "node": "26.x"
   },
   "scripts": {
-    "dev": "cross-env NODE_ENV=development NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx --watch-path=src --watch-path=../shared/src --watch-path=../shared/config src/main.ts",
+    "dev": "pnpm migrate && cross-env NODE_ENV=development NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx --watch-path=src --watch-path=../shared/src --watch-path=../shared/config src/main.ts",
     "dev:mcp": "cross-env SERVICE=mcp NODE_ENV=development NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx --watch-path=src --watch-path=../shared/src --watch-path=../shared/config src/main.ts",
     "dev:oauth": "cross-env SERVICE=oauth NODE_ENV=development NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx --watch-path=src --watch-path=../shared/src --watch-path=../shared/config src/main.ts",
     "dev:jobs": "cross-env SERVICE=jobs NODE_ENV=development NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx --watch-path=src --watch-path=../shared/src --watch-path=../shared/config src/main.ts",
+    "offline": "pnpm dev",
     "ts": "cd .. && tsgo -p backend/tsconfig.json --pretty",
     "tsperf": "rm -rf dist && rm -rf tsconfig.tsbuildinfo && tsgo --extendedDiagnostics",
     "build": "cross-env NODE_ENV=production rolldown -c",
@@ -18,7 +19,7 @@
     "seed": "tsx scripts/seeds.ts",
     "bench:seed": "tsx bench/data-setup.ts",
     "bench:teardown": "tsx bench/data-setup.ts --teardown",
-    "migrate": "tsx scripts/migrate.ts",
+    "migrate": "cross-env SERVICE=migrate NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx src/main.ts",
     "generate": "tsx scripts/generate.ts",
     "generate:openapi": "tsx scripts/generate-openapi.ts",
     "dev:studio": "tsx scripts/drizzle-studio/start.ts",

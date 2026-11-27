@@ -7,7 +7,7 @@ const exitOnStartFailure = (name: string) => (error: unknown) => {
   setTimeout(() => process.exit(1), 500);
 };
 
-// Load exactly one runtime entry. Workers skip API initialization and wait for the API to complete migrations.
+// Load exactly one runtime entry. The other services skip API initialization and wait for the migrate companion's migrations.
 if (env.SERVICE === 'migrate') {
   await import('#/main.migrate');
 } else if (env.SERVICE === 'mcp') {

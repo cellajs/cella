@@ -48,17 +48,6 @@ const main = async () => {
     throw new Error(`Could not connect to PostgreSQL. Is Docker running? Try: pnpm docker\n  Original error: ${msg}`);
   }
 
-  if (env.RUN_MIGRATIONS_ON_BOOT) {
-    // The only API path that touches the admin credential; production runs migrations as SERVICE=migrate.
-    const { migrateDatabase } = await import('../scripts/db/migrate-database');
-    console.info(`${timestamp()} [startup] Running migrations...`);
-    await migrateDatabase('boot-time migrations (RUN_MIGRATIONS_ON_BOOT)');
-
-    console.info(`${timestamp()} [startup] Migrations complete, starting server...`);
-  } else {
-    console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false: skipping migrations (run as SERVICE=migrate)`);
-  }
-
   stops.push(startGeoipRefresh(), closeChangeBundles);
   // Detached: the log says whether the system room takes messages, and a slow homeserver never holds the boot.
   void connectSystemRoom();

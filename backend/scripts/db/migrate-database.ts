@@ -10,7 +10,7 @@ import { createDbRoles } from './create-db-roles';
  * size passes, and clients see its rows by one refetch. The file hashes drizzle stores stay those of the files.
  * @param db - The admin connection: the migrations grant to the roles it owns.
  */
-export async function runMigrations(db: DB): Promise<void> {
+async function runMigrations(db: DB): Promise<void> {
   const migrations = readMigrationFiles(migrateConfig).map((migration) => ({
     ...migration,
     sql: [`SELECT pg_logical_emit_message(true, '${syncBulkMarkerPrefix}', 'migrate:${migration.name}')`, ...migration.sql],
@@ -20,8 +20,8 @@ export async function runMigrations(db: DB): Promise<void> {
 
 /**
  * Brings the database to this release: the roles the migrations grant to, the schema migrations, then the job store,
- * in that order. A step added here reaches the migrate companion, `pnpm migrate` and the API's development boot, which
- * all run this sequence. Every step is idempotent.
+ * in that order. A step added here reaches the migrate companion (`SERVICE=migrate`, which `pnpm migrate` and
+ * `pnpm dev` start) and `pnpm seed`, which both run this sequence. Every step is idempotent.
  * @param purpose - Names the admin connection in the error thrown when `DATABASE_ADMIN_URL` is missing.
  * @param announce - Receives a line naming each step before it runs.
  */

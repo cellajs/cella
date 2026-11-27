@@ -156,9 +156,6 @@ const envSchema = z
     // The slot the seed asks the CDC worker's books about; a test names a slot of its own.
     CDC_SLOT_NAME: z.string().default(defaultCdcSlotName),
 
-    // Apply migrations and roles before binding the API port. A deployed stack runs them as a service of their own.
-    RUN_MIGRATIONS_ON_BOOT: envFlag(appConfig.isLocal ? 'true' : 'false'),
-
     PINO_LOG_LEVEL: z
       .enum([...severityLevels, 'silent'])
       .default(appConfig.mode === 'test' ? 'silent' : appConfig.mode === 'production' ? 'info' : 'debug'),

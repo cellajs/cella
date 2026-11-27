@@ -11,6 +11,7 @@
   },
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx --watch src/cdc-worker.ts",
+    "offline": "pnpm dev",
     "sync": "tsx src/sync-request.ts",
     "build": "cross-env NODE_ENV=production rolldown -c",
     "ts": "tsgo --pretty",

@@ -31,8 +31,7 @@ async function waitForBackgroundMigrations(boss: PgBoss): Promise<void> {
 /**
  * Installs or upgrades the job store as the table owner (admin DSN), grants the runtime role,
  * and creates every declared queue, so runtime processes only ever need `migrate: false`. Runs
- * after the schema migrations: from the migrate companion, `pnpm migrate`, and the API's boot
- * path in development. Idempotent.
+ * after the schema migrations: from the migrate companion and `pnpm seed`. Idempotent.
  */
 export async function installJobsSchema(): Promise<void> {
   if (!env.DATABASE_ADMIN_URL) throw new Error('DATABASE_ADMIN_URL is required to install the job store');
