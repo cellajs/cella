@@ -43,8 +43,8 @@ type RouteOptions = Parameters<typeof createRoute>[0] & XRouteProps & { operatio
 
 /** A session is never narrowed, so of a route's security schemes only the key and the token carry its scope. */
 const scopedSchemes = new Set(['apiKey', 'oauth2']);
-const withScope = (requirement: SecurityRequirement, scope: AccessScope): SecurityRequirement =>
-  Object.fromEntries(Object.entries(requirement).map(([scheme, scopes]) => [scheme, scopedSchemes.has(scheme) ? [scope] : scopes]));
+const withScopes = (requirement: SecurityRequirement, scopes: AccessScope[]): SecurityRequirement =>
+  Object.fromEntries(Object.entries(requirement).map(([scheme, held]) => [scheme, scopedSchemes.has(scheme) ? scopes : held]));
 
 /**
  * The route `createXRoute` makes of a config: its own responses plus the shared error responses for the statuses it
@@ -263,8 +263,10 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
 
   // Security follows the guard: the first guard that declares schemes decides; a route with none is cookie-only.
   const guardSecurity = xMiddlewares.find((mw) => mw.__security !== undefined)?.__security ?? [{ cookieAuth: [] }];
-  const scope = config.xScope ?? (config.xTool && accessScopes.required(config.xTool.entity, toolAction(config.method)));
-  const security = scope ? guardSecurity.map((requirement) => withScope(requirement, scope)) : guardSecurity;
+  // A list's scopes share one requirement, which OpenAPI reads as all of them.
+  const declared = config.xScope ?? (config.xTool && accessScopes.required(config.xTool.entity, toolAction(config.method)));
+  const scopes = declared ? [declared].flat() : [];
+  const security = scopes.length ? guardSecurity.map((requirement) => withScopes(requirement, scopes)) : guardSecurity;
 
   // An MCP call carries the caller's access token and nothing else, so a tool route whose guards take none can never run.
   const accepted = config.security ?? security;
