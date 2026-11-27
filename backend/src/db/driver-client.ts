@@ -1,5 +1,5 @@
 import { DrizzleQueryError } from 'drizzle-orm';
-import { Client, type ClientConfig, DatabaseError } from 'pg';
+import { Client, type ClientConfig, DatabaseError, type QueryResultRow } from 'pg';
 
 // No `#/env` import: the cdc and yjs workers open their pools with this client too.
 
@@ -7,8 +7,8 @@ import { Client, type ClientConfig, DatabaseError } from 'pg';
 const driverErrors = new WeakSet<Error>();
 
 /**
- * How long one ask of `backendState` waits for its answer, its connect included; the wait before a second ask; and how
- * long an answer still on its way from a backend that has ended its statement gets before the connection ends.
+ * How long one ask on a connection of its own waits for its answer, its connect included; the wait before a second ask;
+ * and how long an answer still on its way from a backend that has ended its statement gets before the connection ends.
  */
 const askRules = { answerMs: 2_000, againMs: 3_000, lateAnswerMs: 1_000 } as const;
 
@@ -16,19 +16,20 @@ const askRules = { answerMs: 2_000, againMs: 3_000, lateAnswerMs: 1_000 } as con
 const endedStates = new Set(['idle', 'idle in transaction', 'idle in transaction (aborted)']);
 
 /**
- * The state of the backend `pid` in `pg_stat_activity`, read on a connection of its own as the same role, which sees
- * the state of its own sessions. `gone` when the server holds no such backend; `unknown` when the server answered with
- * an error of its own (too many connections) or hides the state; undefined when it did not answer within `answerMs`.
+ * Runs one statement on a connection of its own, made from `config`: its rows within `answerMs`; `refused` when the
+ * server answered with an error of its own (too many connections); undefined when it did not answer in time.
  */
-async function backendState(config: ClientConfig, pid: number): Promise<string | undefined> {
+async function askOwnConnection<R extends QueryResultRow>(
+  config: ClientConfig,
+  text: string,
+  values: unknown[] = [],
+): Promise<R[] | 'refused' | undefined> {
   const ask = new Client({ ...config, connectionTimeoutMillis: askRules.answerMs, query_timeout: askRules.answerMs });
   ask.on('error', () => undefined);
   const asking = (async () => {
     await ask.connect();
-    const { rows } = await ask.query<{ state: string | null }>('select state from pg_stat_activity where pid = $1', [pid]);
-    if (!rows[0]) return 'gone';
-    return rows[0].state ?? 'unknown';
-  })().catch((error: unknown) => (error instanceof DatabaseError ? 'unknown' : undefined));
+    return (await ask.query<R>(text, values)).rows;
+  })().catch((error: unknown) => (error instanceof DatabaseError ? ('refused' as const) : undefined));
   let timer: NodeJS.Timeout | undefined;
   const silence = new Promise<undefined>((resolve) => {
     timer = setTimeout(() => resolve(undefined), askRules.answerMs);
@@ -41,6 +42,21 @@ async function backendState(config: ClientConfig, pid: number): Promise<string |
     void ask.end().catch(() => undefined);
   }
 }
+
+/**
+ * The state of the backend `pid` in `pg_stat_activity`, read as the same role, which sees the state of its own
+ * sessions. `gone` when the server holds no such backend; `unknown` when it refused the ask or hides the state;
+ * undefined when it did not answer in time.
+ */
+async function backendState(config: ClientConfig, pid: number): Promise<string | undefined> {
+  const answer = await askOwnConnection<{ state: string | null }>(config, 'select state from pg_stat_activity where pid = $1', [pid]);
+  if (answer === undefined) return undefined;
+  if (answer === 'refused') return 'unknown';
+  return answer[0] ? (answer[0].state ?? 'unknown') : 'gone';
+}
+
+/** Whether the server answers on a connection of its own within the ask's deadline: no pool slot, no frozen pooled connection. */
+export const databaseAnswers = async (config: ClientConfig): Promise<boolean> => Array.isArray(await askOwnConnection(config, 'select 1'));
 
 /** A pool client's options: node-postgres's, and the deadline `DriverClient` keeps. */
 export type DriverClientConfig = ClientConfig & {
