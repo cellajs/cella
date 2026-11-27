@@ -47,7 +47,7 @@ const shortDate = (iso: string) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(sameYear ? {} : { year: 'numeric' }) });
 };
 
-/** Unfurl of `/{code}/a7` over a picture of the file's kind, never the file; shown for a private file too, as opening takes access. */
+/** Unfurl of `/{code}/a7` over a picture of the file's kind, never the file; a private file unfurls as a plain private file. */
 export async function getAttachmentPreviewOp(ctx: DbContext, channel: LinkedChannel, number: number): Promise<LinkPreview> {
   const found = await findLinkedAttachment(ctx, { channelId: channel.channelId, number });
 
@@ -61,6 +61,18 @@ export async function getAttachmentPreviewOp(ctx: DbContext, channel: LinkedChan
       ogTitle: 'File moved',
       description: 'This file moved elsewhere.',
       redirectUrl: await openUrl(ctx, moved),
+      indexable: false,
+    };
+  }
+
+  // Anyone holding one link can try every number of its channel. A private file shows no name, kind, size, uploader or channel.
+  if (!found.public) {
+    return {
+      title: 'Private file',
+      ogTitle: 'Private file',
+      description: 'Only people with access can open this file.',
+      redirectUrl: await openUrl(ctx, found),
+      image: '/static/link-previews/file.jpg',
       indexable: false,
     };
   }

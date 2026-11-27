@@ -59,8 +59,8 @@ describe('attachment share links', async () => {
     expect([await numberOf(first), await numberOf(second)]).toEqual([1, 2]);
   });
 
-  it('unfurls a private file with its name and a picture of its kind, sends a browser to the app and keeps it out of search', async () => {
-    const id = await insertFile();
+  it('unfurls a public file with its name and a picture of its kind, sends a browser to the app and lets search index it', async () => {
+    const id = await insertFile({ public: true });
 
     const response = await anonymous(`/links/${await homeCode()}/a${await numberOf(id)}`);
     const page = await response.text();
@@ -69,7 +69,21 @@ describe('attachment share links', async () => {
     expect(page).toContain('<meta property="og:title" content="report.pdf" />');
     expect(page).toContain('<meta property="og:description" content="PDF · 2 KB · added ');
     expect(page).toContain('/static/link-previews/pdf.jpg" />');
+    expect(page).toContain('<meta name="robots" content="index,follow" />');
+    expect(page).toMatch(new RegExp(`/n\\?[^"]*productType=attachment&subjectId=${id}`));
+  });
+
+  it('unfurls a private file with no name, kind, size, uploader or channel, still sends a browser to the app and keeps it out of search', async () => {
+    const id = await insertFile();
+
+    const response = await anonymous(`/links/${await homeCode()}/a${await numberOf(id)}`);
+    const page = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(page).toContain('<meta property="og:title" content="Private file" />');
+    expect(page).toContain('/static/link-previews/file.jpg" />');
     expect(page).toContain('<meta name="robots" content="noindex,nofollow" />');
+    for (const leak of ['report', 'PDF', '2 KB', 'added ', organization.name]) expect(page, leak).not.toContain(leak);
     expect(page).toMatch(new RegExp(`/n\\?[^"]*productType=attachment&subjectId=${id}`));
   });
 
