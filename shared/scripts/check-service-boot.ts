@@ -34,6 +34,7 @@ const ports = {
   internal: appConfig.services.backend.internalPort,
   cdcHealth: appConfig.services.cdc.port,
   yjs: appConfig.services.yjs.port,
+  jobs: appConfig.services.jobs.port,
 };
 
 const serviceEnv: NodeJS.ProcessEnv = {
@@ -191,7 +192,7 @@ try {
   const missing = bundles.filter((file) => !existsSync(join(repoRoot, file)));
   if (missing.length) throw new Error(`Not built: ${missing.join(', ')}. Run \`pnpm build\` first.`);
   const taken: number[] = [];
-  for (const port of [ports.api, ports.internal, ports.cdcHealth, ports.yjs]) if (await portTaken(port)) taken.push(port);
+  for (const port of Object.values(ports)) if (await portTaken(port)) taken.push(port);
   if (taken.length) throw new Error(`Port ${taken.join(', ')} is in use: stop that stack, or set DEV_PORT_OFFSET to move these.`);
 
   const backend = stage('backend');
@@ -212,6 +213,11 @@ try {
   const yjsProcess = appConfig.services.yjs.enabled === false ? undefined : start(yjs);
   if (yjsProcess) await healthy(yjsProcess, 'yjs', ports.yjs);
   else await run(yjs, 60_000);
+  // The jobs worker is a SERVICE of the backend's bundle, which with jobs off loads and exits 0 too.
+  const jobs: Service = { ...api, name: 'jobs', env: { SERVICE: 'jobs' } };
+  const jobsProcess = appConfig.services.jobs.enabled === false ? undefined : start(jobs);
+  if (jobsProcess) await healthy(jobsProcess, 'jobs', ports.jobs);
+  else await run(jobs, 60_000);
 
   // A service that answers once and then crashes, as one reading a missing module late would, is still caught.
   await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -219,10 +225,12 @@ try {
     [apiProcess, 'api'],
     [cdcProcess, 'cdc'],
     [yjsProcess, 'yjs'],
+    [jobsProcess, 'jobs'],
   ] as const)
     if (child && (child.exitCode !== null || child.signalCode !== null))
       throw new Error(`${name} exited (${child.exitCode ?? child.signalCode}) after answering /health`);
 
+  if (jobsProcess) await stop(jobsProcess, 'jobs');
   if (yjsProcess) await stop(yjsProcess, 'yjs');
   await stop(cdcProcess, 'cdc');
   await stop(apiProcess, 'api');
