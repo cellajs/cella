@@ -1,3 +1,4 @@
+import '#/lib/tracing';
 import { type ServerType, serve } from '@hono/node-server';
 import { appConfig } from 'shared';
 import { listenHost } from 'shared/utils/listen-host';

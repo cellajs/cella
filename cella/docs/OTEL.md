@@ -57,6 +57,7 @@ Every worker needs the parts below. CDC is the reference:
 - [pino.ts](../../cdc/src/lib/pino.ts) ships logs to the same destination and prints readable lines in development.
 - [index.ts](../../cdc/src/index.ts) starts telemetry, then a graceful shutdown that flushes it on a signal.
 - A worker that serves HTTP mounts the shared health app ([health-app.ts](../../shared/src/health-app.ts)).
+- A worker that runs as a `SERVICE` of the backend image starts the backend's SDK from [tracing.ts](../../backend/src/lib/tracing.ts) and imports it on its entry's first line, as a bare import. A `pg` loaded before it makes no query span.
 
 ### Metrics
 
@@ -84,7 +85,7 @@ Span names are constants in [span-names.ts](../../shared/src/tracing/span-names.
 
 | Family | Service | What it shows |
 | --- | --- | --- |
-| HTTP server, outbound fetch, Postgres query | Backend | Every request and query, by the OTel conventions: a request's method, route, path and query, status and the caller's user agent, and a query's text without its values |
+| HTTP server, outbound fetch, Postgres query | Backend | Every request, and every query that runs inside a span such as a request's, by the OTel conventions: a request's method, route, path and query, status and the caller's user agent, and a query's text without its values |
 | `nodejs.eventloop.*`, `v8js.*`, `process.*` | Every service | Event loop delay and use, heap and garbage collection, resident memory against its limit, CPU, uptime |
 | `db.client.connection.*` | Every service | Its main pool's connections in use and idle, its maximum, requests waiting |
 | `postgresql.*` | Jobs worker | The server's sessions by state against its limit, the oldest transaction, lock waits, the database's size, commits, rollbacks, deadlocks, temporary files, transaction id age, the WAL its replication slots hold |

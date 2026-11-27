@@ -3,13 +3,15 @@ name: CI
 # Deny-by-default: each job opts in to the scopes it actually needs.
 permissions: {}
 
-# CI runs on pull_request only (there is no merge queue). Two tiers of checks:
+# CI runs on pull requests (there is no merge queue) and nightly on main. Its tiers of checks:
 #   • Every PR: lint (with the schema cache-bust gate and what merging owes an operator), frontend-build,
 #     build-services, and docker-images when the image inputs changed. Cheap, for fast feedback.
 #   • Release PR and an app's upgrade PR, once ready for review: the heavy suites (every test suite, every docker-images
 #     target). Merging the release PR cuts the release + deploy, so gating its merge gates production. On feature PRs
 #     these jobs are skipped.
 #   • Release PR only, once ready for review: release-applied, red while an environment that follows the releases owes an apply.
+#   • Nightly on main: the test suites alone. A feature PR that breaks a test fails main within a day, not at the next
+#     release or upgrade PR.
 # release-please opens the release PR as a draft and refreshes it on every merge to main. On a draft release PR every
 # job but `ci-passed` skips: main passed the cheap checks PR by PR, and marking the PR ready for review runs them all.
 # A check of a few seconds is a step of a job that runs anyway. GitHub bills each job by the started minute.
@@ -19,6 +21,9 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
+  # 03:17 UTC, on the default branch: the only one GitHub runs a schedule on, and late when it is busy.
+  schedule:
+    - cron: '17 3 * * *'
 
 # Cancel older runs of the same PR when a new push arrives.
 concurrency:
@@ -27,7 +32,7 @@ concurrency:
 
 jobs:
   lint:
-    if: ${{ !github.event.pull_request.draft || !startsWith(github.head_ref, 'release-please--branches--main') }}
+    if: ${{ github.event_name == 'pull_request' && (!github.event.pull_request.draft || !startsWith(github.head_ref, 'release-please--branches--main')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -154,7 +159,7 @@ jobs:
   # include regex refuses, a broken relative import in a docs wrapper) fails here and not at the release deploy, which builds from the tag.
   # Apps keep their release-please CHANGELOG.md at the repo root, a path cella itself never builds.
   frontend-build:
-    if: ${{ !github.event.pull_request.draft || !startsWith(github.head_ref, 'release-please--branches--main') }}
+    if: ${{ github.event_name == 'pull_request' && (!github.event.pull_request.draft || !startsWith(github.head_ref, 'release-please--branches--main')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -179,7 +184,7 @@ jobs:
   # pre-commit hook does, and --no-verify skips it), and the bundles are otherwise first built and started by the
   # release deploy, where a package missing from the keep-on-disk list fails (0.12.1). ~2 min, every PR.
   build-services:
-    if: ${{ !github.event.pull_request.draft || !startsWith(github.head_ref, 'release-please--branches--main') }}
+    if: ${{ github.event_name == 'pull_request' && (!github.event.pull_request.draft || !startsWith(github.head_ref, 'release-please--branches--main')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -216,11 +221,12 @@ jobs:
   # the release PR, and in an app on the upgrade PR (`cella/upgrade/<stamp>`, the branch `pnpm cella upgrade` opens), where
   # upstream changes first meet the app's code, once the PR is ready for review. Each job starts the `db_test` compose
   # container and applies migrations in the Vitest global setup, so it needs no service container.
+  # The suites also run nightly on main, the one run of this workflow that is no pull request.
   test:
     # Same-repo branch only: release-please and the upgrade push their branches into this
     # repo, so a PR from another repository (whose branch name its author fully controls)
-    # cannot spoof a prefix to trigger the heavy suites. The docker-images job repeats this condition.
-    if: github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/upgrade/'))
+    # cannot spoof a prefix to trigger the heavy suites. The docker-images job repeats its pull request half.
+    if: github.event_name == 'schedule' || (github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/upgrade/')))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -267,7 +273,7 @@ jobs:
   # the release PR and an app's upgrade PR build every target, without pushing. The targets start from the same stages,
   # so one job builds them on one layer cache.
   docker-images:
-    if: ${{ !github.event.pull_request.draft || !startsWith(github.head_ref, 'release-please--branches--main') }}
+    if: ${{ github.event_name == 'pull_request' && (!github.event.pull_request.draft || !startsWith(github.head_ref, 'release-please--branches--main')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:

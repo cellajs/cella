@@ -117,7 +117,7 @@ The CLI drops `SCW_OWNER_*` from its environment with a notice. A one-day operat
 
 To add a service:
 
-1. Add an entry to [config/services.config.ts](config/services.config.ts).
+1. Add an entry to [config/services.config.ts](config/services.config.ts). A service that opens a database pool sets its size in `env`, by the rule the registry states.
 2. Set its `enabled` flag and ports under `services` in [shared/config/config.default.ts](../shared/config/config.default.ts).
 3. Set its path prefix in [shared/src/config-builder/service-paths.ts](../shared/src/config-builder/service-paths.ts).
 4. List it under each runtime secret it reads in [config/runtime-secrets.config.ts](config/runtime-secrets.config.ts).
