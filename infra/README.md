@@ -15,7 +15,7 @@ The deploy engine ships in [@cellajs/cli](https://github.com/cellajs/cella-cli/t
 - **Agent:** runs on every machine.
 - **CLI:** an operator runs it on their own machine.
 
-The engine names no app. This folder is the app's part: the registries under [config/](config/), which an upgrade merges like every other template file, the stack files and the environment records. The engine reads the registries as `infra/config/<file>`, and they call the helpers `@cellajs/cli/infra` exports. An app changes what it deploys here, without editing engine code.
+The engine names no app. This folder is the app's part: its [description](#the-description), which an upgrade merges like every other template file, the stack files and the environment records. An app changes what it deploys here, without editing engine code.
 
 ## How a release flows
 
@@ -23,7 +23,7 @@ The engine names no app. This folder is the app's part: the registries under [co
 
 **Apply** (`pnpm cella infra apply`) changes the foundation and publishes the **engine image**. That image holds the engine built from your checkout, with the **applied description** of the app. Every run of the main job starts from it.
 
-**Deploy**: the main job's schedule starts a run at the cadence [config/general.config.ts](config/general.config.ts) sets per environment. When the environment's target has no run yet, that run deploys it with one command of the engine image:
+**Deploy**: the main job's schedule starts a run at the cadence `general.schedule` in [description.yml](description.yml) sets per environment. When the environment's target has no run yet, that run deploys it with one command of the engine image:
 
 ```
 pnpm --filter infra run deploy --mode <production|staging> --sha <sha> --retry <n>
@@ -67,7 +67,7 @@ Reset database and Tear down open on what they delete and what they keep, before
 
 Esc steps back one prompt, and from an action's first prompt or its list straight to the menu. An action that ends by itself keeps its output on screen under one **← Back to menu** row until you go back.
 
-Every action also runs alone as `pnpm cella infra <action> [--mode <production|staging>]`. `pnpm cella infra help` lists them. An action that changes something asks a person at the prompt. There is no unattended mode. Only the actions that run Pulumi need its CLI installed. The others, `status` and `logs` among them, work without it. Each run keeps `compose.gen.yml` current with the service registry and says so when it rewrote the file.
+Every action also runs alone as `pnpm cella infra <action> [--mode <production|staging>]`. `pnpm cella infra help` lists them. An action that changes something asks a person at the prompt. There is no unattended mode. Only the actions that run Pulumi need its CLI installed. The others, `status` and `logs` among them, work without it. `pnpm cella infra compose` prints the Compose file a deploy renders from the description. `pnpm cella infra description --mode <production|staging>` prints what the engine of that environment reads of the app.
 
 ## Status
 
@@ -113,35 +113,42 @@ The override keeps a staging run from inheriting production values. The CLI keep
 
 The CLI drops `SCW_OWNER_*` from its environment with a notice. A one-day operator key comes from the prompt, or at a setup from its Owner moment.
 
-## Add a service or a store
+## The description
+
+[description.yml](description.yml) states what only a deployment knows: per service its machine size, how it is replaced and drained, its load balancer route and env; who makes each runtime secret and which services receive it; the database, the stores, the managed keys and the schedule.
+
+Each service states its port, and its internal port and path prefix where it has them. Once the mode's `appConfig` loads, the engine refuses a value that differs from `appConfig.services` in `shared` and names both. A service `appConfig` does not know is not compared, and neither is the proxy's port: it is the container's own, where `appConfig` holds the dev server's.
+
+A runtime secret is keyed by its variable. The engine makes one marked `generation: random`, and one with `derivedFrom` follows another secret through the function the file names. An operator sets every other.
+
+A secret the engine generates states its stored name as `secretName`: renaming its variable then never renames the stored secret by accident. Any other secret's stored name is the variable in kebab-case unless it states one. A stored name never changes, since the secret's resources are named by it.
+
+The engine checks the file at load and stops with the path of the key it refuses. The file holds no code of the app's: a store kind or an env value it cannot state becomes an engine field. A reference, `<path>#<export>`, names a file under `shared/` or `infra/` and an export of it. The frontend proxy's headers come from `frontendHeaders` in [frontend-csp.ts](../shared/src/config-builder/frontend-csp.ts), which the `frontend` service names.
 
 To add a service:
 
-1. Add an entry to [config/services.config.ts](config/services.config.ts).
-2. Set its `enabled` flag and ports under `services` in [shared/config/config.default.ts](../shared/config/config.default.ts).
-3. Set its path prefix in [shared/src/config-builder/service-paths.ts](../shared/src/config-builder/service-paths.ts).
-4. List it under each runtime secret it reads in [config/runtime-secrets.config.ts](config/runtime-secrets.config.ts).
+1. Add an entry under `services` in [description.yml](description.yml), with its port and, behind a path route, its path prefix.
+2. Set its `enabled` flag and the same ports under `services` in [shared/config/config.default.ts](../shared/config/config.default.ts).
+3. Set the same path prefix in [shared/src/config-builder/service-paths.ts](../shared/src/config-builder/service-paths.ts).
+4. Add it to the `services` of each runtime secret it reads.
 5. Ship a Docker image that answers the health path of the engine's [health contract](https://github.com/cellajs/cella-cli/blob/main/src/infra/lib/health-contract.ts) with its release.
 6. Run its migrations, if any, in a one-shot `release` step at its machine's boot.
 
-[tests/app-config-registry.test.ts](tests/app-config-registry.test.ts) fails when the registry and the shared config disagree.
-
 To add a store:
 
-1. A new kind of store is engine code: a provisioner in the engine's [resources/stores/](https://github.com/cellajs/cella-cli/tree/main/src/infra/resources/stores), exported from its catalog and from `@cellajs/cli/infra`.
-2. Add an entry to [config/stores.config.ts](config/stores.config.ts).
+1. A new kind of store is engine code: a provisioner in the engine's [resources/stores/](https://github.com/cellajs/cella-cli/tree/main/src/infra/resources/stores) and a `kind` the file accepts.
+2. Add an entry under `stores` in [description.yml](description.yml).
 
-Either change deploys after an apply, since every registry is part of the applied description.
+Either change deploys after an apply, since the file is part of the applied description.
 
 ## File map
 
 | Path | Holds |
 | --- | --- |
-| [config/](config/) | The registries: services, general settings, runtime secrets, managed keys, stores, env suppliers and the frontend CSP. Also engine-config.ts, where the engine reads the app's config |
+| [description.yml](description.yml) | The [description](#the-description): services, runtime secrets, stores, managed keys, the database and the schedule |
 | [environments](environments) | What each environment deploys |
 | `Pulumi.yaml`, `Pulumi.<mode>.yaml` | The Pulumi project and each environment's stack file |
 | [program.mjs](program.mjs) | The line Pulumi runs, which hands over to the engine's program |
-| `compose.gen.yml` | The Compose file the engine writes from the service registry, which a deploy reads |
 | [tests/](tests/) | The app's checks of its own files against the engine: env schemas, docs, workflows, shared copies |
 
 The engine's own files (the CLI, the Pulumi program, the deploy, the agent, the frontend proxy, the engine image) are in [cella-cli](https://github.com/cellajs/cella-cli/tree/main/src/infra/).
@@ -162,7 +169,7 @@ One name per concept across code and docs:
 | **main job** | An environment's Serverless Jobs definition, with its schedule. Each of its runs deploys at most one target, on the engine image. |
 | **scheduled run** | A run of the main job its schedule starts. Under the lease, it deploys the target when no run record names that target and retry counter. |
 | **engine image** | The engine an apply builds from the operator's checkout and pushes to the environment's registry. The main job names it by digest. |
-| **applied description** | The app as the engine image describes it: the engine config's fields, every registry in `config/`, the boot plan's contract version, the root `package.json`'s Node, pnpm and repository. `control/<mode>/applied.json` keeps it beside its hash. The image's stamp holds the hash. |
+| **applied description** | The app as the engine image describes it: the engine config's fields, `description.yml`, the boot plan's contract version, the root `package.json`'s Node, pnpm and repository. `control/<mode>/applied.json` keeps it beside its hash. The image's stamp holds the hash. |
 | **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm cella infra logs`. |
 | **builder** | A machine a deploy makes to build a release not built yet, deleted after. It writes through links, holds no key and reports the release's own description. |
 | **release archive** | An image of a release as `docker load` reads it, under `releases/<sha>/images/` of the boot-diag bucket, named with its digest in the release's manifest. |
@@ -189,4 +196,4 @@ One name per concept across code and docs:
 | **manifest** | The `manifest` key of a machine's user data: its role, its release and the drain order, which the agent polls. |
 | **boot account** | The boot log a machine uploads to the boot-diag bucket through its link at the end of its first boot. |
 | **internal route** | A private, ACL-guarded LB frontend to a service's `internalPort` listener: an address that survives switches and no public pool reaches. |
-| **engine config** | The app's config as the engine reads it, in [config/engine-config.ts](config/engine-config.ts): the shared `appConfig` of the mode, with the app's own slug. |
+| **engine config** | The engine's part of the mode's shared `appConfig`, which it reads from `shared`: the slugs, domain, origins, buckets, services, `singleVM` and backup retention. |

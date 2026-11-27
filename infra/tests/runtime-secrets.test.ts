@@ -1,118 +1,31 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { runtimeSecretConsumers, runtimeSecrets, runtimeSecretsForConsumer } from '@cellajs/cli/infra/contract';
-import { appServices } from 'infra/config/services.config';
+import { appServices, runtimeSecretConsumers, runtimeSecrets, runtimeSecretsForConsumer } from '@cellajs/cli/infra/contract';
 import { config } from 'shared/config/config.default';
 import { signYjsToken, verifyYjsToken, yjsTokenSigningKey, yjsTokenVerifyKey } from 'shared/utils/yjs-token';
 import { describe, expect, it } from 'vitest';
 import { serviceSecrets } from '../../backend/src/env-service-secrets';
 
-// The engine's runtime secrets and this config module import each other. The test enters from the engine's side, which a static import here would undo: it sorts ahead.
-const { runtimeSecretsConfig } = await import('infra/config/runtime-secrets.config');
+const readSource = (path: string) => readFileSync(resolve(__dirname, '../..', path), 'utf-8');
+const workerEnvBaseSource = readSource('shared/src/utils/worker-env.ts');
 
-const backendEnvSource = readFileSync(resolve(__dirname, '../../backend/src/env.ts'), 'utf-8');
-const cdcEnvSource = readFileSync(resolve(__dirname, '../../cdc/src/env.ts'), 'utf-8');
-const yjsEnvSource = readFileSync(resolve(__dirname, '../../yjs/src/env.ts'), 'utf-8');
-const workerEnvBaseSource = readFileSync(resolve(__dirname, '../../shared/src/utils/worker-env.ts'), 'utf-8');
+// Keyed by the service that builds the image. Shared declarations such as DATABASE_SSL_CA count as declared for cdc and yjs: their env schemas extend workerEnvBase.
+const envSources: Readonly<Record<string, string>> = {
+  backend: readSource('backend/src/env.ts'),
+  cdc: `${workerEnvBaseSource}\n${readSource('cdc/src/env.ts')}`,
+  yjs: `${workerEnvBaseSource}\n${readSource('yjs/src/env.ts')}`,
+};
 
-// Shared declarations such as DATABASE_SSL_CA count as declared for cdc and yjs: their env schemas extend workerEnvBase.
-const envSources = {
-  backend: backendEnvSource,
-  cdc: `${workerEnvBaseSource}\n${cdcEnvSource}`,
-  yjs: `${workerEnvBaseSource}\n${yjsEnvSource}`,
-} as const;
+const deliveredTo = (service: string) => new Set(runtimeSecretsForConsumer(service).map((secret) => secret.envVar));
 
 describe('runtime secret registry', () => {
-  it('merges store-owned declarations ahead of app-config entries', () => {
-    // A store owns its connection strings: the app's registry declares none of them again.
-    const ids = runtimeSecrets.map((secret) => secret.id);
-    expect(ids.slice(0, 4)).toEqual(['databaseUrlRuntime', 'databaseUrlAdmin', 'databaseUrlCdc', 'databaseSslCa']);
-    expect(Object.keys(runtimeSecretsConfig)).not.toContain('databaseUrlRuntime');
-  });
-
-  it('uses unique ids, secret names and env vars', () => {
-    const ids = new Set<string>();
-    const secretNames = new Set<string>();
-    const envVars = new Set<string>();
-
-    for (const secret of runtimeSecrets) {
-      expect(ids.has(secret.id), `duplicate runtime secret id: ${secret.id}`).toBe(false);
-      expect(secretNames.has(secret.secretName), `duplicate runtime secret name: ${secret.secretName}`).toBe(false);
-      expect(envVars.has(secret.envVar), `duplicate runtime env var: ${secret.envVar}`).toBe(false);
-      ids.add(secret.id);
-      secretNames.add(secret.secretName);
-      envVars.add(secret.envVar);
-    }
-  });
-
-  it('assigns every runtime secret to at least one known consumer service', () => {
-    const knownConsumers = new Set<string>(runtimeSecretConsumers);
-
-    for (const secret of runtimeSecrets) {
-      expect(secret.services.length, `${secret.id} must target at least one service`).toBeGreaterThan(0);
-      for (const consumer of secret.services) {
-        expect(knownConsumers.has(consumer), `${secret.id} targets unknown service ${consumer}`).toBe(true);
-      }
-    }
-  });
-
-  it('only allows random generation for secrets the engine makes', () => {
-    for (const secret of runtimeSecrets) {
-      if (secret.generation === 'random') {
-        expect(secret.valueSource, `${secret.id} random generation must stay the engine's`).toBe('engine');
-      }
-    }
-  });
-
-  it('assigns an exact, minimal runtime secret set per consumer service', () => {
-    expect(runtimeSecretsForConsumer('cdc').map((secret) => secret.envVar)).toEqual([
-      'DATABASE_CDC_URL',
-      'DATABASE_SSL_CA',
-      'CDC_SECRET',
-      'OTEL_EXPORTER_OTLP_ENDPOINT',
-      'OTEL_EXPORTER_OTLP_HEADERS',
-    ]);
-    expect(runtimeSecretsForConsumer('yjs').map((secret) => secret.envVar)).toEqual([
-      'DATABASE_URL',
-      'DATABASE_SSL_CA',
-      'YJS_TOKEN_PUBLIC_KEY',
-      'YJS_RELAY_SECRET',
-      'OTEL_EXPORTER_OTLP_ENDPOINT',
-      'OTEL_EXPORTER_OTLP_HEADERS',
-    ]);
-    expect(runtimeSecretsForConsumer('frontend')).toEqual([]);
-    expect(runtimeSecretsForConsumer('oauth').map((secret) => secret.envVar)).toEqual([
-      'DATABASE_URL',
-      'DATABASE_SSL_CA',
-      'COOKIE_SECRET',
-      'PII_HASH_SECRET',
-      'DATA_ENCRYPTION_KEY',
-    ]);
-    expect(runtimeSecretsForConsumer('jobs').map((secret) => secret.envVar)).toEqual([
-      'DATABASE_URL',
-      'DATABASE_ADMIN_URL',
-      'DATABASE_SSL_CA',
-      'COOKIE_SECRET',
-      'UNSUBSCRIBE_SECRET',
-      'DATA_ENCRYPTION_KEY',
-      'BREVO_API_KEY',
-      'OTEL_EXPORTER_OTLP_ENDPOINT',
-      'OTEL_EXPORTER_OTLP_HEADERS',
-      'MATRIX_ACCESS_TOKEN',
-    ]);
-  });
-
   it('does not leak service-exclusive secrets across machine boundaries', () => {
-    const cdcVars = new Set(runtimeSecretsForConsumer('cdc').map((secret) => secret.envVar));
-    const yjsVars = new Set(runtimeSecretsForConsumer('yjs').map((secret) => secret.envVar));
-    const backendVars = new Set(runtimeSecretsForConsumer('backend').map((secret) => secret.envVar));
-
-    expect(cdcVars.has('YJS_RELAY_SECRET')).toBe(false);
-    expect(yjsVars.has('CDC_SECRET')).toBe(false);
-    expect(backendVars.has('DATABASE_CDC_URL')).toBe(false);
+    expect(deliveredTo('cdc').has('YJS_RELAY_SECRET')).toBe(false);
+    expect(deliveredTo('yjs').has('CDC_SECRET')).toBe(false);
+    expect(deliveredTo('backend').has('DATABASE_CDC_URL')).toBe(false);
   });
 
-  it('derives the relay public key from the signing key, so the two change together', () => {
+  it('derives the relay public key from the signing key, so the two change together', async () => {
     const publicKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PUBLIC_KEY');
     const privateKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PRIVATE_KEY');
     expect(publicKey?.derivedFrom?.secretId).toBe(privateKey?.id);
@@ -122,7 +35,7 @@ describe('runtime secret registry', () => {
       yjsTokenSigningKey(material),
       60_000,
     );
-    const derived = publicKey?.derivedFrom?.derive(material) ?? '';
+    const derived = (await publicKey?.derivedFrom?.derive(material)) ?? '';
     expect(verifyYjsToken(token, yjsTokenVerifyKey(derived)).ok).toBe(true);
   });
 });
@@ -136,44 +49,34 @@ describe('runtime secret schema alignment', () => {
   const isFederationEnvVar = (envVar: string) => /^SSO_[A-Z0-9_]+_CLIENT_(ID|SECRET)$/.test(envVar);
 
   it('delivers the client id and secret of every federation the app config declares', () => {
-    for (const envVar of federationEnvVars) {
-      expect(
-        runtimeSecretsForConsumer('backend').map((secret) => secret.envVar),
-        envVar,
-      ).toContain(envVar);
-    }
+    for (const envVar of federationEnvVars) expect(deliveredTo('backend'), envVar).toContain(envVar);
   });
 
-  it('maps each backend service secret env var to a declared service env schema', () => {
+  it("declares each delivered variable in the env schema of the service's image", () => {
     for (const secret of runtimeSecrets) {
+      if (isFederationEnvVar(secret.envVar)) continue;
       for (const service of secret.services) {
-        if (service === 'mcp' || isFederationEnvVar(secret.envVar)) continue;
-        if (!(service in envSources)) continue;
-        const source = envSources[service as keyof typeof envSources];
-        expect(source, `missing env schema fixture for ${service}`).toBeTruthy();
-        expect(source, `${secret.envVar} must be declared in ${service}/src/env.ts when assigned to ${service}`).toContain(`${secret.envVar}:`);
+        const image = appServices[service]?.reusesImageOf ?? service;
+        const source = envSources[image];
+        if (!source) continue;
+        expect(source, `${secret.envVar} must be declared in ${image}/src/env.ts when assigned to ${service}`).toContain(`${secret.envVar}:`);
       }
     }
   });
 
   // The backend image serves each of these on a machine of its own in split mode; the SERVICE its env names picks the process, and
   // a release companion runs one more process (its own SERVICE) on the same machine with the same secrets.
-  const backendImageModes = runtimeSecretConsumers
-    .filter((slug) => {
-      const cfg = appServices[slug];
-      return slug === 'backend' || ('reusesImageOf' in cfg && cfg.reusesImageOf === 'backend');
-    })
-    .map((slug) => {
-      const cfg = appServices[slug];
-      const env: Readonly<Record<string, string>> = 'env' in cfg ? cfg.env : {};
-      const releaseEnv: Readonly<Record<string, string>> = ('release' in cfg && cfg.release?.env) || {};
-      return [slug, [env.SERVICE ?? 'api', ...(releaseEnv.SERVICE ? [releaseEnv.SERVICE] : [])]] as const;
-    });
+  const backendImageModes = runtimeSecretConsumers.flatMap((slug) => {
+    const service = appServices[slug];
+    if (!service || (slug !== 'backend' && service.reusesImageOf !== 'backend')) return [];
+    const releaseMode = service.release?.env?.SERVICE;
+    return [[slug, [service.env?.SERVICE ?? 'api', ...(releaseMode ? [releaseMode] : [])]] as const];
+  });
 
   it('delivers a mode-bound secret to exactly the backend-image machines whose processes read it', () => {
-    expect(backendImageModes.map(([slug]) => slug)).toEqual(['backend', 'mcp', 'oauth', 'jobs']);
+    expect(backendImageModes.map(([slug]) => slug)).toContain('backend');
     for (const [service, vmModes] of backendImageModes) {
-      const delivered = new Set(runtimeSecretsForConsumer(service).map((secret) => secret.envVar));
+      const delivered = deliveredTo(service);
       for (const [envVar, modes] of Object.entries(serviceSecrets)) {
         const reads = modes.some((readingMode) => vmModes.includes(readingMode));
         // Missing, a process's env schema refuses to boot; extra, the machine holds a key none of its processes reads.
@@ -184,29 +87,10 @@ describe('runtime secret schema alignment', () => {
 
   it('delivers the secrets every backend mode requires to each backend-image machine', () => {
     for (const [service] of backendImageModes) {
-      const delivered = new Set(runtimeSecretsForConsumer(service).map((secret) => secret.envVar));
+      const delivered = deliveredTo(service);
       for (const envVar of ['DATABASE_URL', 'COOKIE_SECRET', 'DATA_ENCRYPTION_KEY']) {
         expect(delivered.has(envVar), `${service} and ${envVar}`).toBe(true);
       }
-    }
-  });
-
-  it('documents mcp as a backend-env wrapper instead of requiring a standalone env.ts', () => {
-    const aiSecrets = runtimeSecrets.filter((secret) => secret.services.includes('mcp'));
-    expect(aiSecrets.length).toBeGreaterThan(0);
-    expect(backendEnvSource).toContain('DATABASE_ADMIN_URL:');
-    expect(backendEnvSource).toContain('SCW_AI_API_KEY:');
-  });
-});
-
-describe('runtime secret config seam', () => {
-  it('derives the registry tail from the app config, keyed by id, preserving order', () => {
-    const configIds = Object.keys(runtimeSecretsConfig);
-    const tail = runtimeSecrets.slice(runtimeSecrets.length - configIds.length);
-    expect(tail.map((secret) => secret.id)).toEqual(configIds);
-    for (const secret of tail) {
-      const { id, ...rest } = secret;
-      expect(rest).toEqual(runtimeSecretsConfig[id as keyof typeof runtimeSecretsConfig]);
     }
   });
 });

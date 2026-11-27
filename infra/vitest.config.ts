@@ -7,8 +7,5 @@ export default defineProject({
     include: ['tests/**/*.test.ts'],
     exclude: ['node_modules/**'],
     testTimeout: 5000,
-    // A registry the engine built holds the same functions the tests import: the engine loads the app's config through
-    // the tests' module graph
-    server: { deps: { inline: ['@cellajs/cli'] } },
   },
 });

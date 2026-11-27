@@ -21,7 +21,6 @@ export default defineConfig({
   // NOTE: package.jsons, lockfile, this file, modules with `app` owner are also ignored, with their static assets
   ignored: [
     'README.md',
-    'infra/compose.gen.yml',
     'infra/Pulumi.production.yaml',
     'infra/environments',
     'sdk/gen',

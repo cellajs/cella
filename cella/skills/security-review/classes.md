@@ -373,7 +373,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - CDN origins: `shared/src/config-builder/app-config.ts`, `shared/src/utils/is-cdn-url.ts`.
   - Downloads: no `Content-Disposition` in `backend/src`, `frontend/src`, `shared/src` or `infra`; downloads are a client `<a download>` of a blob (`frontend/src/lib/export.ts`) or a presigned or CDN URL (`attachment-render.tsx`, `attachments-carousel.tsx`).
   - Awareness: `frontend/src/modules/common/blocknote/collaborative-blocknote.tsx` (sets `user: { name, color }`); peers render with BlockNote `YCursorPlugin`; the relay (`yjs/src/sync/relay.ts`, `yjs/src/constants.ts`) checks awareness client-id ownership, rate and entry counts.
-  - Response headers: the app origin is served by Caddy with a CSP (`cella-cli:src/infra/caddy/Caddyfile`, built in `infra/config/frontend-csp.config.ts`, bound in `infra/config/env-suppliers.config.ts`, asserted by `cella-cli:src/infra/tasks/smoke.ts` and `infra/tests/caddyfile.test.ts`), plus HSTS, `X-Frame-Options DENY`, `nosniff`, referrer, permissions and COOP. The API sets Hono `secureHeaders` (`backend/src/middlewares/app.ts`, `shared/src/health-app.ts`) with no CSP of its own; the bucket and CDN set none in `infra/`.
+  - Response headers: the app origin is served by Caddy with a CSP (`cella-cli:src/infra/caddy/Caddyfile`, built by `frontendHeaders` in `shared/src/config-builder/frontend-csp.ts`, which the proxy service's `headers` in `infra/description.yml` names, asserted by `cella-cli:src/infra/tasks/smoke.ts` and `cella-cli:src/infra/tests/unit/caddyfile.test.ts`), plus HSTS, `X-Frame-Options DENY`, `nosniff`, referrer, permissions and COOP. The API sets Hono `secureHeaders` (`backend/src/middlewares/app.ts`, `shared/src/health-app.ts`) with no CSP of its own; the bucket and CDN set none in `infra/`.
   - CSP shape: `script-src 'self' *.gleap.io` (no `unsafe-inline`, no `unsafe-eval`), `style-src 'self' 'unsafe-inline'`, `img-src 'self' blob: https: data:`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `connect-src` lists the API, Yjs, S3, maps, Transloadit, gleap and the monitoring DSN's origin.
 - **Holds:**
   - `tests/emails/email-escaping`: a sender, org, actor or context name cannot inject a link into invite, mention and digest mail; button text cannot inject markup into the Outlook fallback; subject and preview stay unescaped while the rendered mail escapes once.
@@ -381,7 +381,8 @@ One class is one review iteration. The scout verifies every path below at the re
   - `block-media-refs`: a document cannot load media from outside the organization (client writes, malformed media block, welcome text, relay writes).
   - `profile-image-urls`: an avatar or banner cannot point at another host through a CDN-prefixed URL.
   - `upload-visibility`: an attachment cannot be stored public by choosing the public bucket, no system upload token without the system role, public templates store re-encoded images.
-  - `infra/tests/caddyfile.test.ts`: Caddy binds the CSP header; `cella-cli:src/infra/tasks/smoke.ts` fails a deploy without it.
+  - `cella-cli:src/infra/tests/unit/caddyfile.test.ts`: Caddy binds the CSP header; `cella-cli:src/infra/tasks/smoke.ts` fails a deploy without it.
+  - `infra/tests/proxy-contract.test.ts`: the proxy redirects a share link and the OAuth metadata root locations to the app's own service paths, and never to another origin.
 - **Asks:** sink -> sanitizer options -> version minimum as a table; pdf.js `isEvalSupported` and the worker origin; what user text reaches jspdf; the SVG upload policy; `--brand` validation; the CSP's remaining reach (CSS injection, `img-src https:` beacons, markup injection, the `*.gleap.io` script host).
 - **Not this class:** jsPDF and sanitize-html ReDoS belong to C1. DOMPurify prototype pollution belongs to C2. The i18next-http-backend path traversal and URL injection belong to C5. The jsPDF local file read (Node `fs`) belongs to C5 and C6. Presigned URL shape and storage keys belong to C6. Hono headers and `secureHeaders` defaults belong to C7 and A2.
 
@@ -401,7 +402,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/push/push-sender.test.ts`: the metadata address and a `;`-suffixed lookalike host are refused as push endpoints (host allowlist, legacy `url.parse` differential).
   - In the lib, CIMD fetches use `redirect: 'manual'`, a 5 KiB cap, a 2.5 s timeout and a special-use socket check.
 - **Asks:** one outbound policy, decided once before link cards and webhooks ship: destination rule (private ranges and the metadata address refused), redirect limit, size and time caps, no credentials forwarded; today's sites against it as a table.
-- **Not this class:** provider claims, `redirect_uri` handling and `state`/open redirect belong to A4. Mail content and templating belong to D3. Cloud metadata address blocking at the network layer belongs to F3 (M3 is noted here). SVG and HTML uploads, signed URL scope and `logo_uri` rendering belong to C4 and C6. Companion's own fetching of user URLs happens at Transloadit; CSP `connect-src` for it is in `infra/config/frontend-csp.config.ts`.
+- **Not this class:** provider claims, `redirect_uri` handling and `state`/open redirect belong to A4. Mail content and templating belong to D3. Cloud metadata address blocking at the network layer belongs to F3 (M3 is noted here). SVG and HTML uploads, signed URL scope and `logo_uri` rendering belong to C4 and C6. Companion's own fetching of user URLs happens at Transloadit; CSP `connect-src` for it is in `shared/src/config-builder/frontend-csp.ts`.
 
 ### C6 Files and storage
 - **Gain:** cross-tenant read, code execution in a browser.
@@ -432,12 +433,12 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Merges:** `routedPath` in `server.ts` with encoded paths (`lib/listeners.ts` already notes `/api/%2e%2e/internal/cdc`), repeated and encoded slashes, header de-duplication, a cross-site form post per Content-Type, the absence of CORS as the design, the load balancer's prefix handling, the Host header, `Referrer-Policy` on invoke-token paths, `isbot` as a bypass.
 - **Advisories:** 8, plus 1 pattern lesson (hono mount prefix with encoded paths, query after the fragment, CSRF middleware bypass by Content-Type x2, Vary injection, path confusion; node-server encoded slashes, repeated slashes, double dots).
 - **Files:**
-  - `backend/src/server.ts`: `routedPath`, the `getPath` option that strips `/api` and `/mcp` once and routes a custom method's `:verb`. The oauth process mounts itself in `backend/src/modules/oauth-server/server.ts` with `startsWith` on the raw `req.url`; the load balancer prefix `/oauth` precedes it (`infra/config/services.config.ts`).
+  - `backend/src/server.ts`: `routedPath`, the `getPath` option that strips `/api` and `/mcp` once and routes a custom method's `:verb`. The oauth process mounts itself in `backend/src/modules/oauth-server/server.ts` with `startsWith` on the raw `req.url`; the load balancer prefix `/oauth` precedes it (`shared/src/config-builder/service-paths.ts`).
   - `backend/src/lib/listeners.ts`: `serveApi`, `internalApp` (source refusal, then body limit), `isCdcUpgradePath` (raw-target match), `serveInternal` upgrade handler. Internal routes: `/internal/yjs`, `/internal/cdc` (WebSocket upgrade only), the shared health path.
   - `backend/src/middlewares/app.ts`: chain order is request-log context, `secureHeaders` (`overwrite: false`: the invoke-token handler in `general-handlers.ts` sets its own `Referrer-Policy`), otel, request id, logger, CSRF (with skips), client version, body limit, `compressResponse` from `middlewares/compress.ts` (GET only).
   - `backend/src/middlewares/is-no-bot.ts` (used on `metrics-routes.ts`, `magic-routes.ts` and the auth routes in `general-routes.ts`).
   - `backend/src/middlewares/guard/service-guard.ts` (an API-key request carrying `Origin` is refused 403 `browser_origin`); `backend/src/modules/service-accounts/helpers/api-key.ts` (`hasApiKeyHeader`).
-  - Infra: `cella-cli:src/infra/resources/loadbalancer.ts` (path routes with `matchPathBegin`, internal frontends and ACLs, apex redirect), `cella-cli:src/infra/caddy/Caddyfile` (frontend only). Prefixes `/api`, `/yjs`, `/mcp`, `/oauth` in `infra/config/services.config.ts`; mcp and oauth reuse the backend image under `SERVICE`, and `backend/src/routes.ts` mounts every registered module in every mode.
+  - Infra: `cella-cli:src/infra/resources/loadbalancer.ts` (path routes with `matchPathBegin`, internal frontends and ACLs, apex redirect), `cella-cli:src/infra/caddy/Caddyfile` (frontend only). Prefixes `/api`, `/yjs`, `/mcp`, `/oauth` in `shared/src/config-builder/service-paths.ts`, stated again as each service's `pathPrefix` in `infra/description.yml`; mcp and oauth reuse the backend image under `SERVICE`, and `backend/src/routes.ts` mounts every registered module in every mode.
   - Tests: `backend/tests/prefix-mount.test.ts` and `backend/tests/request-id.test.ts` at `backend/tests/`; `csrf`, `malformed-ids`, `internal-listener` under `backend/tests/security/`.
 - **Holds:**
   - `internal-listener`: the CDC socket is not reachable from the public listener under `/internal/cdc`, `/api/%2e%2e/internal/cdc`, `/api/../internal/cdc` or `/api/internal/cdc`; `/internal/yjs/materialize` is a 404 on the public listener under plain, `/api` and `/api/%2e%2e` prefixes even with the relay secret; `isCdcUpgradePath` matches only the exact raw target; dot-segment paths to the CDC socket on the internal listener are 404; an empty or missing secret is refused; a non-private peer is refused on every internal route; the health path stays served.
@@ -483,7 +484,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/lib/error.ts` (`exposesServerMessages`, `hideIfServerError`, `appErrorHandler`).
   - `backend/src/utils/data-encryption.ts` (AES-256-GCM, HKDF per purpose); users: `modules/auth/totps/helpers/totp-secret-encryption.ts`, `modules/oauth-server/keystore.ts`, `utils/list-page.ts` (page tokens, a purpose per list and params).
   - `backend/src/utils/hash-pii.ts`, `hash-token.ts`.
-  - `backend/src/env.ts`, `backend/src/env-service-secrets.ts`, `infra/config/runtime-secrets.config.ts`.
+  - `backend/src/env.ts`, `backend/src/env-service-secrets.ts`, `runtimeSecrets` in `infra/description.yml`.
   - CDC strip: `cdc/src/table-registry.ts` (`strippedKeys`), `cdc/src/utils/compact-row-data.ts`; activity: `cdc/src/services/create-activity.ts`, `cdc/src/utils/get-changed-fields.ts` (names only).
   - Browser: `frontend/src/query/local-user-db.ts`, `frontend/src/query/local-user-storage.ts`, `frontend/src/query/idb-kv-storage.ts`, `frontend/src/lib/sw.ts`, `frontend/src/modules/auth/end-session.ts`, `frontend/src/query/on-error.ts`.
   - `.env.example` lists every secret name; no seed script reads a secret.
@@ -625,7 +626,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `pnpm-workspace.yaml`: `allowBuilds`, `blockExoticSubdeps`, `minimumReleaseAge` (with an exclude for `@cellajs/cli`), `overrides`, `updateConfig.ignoreDependencies`. No `trustPolicy`, `onlyBuiltDependencies` or `.npmrc`.
   - `package.json` (`packageManager`).
   - `.github/workflows/ci.yml`, `.github/workflows/release.yml` (no `.github/actions`); `lefthook.yaml`.
-  - `infra/config/frontend-csp.config.ts`, set by `cella-cli:src/infra/caddy/Caddyfile` from `{$FRONTEND_CSP}`.
+  - `shared/src/config-builder/frontend-csp.ts`, set by `cella-cli:src/infra/caddy/Caddyfile` from `{$FRONTEND_CSP}`.
   - Dockerfiles: `Dockerfile`, `cella-cli:src/infra/agent/Dockerfile`, `cella-cli:src/infra/caddy/Dockerfile`, `backend/db/Dockerfile`.
   - `pnpm cella audit` lives in `@cellajs/cli` (not in this repo; `.github/SECURITY.md` names it); the repo config is the `updateConfig` block in `pnpm-workspace.yaml`.
   - CI has no merge queue (`ci.yml` says so).

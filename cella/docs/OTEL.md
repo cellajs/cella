@@ -41,7 +41,7 @@ OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer <key>
 
 The other standard `OTEL_*` variables apply too, such as a per-signal endpoint or the trace sampler. Without `OTEL_TRACES_SAMPLER`, a service records every request it serves, also one whose caller flags its trace as not sampled; any other span keeps its remote sender's choice.
 
-A deployed machine receives only the variables its runtime secrets and its service's `env` declare. The endpoint and its headers are the runtime secrets `otlp-endpoint` and `otlp-headers`, which an operator sets ([runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts)). Declare any other in the service's `env` in [services.config.ts](../../infra/config/services.config.ts).
+A deployed machine receives only the variables its runtime secrets and its service's `env` declare in [description.yml](../../infra/description.yml). The endpoint and its headers are runtime secrets, which an operator sets. Declare any other in the service's `env`.
 
 The browser has no OTLP export. It sends errors and one session per page load to a DSN, in the Sentry envelope protocol, through Sentry's browser SDK ([monitoring.ts](../../frontend/src/lib/monitoring.ts)). Without a DSN the browser sends nothing.
 

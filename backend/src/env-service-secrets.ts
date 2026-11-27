@@ -17,7 +17,7 @@ export type ServiceSecret = (typeof serviceSecretNames)[number];
 
 /**
  * The services that read each service-bound secret. A worker VM receives only the secrets its own service reads
- * (infra/config/runtime-secrets.config.ts; the infra tests pin the two together), so the env schema requires each one
+ * (`runtimeSecrets` in infra/description.yml; the infra tests pin the two together). The env schema requires each one
  * in its services alone, and code reads it through `serviceSecret` in env.ts. This file imports nothing, so infra can too.
  */
 export const serviceSecrets: Readonly<Record<ServiceSecret, readonly ProcessService[]>> = {

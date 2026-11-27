@@ -3,7 +3,7 @@
 # Production Dockerfile (multi-target: backend | cdc | yjs)
 # =============================================================================
 # One file builds all three Node.js service images; a build selects a service with
-# `--target <name>` (the `target` of infra/config/services.config.ts, which the
+# `--target <name>` (a service's `target` in infra/description.yml, which the
 # release build's bake reads in cella-cli:src/infra/tasks/build-images.ts). Shared stages:
 #
 #   base    : node:<NODE_VERSION>-alpine + pnpm from npm, at the version the
@@ -82,8 +82,6 @@ COPY shared/package.json ./shared/
 COPY sdk/package.json ./sdk/
 COPY cdc/package.json ./cdc/
 COPY yjs/package.json ./yjs/
-# The root links `infra` for @cellajs/cli's peer, and a frozen install refuses a missing linked workspace package.
-COPY infra/package.json ./infra/
 
 # =============================================================================
 # backend: Hono API server

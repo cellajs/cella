@@ -1,0 +1,208 @@
+# yaml-language-server: $schema=./node_modules/@cellajs/cli/dist/infra-description.schema.json
+general:
+  # A Scaleway marketplace label or a pinned image UUID: the agent loads at first boot.
+  compute: { image: docker }
+  database: { nodeType: DB-DEV-S, volumeSizeGb: 10 }
+  # An open tab of a replaced release may still lazy-load its hashed chunks.
+  assets: { retentionDays: 14 }
+  # Each scheduled run is billed: every minute costs about nine euro a month past the free tier, every five stays inside it.
+  schedule: { everyMinutes: { production: 1, staging: 5 } }
+
+processIdentityEnv: [SERVICE]
+
+services:
+  backend:
+    dockerfile: Dockerfile
+    target: backend
+    port: 4000
+    # Only the private, ACL-guarded LB frontend forwards to this listener.
+    internalPort: 4005
+    startPeriod: 15s
+    replacementStrategy: start-first
+    drainPolicy: requests
+    release: { env: { SERVICE: migrate } }
+    primaryRollout: true
+    drainSeconds: 10
+    lbRoute: path
+    pathPrefix: /api
+    s3Access: true
+    instanceType: { production: DEV1-S, staging: DEV1-S }
+    env: { APP_ORIGIN: '@{frontend.url}' }
+  cdc:
+    dockerfile: Dockerfile
+    target: cdc
+    port: 4001
+    startPeriod: 10s
+    # It owns the one PostgreSQL replication slot, which two machines cannot share.
+    replacementStrategy: stop-first
+    instanceType: DEV1-S
+    coHosted: true
+    # The backend's internal listener through the LB's private frontend: the address follows every backend switch.
+    env: { BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}', APP_ORIGIN: '@{frontend.url}' }
+  yjs:
+    dockerfile: Dockerfile
+    target: yjs
+    port: 4002
+    startPeriod: 10s
+    replacementStrategy: start-first
+    drainPolicy: reconnect
+    drainSeconds: 5
+    lbRoute: path
+    pathPrefix: /yjs
+    lbWebsockets: true
+    instanceType: DEV1-S
+    coHosted: true
+    env: { APP_ORIGIN: '@{frontend.url}', BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}' }
+  mcp:
+    port: 4003
+    startPeriod: 15s
+    replacementStrategy: start-first
+    drainPolicy: requests
+    drainSeconds: 10
+    reusesImageOf: backend
+    lbRoute: path
+    pathPrefix: /mcp
+    instanceType: DEV1-S
+    coHosted: true
+    env: { SERVICE: mcp, APP_ORIGIN: '@{frontend.url}' }
+  oauth:
+    port: 4004
+    startPeriod: 15s
+    replacementStrategy: start-first
+    drainPolicy: requests
+    drainSeconds: 10
+    reusesImageOf: backend
+    lbRoute: path
+    pathPrefix: /oauth
+    instanceType: DEV1-S
+    coHosted: true
+    env: { SERVICE: oauth, APP_ORIGIN: '@{frontend.url}' }
+  jobs:
+    port: 4006
+    startPeriod: 15s
+    # One pg-boss maintainer per deployment: it never overlaps its predecessor.
+    replacementStrategy: stop-first
+    reusesImageOf: backend
+    instanceType: DEV1-S
+    coHosted: true
+    env: { SERVICE: jobs, APP_ORIGIN: '@{frontend.url}' }
+  frontend:
+    dockerfile: engine:proxy
+    headers: shared/src/config-builder/frontend-csp.ts#frontendHeaders
+    # Caddy's port: the shared config's 3000 is the Vite dev server's.
+    port: 80
+    startPeriod: 10s
+    replacementStrategy: start-first
+    drainPolicy: requests
+    lbRoute: default
+    # Caddy's binary carries this file capability, and exec refuses it without one.
+    capabilities: [NET_BIND_SERVICE]
+    # The proxy reads no app secret.
+    includeStandardEnv: false
+    includeEnvFile: false
+    # Caddy cannot fold into the backend's Node process under singleVM.
+    placement: host
+    instanceType: DEV1-S
+
+# A stored secretName never changes: Pulumi names the secret's resources by it.
+runtimeSecrets:
+  COOKIE_SECRET:
+    secretName: cookie-secret
+    description: 'Cookie signing secret. A comma-separated list rotates it: the first signs, any verifies'
+    generation: random
+    rotatable: true
+    services: [backend, mcp, oauth, jobs]
+  UNSUBSCRIBE_SECRET:
+    secretName: unsubscribe-token-secret
+    description: Email unsubscribe token secret
+    generation: random
+    rotatable: true
+    services: [backend, mcp, jobs]
+  CDC_SECRET:
+    secretName: cdc-secret
+    description: CDC authentication secret
+    generation: random
+    rotatable: true
+    services: [backend, cdc]
+  YJS_TOKEN_PRIVATE_KEY:
+    secretName: yjs-token-private-key
+    description: Key material of the Ed25519 key that signs Yjs editor tokens
+    generation: random
+    rotatable: true
+    # Only the API process signs; the relay verifies with the public half.
+    services: [backend]
+  YJS_TOKEN_PUBLIC_KEY:
+    description: 'Public key the Yjs relay verifies editor tokens with; it cannot sign one'
+    services: [yjs]
+    derivedFrom: { secret: YJS_TOKEN_PRIVATE_KEY, with: shared/src/utils/yjs-token.ts#yjsTokenPublicKey }
+  YJS_RELAY_SECRET:
+    secretName: yjs-relay-secret
+    description: "Authenticates the Yjs relay on the backend's internal materialize route"
+    generation: random
+    rotatable: true
+    services: [backend, yjs]
+  # Not rotatable, like the next: it protects stored data, which a new value would leave unreadable or unmatched.
+  PII_HASH_SECRET:
+    secretName: pii-hash-secret
+    description: HMAC pepper for hashing PII-derived identifiers
+    generation: random
+    services: [backend, mcp, oauth]
+  DATA_ENCRYPTION_KEY:
+    secretName: data-encryption-key
+    description: Root key for reversible encryption of sensitive database fields
+    generation: random
+    services: [backend, mcp, oauth, jobs]
+  ADMIN_EMAIL: { description: Primary administrative contact email, required: true, services: [backend], group: Admin email }
+  BREVO_API_KEY: { description: Brevo transactional email API key, services: [backend, mcp, jobs], group: Brevo email }
+  SCW_AI_API_KEY: { description: "Scaleway AI API key for the app's own AI features; the MCP endpoint never needs it", services: [backend, mcp], group: Scaleway AI }
+  OTEL_EXPORTER_OTLP_ENDPOINT:
+    secretName: otlp-endpoint
+    description: 'OTLP/HTTP base URL every service exports its traces, metrics and logs to; unset, nothing is exported'
+    services: [backend, cdc, yjs, jobs]
+    group: Telemetry export
+  OTEL_EXPORTER_OTLP_HEADERS:
+    secretName: otlp-headers
+    description: "Headers every OTLP export sends, as `name=value` pairs joined by commas: the destination's key"
+    services: [backend, cdc, yjs, jobs]
+    group: Telemetry export
+  GITHUB_CLIENT_ID: { description: GitHub OAuth client ID, services: [backend, mcp], group: GitHub sign-in }
+  GITHUB_CLIENT_SECRET: { description: GitHub OAuth client secret, services: [backend, mcp], group: GitHub sign-in }
+  GOOGLE_CLIENT_ID: { description: Google OAuth client ID, services: [backend], group: Google sign-in }
+  GOOGLE_CLIENT_SECRET: { description: Google OAuth client secret, services: [backend], group: Google sign-in }
+  MICROSOFT_TENANT_ID:
+    description: 'Microsoft Entra tenant the sign-in narrows to: organizations, consumers or a tenant GUID, never its domain name. None means every tenant'
+    services: [backend]
+    group: Microsoft sign-in
+  MICROSOFT_CLIENT_ID: { description: Microsoft OAuth client ID, services: [backend], group: Microsoft sign-in }
+  MICROSOFT_CLIENT_SECRET: { description: Microsoft OAuth client secret, services: [backend], group: Microsoft sign-in }
+  # One pair per key of appConfig.federations, named as backend/src/env.ts derives them.
+  SSO_SURFCONEXT_CLIENT_ID: { description: SURFconext federation client ID, services: [backend], group: SURFconext sign-in }
+  SSO_SURFCONEXT_CLIENT_SECRET: { description: SURFconext federation client secret, services: [backend], group: SURFconext sign-in }
+  VAPID_PUBLIC_KEY: { description: Web Push VAPID public key, services: [backend], group: Web push }
+  VAPID_PRIVATE_KEY: { description: Web Push VAPID private key, services: [backend], group: Web push }
+  VAPID_SUBJECT: { description: 'Web Push VAPID subject: a mailto: or https: URL', services: [backend], group: Web push }
+  MATRIX_ACCESS_TOKEN: { description: Matrix bot access token for the system room, services: [backend, jobs], group: Matrix chat }
+  TRANSLOADIT_KEY: { description: Transloadit auth key that signed upload assemblies carry, services: [backend], group: Transloadit uploads }
+  TRANSLOADIT_SECRET: { description: Transloadit auth secret that signs upload assembly params, services: [backend], group: Transloadit uploads }
+  SYSTEM_ADMIN_IP_ALLOWLIST: { description: "System admin IP allowlist ('off' to disable, '*' for any IP, or comma-separated IPv4 addresses)", services: [backend, mcp], group: Admin IP allowlist }
+
+stores:
+  primary:
+    kind: postgres-managed
+    secretConsumers:
+      runtime: [backend, yjs, mcp, oauth, jobs]
+      # Migrations and the nightly apply_retention() run as the table owner.
+      admin: [backend, jobs]
+      cdc: [cdc]
+      ca: [backend, yjs, mcp, cdc, oauth, jobs]
+
+managedKeys:
+  ai:
+    suffix: ai
+    label: AI features (Scaleway Generative APIs / Inference)
+    appDescription: "AI principal, Scaleway Generative APIs + Inference (read by the app's own AI features)"
+    policyDescription: 'AI policy: Generative APIs + Inference (auto-generated by infra CLI)'
+    permissionSets: [GenerativeApisFullAccess, GenerativeApisModelAccess, InferenceFullAccess]
+    prompt: { message: "Mint a scoped Scaleway AI key now? (for the app's own AI features; inference is billed)", default: false }
+    # Generative APIs authenticate with one Bearer token: the key's secret half.
+    assign: { secretKey: SCW_AI_API_KEY }

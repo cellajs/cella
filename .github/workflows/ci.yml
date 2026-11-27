@@ -60,11 +60,6 @@ jobs:
       - name: Check for unused files and dependencies
         run: pnpm unused
 
-      # compose.gen.yml is a committed artifact read at deploy time
-      # (the switch step of cella-cli:src/infra/tasks/deploy-run.ts), so a stale copy must fail the PR.
-      - name: Check compose model artifact is committed
-        run: pnpm --filter infra compose:check
-
       # The pre-commit hook regenerates sdk/gen and stages it; a commit made with --no-verify records a stale SDK, which
       # the build-services typecheck and the schema-bust-gate (it reads the committed spec) would then judge in place of
       # the routes. Here and not in build-services: this job ends a minute earlier.

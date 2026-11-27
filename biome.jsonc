@@ -56,7 +56,7 @@
       "tailwindDirectives": true
     }
   },
-  // The Markdown formatter pads every table cell to its column width; `infra/compose.gen.yml` is generator output.
+  // The Markdown formatter pads every table cell to its column width; the YAML formatter breaks the one-line mappings of `infra/description.yml`.
   "markdown": {
     "formatter": { "enabled": false }
   },
