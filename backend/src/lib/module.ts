@@ -11,6 +11,7 @@ import type { NotificationKind } from '#/modules/notification/notification-kinds
 import type { OrganizationModel } from '#/modules/organization/organization-db';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
 import type { UserModel } from '#/modules/user/user-db';
+import type { YjsEditable } from '#/modules/yjs/operations/authorize-yjs-editor';
 import type { YjsMaterializer } from '#/modules/yjs/yjs-materializers';
 import type { EntityModel } from '#/tables';
 
@@ -166,6 +167,8 @@ export interface BackendModule extends ModuleConfig {
   productEntity?: ProductEntityType;
   /** Yjs collab-session materializer for `productEntity`. */
   yjsMaterializer?: YjsMaterializer;
+  /** Refuses collaborative edits of a `productEntity` row the caller may update: the editor then opens read-only. */
+  yjsEditable?: YjsEditable;
   /** In-request reactions keyed by `<type>.<verb>`; a module may react to any tracked type, several to one event. */
   onMutation?: { [E in TrackedEventType]?: MutationHandler<E> };
   /** Content this module gives a new demo (see {@link DemoCreatedHook}); every module's hook runs, in registration order. */
@@ -199,6 +202,7 @@ export function defineBackendModule(module: BackendModule): void {
   const {
     productEntity: _productEntity,
     yjsMaterializer: _yjsMaterializer,
+    yjsEditable: _yjsEditable,
     onMutation: _onMutation,
     onDemoCreated: _onDemoCreated,
     membershipColumns: _membershipColumns,
