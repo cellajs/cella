@@ -246,7 +246,7 @@ The setup's first apply makes the load balancer, before any machine. Its pools, 
 
 ## Configuration
 
-All tunable infra config lives in one committed file, [description.yml](../../infra/description.yml), which the engine checks at load. A few fields take a per-mode map, such as a service's machine size. Every other field is one value. The file is part of the applied description. A release that changes it ends **apply needed** until **Review & apply changes** runs from a checkout that has the change.
+What only a deployment knows lives in [description.yml](../../infra/description.yml), which the engine checks at load. A few fields take a per-mode map, such as a service's machine size. Every other field is one value. The applied description holds the file, the engine's fields of `appConfig`, the proxy's header values and each derived secret's answer for a fixed input ([What needs an apply](./deployment/CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). A release that changes one ends **apply needed** until an apply from a checkout with the change.
 
 | Key | Owns | Applied by |
 | --- | --- | --- |

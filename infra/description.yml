@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=./node_modules/@cellajs/cli/dist/infra-description.schema.json
 general:
-  # A Scaleway marketplace label or a pinned image UUID: the agent loads at first boot.
+  # The machines' image is a Scaleway marketplace label or a pinned image UUID, with nothing baked in: the agent loads at first boot.
   compute: { image: docker }
   database: { nodeType: DB-DEV-S, volumeSizeGb: 10 }
   # An open tab of a replaced release may still lazy-load its hashed chunks.
@@ -8,6 +8,7 @@ general:
   # Each scheduled run is billed: every minute costs about nine euro a month past the free tier, every five stays inside it.
   schedule: { everyMinutes: { production: 1, staging: 5 } }
 
+# The singleVM host takes on each co-hosted worker's env except these variables, which pick a container's process.
 processIdentityEnv: [SERVICE]
 
 services:

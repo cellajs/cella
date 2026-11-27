@@ -36,7 +36,9 @@ A deploy reads what the last apply made, and stops with "an apply makes it" when
 A deploy runs the engine the last **Review & apply changes** built. It holds every release against the description that engine carries:
 
 - the app's [description.yml](../../../infra/description.yml)
-- the engine's fields of the app config: domain, origin, buckets, enabled services and `singleVM`
+- the engine's fields of the app config: slugs, domain, origins, storage region, host, buckets and CDN URLs, each service's `enabled` and public URL, `singleVM` and backup days
+- the proxy's header values: a change to the CSP builder, or to a config field it reads, owes an apply
+- each derived secret's answer for a fixed input: a change to its function, or to what it calls, owes an apply
 - the boot plan's contract version
 - the Node, pnpm and repository the root `package.json` names
 

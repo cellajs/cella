@@ -117,7 +117,7 @@ The CLI drops `SCW_OWNER_*` from its environment with a notice. A one-day operat
 
 [description.yml](description.yml) states what only a deployment knows: per service its machine size, how it is replaced and drained, its load balancer route and env; who makes each runtime secret and which services receive it; the database, the stores, the managed keys and the schedule.
 
-Each service states its port, and its internal port and path prefix where it has them. Once the mode's `appConfig` loads, the engine refuses a value that differs from `appConfig.services` in `shared` and names both. A service `appConfig` does not know is not compared, and neither is the proxy's port: it is the container's own, where `appConfig` holds the dev server's.
+Each service states its port, and its internal port and path prefix where it has them. Once the mode's `appConfig` loads, the engine refuses a value that differs from `appConfig.services` in `shared` and names both. A service `appConfig` does not know is not compared, and neither is the proxy's port: it is the container's own, where `appConfig` holds the dev server's. Under `singleVM` the host takes on every co-hosted worker's env except the variables `processIdentityEnv` lists, such as `SERVICE`, which pick the process a container runs.
 
 A runtime secret is keyed by its variable. The engine makes one marked `generation: random`, and one with `derivedFrom` follows another secret through the function the file names. An operator sets every other.
 
@@ -169,7 +169,7 @@ One name per concept across code and docs:
 | **main job** | An environment's Serverless Jobs definition, with its schedule. Each of its runs deploys at most one target, on the engine image. |
 | **scheduled run** | A run of the main job its schedule starts. Under the lease, it deploys the target when no run record names that target and retry counter. |
 | **engine image** | The engine an apply builds from the operator's checkout and pushes to the environment's registry. The main job names it by digest. |
-| **applied description** | The app as the engine image describes it: the engine config's fields, `description.yml`, the boot plan's contract version, the root `package.json`'s Node, pnpm and repository. `control/<mode>/applied.json` keeps it beside its hash. The image's stamp holds the hash. |
+| **applied description** | The app as the engine image describes it: `description.yml`, the engine config's fields, the proxy's header values, each derived secret's answer for a fixed input, the boot plan's contract version, the root `package.json`'s Node, pnpm and repository. `control/<mode>/applied.json` keeps it beside its hash. The image's stamp holds the hash. |
 | **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm cella infra logs`. |
 | **builder** | A machine a deploy makes to build a release not built yet, deleted after. It writes through links, holds no key and reports the release's own description. |
 | **release archive** | An image of a release as `docker load` reads it, under `releases/<sha>/images/` of the boot-diag bucket, named with its digest in the release's manifest. |
