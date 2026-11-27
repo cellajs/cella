@@ -18,16 +18,16 @@ Resources and traffic flow:
             │             Scaleway Load Balancer              │  TLS termination,
             │  default    →  frontend machine                 │  one public IP
             │  /api       →  backend machine                  │
-            │  /yjs, /mcp, /oauth → worker machines           │
+            │  /yjs, /mcp, /oauth → service machines          │
  ┌──────────┤                                                 ├────────────┐
  │          └───────┬────────────────┬──────────────────┬─────┘            │
  │ Private network  │                │                  │  plain HTTP to   │
  │ (VPC)            │                │                  │  reserved IPs    │
  │                  ▼                ▼                  ▼                  │
  │           ┌─────────────┐  ┌─────────────┐ ┌──────────────────────────┐ │
- │           │  frontend   │  │   backend   │ │  workers: cdc, yjs, mcp, │ │
- │           │   (Caddy)   │  │             │ │  oauth, jobs (on the     │ │
- │           │             │  │             │ │  backend when singleVM)  │ │
+ │           │  frontend   │  │   backend   │ │ services: cdc, yjs, mcp, │ │
+ │           │   (Caddy)   │  │             │ │ oauth, jobs (on the      │ │
+ │           │             │  │             │ │ backend when singleVM)   │ │
  │           └──────┬──────┘  └──────┬──────┘ └─────────┬────────────────┘ │
  │                  │                │                  │                  │
  │                  │                ▼                  ▼                  │
@@ -52,13 +52,13 @@ Resources and traffic flow:
 - **Images:** loaded from the release archive, never a registry. An image whose digest the plan does not name is refused.
 - **Agent:** `infra-agent` boots the release and passes the check only while serving it.
 - **Placement:** a machine per service. `singleVM` co-hosts everything on the backend's machine.
-- **Backend image:** also runs the oauth, mcp and jobs workers and the migrate companion.
+- **Backend image:** also runs the oauth, mcp and jobs services and the migrate companion.
 - **Frontend:** Caddy adds security headers/CSP and the SPA deep-link fallback.
 - **Database:** private, with logical replication on, exposed only by a break-glass action ([Runbooks](./deployment/RUNBOOKS.md)).
-- **Replication slot:** a stopped CDC worker's slot keeps WAL. The worker warns while that WAL has no bound.
+- **Replication slot:** while CDC is stopped, its slot keeps WAL. CDC warns while that WAL has no bound.
 - **WAL bound:** set `max_slot_wal_keep_size` where the provider offers it.
 - **WAL on Scaleway:** unbounded. It can fill the volume until a slot inactive for 24 hours is removed.
-- **Retention job:** the jobs worker calls the retention procedure nightly over the admin connection.
+- **Retention job:** the jobs service calls the retention procedure nightly over the admin connection.
 - **Buckets:** outside the VPC, read directly when public and by presigned URL when private.
 
 ## Deploys
@@ -215,7 +215,7 @@ A **switch** moves one role to its new machine:
 
 A start-first machine that never serves is deleted. The old one never stopped serving. A role whose new machine served keeps it, whatever fails after.
 
-The primary role owns migrations. The migrate companion runs at the boot of its new machine, before the app starts, and must succeed. A migration stuck on a lock fails the deploy. The boot account names the blocker. A migration that needs longer runs outside the deploy, and opens its transaction with the bulk marker the companion adds to every migration ([CDC worker](../../cdc/README.md#operational-constraints)). A migration's rows reach clients by one refetch after the deploy, not as activities.
+The primary role owns migrations. The migrate companion runs at the boot of its new machine, before the app starts, and must succeed. A migration stuck on a lock fails the deploy. The boot account names the blocker. A migration that needs longer runs outside the deploy, and opens its transaction with the bulk marker the companion adds to every migration ([CDC](../../cdc/README.md#operational-constraints)). A migration's rows reach clients by one refetch after the deploy, not as activities.
 
 ## Replacement strategies
 
@@ -224,8 +224,8 @@ Each service declares its `replacementStrategy` in [description.yml](../infra/de
 | Strategy | Services | Behavior | Downtime |
 | --- | --- | --- | --- |
 | **start-first** | backend, frontend, yjs, mcp, oauth (load balancer routes) | The new machine boots on the idle slot beside the old one. Once the pools see it healthy, the old one drains and goes. A new machine that never serves is deleted, and the old one keeps the traffic. | None: the pools hold both until the old one's check turns red. |
-| **stop-first** | cdc (the one replication slot), jobs (the one cron scheduler) | The old machine drains and goes first, then the new one boots. The new CDC worker resumes the slot where the old one stopped reading, so no change is lost. | Worker gap during replacement. |
-| **singleton host** (`singleVM`) | the backend machine when it runs a stop-first worker in-process | start-first. The new process's cdc waits until the old machine drained: one session holds the replication slot. Both processes run a jobs worker until then, and one of them claims each cron period. | None for HTTP. Realtime events pause from the switch until the slot moves, up to a minute past the drain. No activity is lost. |
+| **stop-first** | cdc (the one replication slot), jobs (the one cron scheduler) | The old machine drains and goes first, then the new one boots. The new CDC process resumes the slot where the old one stopped reading. No change is lost. | Service gap during replacement. |
+| **singleton host** (`singleVM`) | the backend machine when it runs a stop-first service in-process | start-first. The new process's cdc waits until the old machine drained: one session holds the replication slot. Both processes run the jobs service until then, and one of them claims each cron period. | None for HTTP. Realtime events pause from the switch until the slot moves, up to a minute past the drain. No activity is lost. |
 
 ## Runtime secret delivery
 

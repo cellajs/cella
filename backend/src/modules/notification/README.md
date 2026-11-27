@@ -25,7 +25,7 @@ Each row names its answers per level ([Sync engine](../../../../cella/docs/sync-
 | The recipient's organization is in a deleted tenant | The digest leaves its rows out (`findReadableSubjectIds`) | | None for the inbox: its rows stay listed and counted unread, with empty names, while the membership rows stay (`recipientStillBelongs`) |
 | The subject is deleted or unpublished, or the recipient may no longer read it | The inbox blanks its names and the digest leaves it out (`findReadableSubjectIds`) | | |
 | One row's fan-out throws | Logged and skipped, per row and per change (`fanOutNotifications`) | | |
-| The API stops after the worker's message reached it and before the fan-out wrote | | | None: no inbox row, mail or digest line (`fanOutNotifications`) |
+| The API stops after CDC's message reached it and before the fan-out wrote | | | None: no inbox row, mail or digest line (`fanOutNotifications`) |
 | The API stops between the insert and the signal, push or mail | | The inbox refetches on window focus once stale, and when the device is back online (`notificationsQueryOptions`) | The digest mails the unmailed row (`runDigest`); none with the digest off |
 | A client misses `notification.created` or `notification.read` | | The same refetch of the inbox | |
 | The mail service refuses or times out an instant mail | The mailer retries with backoff (`sendEmails`) | | The row stays unstamped and the digest mails it (`runDigest`); none with the digest off |
@@ -33,7 +33,7 @@ Each row names its answers per level ([Sync engine](../../../../cella/docs/sync-
 | The mail service refuses a digest mail, or one recipient's digest throws | The mailer retries with backoff (`sendEmails`) | The window stays open and the next run takes the recipient again (`runDigest`) | |
 | The process stops between a digest send and its stamp | | | None: that window is mailed twice |
 | A row's write commits while a digest run reads | | | None: it can fall in neither window (`runDigest`) |
-| A digest run outlives its job's expiry while a second jobs worker runs, as during a deploy | The run takes no recipient past its time budget (`runDigest`) | | |
+| A digest run outlives its job's expiry while a second jobs process runs, as during a deploy | The run takes no recipient past its time budget (`runDigest`) | | |
 | A user has no preferences row | The defaults answer (`defaultPreferences`) | | |
 | A CDC message names an unknown event type | The API's message schema drops it (`cdcMessageSchema`) | | |
 | A mark read fails or diverges from the server | The mutation refetches the inbox when it settles (`useMarkNotificationsReadMutation`), and `notification.read` refetches it in every other tab. Open finding, a second answer in the tab that marked: its own `notification.read` refetches it again | | |

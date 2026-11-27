@@ -18,9 +18,9 @@ const modeOrder: SyncMode[] = ['rest', 'cdc', 'yjs', 'vm'];
 const nodes = {
   database: { y: 80, Icon: DatabaseIcon, label: 'Postgres DB' },
   api: { y: 20, Icon: ServerIcon, label: 'API server' },
-  cdc: { y: 80, Icon: ServerIcon, label: 'CDC worker' },
+  cdc: { y: 80, Icon: ServerIcon, label: 'CDC' },
   client: { y: 20, Icon: MonitorIcon, label: 'Client' },
-  yjs: { y: 80, Icon: ServerIcon, label: 'Yjs worker' },
+  yjs: { y: 80, Icon: ServerIcon, label: 'Yjs relay' },
 } as const;
 
 type NodeKey = keyof typeof nodes;

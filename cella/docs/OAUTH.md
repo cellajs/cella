@@ -1,10 +1,10 @@
-# OAuth worker
+# OAuth
 
-This document covers the OAuth worker: the app's own [OAuth 2.1](https://oauth.net/2.1/) authorization server, issuing the access tokens the REST API and MCP accept.
+This document covers the OAuth service: the app's own [OAuth 2.1](https://oauth.net/2.1/) authorization server, issuing the access tokens the REST API and MCP accept.
 
 ### TL;DR
 
-The worker runs `node-oidc-provider` on the app origin under `/oauth`. A person consents to a client on an app page, and
+The OAuth service runs `node-oidc-provider` on the app origin under `/oauth`. A person consents to a client on an app page, and
 its token acts as that person in one tenant, within the approved scopes. A service account can get one from its API
 key, and an installed LTI tool from the key it registered. Keys, consents and tokens live in the app database, and a
 guard verifies every token locally.
@@ -15,7 +15,7 @@ guard verifies every token locally.
 MCP client / registered app
         │  authorization code + PKCE (person)  or  client_credentials (service account, installed LTI tool)
         ▼
-OAuth worker  (/oauth/*)
+OAuth service  (/oauth/*)
   ├─ discovery, authorize, pushed authorization requests, token, revocation, JWKS
   ├─ interaction routes the app renders as /auth/consent
   ├─ LTI platform routes (has.ltiPlatform): configuration, LTI tool registration, launch
@@ -28,9 +28,9 @@ access token (RS256 JWT, one tenant, one resource)
 REST API (serviceGuard / actorGuard)   MCP endpoint (tokenGuard)
 ```
 
-The worker is a `SERVICE` of the backend image. The issuer shares the app origin with the API and the consent page: the reverse proxy routes `/oauth/*` to the worker. The provider runs on its own Postgres adapter, with no developer interactions and no ID tokens. The app is an authorization server, not an identity provider.
+The OAuth service runs from the backend image as a `SERVICE`. The issuer shares the app origin with the API and the consent page: the reverse proxy routes `/oauth/*` to it. The provider runs on its own Postgres adapter, with no developer interactions and no ID tokens. The app is an authorization server, not an identity provider.
 
-`pnpm dev` starts the worker beside the API. Claim names, limits and other details are documented there, at their declarations.
+`pnpm dev` starts it beside the API. Claim names, limits and other details are documented there, at their declarations.
 
 ## Clients and consent
 
@@ -49,13 +49,13 @@ A registered app shows its registered name and logo. A client known by its metad
 
 A client that registers only through dynamic client registration (RFC 7591) cannot connect. It needs a Client ID Metadata Document or a registered app.
 
-An LTI tool registers at the worker's own LTI routes, with a one-use token an organization admin started ([LTI](./LTI.md)). Its row in `oauth_clients` is private to that tenant. Once an admin approves it, it is a client of the provider at the token endpoint alone: no authorization request or consent names it.
+An LTI tool registers at the service's own LTI routes, with a one-use token an organization admin started ([LTI](./LTI.md)). Its row in `oauth_clients` is private to that tenant. Once an admin approves it, it is a client of the provider at the token endpoint alone: no authorization request or consent names it.
 
-The worker reads that LTI tool's key set itself, through the guarded fetch every address a tenant supplies goes through, and hands the keys to the provider. The token acts as the installation in its own tenant's API and carries only scopes the admin granted. The LTI tool asks for them by the LTI service scopes that stand for them, such as the NRPS scope for `user:read`: the token carries the access scope, and the answer names the service scope.
+The service reads that LTI tool's key set itself, through the guarded fetch every address a tenant supplies goes through, and hands the keys to the provider. The token acts as the installation in its own tenant's API and carries only scopes the admin granted. The LTI tool asks for them by the LTI service scopes that stand for them, such as the NRPS scope for `user:read`: the token carries the access scope, and the answer names the service scope.
 
 An assertion counts once and must expire within five minutes. Its one audience, a string or a list of one, is the issuer, which the LTI configuration gives as the authorization server, or the token endpoint's address as the configuration publishes it. An address built from another host a request names is refused, and the provider takes the token endpoint's address only at the host it sees: behind a proxy, the public host.
 
-A launch of that LTI tool reaches the worker's own launch endpoint, not the provider's authorization endpoint. No session cookie is read there: a one-use launch record the API made names the person, and the worker signs the ID token with the provider's current key.
+A launch of that LTI tool reaches the service's own launch endpoint, not the provider's authorization endpoint. No session cookie is read there: a one-use launch record the API made names the person, and the service signs the ID token with the provider's current key.
 
 The grant policy on the server decides whether a consent is possible. The person must also be a member of the resource's tenant. The page shows a refusal and disables Accept. A posted accept is refused all the same.
 
@@ -78,7 +78,7 @@ A token never crosses tenants. Every token names a resource (RFC 8707): `<backen
 | Refresh token | 30 days, rotated on use. Grants live 30 days. |
 | Scopes | The app's access scopes (`attachment:read`, …), never `openid` |
 
-A guard verifies a token locally against the public signing keys, with no round trip to this worker and no row per token.
+A guard verifies a token locally against the public signing keys, with no round trip to this service and no row per token.
 
 A person's token rests on its grant, and a service account's on the API key it was minted with. An installed LTI tool's rests on its installation: approved, active and still granted every scope the token carries. The guard reads that at every request. Anything that ends a grant or a key, disables an installation or takes a scope from it stops its tokens at the next request, in every process. A membership change counts just as fast.
 

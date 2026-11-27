@@ -13,17 +13,20 @@ export interface InfoGridItem<C extends string = string> {
   category?: C;
   /** Stack layers rendered as badges after the title. */
   layers?: readonly string[];
+  /** Standards the item follows, rendered as outline badges after the layers. */
+  specs?: readonly string[];
 }
 
 interface InfoTileProps {
   id: string;
   namespace: string;
   layers?: readonly string[];
+  specs?: readonly string[];
   image?: boolean;
   tileClassName?: string;
 }
 
-function InfoTile({ id, namespace, layers, image, tileClassName = 'bg-card' }: InfoTileProps) {
+function InfoTile({ id, namespace, layers, specs, image, tileClassName = 'bg-card' }: InfoTileProps) {
   const { t } = useTranslation();
   const title = `about:${namespace}.${id}` as TKey;
   const text = `about:${namespace}.${id}.text` as TKey;
@@ -48,6 +51,11 @@ function InfoTile({ id, namespace, layers, image, tileClassName = 'bg-card' }: I
         {layers?.map((layer) => (
           <Badge key={layer} variant="brand" soft size="micro" className="border-0">
             {layer}
+          </Badge>
+        ))}
+        {specs?.map((spec) => (
+          <Badge key={spec} variant="outline" size="micro" className="font-mono">
+            {spec}
           </Badge>
         ))}
       </div>
@@ -84,7 +92,7 @@ export function InfoGrid<C extends string>({
   const isMediumScreen = useBreakpointAbove('md');
 
   const renderTile = (item: InfoGridItem<C>) => (
-    <InfoTile key={item.id} id={item.id} namespace={namespace} layers={item.layers} image={image} tileClassName={tileClassName} />
+    <InfoTile key={item.id} id={item.id} namespace={namespace} layers={item.layers} specs={item.specs} image={image} tileClassName={tileClassName} />
   );
 
   if (categoryIcons) {

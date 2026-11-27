@@ -138,7 +138,7 @@ and the renderers.
 ### Migrations and seed
 
 - `pnpm generate`, read what it wrote under `backend/drizzle/` (the schema diff, then the folder with
-  grants, triggers and the publication), then `pnpm --filter backend migrate`. The CDC worker reads
+  grants, triggers and the publication), then `pnpm --filter backend migrate`. CDC reads
   nothing until the publication matches its registry, so migrate before starting it.
 - A type change of an array column with a default (`text[]` to `uuid[]`) needs a `DROP DEFAULT`
   before drizzle's `SET DATA TYPE … USING` and a `SET DEFAULT` after: Postgres does not cast the default.
@@ -306,8 +306,8 @@ exist need a data migration that gives them the new id column.
 - **Columns of its own on a membership** (filing a membership under a parent the channel row does
   not name): `membershipColumns` in `defineBackendModule`; it runs before the insert, inside the
   caller's transaction, for an item its caller gave no `extraFields`.
-- **Scheduled jobs and queues**: `jobs` and `queues` in `defineBackendModule`; the jobs worker
-  creates and runs them ([Jobs worker](../../docs/JOBS.md)).
+- **Scheduled jobs and queues**: `jobs` and `queues` in `defineBackendModule`; the jobs service
+  creates and runs them ([Jobs](../../docs/JOBS.md)).
 - **A per-user client store** (recent picks): `idbKvStorage('<base>')` with `skipHydration: true`,
   registered in `frontend/src/query/extra-local-user-stores.ts` (pinned).
 - **Error types of its own**: `<type>` and `<type>.text` in `shared/locales/en/appError.json`, thrown as

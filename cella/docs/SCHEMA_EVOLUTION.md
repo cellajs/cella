@@ -41,7 +41,7 @@ write:  old or new body ─▶ widened validation ─▶ ▣ normalize ─▶ me
 read:   DB row (both columns during expand) ─▶ response, no transform
 boot:   cached rows behind the pointer ─▶ ▣ lens chain ─▶ hydrate
 
-untouched: CDC worker, stream frames, catchup summaries, counters, activities
+untouched: CDC, stream frames, catchup summaries, counters, activities
 ```
 
 ## Lens anatomy

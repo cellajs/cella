@@ -111,7 +111,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Advisories:** 6, plus 2 pattern lessons (jose padding oracle, hono JWT scheme and NumericDate; pattern: hono algorithm confusion x2).
 - **Files:**
   - `backend/src/modules/oauth-server/` (not under `auth/`): `keystore.ts` (mint, ensure, load private set, public set), `verify-access-token.ts` (the only `jwtVerify`), `adapter.ts` (hashes `AuthorizationCode` and `RefreshToken` ids; service accounts are their own clients), `interactions.ts` (consent routes), `provider.ts`, `grant-policy.ts`, `revoke-grant.ts`, `server.ts`, `signing-keys-db.ts`, `resources.ts`.
-  - The `oauth` worker: `backend/src/modules/oauth-server/worker/oauth-worker-entry.ts` (calls `ensureSigningKeys`, then `createProvider`; started in-process by the API under singleVM).
+  - The `oauth` service: `backend/src/modules/oauth-server/worker/oauth-worker-entry.ts` (calls `ensureSigningKeys`, then `createProvider`; started in-process by the API under singleVM).
   - `backend/src/modules/service-accounts/`: `helpers/api-key.ts`, `operations/{issue,create,revoke}-api-key.ts`, `service-accounts-queries.ts`.
   - `backend/src/middlewares/guard/`: `service-guard.ts`, `token-guard.ts`, `actor-guard.ts`, `api-key-cache.ts`, `token-grant-cache.ts`, `invalidate-cache.ts`.
   - `jose` is imported in `verify-access-token.ts` (verify), `keystore.ts` (mint and local set), `signing-keys-db.ts` (type). The `mcp/` package holds no jose, jwt or Bearer code; MCP tokens are checked in the backend `tokenGuard`.
@@ -281,7 +281,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Files:**
   - `backend/src/modules/mcp/`: `mcp-tools.ts` (redispatches through `app.fetch`; input schema, tool outcome), `mcp-server.ts` (JSON-RPC methods, scope mask), `mcp-handlers.ts`, `mcp-routes.ts` (guards `[tokenGuard, tenantGuard, orgGuard]`, `mcpRequestLimiter`), `mcp-module.ts`.
   - The tool registry is the OpenAPI registry read by `buildMcpTools` in `mcp-tools.ts`; the tool marker is `xTool` in `backend/src/core/openapi-extensions.ts`, checked at route build in `backend/src/core/x-routes.ts`.
-  - The `mcp` worker: `backend/src/modules/mcp/worker/mcp-worker-entry.ts` (own `createBaseApp`, mounts only `mcpHandlers`); `SERVICE=mcp` starts it; in-process under singleVM in `backend/src/main.api.ts`.
+  - The `mcp` service: `backend/src/modules/mcp/worker/mcp-worker-entry.ts` (own `createBaseApp`, mounts only `mcpHandlers`); `SERVICE=mcp` starts it; in-process under singleVM in `backend/src/main.api.ts`.
   - `backend/src/middlewares/guard/token-guard.ts`, `service-guard.ts` (`setActorFromToken`), `backend/src/modules/oauth-server/{verify-access-token,resources,provider}.ts`.
   - Tools registered today: four `xTool` routes, all attachments, in `backend/src/modules/attachment/attachment-routes.ts`.
   - Tests: `backend/tests/mcp.test.ts`, `backend/tests/mcp-worker.test.ts`, `backend/src/modules/mcp/mcp-server.test.ts`, `mcp-tools.test.ts`, `backend/src/middlewares/guard/token-guard.test.ts`, `backend/tests/security/{api-key-scope,oauth-grants}.test.ts`.
@@ -291,7 +291,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `api-key-scope`: a read-only key cannot mint a write token through `client_credentials`.
   - `mcp-server.test.ts`: arguments the route schema refuses never reach the route; a tool outcome never carries SQL or a 5xx message.
   - `oauth-grants`: a member-less user, a revoked grant, a removed membership or a revoked key stops an existing token at the next request.
-  - `tests/mcp-worker`: the MCP worker serves the routes and runs in-process.
+  - `tests/mcp-worker`: the MCP service serves the routes and runs in-process.
 - **Asks:** the MCP security best practices page as a checklist; which headers and which actor the internal redispatch carries; a tool call with a token minted for another organization's endpoint.
 - **Not this class:** token signing, key rollover and revoke caches belong to A5. Object-level reads behind a tool belong to B1. Consent, redirect URI matching, CIMD fetch, PKCE and mix-up `iss` belong to the OAuth server (A5, with `oauth-metadata-fetch-ssrf` and `oauth-connect` tests). Batch size, HLC in tool stx and body size belong to C1. Process-local caches in a split worker belong to C8. Prompt injection through returned content is the MCP client's problem.
 
@@ -307,7 +307,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - The relay: `yjs/src/` (`server/ws-server.ts`, `server/upgrade.ts`, `server/rate-limiter.ts`, `constants.ts`) and `backend/src/modules/yjs/`.
   - Config: `shared/config/config.default.ts` (`pageSizes`, `maxBodySize`, `uppy`, `localBlobStorage`); `config.template.ts` repeats them.
   - `ctx.req.json()` call sites: `middlewares/rate-limiter/helpers.ts` (email and bulk-length readers, after `dynamicBodyLimit`), `modules/yjs/yjs-internal-handlers.ts`, `modules/oauth-server/interactions.ts`; `modules/mcp/mcp-routes.ts` takes `jsonBody(z.any())`.
-  - `JSON.parse` sites: `backend/src/lib/cdc-websocket.ts` (each worker frame), `modules/yjs/helpers/{description-update,sanitize-block-media}.ts`, `backend/src/utils/extract-keywords.ts` (stored descriptions).
+  - `JSON.parse` sites: `backend/src/lib/cdc-websocket.ts` (each CDC frame), `modules/yjs/helpers/{description-update,sanitize-block-media}.ts`, `backend/src/utils/extract-keywords.ts` (stored descriptions).
   - pg-boss is cron-only: `backend/src/lib/pg-boss.ts`, `jobs-worker.ts`; no `boss.send` with request data.
 - **Holds:**
   - `request-bodies`: an array or record schema in the OpenAPI document without `maxItems` or `maxProperties` (zod collection exhaustion).
@@ -394,7 +394,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `frontend/src/modules/common/uploader/helpers/uppy-helpers.ts`: `@uppy/url` with `COMPANION_URL` and `COMPANION_ALLOWED_HOSTS` from `@uppy/transloadit`; used by `open-image-upload.ts` and `blocknote/custom-file-panel/uppy-upload-panel.tsx`.
   - `backend/src/lib/health-probe.ts` (caller `backend/src/lib/health.ts`), `backend/src/lib/geoip.ts`, `backend/src/lib/mailer.ts` (Brevo), `yjs/src/sync/materialize.ts` (the relay's materialize call), CIMD and provider fetches in `backend/src/modules/oauth-server/`.
   - No outbound wrapper exists in `backend/src/lib`. `backend/src/utils/ip-subnet.ts` is client-address subnetting, not an outbound check.
-  - The worker code is `backend/src/modules/oauth-server/worker/oauth-worker-entry.ts` and `backend/src/modules/mcp/worker/mcp-worker-entry.ts`, each a `SERVICE` of the backend image (`waitForBackend` in `shared/src/utils/wait-for-backend.ts`). `mcp-tools.ts` uses an in-process `app.fetch`, not a network call.
+  - The service code is `backend/src/modules/oauth-server/worker/oauth-worker-entry.ts` and `backend/src/modules/mcp/worker/mcp-worker-entry.ts`, each a `SERVICE` of the backend image (`waitForBackend` in `shared/src/utils/wait-for-backend.ts`). `mcp-tools.ts` uses an in-process `app.fetch`, not a network call.
   - `cdc/` has only a WebSocket client (`cdc/src/network/websocket-client.ts`). `backend/src/lib/transloadit.ts` only signs params. S3: `backend/src/lib/object-storage.ts` builds a client for `https://${appConfig.s3.host}`.
   - `backend/src/modules/push/helpers/push-service-endpoint.ts` and `push-sender.ts` (endpoint allowlist).
 - **Holds:**
@@ -458,7 +458,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/middlewares/guard/*-cache.ts` (api-key, membership, org, session, tenant, token-grant) and `invalidate-cache.ts`.
   - `backend/src/lib/ttl-cache.ts`: every cache wraps it (`@isaacs/ttlcache`; `load()` coalesces reads per cache and drops results of reads older than the last invalidation). `backend/src/utils/request-coalescing.ts` (in-flight map, keys scoped by the caller).
   - `backend/src/middlewares/rate-limiter/points-cache.ts`; `frontend/src/lib/sw.ts` (Serwist).
-  - The `mcp` and `oauth` workers hold no cache of their own; their code is `backend/src/modules/mcp/*` and `backend/src/modules/oauth-server/*`.
+  - The `mcp` and `oauth` services hold no cache of their own; their code is `backend/src/modules/mcp/*` and `backend/src/modules/oauth-server/*`.
   - Tests: `backend/tests/security/{outside-writes,session-cache-race}.test.ts`, `backend/src/middlewares/guard/api-key-cache.test.ts`, `backend/src/lib/ttl-cache.test.ts`, `backend/src/middlewares/rate-limiter/tests/points-cache.test.ts`.
 - **Holds:**
   - `session-cache-race`: a session read in flight at a revoke stores nothing; a burst shares one read.
@@ -494,7 +494,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `failed-query-redaction`: a request value in a failed query must not reach a log, a span or a colliding database `detail`.
   - `page-tokens`: a page token holds no readable position, and an altered or forged one, or one replayed with other params or on another list, answers 400 `invalid_page_token`.
   - `server-error-messages`: a failed query must not show in a 5xx outside development (development is the control).
-  - `backend/src/env.test.ts`: a worker mode boots without secrets of other modes; the API refuses to boot without the Yjs key; short or empty cookie and unsubscribe secrets refuse to boot; a rotated cookie list boots.
+  - `backend/src/env.test.ts`: a service mode boots without secrets of other modes; the API refuses to boot without the Yjs key; short or empty cookie and unsubscribe secrets refuse to boot; a rotated cookie list boots.
   - `tests/emails/security-inbox`, `request-details`. `cdc/src/tests/secret-columns.test.ts`: a column matching the pattern outside both maps fails.
 - **Asks:** a secrets inventory (name, where it lives, who reads it, rotation path) and the at-rest story per store (Postgres, bucket, browser, logs, traces); the otel version minimum.
 - **Not this class:** which fields a response shows by relation belongs to B3. User and email enumeration belongs to D2. Mail content and escaping belong to D3. Presigned-URL authorization belongs to B1 and C6. Fetch sinks that leak a secret through a URL belong to C5. Rate-limit pseudonym key space belongs to D2.
@@ -590,7 +590,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### E3 Exceptional conditions, fail-open paths and alerting
 - **Gain:** guard bypass under failure, denial of service.
-- **Merges:** an exception that ends a worker, fail-open when a dependency is down (the limiter store, a cache, Brevo, S3, Transloadit, the OAuth worker, the relay, CDC lag), a database failure during a second-factor check (holds), `onError` output, health endpoint exposure, migrations swallowing errors, alerts on lockouts and admin sign-ins, OTel export failure.
+- **Merges:** an exception that ends a service, fail-open when a dependency is down (the limiter store, a cache, Brevo, S3, Transloadit, the OAuth service, the relay, CDC lag), a database failure during a second-factor check (holds), `onError` output, health endpoint exposure, migrations swallowing errors, alerts on lockouts and admin sign-ins, OTel export failure.
 - **Advisories:** 2 (yaml uncaught exception, node-server unparsable Host).
 - **Files:**
   - `shared/src/utils/worker-lifecycle.ts` (`setupGracefulShutdown`), used by `backend/src/main.api.ts`, `cdc/src/index.ts`, `yjs/src/index.ts`, `backend/src/lib/jobs-worker.ts`, the mcp and oauth worker entries; not installed when `inProcess`.
@@ -609,7 +609,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Holds:**
   - `step-up-db-failure`: an exhausted pool answers a step-up 503 `service_unavailable` and a deadlock 409 `write_conflict`, the session stays not stepped up, the same proof works after.
   - `server-error-messages`: a failed query in staging, tunnel and production answers `Internal server error` with no SQL (development shows it as control).
-  - `tests/health`: a failed job-store read puts `jobs_unreadable` in the anonymous diagnostics, never the query text; shallow is 204, full carries the components; the CDC worker's grade passes through. `tests/health-helpers`: only `api` and `database` reach `unhealthy`; a stale CDC report is never graded better than the worker graded it.
+  - `tests/health`: a failed job-store read puts `jobs_unreadable` in the anonymous diagnostics, never the query text; shallow is 204, full carries the components; CDC's own grade passes through. `tests/health-helpers`: only `api` and `database` reach `unhealthy`; a stale CDC report is never graded better than CDC graded it.
   - `tests/integration/jobs-store`: queues and crons converge as the runtime role, a job runs, `supervise` works, health reads the store.
   - `failed-query-redaction` (D1): logs and spans carry no request value from a failed query.
   - In code: a session read failure stays the request's failure, never "signed out" (`resolve-session.ts`); the cookie is kept on a failed read. Yjs authorization failure closes the socket 4503; its connection limiter refuses on any error. CDC: an unknown flush failure never acknowledges; the setup check keeps the stream stopped while replica identity or the publication is wrong. The Matrix helper never throws; a failed mail send throws to its caller, and a request that stored its rows before the mail logs it. `@hono/node-server` answers an unparsable Host with 400, not a throw.

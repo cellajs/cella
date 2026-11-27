@@ -11,10 +11,10 @@ Every failure on the way from a commit to a client's cache has one answer per le
 Each failure has one answer per level:
 
 - **Core:** the normal path, built to absorb the failure.
-- **Mid:** recovers when the core cannot. The client runs catchup, the worker reads again.
-- **Lost case:** starts over. A client refetches once, the worker rebuilds its books.
+- **Mid:** recovers when the core cannot. The client runs catchup, CDC reads again.
+- **Lost case:** starts over. A client refetches once, CDC rebuilds its books.
 
-A second answer at one level is marked as an open finding to remove. A failure nothing answers says None. A change that adds an answer edits its row in the tables below, in the [CDC worker's table](../../../cdc/README.md#failure-and-recovery) or in the [notifications table](../../../backend/src/modules/notification/README.md#failure-modes).
+A second answer at one level is marked as an open finding to remove. A failure nothing answers says None. A change that adds an answer edits its row in the tables below, in the [CDC's table](../../../cdc/README.md#failure-and-recovery) or in the [notifications table](../../../backend/src/modules/notification/README.md#failure-modes).
 
 ## What fails
 
@@ -36,7 +36,7 @@ A second answer at one level is marked as an open finding to remove. A failure n
 | A channel goes private | The same `moveOut`, to the readers who had its rows through their `public` flag alone (`parseUpdate` sets `movedFrom`) | | |
 | A row is hard-deleted or unpublished | A `change` frame with the `delete` action marks its detail stale without a refetch, takes it off the unseen counts, marks its lists, refetching those on screen, and applies its propagation hint (`handleProductChange`) | | |
 | A channel is deleted and its rows leave by cascade | One `channel.deleted`, for the root of the cascade (`flushSignals`), drops the channels and rows cached at and below it (`handleChannelDeleted`) | Missed while away: catchup finds a new signal version and marks the lists (`handleChannelDeleted`) | A reader of only a channel inside the deleted one gets no live signal: its next catchup marks the lists |
-| A versioned signal is heard live | The frame carries its version. The client records it once its handlers ran, and the next catchup does not run it again (`noteHeardSignal`) | Missed across a stream break, moved by a cascade, sent by a worker of an earlier release, or its handler threw: the catchup runs it once | |
+| A versioned signal is heard live | The frame carries its version. The client records it once its handlers ran, and the next catchup does not run it again (`noteHeardSignal`) | Missed across a stream break, moved by a cascade, sent by a process of an earlier release, or its handler threw: the catchup runs it once | |
 | A frame handler throws, in the leader or a follower | Logged and skipped (`applyChange`, the follower's message handler) | | |
 | An embedded row changes while hosts hold copies | The frame's `propagation` hint patches the copies (`propagateEmbeddings`) | Missed while away: the catchup's hints (`buildPropagationHints`). Past a hint's or a frame's cap the host lists refetch (`invalidateEmbeddingHosts`) | |
 | A list read overlaps live patches | The canonical read merges the ranges the cursor moved past while it ran (`readAgainstDeltas`) | | |
@@ -59,7 +59,7 @@ A second answer at one level is marked as an open finding to remove. A failure n
 | The stream errors, ends or falls silent | The silence watchdog and a reconnect with backoff, at once when the app is back online or a tab takes over (`handleStreamFailure`) | Repeated failures open the circuit, which a passing health check closes. A session or tenant the server refuses opens it until the next sign-in (`openCircuit`) | |
 | A request gets no response: the link drops packets, or the tab reloads while it waits | The connectivity probe runs. Once it finds the API unreachable, the app goes offline and a waiting write pauses in the queue (`apiFetch`). A sync write is stored while it runs. A reload sends it again as a replay (`shouldDehydrateMutation`) | | |
 | A catchup hangs or fails | Bounded, then the stream's failure path (`handleCatchupFailure`). The writes waiting for it go ahead (`waitForActiveCatchup`) | The same circuit | |
-| No CDC worker reads | | `worker_away` pings put synced queries back on a stale time (`setSyncWorkerAway`) | |
+| CDC reads nothing | | `worker_away` pings put synced queries back on a stale time (`setSyncWorkerAway`) | |
 | Rows are readable but the summary is unproven (`opaque`) | | Each catchup marks the view's cached lists and refetches those on screen (`processStreamCatchup`). Its hint names the embedded rows changed since the last one, whose hosts refetch (`settleOpaqueHint`) | |
 | The leader tab closes | Web Locks hand the stream to another tab, which reconnects (`initTabCoordinator`) | | |
 | Web Locks are missing or the election throws | The tab takes the leader role (`initTabCoordinator`) | | |
@@ -83,4 +83,4 @@ A second answer at one level is marked as an open finding to remove. A failure n
 | A kept range answer predates a write | A write that commits moves its tenant's count, and an answer read under an earlier count is served to no one, a request that waited for that read included (`tenantWriteCount`, `sharedRangeAnswers`) | | |
 | A range key outlives its reader's access | The key answers until it ends, as long as a session that ended in another process still passes (`rangeKeyLifetimeMs`) | | |
 | One client replays a range key | A kept answer serves a bounded number of requests, and the next one runs the route and its limiter (`sharedRangeAnswers`) | | |
-| A row is written outside the API process's tenant transactions: by another API process, or by the worker's reference strip | | A kept answer holds the older row until it ends (`rangeAnswerLifetimeMs`) | None, an open finding: a tab that takes it keeps the older row until the row changes again. An app runs one API process |
+| A row is written outside the API process's tenant transactions: by another API process, or by CDC's reference strip | | A kept answer holds the older row until it ends (`rangeAnswerLifetimeMs`) | None, an open finding: a tab that takes it keeps the older row until the row changes again. An app runs one API process |

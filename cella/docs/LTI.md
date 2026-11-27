@@ -12,7 +12,7 @@ Your app is a **platform** when it hosts other apps: an admin installs an LTI to
 
 Your app is an **LTI tool** when a platform, such as a learning platform or another app on the template, opens it inside one of its pages. Turn it on with the `lti` sign-in method, and list the origins of the platforms that may frame its embedded pages in `ltiFrameAncestors`.
 
-An app can be both. As a platform, it needs the [OAuth worker](./OAUTH.md) on: it signs launches and serves the platform's addresses. It stores the addresses the LTI tool registers and fetches only its key set, to check the LTI tool's token requests. As an LTI tool, the app needs the API and the [jobs worker](./JOBS.md) alone, and fetches the platform's configuration and keys server to server. Outside development, each needs a public HTTPS address.
+An app can be both. As a platform, it needs the [OAuth service](./OAUTH.md) on: it signs launches and serves the platform's addresses. It stores the addresses the LTI tool registers and fetches only its key set, to check the LTI tool's token requests. As an LTI tool, the app needs the API and the [jobs service](./JOBS.md) alone, and fetches the platform's configuration and keys server to server. Outside development, each needs a public HTTPS address.
 
 ## Registration
 
@@ -28,7 +28,7 @@ Canvas sends what the registration asks for by its privacy level. The name alone
 
 Each connection gets a key pair of its own, and the registration names that connection's key set on the API. The app stores the connection, waiting, before it calls the platform: a platform that reads the key set while it registers the app, as Brightspace does, finds it. Deleting the connection deletes its keys, and its key set answers no more.
 
-A connection's key rotates on a schedule, with no new registration and no call to the platform. The jobs worker publishes the next key in the key set beside the current one, under a new key id. The app signs with it only once a platform that keeps the key set had time to read it again. The key it replaces stays published a while longer, then goes.
+A connection's key rotates on a schedule, with no new registration and no call to the platform. The jobs service publishes the next key in the key set beside the current one, under a new key id. The app signs with it only once a platform that keeps the key set had time to read it again. The key it replaces stays published a while longer, then goes.
 
 A platform accepts every token request throughout a rotation when it reads the key set at every token request, as Canvas does, or reads it again before the next key signs. So does a platform that reads it again for a key id it does not hold, as Moodle does.
 
@@ -115,7 +115,7 @@ List the school's own Canvas host in `ltiFrameAncestors`: the embedded page a la
 
 ## Serving members
 
-An installed LTI tool reads the members of an LTI context as itself, by [NRPS 2.0](https://www.imsglobal.org/spec/lti-nrps/v2p0), within the scopes the admin granted. It asks the OAuth worker for a token with the NRPS scope and an assertion signed by a key of the set it registered. Like any LTI tool, it names no resource: the token is for the tenant's API, carries `user:read` and acts as the installation.
+An installed LTI tool reads the members of an LTI context as itself, by [NRPS 2.0](https://www.imsglobal.org/spec/lti-nrps/v2p0), within the scopes the admin granted. It asks the OAuth service for a token with the NRPS scope and an assertion signed by a key of the set it registered. Like any LTI tool, it names no resource: the token is for the tenant's API, carries `user:read` and acts as the installation.
 
 Its reach follows its tabs that open, read at every request for the channel the address names. A tab gives the installation the least privileged role of its own channel, when that channel is an LTI context, and nothing in a channel above or below it. Nothing about a tab is stored on the installation.
 
@@ -187,7 +187,7 @@ As an LTI tool, your app also reads who is in a context by NRPS, before any of t
 
 The import starts when someone who sets the context up launches, once a launch carried the NRPS claim. A launch without the claim keeps the member list an earlier one named, as Moodle names it on some launch paths only. A platform that refuses the scope or the member list makes the app forget it until a launch names it again.
 
-The import runs on the [jobs worker](./JOBS.md), at most once in a short while per context, and the launch never waits for it. A connection imports a limited number of different contexts in any hour: a context whose teams each have a tab fits. Each read stops at a limit of pages and of people, and what an import adds is bounded by the tenant's seats.
+The import runs on the [jobs service](./JOBS.md), at most once in a short while per context, and the launch never waits for it. A connection imports a limited number of different contexts in any hour: a context whose teams each have a tab fits. Each read stops at a limit of pages and of people, and what an import adds is bounded by the tenant's seats.
 
 A context past either number says its import waits, unless its last import was refused in a way only the platform or a new registration changes. No button starts one: the next such launch after that while does.
 
@@ -298,7 +298,7 @@ The template ships the organization's embedded page. An app that maps a context 
 
 Development turns both roles on, and `pnpm seed` connects two seeded organizations. The first organization the seeded admin manages is the platform: it shows a tab named after the second, which is registered there as an LTI tool, approved with the name released, reading members granted and the organization allowed.
 
-Open that tab to land in the second organization inside the frame, as a new person carrying your name. Moments later the jobs worker imports the first organization's members into the second, with their names.
+Open that tab to land in the second organization inside the frame, as a new person carrying your name. Moments later the jobs service imports the first organization's members into the second, with their names.
 
 To walk the registration by hand, create a registration link under LTI connections in one organization, paste it under LTI tools in another, approve the LTI tool with the organization allowed and switch its tab on in the Tabs card of the organization's settings.
 
