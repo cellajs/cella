@@ -52,6 +52,8 @@ The socket speaks the sync and awareness framing of y-protocols plus two message
 
 A socket needs a token. The backend issues one per entity, for five minutes, to a user who may update it. A valid token opens the socket. The relay then asks the permission engine itself whether this user may update this row. A socket lives no longer than its token, so the client refreshes and reconnects.
 
+A module can close collaborative editing of a row its user may still update, such as a submission past its deadline, with `yjsEditable`. The token, pull and push routes then refuse it as they refuse a user without edit rights, and the editor opens read-only. A session already open ends with its token.
+
 - **No minting on the relay.** It holds only the public half of the signing key.
 - **One origin.** A page on another origin than the app's cannot open a socket.
 - **No existence leak.** A refusal tells nobody whether the entity exists.

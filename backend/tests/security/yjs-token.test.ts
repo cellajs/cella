@@ -6,6 +6,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { verifyYjsToken, yjsTokenVerifyKey } from 'shared/utils/yjs-token';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getAdminDb } from '#/db/db';
+import { defineBackendModule } from '#/lib/module';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { adminRole, defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
@@ -32,6 +33,8 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
   let ownersAttachment: Awaited<ReturnType<typeof seedAttachment>>;
   let membersAttachment: Awaited<ReturnType<typeof seedAttachment>>;
   let otherTenantAttachment: Awaited<ReturnType<typeof seedAttachment>>;
+  /** The row the probe module closes to collaborative editing, as a deadline closes a submission. */
+  let closedId: string | undefined;
 
   const tokenFor = (cookie: string, scope: { tenantId: string; organizationId: string }, entityId: string) =>
     call(getYjsToken, { path: scope, query: { entityType: 'attachment', entityId }, headers: { ...defaultHeaders, Cookie: cookie } });
@@ -47,6 +50,15 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
     ownersAttachment = await attachmentIn(owner, owner.user.id, [member.id]);
     membersAttachment = await attachmentIn(owner, member.id);
     otherTenantAttachment = await attachmentIn(other, other.user.id);
+
+    defineBackendModule({
+      name: 'yjs-editable-probe',
+      owner: 'app',
+      scope: ['backend'],
+      description: 'Closes one attachment to collaborative editing',
+      productEntity: 'attachment',
+      yjsEditable: (_ctx, entity) => entity.id !== closedId,
+    });
   });
 
   afterAll(async () => {
@@ -82,6 +94,16 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
     const { data, error, response } = await tokenFor(member.sessionCookie, ownScope(), ownersAttachment.id);
     await expectRefusal({ response, error }, 403, 'forbidden');
     expect(data).toBeUndefined();
+  });
+
+  it('must not sign a token for a row its module closes to collaborative editing', async () => {
+    closedId = ownersAttachment.id;
+    try {
+      const { error, response } = await tokenFor(owner.sessionCookie, ownScope(), ownersAttachment.id);
+      await expectRefusal({ response, error }, 403, 'forbidden');
+    } finally {
+      closedId = undefined;
+    }
   });
 
   it("must not sign a token for another tenant's entity", async () => {
