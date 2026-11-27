@@ -36,6 +36,12 @@ const identify = (userId: string | null) => setUser(userId ? { id: userId } : nu
 /** The id of this page load's session, which every API request names in its `baggage`. */
 const pageSessionId = (): string | undefined => getIsolationScope().getSession()?.sid;
 
+/** Names this page load's session in a request's `baggage`, which the server records on the request's spans; nothing without one. */
+export const setSessionBaggage = (headers: Headers) => {
+  const sessionId = pageSessionId();
+  if (sessionId) headers.set('baggage', `session.id=${sessionId}`);
+};
+
 /**
  * The URLs the SDK collected, through the redaction the backend's logs and spans use. The SDK's own filter covers a few
  * query keys and no fragment, where a launch's handoff code travels.
@@ -84,7 +90,8 @@ if (monitoringEnabled) {
       browserTracingCoreIntegration(),
       fetchTracingIntegration(),
     ],
-    tracePropagationTargets: [new RegExp(`^${escapeRegExp(appConfig.backendUrl)}(/|$)`)],
+    // The authorization server too: the consent page's requests go there.
+    tracePropagationTargets: [appConfig.backendUrl, appConfig.oauthUrl].map((url) => new RegExp(`^${escapeRegExp(url)}(/|$)`)),
     propagateTraceparent: true,
     // No address is inferred and no cookie read; the user is the id `identify` sets.
     dataCollection: { userInfo: false, cookies: false },
@@ -97,8 +104,7 @@ if (monitoringEnabled) {
 
   // The backend's request span records the page's session, and the SDK adds its own entries after it.
   client.interceptors.request.use((request) => {
-    const sessionId = pageSessionId();
-    if (sessionId) request.headers.set('baggage', `session.id=${sessionId}`);
+    setSessionBaggage(request.headers);
     return request;
   });
 }
