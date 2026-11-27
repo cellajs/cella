@@ -90,13 +90,12 @@ function mayAddMentions(action: ActivityAction, { changedFields }: ActivityRow):
 /** Writes one row's notifications under its activity and writer, and signals and pushes the recipients written; returns their rows. */
 async function fanOutRow(
   { organizationId, tenantId }: EventIds,
-  { activityId, actorId: writerId }: ActivityRow,
+  { activityId, actorId }: ActivityRow,
   source: NotificationSource,
   row: NotificationSubjectRow,
   readsMentions: boolean,
 ): Promise<WrittenNotification[]> {
   const { entityType } = source;
-  const actorId = writerId ?? row.createdBy ?? null;
 
   const candidates = new Map<string, Candidate>();
   // First writer wins, so a mention outranks the activity classification for the same user.
