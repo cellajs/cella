@@ -213,6 +213,10 @@ export type Attachment = {
     thumbnail?: string;
     converted?: string;
   };
+  /**
+   * When the file became readable beyond its uploader; null while only an unpublished document holds it.
+   */
+  publishedAt: string | null;
   organizationId: string;
   viewCount?: number;
 };
@@ -1255,6 +1259,10 @@ export type ListAttachmentsResponses = {
           id: string;
           createdAt: string;
           seq: number;
+          /**
+           * When the file became readable beyond its uploader; null while only an unpublished document holds it.
+           */
+          publishedAt: string | null;
           organizationId: string;
           deletedAt: string;
         }
@@ -1497,6 +1505,10 @@ export type BatchCreateAttachmentsData = {
      * MIME type of the server-converted variant; null when none.
      */
     convertedContentType?: string | null;
+    /**
+     * Create unpublished, for an upload into a document that is not published: the file stays its uploader's until the document publishes it.
+     */
+    draft?: boolean;
     stx: StxBase;
   }>;
   path: {

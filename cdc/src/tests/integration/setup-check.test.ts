@@ -1,23 +1,24 @@
 import { sql } from 'drizzle-orm';
 import { nanoidTenant } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createPgConnection } from '#/db/create-connection';
+import { publishedRowFilter } from '#/db/utils/publication-filter';
 import { cdcPublicationName } from '../../constants';
 import { env } from '../../env';
 import { cdcDb } from '../../lib/db';
 import { checkReplicationSetup } from '../../services/setup-check';
 
-/** A product type a test gives drafts: the check then expects its table published behind the draft boundary. */
-const draftable = vi.hoisted(() => ({ type: null as string | null }));
-
-vi.mock('#/db/utils/publication-filter', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('#/db/utils/publication-filter')>();
-  return {
-    ...actual,
-    publicationRowFilter: (...args: Parameters<typeof actual.publicationRowFilter>) =>
-      args[0] === draftable.type ? actual.publishedRowFilter : actual.publicationRowFilter(...args),
-  };
-});
+/** Puts a table back in the publication as the migration left it, behind `rowFilter` or none. */
+async function republish(table: string, rowFilter: string | null): Promise<void> {
+  const [published] = (
+    await cdcDb.execute<{ rowfilter: string | null }>(
+      sql`SELECT rowfilter FROM pg_publication_tables WHERE pubname = ${cdcPublicationName} AND tablename = ${table}`,
+    )
+  ).rows;
+  if (published && published.rowfilter === (rowFilter && `(${rowFilter})`)) return;
+  if (published) await cdcDb.execute(sql.raw(`ALTER PUBLICATION ${cdcPublicationName} DROP TABLE ${table}`));
+  await cdcDb.execute(sql.raw(`ALTER PUBLICATION ${cdcPublicationName} ADD TABLE ${table}${rowFilter ? ` WHERE (${rowFilter})` : ''}`));
+}
 
 /** Whether the configured database is set up for the worker at all. */
 async function probeReady(): Promise<boolean> {
@@ -34,16 +35,10 @@ const ready = await probeReady();
 /** The check runs against the real catalog: a migrated database passes, and each thing it guards is broken once. */
 describe.skipIf(!ready)('Replication setup check (integration)', () => {
   afterEach(async () => {
-    draftable.type = null;
     await cdcDb.execute(sql`ALTER TABLE attachments REPLICA IDENTITY FULL`);
     await cdcDb.execute(sql`DROP TABLE IF EXISTS setup_check_stray`);
-    const [tenants] = (
-      await cdcDb.execute<{ rowfilter: string | null }>(
-        sql`SELECT rowfilter FROM pg_publication_tables WHERE pubname = ${cdcPublicationName} AND tablename = 'tenants'`,
-      )
-    ).rows;
-    if (tenants?.rowfilter) await cdcDb.execute(sql.raw(`ALTER PUBLICATION ${cdcPublicationName} DROP TABLE tenants`));
-    if (!tenants || tenants.rowfilter) await cdcDb.execute(sql.raw(`ALTER PUBLICATION ${cdcPublicationName} ADD TABLE tenants`));
+    await republish('tenants', null);
+    await republish('attachments', publishedRowFilter);
   });
 
   it('finds nothing wrong with a migrated database (positive control)', async () => {
@@ -63,7 +58,8 @@ describe.skipIf(!ready)('Replication setup check (integration)', () => {
   });
 
   it('must not accept a product table with drafts published without its row filter: its drafts would reach the stream', async () => {
-    draftable.type = 'attachment';
+    await cdcDb.execute(sql.raw(`ALTER PUBLICATION ${cdcPublicationName} DROP TABLE attachments`));
+    await cdcDb.execute(sql.raw(`ALTER PUBLICATION ${cdcPublicationName} ADD TABLE attachments`));
 
     expect(await checkReplicationSetup()).toEqual([
       expect.stringContaining('another row filter on: attachments (none, expected (published_at IS NOT NULL))'),

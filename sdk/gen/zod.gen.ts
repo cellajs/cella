@@ -194,6 +194,7 @@ export const zAttachment = z.object({
     thumbnail: z.string().max(2048).optional(),
     converted: z.string().max(2048).optional(),
   }),
+  publishedAt: z.string().nullable(),
   organizationId: z.uuid(),
   viewCount: z.int().gte(0).optional(),
 });
@@ -999,6 +1000,7 @@ export const zListAttachmentsResponse = z.object({
         id: z.uuid(),
         createdAt: z.string(),
         seq: z.int().gte(-9007199254740991).lte(9007199254740991),
+        publishedAt: z.string().nullable(),
         organizationId: z.uuid(),
         deletedAt: z.string(),
       }),
@@ -1095,6 +1097,7 @@ export const zBatchCreateAttachmentsBody = z
       }),
       groupId: z.uuid().nullish(),
       convertedContentType: z.string().max(255).nullish(),
+      draft: z.boolean().optional(),
       stx: zStxBase,
     }),
   )

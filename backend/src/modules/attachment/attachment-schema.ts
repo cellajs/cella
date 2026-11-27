@@ -33,6 +33,7 @@ const attachmentFieldDescriptions = {
   convertedContentType: 'MIME type of the server-converted variant; null when none.',
   publicBucket: 'When true, the file is stored in the public bucket and served from the CDN without a presigned URL.',
   keys: 'Storage object keys per variant, keyed by variant name; only generated variants are present.',
+  publishedAt: 'When the file became readable beyond its uploader; null while only an unpublished document holds it.',
 } as const;
 
 const keysRefinement = { keys: attachmentKeysSchema };
@@ -69,6 +70,10 @@ const attachmentCreateBodySchema = attachmentInsertSchema
   .extend({
     id: validUuidSchema,
     size: z.number().int().min(0),
+    draft: z.boolean().optional().openapi({
+      description:
+        "Create unpublished, for an upload into a document that is not published: the file stays its uploader's until the document publishes it.",
+    }),
     // The home id of a row that lives in a channel; none while attachments live in the organization.
     ...placementFieldsSchema('attachment'),
   });

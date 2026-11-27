@@ -1531,6 +1531,10 @@
             "required": ["original"],
             "description": "Storage object keys per variant, keyed by variant name; only generated variants are present."
           },
+          "publishedAt": {
+            "type": ["string", "null"],
+            "description": "When the file became readable beyond its uploader; null while only an unpublished document holds it."
+          },
           "organizationId": {
             "type": "string",
             "format": "uuid"
@@ -1565,6 +1569,7 @@
           "convertedContentType",
           "size",
           "keys",
+          "publishedAt",
           "organizationId"
         ],
         "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
@@ -1600,6 +1605,7 @@
           "deletedBy": null,
           "public": false,
           "seq": 447,
+          "publishedAt": "2024-05-01T22:40:37.374Z",
           "publicBucket": false,
           "bucketName": "attachments",
           "groupId": null,
@@ -4899,6 +4905,7 @@
                       "deletedBy": null,
                       "public": false,
                       "seq": 108,
+                      "publishedAt": "2024-06-13T07:35:15.527Z",
                       "publicBucket": false,
                       "bucketName": "attachments",
                       "groupId": null,
@@ -4944,6 +4951,7 @@
                       "deletedBy": null,
                       "public": false,
                       "seq": 306,
+                      "publishedAt": "2024-03-16T09:09:58.231Z",
                       "publicBucket": false,
                       "bucketName": "attachments",
                       "groupId": null,
@@ -4985,6 +4993,10 @@
                                 "minimum": -9007199254740991,
                                 "maximum": 9007199254740991
                               },
+                              "publishedAt": {
+                                "type": ["string", "null"],
+                                "description": "When the file became readable beyond its uploader; null while only an unpublished document holds it."
+                              },
                               "organizationId": {
                                 "type": "string",
                                 "format": "uuid"
@@ -4993,7 +5005,7 @@
                                 "type": "string"
                               }
                             },
-                            "required": ["id", "createdAt", "seq", "organizationId", "deletedAt"],
+                            "required": ["id", "createdAt", "seq", "publishedAt", "organizationId", "deletedAt"],
                             "description": "A soft-deleted row: the fields that place it, without its content."
                           }
                         ]
@@ -5601,6 +5613,10 @@
                       "maxLength": 255,
                       "description": "MIME type of the server-converted variant; null when none."
                     },
+                    "draft": {
+                      "type": "boolean",
+                      "description": "Create unpublished, for an upload into a document that is not published: the file stays its uploader's until the document publishes it."
+                    },
                     "stx": {
                       "$ref": "#/components/schemas/StxBase"
                     }
@@ -5652,6 +5668,7 @@
                       "deletedBy": null,
                       "public": false,
                       "seq": 482,
+                      "publishedAt": "2024-09-10T16:55:24.272Z",
                       "publicBucket": false,
                       "bucketName": "attachments",
                       "groupId": null,
@@ -5697,6 +5714,7 @@
                       "deletedBy": null,
                       "public": false,
                       "seq": 39,
+                      "publishedAt": "2024-04-01T00:36:54.729Z",
                       "publicBucket": false,
                       "bucketName": "attachments",
                       "groupId": null,
@@ -5783,6 +5801,7 @@
                       "deletedBy": null,
                       "public": false,
                       "seq": 482,
+                      "publishedAt": "2024-09-10T16:55:24.272Z",
                       "publicBucket": false,
                       "bucketName": "attachments",
                       "groupId": null,
@@ -5828,6 +5847,7 @@
                       "deletedBy": null,
                       "public": false,
                       "seq": 39,
+                      "publishedAt": "2024-04-01T00:36:54.729Z",
                       "publicBucket": false,
                       "bucketName": "attachments",
                       "groupId": null,
@@ -6035,6 +6055,7 @@
                       "deletedBy": null,
                       "public": false,
                       "seq": 482,
+                      "publishedAt": "2024-09-10T16:55:24.272Z",
                       "publicBucket": false,
                       "bucketName": "attachments",
                       "groupId": null,
@@ -6080,6 +6101,7 @@
                       "deletedBy": null,
                       "public": false,
                       "seq": 39,
+                      "publishedAt": "2024-04-01T00:36:54.729Z",
                       "publicBucket": false,
                       "bucketName": "attachments",
                       "groupId": null,

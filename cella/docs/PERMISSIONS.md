@@ -171,6 +171,8 @@ Readers who had a row through its flag alone lose it when the channel goes priva
 
 A row whose `publishedAt` is null is a draft, checked before the engine. A product draft shows to its author alone.
 
+A file uploaded into a document that is not published yet is a draft too, when its create says `draft`. It signs for its uploader alone and becomes readable when the document's publish publishes it. Without that, a reader of the channel can open the files of a document they cannot see.
+
 A channel starts as a draft only when its hierarchy entry declares `drafts: { prepareRoles }` and the create asks for one. It then shows to its own members and to a grant above it that holds `update` on its type.
 
 A draft channel's invitations wait for the publish. Those for its `prepareRoles` go out at once, so those people can set it up.
