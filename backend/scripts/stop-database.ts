@@ -1,14 +1,15 @@
 import { execSync } from 'node:child_process';
 import { appConfig } from 'shared';
 import { composeEnv } from 'shared/local-database';
+import { portListeners } from 'shared/utils/port-listeners';
 import { drizzleStudioPort } from 'shared/utils/tool-ports';
 import { checkMark } from '#/utils/console';
 
 /** Ends Drizzle Studio on this checkout's port, if it runs. */
 const stopDrizzleStudio = () => {
-  const pids = execSync(`lsof -ti:${drizzleStudioPort()} || true`, { encoding: 'utf8' }).trim();
-  if (!pids) return;
-  execSync(`kill ${pids.split('\n').join(' ')}`);
+  const pids = portListeners(drizzleStudioPort());
+  if (!pids.length) return;
+  for (const pid of pids) process.kill(pid);
   console.info(`${checkMark} Drizzle Studio stopped`);
 };
 

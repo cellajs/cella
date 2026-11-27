@@ -13,7 +13,7 @@
     "dev": "cross-env NODE_ENV=development tsx --no-experimental-webstorage --watch src/yjs-worker.ts",
     "build": "cross-env NODE_ENV=production rolldown -c",
     "ts": "tsgo --pretty",
-    "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics",
+    "tsperf": "tsgo --noEmit --incremental false --extendedDiagnostics",
     "test": "vitest run"
   },
   "dependencies": {

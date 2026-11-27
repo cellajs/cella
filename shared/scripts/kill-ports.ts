@@ -1,7 +1,6 @@
-import { execSync } from 'node:child_process';
-import os from 'node:os';
 import { appConfig } from '../src/config-builder/app-config.ts';
 import { checkMark } from '../src/utils/console.ts';
+import { portListeners } from '../src/utils/port-listeners.ts';
 import { drizzleStudioPort, frontendDevPort, storybookPort } from '../src/utils/tool-ports.ts';
 
 /**
@@ -15,17 +14,9 @@ const ports = new Set([
   drizzleStudioPort(),
 ]);
 
-const listeners = (port: number): number[] => {
-  const command =
-    os.platform() === 'win32'
-      ? `powershell -Command "(Get-NetTCPConnection -LocalPort ${port} -State Listen -ErrorAction SilentlyContinue).OwningProcess"`
-      : `lsof -tiTCP:${port} -sTCP:LISTEN || true`;
-  return execSync(command, { encoding: 'utf8' }).split(/\s+/).filter(Boolean).map(Number);
-};
-
 let freed = 0;
 for (const port of ports) {
-  const pids = listeners(port);
+  const pids = portListeners(port);
   if (pids.length === 0) continue;
   for (const pid of pids) process.kill(pid);
   console.info(`${checkMark} Port ${port} freed (pid ${pids.join(', ')})`);

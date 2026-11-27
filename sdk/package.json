@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx src/generate-sdk.ts --watch",
     "ts": "cd .. && tsgo -p sdk/tsconfig.json --pretty",
-    "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics",
+    "tsperf": "tsgo --noEmit --incremental false --extendedDiagnostics",
     "generate:sdk": "tsx src/generate-sdk.ts"
   },
   "exports": {
