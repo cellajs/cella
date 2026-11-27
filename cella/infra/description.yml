@@ -18,7 +18,8 @@ processIdentityEnv: [SERVICE, DATABASE_POOL_MAX, DATABASE_CLIENT_DEADLINE_MS]
 # operator sessions. A service of the app's own takes a size by the same rule.
 # A service that serves requests also sets `DATABASE_CLIENT_DEADLINE_MS`: a statement unanswered for 30 s makes its
 # client ask the server after it, so a frozen database ends a request. A working server's statement runs to its end
-# whatever the value, at one ask per deadline. The jobs worker sets none.
+# whatever the value, at one ask per deadline. The jobs worker sets none; under `singleVM` its folded handlers share
+# the backend's pool and its value.
 services:
   backend:
     dockerfile: Dockerfile

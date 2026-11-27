@@ -17,10 +17,11 @@ const connect = (connectionString: string, max: number, limits: { sessionTimeout
   createPgConnection(connectionString, { max, sslCa, debug: env.DEBUG, ...limits });
 
 /**
- * The runtime pool's client deadline, for a process that serves requests. The migrate companion takes the API's env,
- * and under `singleVM` the folded jobs worker shares this pool: both wait as long as the server.
+ * The runtime pool's client deadline. The migrate companion takes the API's env and waits as long as the server. Under
+ * `singleVM` a folded jobs handler's statement meets it as a request's does: its run fails only once the server stops
+ * answering.
  */
-const clientDeadlineMs = appConfig.singleVM || env.SERVICE === 'migrate' ? undefined : env.DATABASE_CLIENT_DEADLINE_MS;
+const clientDeadlineMs = env.SERVICE === 'migrate' ? undefined : env.DATABASE_CLIENT_DEADLINE_MS;
 
 /** Probes exempt from the NODB throw: `prepared.ts` reads `select`, the pool probe reads `$client`. */
 const noDbProbeKeys: ReadonlySet<string | symbol> = new Set(['select', '$client']);
