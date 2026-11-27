@@ -48,6 +48,7 @@ import type {
   SelectHeaderRowEvent,
   SelectRowEvent,
   SortColumn,
+  TreeRowAttributes,
 } from './types';
 import {
   assertIsValidKeyGetter,
@@ -145,6 +146,8 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   // Miscellaneous
   renderers?: Maybe<Renderers<NoInfer<R>, NoInfer<SR>>>;
   rowClass?: Maybe<(row: NoInfer<R>, rowIdx: number) => Maybe<string>>;
+  /** Rows that form a tree: the grid is a treegrid, and each row takes the attributes this returns for its index. */
+  treeRow?: Maybe<(rowIdx: number) => TreeRowAttributes>;
   headerRowClass?: Maybe<string>;
   /** Enable compact column overrides and the root data-is-compact attribute. */
   isCompact?: Maybe<boolean>;
@@ -208,6 +211,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     renderers,
     className,
     rowClass,
+    treeRow,
     headerRowClass,
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledBy,
@@ -798,6 +802,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         renderRow(key, {
           // aria-rowindex is 1 based
           'aria-rowindex': headerRowsCount + rowIdx + 1,
+          ...treeRow?.(rowIdx),
           'aria-selected': isSelectable ? isRowSelected : undefined,
           rowIdx,
           row,
@@ -841,7 +846,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
   return (
     <div
-      role="grid"
+      role={treeRow ? 'treegrid' : 'grid'}
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       aria-description={ariaDescription}

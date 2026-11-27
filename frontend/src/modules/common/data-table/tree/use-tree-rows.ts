@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getEdgeOrder, getRelativeOrder } from 'shared/utils/display-order';
 import { useLatestRef } from '~/hooks/use-latest-ref';
+import type { TreeRowAttributes } from '~/modules/common/data-grid/types';
 import { buildTree, type TreeItem, type TreeRow } from '~/modules/common/data-table/tree/build-tree';
 import type { TreeContextValue } from '~/modules/common/data-table/tree/tree-context';
 import type { ReorderPosition } from '~/modules/common/reorder-handle/reorder-handle';
@@ -50,10 +51,25 @@ export function siblingPosition(rows: readonly TreeItem[], rowIdx: number): Reor
   return places.get(rows[rowIdx]?.id) ?? { index: 0, total: 1 };
 }
 
+/** The row at `rowIdx` as a treegrid row: pass `(rowIdx) => treeRowAttributes(rows, rowIdx)` as the table's `treeRow`. */
+export function treeRowAttributes(rows: readonly TreeRow<TreeItem>[], rowIdx: number): TreeRowAttributes {
+  const row = rows[rowIdx];
+  const { index, total } = siblingPosition(rows, rowIdx);
+  return {
+    'aria-level': (row?._depth ?? 0) + 1,
+    'aria-expanded': row?._hasChildren ? row._isExpanded : undefined,
+    'aria-posinset': index + 1,
+    'aria-setsize': total,
+  };
+}
+
 const sortedChildren = <T extends TreeItem>(items: readonly T[], parentId: string | null) =>
   items.filter((item) => item.parentId === parentId).toSorted((a, b) => a.displayOrder - b.displayOrder);
 
-/** Owns expansion, drop validation, reordering, and reparenting; pair its context with `TreeProvider` and `ExpandToggleColumn`. */
+/**
+ * Owns expansion, drop validation, reordering, and reparenting; pair its context with `TreeProvider` and
+ * `ExpandToggleColumn`, and give the table `treeRowAttributes` as its `treeRow`.
+ */
 export function useTreeRows<T extends TreeItem>(options: UseTreeRowsOptions) {
   const [toggledIds, setToggledIds] = useState<Set<string>>(new Set());
   // The handlers below stay stable and read the current options through this ref; render reads `options` itself
