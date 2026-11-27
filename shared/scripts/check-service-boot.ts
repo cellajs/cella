@@ -45,8 +45,6 @@ const serviceEnv: NodeJS.ProcessEnv = {
   DATABASE_URL: localDatabaseUrl('test', 'runtime_role', database),
   DATABASE_ADMIN_URL: localDatabaseUrl('test', 'postgres', database),
   DATABASE_CDC_URL: localDatabaseUrl('test', 'admin_role', database),
-  // Production migrates as SERVICE=migrate before the API starts; so does this check.
-  RUN_MIGRATIONS_ON_BOOT: 'false',
   GEOIP_SOURCE_URL: 'off',
   BACKEND_INTERNAL_URL: `http://localhost:${ports.internal}`,
 };
