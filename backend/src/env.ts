@@ -138,7 +138,7 @@ const envSchema = z
     // Authenticates the Yjs relay on the internal listener's materialize route; it never signs a token.
     YJS_RELAY_SECRET: secretString('YJS_RELAY_SECRET').optional(),
     CDC_SECRET: secretString('CDC_SECRET').optional(),
-    PII_HASH_SECRET: secretString('PII_HASH_SECRET').optional(),
+    DATA_HASH_SECRET: secretString('DATA_HASH_SECRET').optional(),
     DATA_ENCRYPTION_KEY: secretString('DATA_ENCRYPTION_KEY', 32),
 
     // GeoIP: local MMDB paths, the object prefix they download from ('off' disables the refresh; empty

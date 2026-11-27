@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { PgAsyncDatabase, type PgTable } from 'drizzle-orm/pg-core';
 import { nanoid } from 'nanoid';
@@ -15,6 +16,7 @@ import { hashToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
 import { defaultHeaders } from '../fixtures';
 import {
+  adminDb,
   authCookie,
   cookieChange,
   createTestOrganization,
@@ -259,6 +261,41 @@ describe('magic link opened in another browser', async () => {
       expect(cookieChange(response, 'magic-requested')).toBe('set');
     }
     setTestConfig({ selfRegistration: true });
+  });
+});
+
+/**
+ * A row written straight into `tokens` carries a hash its writer computed. Stored hashes are keyed by
+ * `DATA_HASH_SECRET`: the plain SHA-256 of a chosen value names no link and signs nobody in.
+ */
+describe('magic link planted in the database', async () => {
+  const call = await createAppClient();
+
+  afterEach(async () => await clearSecurityTestData());
+
+  it('must not sign in via a magic link row stored with the plain SHA-256 of a chosen value', async () => {
+    const victim = await createTestUser(`planted-${nanoid(6)}@security-test.com`.toLowerCase());
+    const chosen = nanoid(40);
+    const [row] = await adminDb
+      .insert(tokensTable)
+      .values({
+        kind: 'magic',
+        secretHash: createHash('sha256').update(chosen, 'utf8').digest('hex'),
+        email: victim.email,
+        userId: victim.id,
+        createdBy: victim.id,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      })
+      .returning();
+
+    const opened = await call(invokeToken, { path: { kind: 'magic', token: chosen }, headers: defaultHeaders });
+    await expectRefusal(opened, 401, 'magic_not_found');
+    expect(cookieChange(opened.response, 'session')).toBeUndefined();
+
+    const confirmed = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: authCookie('magic-pending', chosen) } });
+    await expectRefusal(confirmed, 401, 'magic_not_found');
+    expect(cookieChange(confirmed.response, 'session')).toBeUndefined();
+    expect((await tokenRow(row.id))?.redeemedAt).toBeNull();
   });
 });
 

@@ -9,7 +9,7 @@ const serviceSecretNames = [
   'YJS_TOKEN_PRIVATE_KEY',
   'YJS_RELAY_SECRET',
   'UNSUBSCRIBE_SECRET',
-  'PII_HASH_SECRET',
+  'DATA_HASH_SECRET',
   'ADMIN_EMAIL',
 ] as const;
 
@@ -27,8 +27,8 @@ export const serviceSecrets: Readonly<Record<ServiceSecret, readonly ProcessServ
   YJS_RELAY_SECRET: ['api'],
   // The digest's unsubscribe links are signed where the digest runs: the jobs worker.
   UNSUBSCRIBE_SECRET: ['api', 'mcp', 'jobs'],
-  // The rate limiter keys an IP or address by its pseudonym; the OAuth face limits client metadata fetches per IP.
-  PII_HASH_SECRET: ['api', 'mcp', 'oauth'],
+  // The rate limiter keys an IP or address by its pseudonym (the OAuth face limits metadata fetches per IP); tokens hash under it.
+  DATA_HASH_SECRET: ['api', 'mcp', 'oauth'],
   // Read by the admin seed alone, which the release companion (SERVICE=migrate) runs with the API's secrets.
   ADMIN_EMAIL: ['migrate'],
 };

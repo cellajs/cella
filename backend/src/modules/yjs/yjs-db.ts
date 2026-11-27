@@ -1,6 +1,6 @@
 import { bigint, bytea, index, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
-import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
+import { tenantPolicy } from '#/db/rls-helpers';
 import { tenantIdLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
@@ -41,8 +41,7 @@ export const yjsDocumentsTable = snakeCase.table(
     index('idx_yjs_docs_tenant').on(table.tenantId),
     index('idx_yjs_docs_org').on(table.organizationId),
     organizationForeignKey(table),
-    tenantSelectPolicy('yjs_documents', table),
-    ...writeThroughPolicies('yjs_documents'),
+    tenantPolicy('yjs_documents', table),
   ],
 );
 
@@ -70,7 +69,6 @@ export const yjsUpdatesTable = snakeCase.table(
     index('idx_yjs_updates_doc').on(table.entityType, table.entityId, table.id),
     index('idx_yjs_updates_tenant').on(table.tenantId),
     organizationForeignKey(table),
-    tenantSelectPolicy('yjs_updates', table),
-    ...writeThroughPolicies('yjs_updates'),
+    tenantPolicy('yjs_updates', table),
   ],
 );

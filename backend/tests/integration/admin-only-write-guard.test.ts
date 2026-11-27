@@ -5,9 +5,15 @@ import pg from 'pg';
 import { testRuntimeDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb } from '#/db/db';
+import { allAdminOnlyWriteTables } from '#/db/immutability-triggers';
 
 const TEST_USER = '00000000-0000-4000-b000-0000000000f1';
 const TEST_ROLE_ROW = '00000000-0000-4000-b000-0000000000f2';
+const TEST_ACTIVITY = 'write-guard-activity-001';
+
+const guardedTables = allAdminOnlyWriteTables.map(({ tableName }) => tableName);
+/** The history CDC keeps: the guarded tables beside `system_roles`. */
+const historyTables = guardedTables.filter((tableName) => tableName !== 'system_roles');
 
 /** Return the PostgreSQL cause so tests distinguish trigger rejection from grant rejection. */
 async function rejectionMessage(run: Promise<unknown>): Promise<string> {
@@ -30,7 +36,7 @@ const guardSuiteReady = await (async () => {
     // Open the GRANT layer wide, as a `permission=all` reconcile would; otherwise the grant
     // rejects the write first and the trigger is never exercised.
     await adminDb.execute(sql`GRANT USAGE ON SCHEMA public TO runtime_role`);
-    await adminDb.execute(sql`GRANT SELECT, INSERT, UPDATE, DELETE ON system_roles TO runtime_role`);
+    for (const tableName of guardedTables) await adminDb.execute(sql.raw(`GRANT SELECT, INSERT, UPDATE, DELETE ON ${tableName} TO runtime_role`));
     await adminDb.execute(sql`GRANT SELECT, INSERT, UPDATE, DELETE ON users TO runtime_role`);
 
     runtimePool = new pg.Pool({ connectionString: testRuntimeDatabaseUrl, max: 2 });
@@ -46,16 +52,18 @@ const guardSuiteReady = await (async () => {
 
 afterAll(async () => {
   if (runtimePool) {
-    await adminDb.execute(sql`REVOKE INSERT, UPDATE, DELETE ON system_roles FROM runtime_role`).catch(() => {});
+    for (const tableName of guardedTables)
+      await adminDb.execute(sql.raw(`REVOKE INSERT, UPDATE, DELETE ON ${tableName} FROM runtime_role`)).catch(() => {});
     await runtimePool.end().catch(() => {});
   }
+  await adminDb.execute(sql`DELETE FROM activities WHERE id = ${TEST_ACTIVITY}`).catch(() => {});
   // Cascades to users
   await adminDb.execute(sql`DELETE FROM actors WHERE id = ${TEST_USER}`).catch(() => {});
 });
 
 // Runtime writes must remain blocked even when database grants are open. Runtime reads
 // and owner-driven `ON DELETE CASCADE` must continue to work.
-(guardSuiteReady ? describe : describe.skip)('system_roles write guard', () => {
+(guardSuiteReady ? describe : describe.skip)('admin-only write guard', () => {
   beforeAll(async () => {
     await adminDb.execute(sql`DELETE FROM actors WHERE id = ${TEST_USER}`);
     // users.id is a foreign key to actors.id, so the actor row comes first
@@ -66,6 +74,12 @@ afterAll(async () => {
     `);
     await adminDb.execute(sql`
       INSERT INTO system_roles (id, user_id, role) VALUES (${TEST_ROLE_ROW}, ${TEST_USER}, 'admin')
+    `);
+    // The admin connection still writes the history: this insert is the positive control.
+    await adminDb.execute(sql`
+      INSERT INTO activities (id, action, table_name, type, created_at)
+      VALUES (${TEST_ACTIVITY}, 'create', 'write_guard_probe', 'entity', now())
+      ON CONFLICT DO NOTHING
     `);
   });
 
@@ -94,6 +108,20 @@ afterAll(async () => {
     expect(message).toMatch(/not writable by runtime_role/);
 
     const survived = await adminDb.execute<Record<string, unknown>>(sql`SELECT 1 FROM system_roles WHERE user_id = ${TEST_USER}`);
+    expect(survived.rows).toHaveLength(1);
+  });
+
+  // `DEFAULT VALUES` names no column and a row trigger fires before any NOT NULL check: one statement probes every table.
+  it.each(historyTables)('blocks runtime_role from inserting into %s, even with the grant open', async (tableName) => {
+    const message = await rejectionMessage(runtimeDb.execute(sql.raw(`INSERT INTO ${tableName} DEFAULT VALUES`)));
+    expect(message).toMatch(/not writable by runtime_role/);
+  });
+
+  it('blocks runtime_role from deleting an activity, even with the grant open', async () => {
+    const message = await rejectionMessage(runtimeDb.execute(sql`DELETE FROM activities WHERE id = ${TEST_ACTIVITY}`));
+    expect(message).toMatch(/not writable by runtime_role/);
+
+    const survived = await adminDb.execute<Record<string, unknown>>(sql`SELECT 1 FROM activities WHERE id = ${TEST_ACTIVITY}`);
     expect(survived.rows).toHaveLength(1);
   });
 

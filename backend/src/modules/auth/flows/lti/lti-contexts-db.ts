@@ -2,7 +2,7 @@ import { boolean, index, integer, primaryKey, snakeCase, uniqueIndex, uuid, varc
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
-import { membershipChannelColumns } from '#/db/utils/channel-relation-columns';
+import { membershipChannelColumns, membershipChannelForeignKeys } from '#/db/utils/channel-relation-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
 import { isoTimestamp } from '#/db/utils/timestamp-columns';
@@ -78,6 +78,7 @@ export const ltiContextsTable = snakeCase.table(
     index('lti_contexts_connection_id_idx').on(table.connectionId),
     index('lti_contexts_channel_id_idx').on(table.channelId),
     organizationForeignKey(table),
+    ...membershipChannelForeignKeys(table),
   ],
 );
 

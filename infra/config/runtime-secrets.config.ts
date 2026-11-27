@@ -83,10 +83,11 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     rotatable: true,
     services: ['backend', 'yjs'],
   },
-  piiHashSecret: {
+  dataHashSecret: {
+    // The store name predates the rename and stays: a deployed value carries over.
     secretName: 'pii-hash-secret',
-    description: 'HMAC pepper for hashing PII-derived identifiers',
-    envVar: 'PII_HASH_SECRET',
+    description: 'HMAC pepper for PII-derived pseudonyms and stored token hashes',
+    envVar: 'DATA_HASH_SECRET',
     required: true,
     valueSource: 'engine',
     generation: 'random',

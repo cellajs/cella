@@ -52,7 +52,7 @@ ${triggersSql}
   EXCEPTION WHEN OTHERS THEN
     -- Fail LOUDLY: a swallowed failure here rolls back EVERY trigger in this block and
     -- ships a database where identity columns (tenant_id, organization_id, ...) are
-    -- mutable: the write-through RLS policies delegate that protection to these triggers.
+    -- mutable and the history tables writable by the runtime role: nothing else guards either.
     RAISE EXCEPTION 'Immutability triggers setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
   END;
 END $$;

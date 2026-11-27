@@ -1,0 +1,367 @@
+{
+  "type": "diff",
+  "version": "10",
+  "dialect": "postgres",
+  "id": "df550132-5e4a-496f-ae29-750a8c5df64d",
+  "prevIds": [
+    "d80c7663-089b-412c-a139-62f0c5804e31"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "attachments"
+      ],
+      "writes": [
+        "s|pol|public.attachments.attachments_select_policy",
+        "n|pol|public.attachments.attachments_select_policy",
+        "e|pol|public.attachments.attachments_select_policy"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "attachments"
+      ],
+      "writes": [
+        "s|pol|public.attachments.attachments_insert_policy",
+        "n|pol|public.attachments.attachments_insert_policy",
+        "e|pol|public.attachments.attachments_insert_policy"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "attachments"
+      ],
+      "writes": [
+        "s|pol|public.attachments.attachments_update_policy",
+        "n|pol|public.attachments.attachments_update_policy",
+        "e|pol|public.attachments.attachments_update_policy"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "attachments"
+      ],
+      "writes": [
+        "s|pol|public.attachments.attachments_delete_policy",
+        "n|pol|public.attachments.attachments_delete_policy",
+        "e|pol|public.attachments.attachments_delete_policy"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "yjs_documents"
+      ],
+      "writes": [
+        "s|pol|public.yjs_documents.yjs_documents_select_policy",
+        "n|pol|public.yjs_documents.yjs_documents_select_policy",
+        "e|pol|public.yjs_documents.yjs_documents_select_policy"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_documents",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "yjs_documents"
+      ],
+      "writes": [
+        "s|pol|public.yjs_documents.yjs_documents_insert_policy",
+        "n|pol|public.yjs_documents.yjs_documents_insert_policy",
+        "e|pol|public.yjs_documents.yjs_documents_insert_policy"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_documents",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "yjs_documents"
+      ],
+      "writes": [
+        "s|pol|public.yjs_documents.yjs_documents_update_policy",
+        "n|pol|public.yjs_documents.yjs_documents_update_policy",
+        "e|pol|public.yjs_documents.yjs_documents_update_policy"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_documents",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "yjs_documents"
+      ],
+      "writes": [
+        "s|pol|public.yjs_documents.yjs_documents_delete_policy",
+        "n|pol|public.yjs_documents.yjs_documents_delete_policy",
+        "e|pol|public.yjs_documents.yjs_documents_delete_policy"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_documents",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "yjs_updates"
+      ],
+      "writes": [
+        "s|pol|public.yjs_updates.yjs_updates_select_policy",
+        "n|pol|public.yjs_updates.yjs_updates_select_policy",
+        "e|pol|public.yjs_updates.yjs_updates_select_policy"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_updates",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "yjs_updates"
+      ],
+      "writes": [
+        "s|pol|public.yjs_updates.yjs_updates_insert_policy",
+        "n|pol|public.yjs_updates.yjs_updates_insert_policy",
+        "e|pol|public.yjs_updates.yjs_updates_insert_policy"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_updates",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "yjs_updates"
+      ],
+      "writes": [
+        "s|pol|public.yjs_updates.yjs_updates_update_policy",
+        "n|pol|public.yjs_updates.yjs_updates_update_policy",
+        "e|pol|public.yjs_updates.yjs_updates_update_policy"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_updates",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "yjs_updates"
+      ],
+      "writes": [
+        "s|pol|public.yjs_updates.yjs_updates_delete_policy",
+        "n|pol|public.yjs_updates.yjs_updates_delete_policy",
+        "e|pol|public.yjs_updates.yjs_updates_delete_policy"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_updates",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "attachments"
+      ],
+      "writes": [
+        "s|pol|public.attachments.attachments_tenant_policy",
+        "n|pol|public.attachments.attachments_tenant_policy",
+        "e|pol|public.attachments.attachments_tenant_policy"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public",
+        "e|rls|public.attachments"
+      ]
+    },
+    {
+      "statementType": "create_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "yjs_documents"
+      ],
+      "writes": [
+        "s|pol|public.yjs_documents.yjs_documents_tenant_policy",
+        "n|pol|public.yjs_documents.yjs_documents_tenant_policy",
+        "e|pol|public.yjs_documents.yjs_documents_tenant_policy"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_documents",
+        "n|sch|public",
+        "e|rls|public.yjs_documents"
+      ]
+    },
+    {
+      "statementType": "create_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "yjs_updates"
+      ],
+      "writes": [
+        "s|pol|public.yjs_updates.yjs_updates_tenant_policy",
+        "n|pol|public.yjs_updates.yjs_updates_tenant_policy",
+        "e|pol|public.yjs_updates.yjs_updates_tenant_policy"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_updates",
+        "n|sch|public",
+        "e|rls|public.yjs_updates"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "attachments",
+        "name": "attachments_tenant_policy",
+        "as": "PERMISSIVE",
+        "for": "ALL",
+        "roles": [
+          "public"
+        ],
+        "using": "\n    \n  COALESCE((SELECT current_setting('app.tenant_id', true)), '') != ''\n  AND \"attachments\".\"tenant_id\" = (SELECT current_setting('app.tenant_id', true))\n\n    AND (\"attachments\".\"deleted_at\" IS NULL OR (SELECT current_setting('app.include_deleted', true)) = 'true')\n  ",
+        "withCheck": null,
+        "entityType": "policies"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "yjs_documents",
+        "name": "yjs_documents_tenant_policy",
+        "as": "PERMISSIVE",
+        "for": "ALL",
+        "roles": [
+          "public"
+        ],
+        "using": "\n    \n  COALESCE((SELECT current_setting('app.tenant_id', true)), '') != ''\n  AND \"yjs_documents\".\"tenant_id\" = (SELECT current_setting('app.tenant_id', true))\n\n    \n  ",
+        "withCheck": null,
+        "entityType": "policies"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "yjs_updates",
+        "name": "yjs_updates_tenant_policy",
+        "as": "PERMISSIVE",
+        "for": "ALL",
+        "roles": [
+          "public"
+        ],
+        "using": "\n    \n  COALESCE((SELECT current_setting('app.tenant_id', true)), '') != ''\n  AND \"yjs_updates\".\"tenant_id\" = (SELECT current_setting('app.tenant_id', true))\n\n    \n  ",
+        "withCheck": null,
+        "entityType": "policies"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "policies\u0000[\"public\",\"attachments\",\"attachments_select_policy\"]"
+    },
+    {
+      "op": "drop",
+      "key": "policies\u0000[\"public\",\"attachments\",\"attachments_insert_policy\"]"
+    },
+    {
+      "op": "drop",
+      "key": "policies\u0000[\"public\",\"attachments\",\"attachments_update_policy\"]"
+    },
+    {
+      "op": "drop",
+      "key": "policies\u0000[\"public\",\"attachments\",\"attachments_delete_policy\"]"
+    },
+    {
+      "op": "drop",
+      "key": "policies\u0000[\"public\",\"yjs_documents\",\"yjs_documents_select_policy\"]"
+    },
+    {
+      "op": "drop",
+      "key": "policies\u0000[\"public\",\"yjs_documents\",\"yjs_documents_insert_policy\"]"
+    },
+    {
+      "op": "drop",
+      "key": "policies\u0000[\"public\",\"yjs_documents\",\"yjs_documents_update_policy\"]"
+    },
+    {
+      "op": "drop",
+      "key": "policies\u0000[\"public\",\"yjs_documents\",\"yjs_documents_delete_policy\"]"
+    },
+    {
+      "op": "drop",
+      "key": "policies\u0000[\"public\",\"yjs_updates\",\"yjs_updates_select_policy\"]"
+    },
+    {
+      "op": "drop",
+      "key": "policies\u0000[\"public\",\"yjs_updates\",\"yjs_updates_insert_policy\"]"
+    },
+    {
+      "op": "drop",
+      "key": "policies\u0000[\"public\",\"yjs_updates\",\"yjs_updates_update_policy\"]"
+    },
+    {
+      "op": "drop",
+      "key": "policies\u0000[\"public\",\"yjs_updates\",\"yjs_updates_delete_policy\"]"
+    }
+  ]
+}

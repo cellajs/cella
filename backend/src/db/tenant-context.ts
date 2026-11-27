@@ -80,7 +80,7 @@ export const tenantContextById = <T>(tenantId: string, fn: (tx: Tx) => Promise<T
 type RequestTransactionOptions = {
   /** The tenant a route without `tenantGuard` resolved itself, such as an org-scoped list on bare `baseDb`. Default: `ctx.var.tenantId`. */
   tenantId?: string;
-  /** Sets `app.include_deleted`: reads see tombstones, and an UPDATE's WHERE reaches them, since the select policy filters it too. */
+  /** Sets `app.include_deleted`: reads see tombstones, and an UPDATE's WHERE reaches them, since the tenant policy filters it too. */
   includeDeleted?: boolean;
 };
 
@@ -94,7 +94,7 @@ export const tenantRead = <T>(
   { tenantId = ctx.var.tenantId, includeDeleted = false }: RequestTransactionOptions = {},
 ): Promise<T> => requestTransaction(ctx, tenantId, includeDeleted, true, fn);
 
-/** Read-write tenant RLS transaction for a request's writes; the session variables let RLS select policies pass on RETURNING. */
+/** Read-write tenant RLS transaction for a request's writes: the tenant policy checks each row read or written against its session variables. */
 export const tenantContext = <T>(
   ctx: ActorContext,
   fn: (txCtx: ActorContext) => Promise<T>,
