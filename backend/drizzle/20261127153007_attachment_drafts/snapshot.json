@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "10",
+  "dialect": "postgres",
+  "id": "24cd5da3-20fa-4efb-bcb6-ebf266fd7c40",
+  "prevIds": [
+    "df550132-5e4a-496f-ae29-750a8c5df64d"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "attachments",
+        "published_at"
+      ],
+      "writes": [
+        "s|col|public.attachments.published_at",
+        "n|col|public.attachments.published_at",
+        "e|col|public.attachments.published_at"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "attachments",
+        "name": "published_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

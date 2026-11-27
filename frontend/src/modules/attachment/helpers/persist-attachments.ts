@@ -11,15 +11,18 @@ export function persistAttachments(
     tenantId,
     organizationId,
     placement,
+    draft,
   }: {
     tenantId: string;
     organizationId: string;
     /** The deepest home channel id only (ancestors are server-derived); omitted = org-homed. The fields a create accepts follow the hierarchy (`placementFieldsSchema`). */
     placement?: Record<string, string | null | undefined>;
+    /** True for uploads into a document that is not published yet: they stay the uploader's until a host publishes them. */
+    draft?: boolean;
   },
 ): Promise<void> {
   if (!attachments.length) return Promise.resolve();
-  const data = placement ? attachments.map((attachment) => ({ ...attachment, ...placement })) : attachments;
+  const data = attachments.map((attachment) => ({ ...attachment, ...placement, draft }));
   const mutation = queryClient.getMutationCache().build(queryClient, attachmentCreateOptions(queryClient));
   const created = mutation.execute({ tenantId, organizationId, data, stx: createStxForCreate() }).then(() => {});
   // The mutation's onError already reports a failed create.

@@ -5,6 +5,7 @@ import { maxLength } from '#/db/utils/constraints';
 import { homeNumberIndex, numberColumn } from '#/db/utils/number-column';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
 import { productColumns, productIndexes } from '#/db/utils/product-columns';
+import { isoTimestamp } from '#/db/utils/timestamp-columns';
 import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
 
 /** Each attachment belongs to exactly one tenant and organization: the RLS isolation boundary. */
@@ -24,6 +25,8 @@ export const attachmentsTable = snakeCase.table(
     size: bigint({ mode: 'number' }).notNull(),
     /** Storage object keys per variant. `original` is always present; other variants appear only once the upload pipeline generates them. */
     keys: jsonb().$type<AttachmentKeys>().notNull(),
+    /** Live at insert; null while the file sits only in an unpublished document (`draft` at create), its uploader's alone. */
+    publishedAt: isoTimestamp().defaultNow(),
     ...channelRelationColumns('attachment'),
   },
   (table) => [

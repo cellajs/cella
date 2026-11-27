@@ -1,0 +1,1 @@
+ALTER TABLE "attachments" ADD COLUMN "published_at" timestamp with time zone DEFAULT now();

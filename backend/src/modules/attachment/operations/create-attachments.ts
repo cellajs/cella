@@ -52,7 +52,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   const createdAttachments = await tenantContext(ctx, async (txCtx) => {
     const placeCtx: OrgContext = { var: { ...ctx.var, db: txCtx.var.db } };
     const attachmentsToInsert: InsertAttachmentModel[] = [];
-    for (const [index, { stx, ...att }] of fresh.entries()) {
+    for (const [index, { stx, draft, ...att }] of fresh.entries()) {
       attachmentContract.assertBlockFields(att, organization.id);
 
       // The ancestor columns and the public flag come from the home channel's own row, held until the insert commits.
@@ -69,6 +69,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
         organizationId: organization.id,
         createdAt: now,
         createdBy: ctx.var.actor.id,
+        publishedAt: draft ? null : now,
         stx: buildStx(stx),
       };
 

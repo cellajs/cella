@@ -1,6 +1,6 @@
-import { eq, inArray, or } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ActorContext } from '#/core/context';
 import { baseDb, getSeedDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
@@ -12,13 +12,6 @@ import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
-
-// The template's one product keeps no drafts, so its draft rule would never reach the statement. Here the public date
-// stands in for the publish date: a row without one shows to its creator alone.
-vi.mock('#/db/utils/published-predicate', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('#/db/utils/published-predicate')>()),
-  draftVisibleRowsPredicate: (_table: unknown, actorId: string) => or(eq(attachmentsTable.public, true), eq(attachmentsTable.createdBy, actorId)),
-}));
 
 /**
  * A host row stores the ids of the rows it embeds (`appConfig.productEmbeddings`). The filter keeps the ids that name a
@@ -32,10 +25,10 @@ describe('filterExistingProductIds', async () => {
   const plans: Awaited<ReturnType<typeof seedAttachmentHome>>[] = [];
   const [live, alsoLive, deleted, foreign, othersDraft] = [generateId(), generateId(), generateId(), generateId(), generateId()];
 
-  const seed = async (owner: TestTenant, id: string, createdBy: string = owner.user.id) => {
+  const seed = async (owner: TestTenant, id: string, columns: { createdBy?: string; publishedAt?: null } = {}) => {
     const plan = await seedAttachmentHome({ id: owner.organization.id, tenantId: owner.tenantId }, owner.user.id);
     plans.push(plan);
-    await insertAttachmentIn(plan, { id, tenantId: owner.tenantId, createdBy });
+    await insertAttachmentIn(plan, { id, tenantId: owner.tenantId, createdBy: owner.user.id, ...columns });
   };
 
   beforeAll(async () => {
@@ -44,7 +37,7 @@ describe('filterExistingProductIds', async () => {
     for (const id of [live, alsoLive, deleted]) await seed(tenant, id);
     await seed(other, foreign);
     // Written by another member of the organization and not shown to this caller.
-    await seed(tenant, othersDraft, other.user.id);
+    await seed(tenant, othersDraft, { createdBy: other.user.id, publishedAt: null });
     await db.update(attachmentsTable).set({ deletedAt: new Date().toISOString() }).where(eq(attachmentsTable.id, deleted));
   });
 

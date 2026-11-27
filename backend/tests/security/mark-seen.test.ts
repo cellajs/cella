@@ -33,7 +33,8 @@ describe.skipIf(!isSeenTracked('attachment'))('markSeen and rows the caller cann
 
   const insertAttachment = async (createdBy: string, overrides: Record<string, unknown> = {}) => {
     const id = generateId();
-    await insertAttachmentIn(plan, { id, tenantId: organization.tenantId, createdBy, createdAt: new Date().toISOString(), ...overrides });
+    const now = new Date().toISOString();
+    await insertAttachmentIn(plan, { id, tenantId: organization.tenantId, createdBy, createdAt: now, publishedAt: now, ...overrides });
     return id;
   };
 

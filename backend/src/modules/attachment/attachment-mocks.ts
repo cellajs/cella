@@ -17,9 +17,11 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
   withFakerSeed(key, () => {
     const filename = faker.system.fileName();
     const channelIds = generateMockEntityChannelIdColumns('attachment');
+    const product = mockProductColumns('attachment', { name: filename, description: null });
 
     return {
-      ...mockProductColumns('attachment', { name: filename, description: null }),
+      ...product,
+      publishedAt: product.createdAt,
       publicBucket: false,
       bucketName: 'attachments',
       groupId: null,

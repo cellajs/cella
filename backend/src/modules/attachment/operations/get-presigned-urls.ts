@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { type Access, buildSubjectFromEntity, checkAccessBatch } from 'shared';
+import { type Access, buildSubjectFromEntity, checkAccessBatch, draftVisibleTo } from 'shared';
 import type { ActorBinding, ActorContext } from '#/core/context';
 import { tenantRead, tenantReadById } from '#/db/tenant-context';
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
@@ -58,8 +58,9 @@ async function signReadable(access: Access<ActorBinding>, rows: AttachmentModel[
   const ids = idsOf(items);
   const rowById = new Map(rows.map((row) => [row.id, row]));
 
-  // The access carries the system-admin bypass, so `allowed` is already the final verdict.
-  const subjects = rows.map((row) => buildSubjectFromEntity('attachment', row));
+  // A draft signs for its uploader alone. The access carries the system-admin bypass: `allowed` is the final verdict.
+  const actorId = 'visitor' in access ? null : access.actorId;
+  const subjects = rows.filter((row) => draftVisibleTo(row, actorId)).map((row) => buildSubjectFromEntity('attachment', row));
   const results = checkAccessBatch(access, 'read', subjects);
 
   // A row naming storage outside its organization is refused like a denied one, whatever wrote it: an id is signed

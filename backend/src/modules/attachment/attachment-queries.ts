@@ -12,6 +12,7 @@ import { homeChannelId } from '#/db/utils/number-column';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { requestScopeWhere } from '#/db/utils/request-scope';
 import { servedColumns } from '#/db/utils/served-columns';
+import { updateStamps } from '#/db/utils/stamps';
 import { attachmentsTable, type InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
 import { getOrganizationEntityCount, productViewCountJoin, productViewCountSelect } from '#/modules/entities/entities-queries';
@@ -94,7 +95,7 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
   const rangeRead = seqRangeRead(attachmentsTable, range);
   const filters = [...opts.filters, ...rangeRead.where];
 
-  // A no-op for attachments, which carry no `publishedAt`; kept as the pattern app entity queries copy.
+  // Drafts stay out for their uploader too: one range answer serves every reader. Undefined for a table without drafts.
   const publishedOnly = publishedRowsPredicate(attachmentsTable);
   if (publishedOnly) filters.push(publishedOnly);
 
@@ -187,6 +188,34 @@ export const findLinkedAttachment = async (ctx: DbContext, ref: { channelId: str
     .where(and(named, isNull(attachmentsTable.deletedAt), publiclyServedTenant(attachmentsTable.tenantId)))
     .limit(1);
   return attachment;
+};
+
+/**
+ * Publishes the drafts among `ids` that the actor uploaded, for a host write that puts them in a published document. A
+ * server-driven write: it keeps the stored stx. Returns the rows as they were and as they are, for `attachment.updated`.
+ */
+export const publishDraftAttachments = async (ctx: ActorContext, { ids, now }: { ids: string[]; now: string }) => {
+  if (ids.length === 0) return { before: [], after: [] };
+  const { db } = ctx.var;
+  const ownDrafts = and(
+    inArray(attachmentsTable.id, ids),
+    isNull(attachmentsTable.publishedAt),
+    isNull(attachmentsTable.deletedAt),
+    eq(attachmentsTable.createdBy, ctx.var.actor.id),
+    requestScopeWhere(ctx, attachmentsTable, 'attachment'),
+  );
+
+  const locked = await db.select().from(attachmentsTable).where(ownDrafts).for('no key update');
+  if (locked.length === 0) return { before: [], after: [] };
+  const lockedById = new Map(locked.map((row) => [row.id, row]));
+
+  const after = await db
+    .update(attachmentsTable)
+    .set({ publishedAt: now, ...updateStamps(ctx.var.actor.id, now) })
+    .where(inArray(attachmentsTable.id, [...lockedById.keys()]))
+    .returning();
+  // Every updated row was locked above, so pairing by id keeps the two lists aligned.
+  return { before: after.flatMap((row) => lockedById.get(row.id) ?? []), after };
 };
 
 const ownedBy = appConfig.productEmbeddings.find(
