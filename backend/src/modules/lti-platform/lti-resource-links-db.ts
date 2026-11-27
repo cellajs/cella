@@ -2,7 +2,7 @@ import { boolean, index, jsonb, snakeCase, uniqueIndex, uuid, varchar } from 'dr
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
-import { membershipChannelColumns } from '#/db/utils/channel-relation-columns';
+import { membershipChannelColumns, membershipChannelForeignKeys } from '#/db/utils/channel-relation-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { ServiceAccountId } from '#/db/utils/ids';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
@@ -50,6 +50,7 @@ export const ltiResourceLinksTable = snakeCase.table(
     uniqueIndex('lti_resource_links_channel_id_installation_id_idx').on(table.channelId, table.installationId),
     index('lti_resource_links_installation_id_idx').on(table.installationId),
     organizationForeignKey(table),
+    ...membershipChannelForeignKeys(table),
   ],
 );
 

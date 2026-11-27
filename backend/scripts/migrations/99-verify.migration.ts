@@ -1,7 +1,7 @@
 import { getTableName } from 'drizzle-orm';
 import { adminOnlyWriteTriggerName, allAdminOnlyWriteTables, allImmutabilityTables, immutableKeysTriggerName } from '#/db/immutability-triggers';
 import { membershipRuleTriggers } from '#/db/membership-rules';
-import { rlsPolicyContract } from '#/db/rls-helpers';
+import { tenantPolicyName } from '#/db/rls-helpers';
 import { publicationRowFilter } from '#/db/utils/publication-filter';
 import { entityTables, resourceTables } from '#/tables';
 import { cdcPublicationName } from '../../../cdc/src/constants';
@@ -24,7 +24,7 @@ function textArray(items: readonly string[]): string {
  * Builds the final assertions for the combined side-effect migration, causing any missing
  * end state to roll back the transaction. Assertions share producer preconditions and
  * derive expected state from the same TypeScript sources: table classification from
- * `10-rls`, the policy set from `rls-helpers`, triggers from `immutability-triggers` and `membership-rules`.
+ * `10-rls`, the policy name from `rls-helpers`, triggers from `immutability-triggers` and `membership-rules`.
  * Each check is one query over arrays of expected objects that appends what the catalog lacks.
  */
 async function run(): Promise<SideEffectBlock> {
@@ -48,8 +48,6 @@ async function run(): Promise<SideEffectBlock> {
   // Draft-lifecycle product tables carry a publication row filter (the draft boundary).
   const rowFilteredCount = Object.entries(entityTables).filter(([entityType, table]) => publicationRowFilter(entityType, table)).length;
 
-  const policyCount = Object.keys(rlsPolicyContract('x')).length;
-  const policies = rlsTables.flatMap((table) => Object.values(rlsPolicyContract(table)).map((policy) => ({ table, ...policy })));
   const persistence = [...unloggedTables.map((table) => ({ table, kind: 'u' })), ...loggedAgainTables.map((table) => ({ table, kind: 'p' }))];
   const partitionedTables = textArray(partitionConfigs.map(({ name }) => name));
   const inPublic = `relnamespace = 'public'::regnamespace`;
@@ -96,24 +94,21 @@ BEGIN
     SELECT 'rls-enabled-not-forced:' || e.tbl FROM unnest(${textArray(rlsTables)}) AS e(tbl)
     WHERE NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = e.tbl AND ${inPublic} AND relrowsecurity AND NOT relforcerowsecurity));
 
-  -- Policy contract (${rlsTables.length} tables x ${policyCount} policies): every policy on an RLS table is one of the
-  -- contract's, with its command, permissive mode, PUBLIC target and expression shape; a fifth policy fails the count.
+  -- Tenant policy (${rlsTables.length} tables): each RLS table holds exactly one policy, for every command, permissive,
+  -- on PUBLIC, with the tenant match as its expression. It has no check of its own, so a written row is checked
+  -- against that expression; a second policy fails the count.
   missing := missing || ARRAY(
     SELECT 'policy:' || e.name
-    FROM unnest(${textArray(policies.map((p) => p.table))}, ${textArray(policies.map((p) => p.name))},
-      ${textArray(policies.map((p) => p.command))}, ${textArray(policies.map((p) => p.expression))}) AS e(tbl, name, cmd, expression)
+    FROM unnest(${textArray(rlsTables)}, ${textArray(rlsTables.map(tenantPolicyName))}) AS e(tbl, name)
     WHERE NOT EXISTS (
       SELECT 1 FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid
-      WHERE c.relname = e.tbl AND c.${inPublic} AND p.polname = e.name AND p.polcmd::text = e.cmd
-        AND p.polpermissive AND p.polroles = '{0}'::oid[]
-        AND CASE e.expression
-          WHEN 'tenant' THEN pg_get_expr(p.polqual, p.polrelid) LIKE '%app.tenant_id%'
-            AND pg_get_expr(p.polqual, p.polrelid) LIKE '%tenant_id)::text = ( SELECT current_setting(''app.tenant_id''%'
-          ELSE COALESCE(pg_get_expr(p.polwithcheck, p.polrelid), pg_get_expr(p.polqual, p.polrelid)) = 'true'
-        END));
+      WHERE c.relname = e.tbl AND c.${inPublic} AND p.polname = e.name AND p.polcmd::text = '*'
+        AND p.polpermissive AND p.polroles = '{0}'::oid[] AND p.polwithcheck IS NULL
+        AND pg_get_expr(p.polqual, p.polrelid) LIKE '%app.tenant_id%'
+        AND pg_get_expr(p.polqual, p.polrelid) LIKE '%tenant_id)::text = ( SELECT current_setting(''app.tenant_id''%'));
   missing := missing || ARRAY(
     SELECT 'policy-count:' || e.tbl FROM unnest(${textArray(rlsTables)}) AS e(tbl)
-    WHERE (SELECT count(*) FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid WHERE c.relname = e.tbl AND c.${inPublic}) <> ${policyCount});
+    WHERE (SELECT count(*) FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid WHERE c.relname = e.tbl AND c.${inPublic}) <> 1);
 
   -- Grants per classification: CRUD tables hold every privilege, read-only tables SELECT and nothing else
   missing := missing || ARRAY(
@@ -165,7 +160,7 @@ END $$;
     title: 'Verify, assert end state of all side-effect blocks',
     sql: migrationSql,
     notes: [
-      `asserts: ${expectedTriggers.length} triggers, ${functionNames.length} functions, ${partitionConfigs.length} partitioned tables, ${ownedTables.length} owners, ${rlsTables.length} RLS tables (enabled, not forced), ${rlsTables.length * policyCount} policies, ${crudTables.length} CRUD + ${readOnlyTables.length} read-only grant sets, ${unloggedTables.length} unlogged, ${loggedAgainTables.length} logged again, 1 publication, runtime_role not BYPASSRLS`,
+      `asserts: ${expectedTriggers.length} triggers, ${functionNames.length} functions, ${partitionConfigs.length} partitioned tables, ${ownedTables.length} owners, ${rlsTables.length} RLS tables (enabled, not forced), one tenant policy each, ${crudTables.length} CRUD + ${readOnlyTables.length} read-only grant sets, ${unloggedTables.length} unlogged, ${loggedAgainTables.length} logged again, 1 publication, runtime_role not BYPASSRLS`,
     ],
   };
 }

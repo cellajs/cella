@@ -152,9 +152,10 @@ runtimeSecrets:
     rotatable: true
     services: [backend, yjs]
   # Not rotatable, like the next: it protects stored data, which a new value would leave unreadable or unmatched.
-  PII_HASH_SECRET:
+  DATA_HASH_SECRET:
+    # The store name predates the rename and stays: a deployed value carries over.
     secretName: pii-hash-secret
-    description: HMAC pepper for hashing PII-derived identifiers
+    description: HMAC pepper for PII-derived pseudonyms and stored token hashes
     generation: random
     services: [backend, mcp, oauth]
   DATA_ENCRYPTION_KEY:

@@ -1,6 +1,6 @@
 import { bigint, boolean, index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
-import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
-import { channelRelationColumns, channelRelationIndexes } from '#/db/utils/channel-relation-columns';
+import { tenantPolicy } from '#/db/rls-helpers';
+import { channelRelationColumns, channelRelationConstraints } from '#/db/utils/channel-relation-columns';
 import { maxLength } from '#/db/utils/constraints';
 import { homeNumberIndex, numberColumn } from '#/db/utils/number-column';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
@@ -31,12 +31,11 @@ export const attachmentsTable = snakeCase.table(
     // The list's default order, read backward: `.desc()` would emit NULLS LAST, which an `ORDER BY ... DESC` cannot use.
     index('attachments_organization_id_created_at_index').on(table.organizationId, table.createdAt, table.id),
     index('attachments_group_id_index').on(table.groupId),
-    // An index per sub-organization ancestor column; none for org-homed rows.
-    ...channelRelationIndexes('attachments', table, 'attachment'),
+    // An index and a tenant-bound key per sub-organization ancestor column; none for org-homed rows.
+    ...channelRelationConstraints('attachments', table, 'attachment'),
     homeNumberIndex('attachments', table, 'attachment'),
     organizationForeignKey(table),
-    tenantSelectPolicy('attachments', table),
-    ...writeThroughPolicies('attachments'),
+    tenantPolicy('attachments', table),
   ],
 );
 

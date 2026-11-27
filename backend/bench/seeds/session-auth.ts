@@ -1,13 +1,13 @@
-import { createHash, createHmac } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 
 /** Deterministic session token per user index. */
 export function sessionToken(index: number): string {
   return `xbench-session-token-${String(index).padStart(12, '0')}`;
 }
 
-/** SHA-256 hex lowercase, matching backend's hashToken (node:crypto). */
-export function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
+/** The stored hash of `token`, matching backend's `hashToken`: HMAC-SHA-256 hex under `DATA_HASH_SECRET`. */
+export function hashToken(token: string, dataHashSecret: string): string {
+  return createHmac('sha256', dataHashSecret).update(`token\n${token}`, 'utf8').digest('hex');
 }
 
 /**

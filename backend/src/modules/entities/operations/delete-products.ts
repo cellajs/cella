@@ -30,7 +30,7 @@ export const tombstoneProducts = <T extends TombstoneTable>(
   ctx: ActorContext,
   { entityType, table, ids, stx }: TombstoneProductsInput<T>,
 ): Promise<InferSelectModel<T>[]> =>
-  // RETURNING hands back rows the update just deleted, which the select policy shows only with deleted rows included.
+  // RETURNING hands back rows the update just deleted, which the tenant policy accepts only with deleted rows included.
   tenantContext(
     ctx,
     async (txCtx) => {

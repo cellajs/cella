@@ -21,7 +21,7 @@ const modeBound = {
   YJS_TOKEN_PRIVATE_KEY: 'test-yjs-token-key-material-min-32-chars',
   YJS_RELAY_SECRET: 'test-yjs-relay-secret-min16',
   UNSUBSCRIBE_SECRET: 'test-unsubscribe-secret',
-  PII_HASH_SECRET: 'test-pii-hash-secret-min16',
+  DATA_HASH_SECRET: 'test-data-hash-secret-min16',
   ADMIN_EMAIL: 'admin@example.com',
 };
 
@@ -44,7 +44,7 @@ function loadEnv(vars: Record<string, string>) {
 describe('env schema per process mode', () => {
   it('must not require the Yjs signing key, the relay, CDC or unsubscribe secrets to boot the authorization server', () => {
     // The pepper it does read: its client metadata fetches count per IP, under the IP's pseudonym.
-    const { status, output } = loadEnv({ SERVICE: 'oauth', ...common, PII_HASH_SECRET: modeBound.PII_HASH_SECRET });
+    const { status, output } = loadEnv({ SERVICE: 'oauth', ...common, DATA_HASH_SECRET: modeBound.DATA_HASH_SECRET });
     expect(output).not.toContain('Invalid environment variables');
     expect(status).toBe(0);
   });
@@ -54,7 +54,7 @@ describe('env schema per process mode', () => {
       SERVICE: 'mcp',
       ...common,
       UNSUBSCRIBE_SECRET: modeBound.UNSUBSCRIBE_SECRET,
-      PII_HASH_SECRET: modeBound.PII_HASH_SECRET,
+      DATA_HASH_SECRET: modeBound.DATA_HASH_SECRET,
     });
     expect(output).not.toContain('Invalid environment variables');
     expect(status).toBe(0);
@@ -143,7 +143,7 @@ const secretNames = [
   'YJS_TOKEN_PUBLIC_KEY',
   'CDC_SECRET',
   'YJS_RELAY_SECRET',
-  'PII_HASH_SECRET',
+  'DATA_HASH_SECRET',
   'DATA_ENCRYPTION_KEY',
 ] as const;
 

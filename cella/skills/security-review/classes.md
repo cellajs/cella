@@ -37,7 +37,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/middlewares/guard/session-cache.ts` (TTL 10 s), `backend/src/middlewares/update-last-seen.ts`.
   - Other session writers: `modules/me/me-handlers.ts`, `modules/me/operations/{revoke-my-sessions,toggle-mfa}.ts`, `modules/user/operations/delete-accounts.ts`, `modules/entities/entities-listeners.ts`, `modules/entities/operations/stream-session-recheck.ts`.
   - `backend/src/modules/oauth-server/provider.ts`: oidc-provider's own cookies, signed with `cookieSecrets`.
-  - `backend/src/utils/hash-token.ts` (session lookup by SHA-256 of the token) and `shared/src/utils/safe-equal.ts` (hash both sides, then `timingSafeEqual`).
+  - `backend/src/utils/hash-token.ts` (session, API key and link lookup by HMAC-SHA-256 of the token under `DATA_HASH_SECRET`) and `shared/src/utils/safe-equal.ts` (hash both sides, then `timingSafeEqual`).
   - `cella/docs/authentication/SESSIONS.md`. The `Set-Cookie` mentions in `auth/{oauth,totps,passkeys,general}/*-routes.ts` are OpenAPI header documentation only.
 - **Holds:**
   - `cookie-integrity`: an unsigned cookie, a value signed for another cookie name, a past max age, a foreign secret.
@@ -177,7 +177,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `notification-access`: inbox, instant mail and digest naming a left organization's items. `mark-seen`: confirming a deleted or hidden attachment.
   - `member-visibility`, `user-organizations`, `user-list-system-role`, `member-personal-view`, `archived-tenant`, `tenant-access`.
   - `yjs-token` and `tests/yjs-http`: token or pull/push for an entity the caller may not update; `tests/mcp` and `mcp-server.test.ts`: a call outside scopes.
-  - `tests/integration/rls-security`: attachment reads across tenants and without tenant context as `runtime_role`; `tests/integration/schema-verification`: channel tables have no RLS, composite FK on product tables.
+  - `tests/integration/rls-security`: attachment reads across tenants and without tenant context as `runtime_role`, and writes for another tenant or none; `tests/integration/schema-verification`: channel tables have no RLS, composite FK on product tables and on every channel reference.
   - `permission-engine-boundary`: any file but `check-access.ts` importing `getAllDecisions`. `tests/channel-discovery` (contract test). `route-guards`. `tests/organization-member-previews` (at most 3 previews, only `UserMinimalBase` fields). `pnpm test:core:runtime`.
 - **Asks:** PERMISSIONS.md's rule "any grant the single-row path honours must appear in lists and over SSE" as a table: path x grant source (membership, relation, public, systemAdmin, draft) -> the test. The paths to cover: single row, list, SSE, MCP tools, counters, member previews, search, activities, Yjs, catchup.
 - **Not this class:** role escalation, last admin and invitations belong to B2. Which fields a reader sees (`membershipAsSeenBy`, `mfa`, system `role`, secret columns, email in user lists) belongs to B3. Stream fan-out mechanics (subscriber caps, membership refresh timing, session close, signals) belong to B4; the disclosure question stays here. Yjs token lifecycle and claims belong to B5. MCP token audience, scopes and consent belong to B6. The client-address and system-admin allowlist belong to A6.
@@ -199,7 +199,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `pending-invitations`: no account oracle on list, resend, invite, check; a member cannot withdraw. `declined-invitations`: a declined invitation cannot be accepted by id, token or inbox proof. `resend-invitation`: no re-mint of rejected, revoked, accepted or used invitations.
   - `tests/invitations/*`: draft invites held, only `prepareRoles` dispatch, a member cannot publish; invite and accept flows.
   - `tests/service-accounts`: a member cannot create an account, key scopes mask grants, revoke through another account, no grant at the tenant door, quota.
-  - `tests/integration/system-roles-write-guard`: `runtime_role` cannot insert, update or delete `system_roles` even with the grant open; the admin connection and the user-delete cascade still work.
+  - `tests/integration/admin-only-write-guard`: `runtime_role` cannot insert, update or delete `system_roles`, nor write `activities`, `sync_state` or `sync_incidents`, even with the grant open; the admin connection and the user-delete cascade still work.
   - `user-list-system-role` (B3 field visibility, listed because the plan names it); `tests/system-update-user`; `tests/tenants`.
 - **Asks:** every write that carries a role or a binding, who may set it and the cap, as a table.
 - **Not this class:** field visibility of `role` and the system role in user lists belongs to B3. Cross-tenant and object reads belong to B1. Invitation address takeover belongs to C7. API key hashing and token signing belong to A5. Session cache and bindings cache staleness belong to C8. SSE and catchup grants belong to B1 and B4.

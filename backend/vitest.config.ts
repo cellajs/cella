@@ -40,7 +40,7 @@ export default defineConfig({
       CDC_SECRET: 'test-cdc-secret-min16chars',
       YJS_TOKEN_PRIVATE_KEY: testYjsTokenKeyMaterial,
       YJS_RELAY_SECRET: 'test-yjs-relay-secret-min16',
-      PII_HASH_SECRET: 'test-pii-hash-secret-min16',
+      DATA_HASH_SECRET: 'test-data-hash-secret-min16',
       DATA_ENCRYPTION_KEY: 'test-data-encryption-key-minimum-32-chars',
       SYSTEM_ADMIN_IP_ALLOWLIST: '*',
       // A sign-in start refuses a provider without keys; the round trip itself never leaves the test process.

@@ -2,7 +2,7 @@ import { boolean, doublePrecision, index, snakeCase, unique, uuid, varchar } fro
 import { appConfig, hierarchy, roles } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
-import { membershipChannelColumns, membershipChannelIndexes } from '#/db/utils/channel-relation-columns';
+import { membershipChannelColumns, membershipChannelForeignKeys, membershipChannelIndexes } from '#/db/utils/channel-relation-columns';
 import { tenantIdLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
@@ -45,6 +45,7 @@ export const membershipsTable = snakeCase.table(
     index('memberships_org_user_tenant_idx').on(table.organizationId, table.userId, table.tenantId),
     unique('memberships_unique_channel').on(table.tenantId, table.userId, table.channelId),
     organizationForeignKey(table),
+    ...membershipChannelForeignKeys(table),
   ],
 );
 

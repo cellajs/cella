@@ -5,8 +5,8 @@ This document explains how tenant data stays isolated: which layer does what, an
 ### TL;DR
 
 The application keeps each tenant's data separate. It checks who makes a request, limits every query to the current
-tenant and applies [permissions](./PERMISSIONS.md). PostgreSQL adds a second safety net for reads of tenant-owned
-content. It catches application mistakes but is not the main access-control layer.
+tenant and applies [permissions](./PERMISSIONS.md). PostgreSQL adds a second safety net for reads and writes of
+tenant-owned content. It catches application mistakes but is not the main access-control layer.
 
 ## Security contract
 
@@ -18,6 +18,7 @@ The backend suite proves it by running twice with identical expectations: once w
 | --- | --- |
 | RLS is absent, application authorization is correct | Guards, permissions, and query scope still deny |
 | An application read has the wrong tenant scope, RLS is active | RLS hides rows from every other tenant |
+| An application write names another tenant or none, RLS is active | RLS refuses the row, or the statement touches no row |
 | A permission bug exposes data within the active tenant | RLS cannot help because the row still matches the tenant |
 | Application scope and RLS both fail | Cross-tenant isolation can fail |
 
@@ -27,7 +28,7 @@ RLS is enabled on product tables and on resources that hold tenant data. The own
 
 | Table category | RLS behavior | Primary authorization |
 | --- | --- | --- |
-| Product entities | Tenant-scoped SELECT, permissive writes | Guards, scoped queries, and permissions |
+| Product entities | Tenant-scoped reads and writes | Guards, scoped queries, and permissions |
 | Channel entities | No RLS | Channel and organization guards plus permissions |
 | Memberships | No RLS | Membership operations and permissions |
 | Resources | RLS only when they hold tenant data and the migration lists them | Owning module and guards |
@@ -36,7 +37,7 @@ The RLS migration enables RLS on every registered product table. Every product e
 
 ## Product reads
 
-The helpers in `backend/src/db/tenant-context.ts` open a transaction that names the tenant to the RLS policies. A protected read without one returns nothing. Pick by what the work does:
+The helpers in `backend/src/db/tenant-context.ts` open a transaction that names the tenant to the RLS policies. A protected read without one returns nothing, and a write without one is refused or touches no row. Pick by what the work does:
 
 - `tenantRead` for a request's product reads.
 - `tenantContext` for a request's creates and updates.
@@ -45,18 +46,21 @@ The helpers in `backend/src/db/tenant-context.ts` open a transaction that names 
 
 An `includeDeleted` option also reaches tombstones. Database work stays inside the callback. A helper called inside a tenant transaction for the same tenant joins it as a savepoint. One for another tenant is refused.
 
-## Write-through policies
+## Tenant policy
 
-Each RLS table carries INSERT, UPDATE and DELETE policies whose expressions are `true`. **The write policy supplies no authorization.** Permissions stay in the shared engine, and a contextless insert passes RLS.
+Each RLS table carries one policy for every command. A statement by the runtime role reads and writes only rows of the transaction's tenant, and none without one. **The policy checks the tenant, never the actor.** Permissions stay in the shared engine.
+
+A written row passes the same check as a read one. A soft delete writes a tombstone, so it runs with `includeDeleted`.
 
 | Concern | Mechanism | Limit |
 | --- | --- | --- |
 | Actor may perform the action | Guards and the permission engine | Every mutation path must call them |
-| Initial tenant and organization | The server derives them from the guarded context | A contextless SQL insert is outside this protection |
-| Update or delete targets | The operation's query uses guarded ids and channel scope | RLS write policies add no predicates |
+| Initial tenant and organization | The server derives them from the guarded context, and the policy refuses a row of another tenant | The policy trusts the tenant the transaction names |
+| Update or delete targets | The operation's query uses guarded ids and channel scope, and the policy keeps the statement inside its tenant | Channel scope inside a tenant is the application's |
 | Tenant and organization agree | A composite `(tenant_id, organization_id)` foreign key on product and membership tables. Tenant and organization are 1:1. | Does not authorize the actor |
-| Product identity cannot move | A trigger makes `tenant_id` and `organization_id` immutable after insert | Does not validate the insert. Deeper ancestor ids are not covered. |
-| Membership identity, activities | Immutability triggers on membership identity columns. Activity rows are read-only for the runtime role. | Same limits. `admin_role` can delete activities. |
+| A channel reference stays in its tenant | A composite `(tenant_id, <channel>_id)` foreign key on every column that names a channel below the organization: product ancestors, a channel's own ancestors, and the membership, invitation and LTI channel columns | Related channels, host id arrays and polymorphic ids (`channel_id`, `entity_id`) are not covered. A null id is not checked. |
+| Product identity cannot move | A trigger makes `tenant_id` and `organization_id` immutable after insert | Does not validate the insert. An ancestor below the organization may change, inside the tenant. |
+| Membership identity, history | Immutability triggers on membership identity columns. A trigger refuses the runtime role on `system_roles`, `activities`, `sync_state` and `sync_incidents`, whatever its grants. | `admin_role` can delete activities. A `TRUNCATE` under a reopened grant fires no row trigger. |
 
 ## Database roles
 
@@ -67,7 +71,7 @@ Each RLS table carries INSERT, UPDATE and DELETE policies whose expressions are 
 
 `admin_role` also owns the activities. Its bypass never depends on the `BYPASSRLS` attribute, which managed providers such as Scaleway cannot grant. The dev and test roles are created without it to match. Migrations grant `runtime_role` what the application needs. They refuse to run when either role is missing.
 
-Only the admin connection can write `system_roles`. A system admin of the app is not `admin_role`. Their requests use the runtime connection and normal request scope.
+Only the admin connection can write `system_roles` and the history CDC keeps. A system admin of the app is not `admin_role`. Their requests use the runtime connection and normal request scope.
 
 The admin credential serves migrations, seeds and retention. An API that runs none of them serves without it. Its request handlers then cannot reach an RLS-bypassing connection. Never call `getAdminDb()` from a request handler.
 

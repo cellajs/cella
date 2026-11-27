@@ -16,6 +16,8 @@ ones a click from a mail or a provider's callback must carry are Lax.
 - **Brief cache.** A revocation, membership or system role change reaches every process within seconds.
 - **Outage is no sign-out.** A failed session read fails the request, never reading as signed out.
 
+The stored hash of a session, an API key or a link is an HMAC under `DATA_HASH_SECRET`. A row written straight into the database with a hash of a chosen value matches nothing. A new value of the secret ends every session, API key and link at once.
+
 A sign-out ends the session and any sign-in in progress before it clears a cookie. A failed sign-out leaves the browser signed in. The sign-out page then offers to try again.
 
 A sign-out also clears an opened invitation. The next person at the browser cannot read it. Other accounts' offline work and the device cookie survive a sign-out: it sends no `Clear-Site-Data`.
@@ -38,7 +40,7 @@ A session route's 401 to a request with a session cookie carries no `WWW-Authent
 
 ## Devices
 
-A sign-in sets a long-lived `device-id` cookie and records its per-user hash in `devices`. A database leak cannot correlate browsers across accounts, since `PII_HASH_SECRET` peppers the hash. A sign-in from a new browser mails the owner, unless it came through their inbox. The address lookup of the sign-in page recognizes a browser by its device id.
+A sign-in sets a long-lived `device-id` cookie and records its per-user hash in `devices`. A database leak cannot correlate browsers across accounts, since `DATA_HASH_SECRET` peppers the hash. A sign-in from a new browser mails the owner, unless it came through their inbox. The address lookup of the sign-in page recognizes a browser by its device id.
 
 ## Cookies
 

@@ -26,9 +26,9 @@ describe('runtime secret registry', () => {
     expect(runtimeSecretsForConsumer('frontend')).toEqual([]);
   });
 
-  // A new DATA_ENCRYPTION_KEY loses every stored TOTP secret, OAuth key and LTI key; a new PII_HASH_SECRET, every stored IP, device and subnet hash.
+  // A new DATA_ENCRYPTION_KEY loses every stored TOTP secret, OAuth key and LTI key; a new DATA_HASH_SECRET, every stored token, IP, device and subnet hash.
   it('generates the keys that protect stored data and never rotates them', () => {
-    for (const envVar of ['DATA_ENCRYPTION_KEY', 'PII_HASH_SECRET']) {
+    for (const envVar of ['DATA_ENCRYPTION_KEY', 'DATA_HASH_SECRET']) {
       const secret = runtimeSecrets.find((candidate) => candidate.envVar === envVar);
       expect(secret, envVar).toMatchObject({ valueSource: 'engine', generation: 'random' });
       expect(secret?.rotatable, envVar).not.toBe(true);

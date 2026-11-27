@@ -1,0 +1,5 @@
+[
+  { "type": "create", "kind": "policy", "entity": ["public", "attachments", "attachments_tenant_policy"] },
+  { "type": "create", "kind": "policy", "entity": ["public", "yjs_documents", "yjs_documents_tenant_policy"] },
+  { "type": "create", "kind": "policy", "entity": ["public", "yjs_updates", "yjs_updates_tenant_policy"] }
+]

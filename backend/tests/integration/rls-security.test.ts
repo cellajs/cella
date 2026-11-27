@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { eq, getColumns, getTableName, sql } from 'drizzle-orm';
+import { eq, getColumns, getTableName, sql, TransactionRollbackError } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { appConfig, type ProductEntityType, seenWindowMs } from 'shared';
+import { appConfig, entityIdColumnName, type ProductEntityType, seenWindowMs } from 'shared';
 import { testAdminRoleDatabaseUrl, testRuntimeDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -16,6 +16,8 @@ import { entityTables, getEntityTable } from '#/tables';
 // Deterministic ids so cleanup can target the rows.
 const TEST_TENANT_A = 'rlsta1';
 const TEST_TENANT_B = 'rlsta2';
+/** A tenant id no row carries: whatever a statement touches under it belongs to another tenant. */
+const TEST_TENANT_EMPTY = 'rlsta0';
 const TEST_USER_A = '00000000-0000-4000-a000-000000000001';
 const TEST_USER_B = '00000000-0000-4000-a000-000000000002';
 const TEST_ORG_A = '00000000-0000-4000-a000-000000000003';
@@ -62,7 +64,7 @@ async function cleanupEntityHierarchy(executor: Pick<typeof adminDb, 'execute'>,
   }
 }
 
-/** Org-scoped product entities are the RLS-subject tables: tenant SELECT policy + FORCE RLS. */
+/** Product entities are the RLS-subject tables: one tenant policy each. */
 const rlsProductTypes = appConfig.productEntityTypes;
 
 /**
@@ -271,6 +273,26 @@ async function queryAsRuntimeRole<T = Record<string, unknown>>(tenantId: string,
   });
 }
 
+/**
+ * How many rows `statement` touches as runtime_role in a transaction that always rolls back.
+ * @param tenantId - The tenant the transaction names; empty for none.
+ */
+async function rowsTouched(tenantId: string, statement: string): Promise<number> {
+  let touched = Number.NaN;
+  await runtimeDb
+    .transaction(async (tx) => {
+      await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantId}, true)`);
+      // One statement gives one result; the driver types a batch of them as an array.
+      const result = await tx.execute(sql.raw(statement));
+      touched = Array.isArray(result) ? Number.NaN : (result.rowCount ?? Number.NaN);
+      tx.rollback();
+    })
+    .catch((error: unknown) => {
+      if (!(error instanceof TransactionRollbackError)) throw error;
+    });
+  return touched;
+}
+
 /** Query as runtime_role with no session context: fail-closed reads must yield zero rows. */
 async function queryWithoutChannel<T = Record<string, unknown>>(queryFn: (tx: NodePgTx) => Promise<unknown>): Promise<T[]> {
   return runtimeDb.transaction(async (tx) => {
@@ -466,12 +488,31 @@ const rlsSuiteReady = await (async () => {
     });
   });
 
-  // ---- Write-through on RLS tables (INSERT/UPDATE/DELETE must succeed) ----
+  // ---- Writes on RLS tables: inside the transaction's tenant, and nowhere without one ----
 
-  describe('Write-through on RLS tables', () => {
-    // Regression guard: FORCE RLS with a SELECT-only policy denies every write.
-
+  describe('Writes on RLS tables', () => {
     describe.each(iterableRlsProducts)('%s', (_type, fixture) => {
+      it('must not insert a row for another tenant', async () => {
+        // `fixture.insert` returns no row: only the policy's check on the written row can refuse it.
+        const insert = queryAsRuntimeRole(TEST_TENANT_A, async (tx) =>
+          fixture.insert(tx, { id: randomUUID(), tenantId: TEST_TENANT_B, createdBy: TEST_USER_A }),
+        );
+        await expect(unwrapDrizzle(insert)).rejects.toThrow(/row-level security policy/);
+      });
+
+      it('must not insert a row without a tenant', async () => {
+        const insert = queryWithoutChannel(async (tx) => fixture.insert(tx, { id: randomUUID(), tenantId: TEST_TENANT_A, createdBy: TEST_USER_A }));
+        await expect(unwrapDrizzle(insert)).rejects.toThrow(/row-level security policy/);
+      });
+
+      it('must not reach another tenant with an UPDATE or DELETE that names no row', async () => {
+        // No WHERE and no RETURNING: a statement that reads no column passes no read check, and the policy's own
+        // expression alone scopes it. The seeded row of tenant A is what an unscoped statement would touch.
+        expect(await rowsTouched(TEST_TENANT_EMPTY, `UPDATE ${fixture.table} SET name = 'Reached'`)).toBe(0);
+        expect(await rowsTouched(TEST_TENANT_EMPTY, `DELETE FROM ${fixture.table}`)).toBe(0);
+        expect(await rowsTouched('', `DELETE FROM ${fixture.table}`)).toBe(0);
+      });
+
       it('should allow INSERT as runtime_role', async () => {
         const id = randomUUID();
         await queryAsRuntimeRole(TEST_TENANT_A, async (tx) => fixture.insert(tx, { id, tenantId: TEST_TENANT_A, createdBy: TEST_USER_A }));
@@ -510,14 +551,16 @@ const rlsSuiteReady = await (async () => {
       await adminDb.execute(sql`DELETE FROM yjs_documents WHERE entity_id = ${fixture.rowId}`);
     });
 
-    it.skipIf(iterableRlsProducts.length === 0)('should allow writing without tenant context (write-through is unconditional)', async () => {
-      const [, fixture] = iterableRlsProducts[0];
-      const id = randomUUID();
-      // The write-through policy is sql`true`, so no session context is needed.
-      await queryWithoutChannel(async (tx) => fixture.insert(tx, { id, tenantId: TEST_TENANT_A, createdBy: TEST_USER_A }));
-      const rows = await queryWithoutChannel(async (tx) => tx.execute(sql.raw(`SELECT id FROM ${fixture.table} WHERE id = '${id}'`)));
-      expect(rows).toHaveLength(0);
-      await adminDb.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`));
+    it.skipIf(iterableRlsProducts.length === 0)('must not insert a yjs_document for another tenant', async () => {
+      const [entityType] = iterableRlsProducts[0];
+      const entityId = randomUUID();
+      const insert = queryAsRuntimeRole(TEST_TENANT_A, async (tx) =>
+        tx.execute(sql`
+          INSERT INTO yjs_documents (entity_type, entity_id, tenant_id, organization_id, state)
+          VALUES (${entityType}, ${entityId}, ${TEST_TENANT_B}, ${TEST_ORG_B}, '\\x00')
+        `),
+      );
+      await expect(unwrapDrizzle(insert)).rejects.toThrow(/row-level security policy/);
     });
   });
 
@@ -535,6 +578,190 @@ const rlsSuiteReady = await (async () => {
         const id = randomUUID();
         await expect(fixture.insert(adminDb, { id, tenantId: TEST_TENANT_A, createdBy: TEST_USER_A })).resolves.not.toThrow();
         await adminDb.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`));
+      });
+    });
+
+    // Every column naming a channel below the organization carries the tenant in its key. The cases come from the
+    // hierarchy: product ancestors, a channel's own ancestors and the membership channel columns.
+    type ChannelRow = TestEntityHierarchyPlan['seedChannelRows'][number];
+    // Typed wide: with no channel below the organization the filter infers `never`.
+    const subOrganizationTypes: ChannelRow['channelType'][] = appConfig.channelEntityTypes.filter((type) => type !== 'organization');
+
+    /** A channel of `channelType` under `organizationId`: its row, and a plan that seeds its ancestors and then the row. */
+    const channelOfType = (channelType: ChannelRow['channelType'], organizationId: string) => {
+      const plan = buildTestEntityHierarchyPlan({ entityType: channelType, organizationId, makeChannelId: () => randomUUID() });
+      const [parent] = plan.sqlChannelColumns;
+      const row: ChannelRow = {
+        channelType,
+        id: randomUUID(),
+        tableName: getTableName(entityTables[channelType]),
+        parentChannelType: parent.channelType,
+        parentId: parent.id,
+        parentIdKey: parent.idKey,
+        parentColumnName: parent.columnName,
+        ancestorColumns: plan.sqlChannelColumns,
+      };
+      return { row, plan: { ...plan, seedChannelRows: [...plan.seedChannelRows, row] } };
+    };
+
+    // Per type, a channel of tenant B to attack with and a second channel of tenant A to move to.
+    const channelPairs = new Map(
+      subOrganizationTypes.map((type) => [type, { foreign: channelOfType(type, TEST_ORG_B), local: channelOfType(type, TEST_ORG_A) }]),
+    );
+
+    const insertRow = (table: string, values: Record<string, unknown>) =>
+      adminDb.execute(sql`
+        INSERT INTO ${sql.raw(quoteIdent(table))} (${sql.join(
+          Object.keys(values).map((name) => sql.raw(quoteIdent(name))),
+          sql`, `,
+        )})
+        VALUES (${sql.join(
+          Object.values(values).map((value) => sql`${value}`),
+          sql`, `,
+        )})
+      `);
+
+    interface ChannelReferenceCase {
+      /** `<table>.<column>`, for the titles. */
+      name: string;
+      table: string;
+      column: string;
+      foreignId: string;
+      localId: string;
+      /** Inserts a new row of tenant A whose column names `channelId`. */
+      insert: (channelId: string) => Promise<unknown>;
+      /** The seeded row of tenant A a move rewrites and the id to restore; null where a trigger freezes the column. */
+      moved: { rowId: string; channelId: string | null } | null;
+    }
+
+    /** The case of `column` on `table`; none for a column naming the organization. */
+    const referenceCase = (
+      table: string,
+      column: string,
+      channelType: ChannelRow['channelType'],
+      insert: ChannelReferenceCase['insert'],
+      moved: ChannelReferenceCase['moved'],
+    ): ChannelReferenceCase[] => {
+      const pair = channelPairs.get(channelType);
+      if (!pair) return [];
+      return [{ name: `${table}.${column}`, table, column, foreignId: pair.foreign.row.id, localId: pair.local.row.id, insert, moved }];
+    };
+
+    const productCases = iterableRlsProducts.flatMap(([entityType, fixture]) =>
+      fixture.plan.sqlChannelColumns.flatMap((column) => {
+        const insert = async (channelId: string) => {
+          // TS cannot verify a dynamically-built row against the union insert type.
+          const row = buildInsertableProduct(entityType, {
+            id: randomUUID(),
+            tenantId: TEST_TENANT_A,
+            createdBy: TEST_USER_A,
+            updatedBy: null,
+            deletedBy: null,
+            ...fixture.plan.channelIdColumns,
+            [column.idKey]: channelId,
+            seq: 0,
+          }) as never;
+          await adminDb.insert(getEntityTable(entityType)).values(row);
+        };
+        return referenceCase(fixture.table, column.columnName, column.channelType, insert, { rowId: fixture.rowId, channelId: column.id });
+      }),
+    );
+
+    const channelCases = [...channelPairs.values()].flatMap(({ local }) =>
+      local.row.ancestorColumns.flatMap((column) => {
+        const insert = (channelId: string) => {
+          const ancestorColumns = local.row.ancestorColumns.map((ancestor) => (ancestor === column ? { ...ancestor, id: channelId } : ancestor));
+          const seedChannelRows = [{ ...local.row, id: randomUUID(), ancestorColumns }];
+          return seedEntityHierarchy({ ...local.plan, seedChannelRows }, TEST_TENANT_A, TEST_USER_A, 'rls-fk');
+        };
+        return referenceCase(local.row.tableName, column.columnName, column.channelType, insert, { rowId: local.row.id, channelId: column.id });
+      }),
+    );
+
+    // The tables with membership channel columns, each as a row of tenant A; lti_resource_links needs an installation,
+    // and schema-verification checks its keys. The immutability trigger freezes the columns on memberships and invitations.
+    const ltiContextId = randomUUID();
+    const ltiContextRow = (id: string) => ({
+      id,
+      tenant_id: TEST_TENANT_A,
+      organization_id: TEST_ORG_A,
+      issuer: 'https://rls.test',
+      context_id: id,
+      channel_type: 'organization',
+      channel_id: TEST_ORG_A,
+    });
+    const membershipChannelTables = [
+      {
+        table: 'memberships',
+        movableRowId: null,
+        row: (id: string) => ({
+          id,
+          tenant_id: TEST_TENANT_A,
+          channel_type: 'organization',
+          channel_id: TEST_ORG_A,
+          user_id: TEST_USER_B,
+          created_by: TEST_USER_A,
+          display_order: 1,
+          organization_id: TEST_ORG_A,
+        }),
+      },
+      {
+        table: 'invitations',
+        movableRowId: null,
+        row: (id: string) => ({
+          id,
+          tenant_id: TEST_TENANT_A,
+          channel_type: 'organization',
+          channel_id: TEST_ORG_A,
+          email: `${id}@rls.test`,
+          created_by: TEST_USER_A,
+          organization_id: TEST_ORG_A,
+        }),
+      },
+      { table: 'lti_contexts', movableRowId: ltiContextId, row: ltiContextRow },
+    ];
+
+    const membershipCases = subOrganizationTypes.flatMap((type) =>
+      membershipChannelTables.flatMap(({ table, movableRowId, row }) => {
+        const column = entityIdColumnName(type);
+        const insert = (channelId: string) => insertRow(table, { ...row(randomUUID()), [column]: channelId });
+        return referenceCase(table, column, type, insert, movableRowId ? { rowId: movableRowId, channelId: null } : null);
+      }),
+    );
+
+    const channelReferenceCases = [...productCases, ...channelCases, ...membershipCases];
+    const movableCases = channelReferenceCases.flatMap((reference) => (reference.moved ? [{ ...reference, moved: reference.moved }] : []));
+
+    const moveTo = ({ table, column, moved }: (typeof movableCases)[number], channelId: string | null) =>
+      adminDb.execute(sql`UPDATE ${sql.raw(quoteIdent(table))} SET ${sql.raw(quoteIdent(column))} = ${channelId} WHERE id = ${moved.rowId}`);
+
+    describe.skipIf(subOrganizationTypes.length === 0)('channel references', () => {
+      beforeAll(async () => {
+        if (!rolesAvailable || !requiredTablesAvailable) return;
+        for (const { foreign, local } of channelPairs.values()) {
+          await seedEntityHierarchy(foreign.plan, TEST_TENANT_B, TEST_USER_B, 'rls-fk-b');
+          await seedEntityHierarchy(local.plan, TEST_TENANT_A, TEST_USER_A, 'rls-fk-a');
+        }
+        await insertRow('lti_contexts', ltiContextRow(ltiContextId));
+      });
+
+      afterAll(async () => {
+        if (!rolesAvailable || !requiredTablesAvailable) return;
+        await adminDb.execute(sql`DELETE FROM lti_contexts WHERE id = ${ltiContextId}`);
+        await cleanupEntityHierarchy(adminDb, ...[...channelPairs.values()].flatMap(({ foreign, local }) => [foreign.plan, local.plan]));
+      });
+
+      it.each(channelReferenceCases)('must not insert a row of tenant A whose $name names a channel of tenant B', async ({ insert, foreignId }) => {
+        await expect(unwrapDrizzle(insert(foreignId))).rejects.toThrow(/foreign key constraint/i);
+      });
+
+      it.each(movableCases)('must not move $name of a row of tenant A to a channel of tenant B', async (reference) => {
+        await expect(unwrapDrizzle(moveTo(reference, reference.foreignId))).rejects.toThrow(/foreign key constraint/i);
+      });
+
+      it.each(movableCases)('moves $name to another channel of tenant A', async (reference) => {
+        await expect(moveTo(reference, reference.localId)).resolves.not.toThrow();
+        await moveTo(reference, reference.moved.channelId);
       });
     });
   });

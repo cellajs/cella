@@ -76,8 +76,14 @@ const appendOnlyConfigs: TableImmutabilityConfig[] = [{ tableName: 'activities',
 /** Each table with the trigger function that refuses a change of its immutable columns or, for `activities`, any update. */
 export const allImmutabilityTables: TableImmutabilityConfig[] = [...channelConfigs, ...productConfigs, ...membershipConfigs, ...appendOnlyConfigs];
 
-/** Read-only for the app: `system_roles` decides who is a system admin, so writes must use the admin connection. */
-export const allAdminOnlyWriteTables: TableImmutabilityConfig[] = [{ tableName: 'system_roles', functionName: 'admin_only_write_row' }];
+/**
+ * Tables only the admin connection writes, whatever the grants say: `system_roles` decides who is a system admin, and
+ * the other three are the history CDC keeps (the activities, its sync state and its incidents).
+ */
+export const allAdminOnlyWriteTables: TableImmutabilityConfig[] = ['system_roles', 'activities', 'sync_state', 'sync_incidents'].map((tableName) => ({
+  tableName,
+  functionName: 'admin_only_write_row',
+}));
 
 /** Creation order: both migration emitters build from this list, so every function exists before its `CREATE TRIGGER`. */
 export const allImmutabilityFunctionsSQL: string[] = [

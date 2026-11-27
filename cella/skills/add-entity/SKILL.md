@@ -70,9 +70,9 @@ and the renderers.
 
 - `<name>-db.ts` from `attachment-db.ts`: `...productColumns('<name>')`, the product's own columns,
   `...channelRelationColumns('<name>')`. Its index list starts with `...productIndexes('<name>s', table)`
-  and `...channelRelationIndexes('<name>s', table, '<name>')`, adds an index for the list's default
-  order, and ends with `organizationForeignKey(table)`, `tenantSelectPolicy('<name>s', table)` and
-  `...writeThroughPolicies('<name>s')`. A secret column (a hash, a token) goes in
+  and `...channelRelationConstraints('<name>s', table, '<name>')` (an index and a composite tenant key per
+  ancestor column), adds an index for the list's default order, and ends with `organizationForeignKey(table)` and
+  `tenantPolicy('<name>s', table)`. A secret column (a hash, a token) goes in
   `backend/src/db/secret-columns.ts`, a column naming a stored file in `backend/src/db/storage-columns.ts`.
 - A lazy getter in `backend/src/db/product-tables.ts`, which feeds `entityTables`: RLS grants, the
   CDC publication, triggers and activity tracking follow from it.
@@ -200,11 +200,12 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
 ### Backend
 
 - `<name>-db.ts`: `...channelColumns('<name>')`, then `organizationId: uuid().notNull()` and a
-  non-null id column for each channel between it and the organization, the parent's with
-  `.references(() => <parent>sTable.id, { onDelete: 'cascade' })`. The generated `path` column reads
-  these. Indexes on name, `createdAt`, `createdBy` and `updatedBy` as `organization-db.ts` has them,
-  plus `tenantId` and each ancestor column; `unique('<name>s_tenant_id_unique').on(table.tenantId, table.id)`
-  (the composite FK target of memberships and products) and `organizationForeignKey(table)`.
+  non-null `uuid()` id column for each channel between it and the organization, with no `.references()`.
+  The generated `path` column reads these. Indexes on name, `createdAt`, `createdBy` and `updatedBy` as
+  `organization-db.ts` has them, plus `tenantId`; `...channelRelationConstraints('<name>s', table, '<name>')`
+  (an index and a composite tenant key per ancestor column, cascading with it);
+  `unique('<name>s_tenant_id_unique').on(table.tenantId, table.id)` (the target of the composite tenant keys
+  of the tables below it and the membership tables) and `organizationForeignKey(table)`.
 - A lazy getter in `backend/src/db/channel-tables.ts`.
 - `<name>-schema.ts`: `evolutionContract.channel('<name>', { createItem, updateBody })`. App counts
   on its `included.counts` go in `appChannelCountFields` in `backend/src/schemas/app-schemas.ts`; the
@@ -227,8 +228,8 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
   `canCreateEntity(ctx, buildSubject('<name>', { organizationId, <parent>Id }))` (the organization
   skips it). One transaction inserts the rows, dispatches `<name>.created` and inserts the creator's
   membership with `insertMemberships` (role `hierarchy.getMostPrivilegedRole('<name>')`). Run it in
-  `tenantContext` when a `<name>.created` handler writes product rows, whose fail-closed select policy
-  hides every row outside a tenant transaction. Then `invalidateCache.user(user.id)`. A channel that
+  `tenantContext` when a `<name>.created` handler writes product rows, whose tenant policy hides every
+  row and refuses every write outside a tenant transaction. Then `invalidateCache.user(user.id)`. A channel that
   declares `drafts` accepts `draft` and creates with `publishedAt: null`, as the organization does
   ([Drafts](../../docs/PERMISSIONS.md#drafts)).
 - The policy case needs elevation and self lines ([Permissions](../../docs/PERMISSIONS.md#the-policy-consulted)).

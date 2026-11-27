@@ -27,6 +27,7 @@ const envSchema = z.object({
   YJS_STAGGER_S: z.coerce.number().default(10),
   YJS_DOC_OFFSET: z.coerce.number().default(0),
   COOKIE_SECRET: z.string().default(''),
+  DATA_HASH_SECRET: z.string().default(''),
   SSE_HOLD_MS: z.coerce.number().default(25_000),
   SSE_SYNC_MODE: z.enum(['immediate', 'lazy']).default('lazy'),
   RANGE_KEY: z.enum(['on', 'off']).default('on'),
@@ -86,6 +87,9 @@ export const SESSION_COOKIE_NAME = `${appConfig.slug}-session-${appConfig.cookie
 
 /** Signs the bench session cookies like the app does; read from the repo's `.env`. */
 export const COOKIE_SECRET = env.COOKIE_SECRET;
+
+/** Keys the seeded session hashes like the app does; read from the repo's `.env`. */
+export const DATA_HASH_SECRET = env.DATA_HASH_SECRET;
 
 /** Whether a sync client sends the range key of a change frame with its fetch; `off` measures the fetches without shared answers. */
 export const SYNC_RANGE_KEY = env.RANGE_KEY === 'on';

@@ -2,7 +2,7 @@ import { index, snakeCase, unique, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, hierarchy, roles } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
-import { membershipChannelColumns } from '#/db/utils/channel-relation-columns';
+import { membershipChannelColumns, membershipChannelForeignKeys } from '#/db/utils/channel-relation-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
@@ -55,6 +55,7 @@ export const invitationsTable = snakeCase.table(
     index('invitations_org_status_idx').on(table.organizationId, table.status),
     unique('invitations_tenant_email_ctx').on(table.tenantId, table.email, table.channelId),
     organizationForeignKey(table),
+    ...membershipChannelForeignKeys(table),
   ],
 );
 
