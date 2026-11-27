@@ -7,6 +7,7 @@ import { scrubUrl } from 'shared/utils/scrub-url';
 import type { Env } from '#/core/context';
 import { AppError, type AppErrorStatus, type ErrorKey, errorTitle } from '#/core/error';
 import { checksAuthoringRules, clientPath, undocumentedErrorStatus } from '#/core/openapi-validation';
+import { isDatabaseUnavailable } from '#/db/driver-client';
 import { keepOrganizationAdminConstraint } from '#/db/membership-rules';
 import { env } from '#/env';
 import { ltiClientIdIndex } from '#/modules/connections/connections-db';
@@ -67,12 +68,8 @@ export function extractPgError(err: unknown): PgErrorInfo | null {
   return null;
 }
 
-/** Detects pool exhaustion: pg.Pool throws a plain Error with a fixed message when it cannot acquire a connection. */
-function isPoolTimeoutError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  const msg = err.message;
-  return msg.includes('timeout exceeded when trying to connect') || msg.includes('Cannot use a pool after calling end');
-}
+/** Seconds a client waits before it sends again what an unavailable database refused. */
+const unavailableRetryAfter = 1;
 
 /** A Hono `HTTPException` carries a status and no error key: below 500 it refuses the request itself. */
 const httpExceptionType = (status: number): ErrorKey => (status >= 500 ? 'server_error' : status === 403 ? 'forbidden' : 'invalid_request');
@@ -118,9 +115,10 @@ const missingAncestorError = (err: MissingAncestorError) =>
 
 /**
  * Maps any thrown value to the error a client may see, and logs it once. An `AppError` passes through, and so does a
- * `MissingAncestorError`, as a 400; a Postgres error with a known code maps to its status and a fixed detail; pool
- * exhaustion answers 503; anything else is a 500 whose message (for a failed query: the SQL and its parameters)
- * reaches the client as its detail only with `exposeServerMessage`. The title is the type's own text.
+ * `MissingAncestorError`, as a 400; a Postgres error with a known code maps to its status and a fixed detail; a
+ * database that cannot be reached or did not answer in time answers 503 with the seconds to wait; anything else is a
+ * 500 whose message (for a failed query: the SQL and its parameters) reaches the client as its detail only with
+ * `exposeServerMessage`. The title is the type's own text.
  * The logger writes a failed query with the database's reason alone, never its SQL or values.
  */
 export function toClientError(
@@ -132,9 +130,13 @@ export function toClientError(
   const fields = Object.fromEntries(Object.entries(logFields).filter(([, value]) => value !== undefined));
   const hideIfServerError = (status: number, message: string) => (status >= 500 && !exposeServerMessage ? 'Internal server error' : message);
 
-  if (isPoolTimeoutError(err)) {
-    log.error('Database pool exhausted', { err, ...fields });
-    return jsonClientError('service_unavailable', 503, 'Service temporarily unavailable, please retry', 'error');
+  // An `AppError` or an `HTTPException` chose its own status, whatever its cause.
+  if (!(err instanceof AppError) && !(err instanceof HTTPException) && isDatabaseUnavailable(err)) {
+    log.error('Database unavailable', { err, ...fields });
+    return {
+      ...jsonClientError('service_unavailable', 503, 'Service temporarily unavailable, please retry', 'error'),
+      meta: { retryAfter: unavailableRetryAfter },
+    };
   }
 
   if (err instanceof HTTPException) {
@@ -208,8 +210,8 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   const traced = withoutFailedQuery(err);
   ctx.error = clientError.status >= 500 && traced instanceof Error ? traced : undefined;
 
-  // Every 429 that states its wait sends it as the header the 429 response documents, whatever threw it, a redirect too.
-  const retryAfter = clientError.status === 429 ? clientError.meta?.retryAfter : undefined;
+  // Every 429 and 503 that states its wait sends it as the header its response documents, whatever threw it, a redirect too.
+  const retryAfter = clientError.status === 429 || clientError.status === 503 ? clientError.meta?.retryAfter : undefined;
   if (typeof retryAfter === 'number') ctx.header('Retry-After', String(retryAfter));
 
   // A navigation's refusal answers with a redirect to its error page, whatever refused it; tests read the JSON body.

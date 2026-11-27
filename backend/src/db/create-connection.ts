@@ -11,6 +11,7 @@ import { PgDialect } from 'drizzle-orm/pg-core';
 import type { Pool } from 'pg';
 import { appConfig } from 'shared';
 import { verifiedPostgresConnection } from 'shared/utils/postgres-tls';
+import { DriverClient } from '#/db/driver-client';
 
 // No `#/env` import and no pool opened at module load, so the cdc and yjs workers can import this.
 
@@ -68,6 +69,7 @@ export const createPgConnection = (
   const db = pgDrizzle({
     connection: {
       ...verifiedPostgresConnection(url, sslCa),
+      Client: DriverClient,
       connectionTimeoutMillis,
       max,
       // Long-lived pooled connections (the job lock) sit idle for minutes.

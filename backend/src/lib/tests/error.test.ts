@@ -1,4 +1,6 @@
+import { DrizzleQueryError } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
+import { DatabaseError } from 'pg';
 import { describe, expect, it } from 'vitest';
 import { AppError, type ErrorKey } from '#/core/error';
 import { toClientError } from '#/lib/error';
@@ -37,6 +39,40 @@ describe('toClientError', () => {
       type: 'service_unavailable',
       severity: 'error',
     });
+  });
+
+  it('answers a database that cannot be reached or did not answer in time as unavailable, with the wait to retry, when drizzle wraps it too', () => {
+    const unavailable = [
+      new Error('timeout exceeded when trying to connect'),
+      new Error('Connection terminated due to connection timeout'),
+      new Error('Connection terminated'),
+      new Error('Client was closed and is not queryable'),
+      Object.assign(new DatabaseError('the database system is shutting down', 0, 'error'), { code: '57P03' }),
+      Object.assign(new DatabaseError('terminating connection due to administrator command', 0, 'error'), { code: '57P01' }),
+      Object.assign(new Error('connect ECONNREFUSED 127.0.0.1:5432'), { code: 'ECONNREFUSED' }),
+    ];
+    for (const cause of unavailable) {
+      expect(toClientError(new DrizzleQueryError('select 1', [], cause), {}, { exposeServerMessage: false }), cause.message).toMatchObject({
+        status: 503,
+        type: 'service_unavailable',
+        meta: { retryAfter: 1 },
+      });
+    }
+  });
+
+  it('answers what a caller wrote, a cancelled statement, a write in a read-only transaction and a mail service cut off as before, never as an outage', () => {
+    const quoted = Object.assign(new DatabaseError('invalid input syntax for type uuid: "Query read timeout"', 0, 'error'), { code: '22P02' });
+    expect(seenByClient(new DrizzleQueryError('select 1 where id = $1', ['Query read timeout'], quoted))).toMatchObject({
+      status: 400,
+      type: 'invalid_request',
+    });
+    const cancelled = Object.assign(new DatabaseError('canceling statement due to statement timeout', 0, 'error'), { code: '57014' });
+    expect(seenByClient(new DrizzleQueryError('select 1', [], cancelled))).toMatchObject({ status: 500, type: 'server_error' });
+    // Every tenant read opens `BEGIN READ ONLY`: a write inside one is a bug, which a retry repeats.
+    const readOnly = Object.assign(new DatabaseError('cannot execute UPDATE in a read-only transaction', 0, 'error'), { code: '25006' });
+    expect(seenByClient(new DrizzleQueryError('update users set id = id', [], readOnly))).toMatchObject({ status: 500, type: 'server_error' });
+    const mailer = new TypeError('fetch failed', { cause: Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' }) });
+    expect(seenByClient(mailer)).toMatchObject({ status: 500, type: 'server_error' });
   });
 
   it('answers a deadlock and a serialization failure as a write conflict to retry', () => {

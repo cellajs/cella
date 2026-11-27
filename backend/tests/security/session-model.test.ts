@@ -84,7 +84,7 @@ describe('session model', async () => {
     const lookup = failSessionLookup();
     const { response } = await me(session.cookie);
     lookup.mockRestore();
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(503);
     expect(cookieChange(response, 'session')).toBeUndefined();
 
     // Once the database answers again, the same cookie signs in (positive control).

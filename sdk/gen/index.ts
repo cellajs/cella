@@ -775,6 +775,7 @@ export type {
   SendStepUpCodeResponse,
   SendStepUpCodeResponses,
   ServiceAccount,
+  ServiceUnavailableError,
   SignInWithPasskeyData,
   SignInWithPasskeyError,
   SignInWithPasskeyErrors,
