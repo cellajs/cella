@@ -50,6 +50,8 @@ sdk/src/.spec-hash
 *.cache.json
 .pnpm-store
 .worktrees
+# The route generator writes routeTree.gen.ts through a temp file here, which a thrown rerun leaves behind
+.tanstack
 
 
 # Migration scripts
