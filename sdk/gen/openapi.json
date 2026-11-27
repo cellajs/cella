@@ -4787,10 +4787,10 @@
             "schema": {
               "type": "string",
               "maxLength": 255,
-              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
+              "description": "Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word."
             },
             "required": false,
-            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
+            "description": "Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.",
             "name": "q",
             "in": "query"
           },
@@ -15128,10 +15128,10 @@
             "schema": {
               "type": "string",
               "maxLength": 255,
-              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
+              "description": "Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word."
             },
             "required": false,
-            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
+            "description": "Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.",
             "name": "q",
             "in": "query"
           },
@@ -16509,10 +16509,10 @@
             "schema": {
               "type": "string",
               "maxLength": 255,
-              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
+              "description": "Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word."
             },
             "required": false,
-            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
+            "description": "Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.",
             "name": "q",
             "in": "query"
           },
@@ -18256,10 +18256,10 @@
             "schema": {
               "type": "string",
               "maxLength": 255,
-              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
+              "description": "Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word."
             },
             "required": false,
-            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
+            "description": "Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.",
             "name": "q",
             "in": "query"
           },
@@ -18883,10 +18883,10 @@
             "schema": {
               "type": "string",
               "maxLength": 255,
-              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
+              "description": "Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word."
             },
             "required": false,
-            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
+            "description": "Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.",
             "name": "q",
             "in": "query"
           }
@@ -20213,10 +20213,10 @@
             "schema": {
               "type": "string",
               "maxLength": 255,
-              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
+              "description": "Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word."
             },
             "required": false,
-            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
+            "description": "Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.",
             "name": "q",
             "in": "query"
           },
@@ -21833,10 +21833,10 @@
             "schema": {
               "type": "string",
               "maxLength": 255,
-              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
+              "description": "Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word."
             },
             "required": false,
-            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
+            "description": "Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.",
             "name": "q",
             "in": "query"
           },

@@ -128,7 +128,7 @@ export const listQuerySchema = pageQuerySchema.extend({
     .max(maxLength.field)
     .optional()
     .describe(
-      'Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.',
+      'Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.',
     ),
 });
 
