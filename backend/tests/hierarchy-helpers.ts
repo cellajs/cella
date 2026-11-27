@@ -74,11 +74,16 @@ const joinRole = (plan: TestEntityHierarchyPlan, channelType: ChannelEntityType)
 };
 
 /**
- * Makes `userId` a member of every channel the plan seeded, at `role` or else at `memberRoleIn` each, on the admin
- * connection. A member acts below the organization through these memberships: an organization role that is not
- * elevated reaches no row homed there. None in the template, whose plans seed no channel.
+ * Makes `userId` a member of every channel the plan seeded, at `role` (one role, or one per channel type) or else at
+ * `memberRoleIn` each, on the admin connection. A member acts below the organization through these memberships: an
+ * organization role that is not elevated reaches no row homed there. None in the template, whose plans seed no channel.
  */
-export async function joinAttachmentHome(org: { id: string; tenantId: string }, plan: TestEntityHierarchyPlan, userId: string, role?: string) {
+export async function joinAttachmentHome(
+  org: { id: string; tenantId: string },
+  plan: TestEntityHierarchyPlan,
+  userId: string,
+  role?: string | ((channelType: ChannelEntityType) => string),
+) {
   if (plan.seedChannelRows.length === 0) return;
   const rows = plan.seedChannelRows.map((row) => ({
     ...Object.fromEntries([
@@ -91,7 +96,7 @@ export async function joinAttachmentHome(org: { id: string; tenantId: string }, 
     channelType: row.channelType,
     channelId: row.id,
     userId,
-    role: role ?? joinRole(plan, row.channelType),
+    role: typeof role === 'function' ? role(row.channelType) : (role ?? joinRole(plan, row.channelType)),
     displayOrder: 1,
     createdBy: userId,
   }));
