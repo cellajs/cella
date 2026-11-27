@@ -98,7 +98,7 @@ export function frontendCsp(config: BuiltConfig, frameAncestors = "'self'"): str
 /** The frontend's Permissions-Policy: a page of the app may use the camera and microphone (the uploader), and none asks for a location. */
 export const frontendPermissionsPolicy = 'camera=(self), microphone=(self), geolocation=()';
 
-/** The proxy's three header values for the config `APP_MODE` names: the engine reads them through `infra/description.yml`. */
+/** The proxy's three header values for the config `APP_MODE` names: the engine reads them through `cella/infra/description.yml`. */
 export const frontendHeaders = {
   csp: frontendCsp(appConfig),
   embedCsp: frontendCsp(appConfig, embedFrameAncestors(appConfig)),

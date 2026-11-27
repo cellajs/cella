@@ -19,14 +19,14 @@ The engine names no app. This folder is the app's part: its [description](#the-d
 
 ## How a release flows
 
-**Setup** (`pnpm cella infra`) is a wizard that takes an empty Scaleway account to a provisioned environment in one sitting, along the launch checklist ([fresh installation](../cella/docs/deployment/FRESH_INSTALLATION.md)).
+**Setup** (`pnpm cella infra`) is a wizard that takes an empty Scaleway account to a provisioned environment in one sitting, along the launch checklist ([fresh installation](../docs/deployment/FRESH_INSTALLATION.md)).
 
 **Apply** (`pnpm cella infra apply`) changes the foundation and publishes the **engine image**. That image holds the engine built from your checkout, with the **applied description** of the app. Every run of the main job starts from it.
 
 **Deploy**: the main job's schedule starts a run at the cadence `general.schedule` in [description.yml](description.yml) sets per environment. When the environment's target has no run yet, that run deploys it with one command of the engine image:
 
 ```
-pnpm --filter infra run deploy --mode <production|staging> --sha <sha> --retry <n>
+cella infra deploy --mode <production|staging> --sha <sha> --retry <n>
 ```
 
 It builds a release not built yet, switches every role to a machine of the release and deletes the old ones. A release whose own description of the app differs from the applied one ends **apply needed** and names the fields that differ. The apply from its checkout starts it again.
@@ -74,7 +74,7 @@ Every action also runs alone as `pnpm cella infra <action> [--mode <production|s
 `infra status` is a read-only health check of the whole lifecycle. The home screen is its compact report. Menu: `pnpm cella infra` → **Full status**: each finding with what it names and what fixes it, the checks that could not be read, and the passing checks as one line per area. Standalone:
 
 ```
-pnpm --filter infra status [--mode <production|staging>] [--json]
+pnpm cella infra status [--mode <production|staging>] [--json]
 ```
 
 Without `--mode` it reads `INFRA_MODE`, else the first stack file it finds, production first. `--json` prints the report as JSON, shaped as [lib/status/types.ts](https://github.com/cellajs/cella-cli/blob/main/src/infra/lib/status/types.ts) declares it.
@@ -105,9 +105,9 @@ Stable check `id`s:
 ## Key files
 
 - `~/.config/<app>/observer.env`: this machine's observer key, which every checkout and worktree of the app reads and no repository holds.
-- `infra/.env.<mode>`: values of one environment on this machine, which override the ambient environment. It holds no key.
-- `infra/Pulumi.<mode>.yaml`: the environment's Scaleway project, committed as `infra:projectId`.
-- A bare `infra/.env`: never read.
+- `cella/infra/.env.<mode>`: values of one environment on this machine, which override the ambient environment. It holds no key.
+- `cella/infra/Pulumi.<mode>.yaml`: the environment's Scaleway project, committed as `infra:projectId`.
+- A bare `cella/infra/.env`: never read.
 
 The override keeps a staging run from inheriting production values. The CLI keeps the env file at `0600`.
 
@@ -123,13 +123,13 @@ A runtime secret is keyed by its variable. The engine makes one marked `generati
 
 A secret the engine generates states its stored name as `secretName`: renaming its variable then never renames the stored secret by accident. Any other secret's stored name is the variable in kebab-case unless it states one. A stored name never changes, since the secret's resources are named by it.
 
-The engine checks the file at load and stops with the path of the key it refuses. The file holds no code of the app's: a store kind or an env value it cannot state becomes an engine field. A reference, `<path>#<export>`, names a file under `shared/` or `infra/` and an export of it. The frontend proxy's headers come from `frontendHeaders` in [frontend-csp.ts](../shared/src/config-builder/frontend-csp.ts), which the `frontend` service names.
+The engine checks the file at load and stops with the path of the key it refuses. The file holds no code of the app's: a store kind or an env value it cannot state becomes an engine field. A reference, `<path>#<export>`, names a file under `shared/` or `cella/infra/` and an export of it. The frontend proxy's headers come from `frontendHeaders` in [frontend-csp.ts](../../shared/src/config-builder/frontend-csp.ts), which the `frontend` service names.
 
 To add a service:
 
 1. Add an entry under `services` in [description.yml](description.yml), with its port and, behind a path route, its path prefix.
-2. Set its `enabled` flag and the same ports under `services` in [shared/config/config.default.ts](../shared/config/config.default.ts).
-3. Set the same path prefix in [shared/src/config-builder/service-paths.ts](../shared/src/config-builder/service-paths.ts).
+2. Set its `enabled` flag and the same ports under `services` in [shared/config/config.default.ts](../../shared/config/config.default.ts).
+3. Set the same path prefix in [shared/src/config-builder/service-paths.ts](../../shared/src/config-builder/service-paths.ts).
 4. Add it to the `services` of each runtime secret it reads.
 5. Ship a Docker image that answers the health path of the engine's [health contract](https://github.com/cellajs/cella-cli/blob/main/src/infra/lib/health-contract.ts) with its release.
 6. Run its migrations, if any, in a one-shot `release` step at its machine's boot.
@@ -149,7 +149,11 @@ Either change deploys after an apply, since the file is part of the applied desc
 | [environments](environments) | What each environment deploys |
 | `Pulumi.yaml`, `Pulumi.<mode>.yaml` | The Pulumi project and each environment's stack file |
 | [program.mjs](program.mjs) | The line Pulumi runs, which hands over to the engine's program |
-| [tests/](tests/) | The app's checks of its own files against the engine: env schemas, docs, workflows, shared copies |
+| `.env.<mode>`, `.debug/`, `.state-backups/`, `Pulumi.<mode>.exposure.yaml` | An operator's local files, which git ignores |
+| [cella/package.json](../package.json) | The workspace package `cella-tools`: the engine's packages, and the `test` and `ts` scripts of the checks |
+| [cella/tests/](../tests/) | The app's checks of its own files against the engine: env schemas, docs, workflows, shared copies. `pnpm --filter cella-tools test` runs them |
+
+This folder has no `package.json` of its own: Pulumi runs the program here and resolves its packages in `cella-tools`, one folder up.
 
 The engine's own files (the CLI, the Pulumi program, the deploy, the agent, the frontend proxy, the engine image) are in [cella-cli](https://github.com/cellajs/cella-cli/tree/main/src/infra/).
 

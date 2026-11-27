@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=./node_modules/@cellajs/cli/dist/infra-description.schema.json
+# yaml-language-server: $schema=../../node_modules/@cellajs/cli/dist/infra-description.schema.json
 general:
   # The machines' image is a Scaleway marketplace label or a pinned image UUID, with nothing baked in: the agent loads at first boot.
   compute: { image: docker }

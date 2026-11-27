@@ -17,8 +17,9 @@ export type ServiceSecret = (typeof serviceSecretNames)[number];
 
 /**
  * The services that read each service-bound secret. A worker VM receives only the secrets its own service reads
- * (`runtimeSecrets` in infra/description.yml; the infra tests pin the two together). The env schema requires each one
- * in its services alone, and code reads it through `serviceSecret` in env.ts. This file imports nothing, so infra can too.
+ * (`runtimeSecrets` in cella/infra/description.yml; cella/tests/runtime-secrets.test.ts pins the two together). The
+ * env schema requires each one in its services alone, and code reads it through `serviceSecret` in env.ts. This file
+ * imports nothing, so that test can import it too.
  */
 export const serviceSecrets: Readonly<Record<ServiceSecret, readonly ProcessService[]>> = {
   // The internal listener (the CDC socket, the relay's materialize route) and the Yjs token route run in the API process.

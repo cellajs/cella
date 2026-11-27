@@ -68,7 +68,7 @@ export const resourceLimits = {
     walLagWarnBytes: 1 * 1024 * 1024 * 1024,
     /**
      * The WAL bound: slot lag from which the worker reports unhealthy and logs an error, and drops its slot once it has
-     * also not got past a failure for `rereadUnhealthyMs`. Far below the database volume (`general.database` in `infra/description.yml`);
+     * also not got past a failure for `rereadUnhealthyMs`. Far below the database volume (`general.database` in `cella/infra/description.yml`);
      * where `max_slot_wal_keep_size` is set at or below it, Postgres invalidates the slot first, and the same rebuild follows.
      */
     walLagUnhealthyBytes: 2 * 1024 * 1024 * 1024,

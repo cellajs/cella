@@ -25,7 +25,9 @@
       "!shared/json",
       "cdc/src/**",
       "yjs/src/**",
-      "infra/**",
+      "cella/infra/**",
+      "cella/tests/**",
+      "cella/vitest.config.ts",
       "cella/a11y*.ts",
       "cella/screenshots*.ts",
       "cella/pentest*.ts",
@@ -56,7 +58,7 @@
       "tailwindDirectives": true
     }
   },
-  // The Markdown formatter pads every table cell to its column width; the YAML formatter breaks the one-line mappings of `infra/description.yml`.
+  // The Markdown formatter pads every table cell to its column width; the YAML formatter breaks the one-line mappings of `cella/infra/description.yml`.
   "markdown": {
     "formatter": { "enabled": false }
   },
@@ -395,9 +397,8 @@
       }
     },
     {
-      // Literal ${VAR} placeholders consumed by other interpolators (docker-compose
-      // env substitution, Transloadit assembly variables), not JS template strings.
-      "includes": ["infra/**", "shared/config/transloadit-config.ts"],
+      // Literal ${VAR} placeholders of Transloadit assembly variables, not JS template strings.
+      "includes": ["shared/config/transloadit-config.ts"],
       "linter": {
         "rules": {
           "suspicious": {
@@ -471,12 +472,11 @@
       }
     },
     {
-      // Permit process globals in env loaders, bootstrap entrypoints, infrastructure,
-      // scripts, build configuration, Vite plugins, and CLI runtime.
+      // Permit process globals in env loaders, bootstrap entrypoints, scripts, build configuration, Vite plugins, and
+      // CLI runtime.
       "includes": [
         "shared/src/config-builder/app-config.ts",
         "shared/src/config-builder/dev-port-offset.ts",
-        "infra/**",
         "**/scripts/**",
         "cella/skills/**",
         "frontend/.storybook/**",

@@ -3,7 +3,7 @@
 # Production Dockerfile (multi-target: backend | cdc | yjs)
 # =============================================================================
 # One file builds all three Node.js service images; a build selects a service with
-# `--target <name>` (a service's `target` in infra/description.yml, which the
+# `--target <name>` (a service's `target` in cella/infra/description.yml, which the
 # release build's bake reads in cella-cli:src/infra/lib/builder/build-images.ts). Shared stages:
 #
 #   base    : node:<NODE_VERSION>-alpine + pnpm from npm, at the version the

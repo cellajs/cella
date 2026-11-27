@@ -37,7 +37,7 @@ function loadEnv(vars: Record<string, string>) {
 }
 
 /**
- * A worker VM receives only the secrets its mode reads (`runtimeSecrets` in infra/description.yml), and the backend image's
+ * A worker VM receives only the secrets its mode reads (`runtimeSecrets` in cella/infra/description.yml), and the backend image's
  * env schema must accept exactly that: a schema requiring more fails the worker's boot, and handing the worker more
  * widens who can read the API's keys.
  */

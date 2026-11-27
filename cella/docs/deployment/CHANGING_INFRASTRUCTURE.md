@@ -23,7 +23,7 @@ Identities are IAM, written at an Owner moment ([Identities](#identities)). To a
 1. Builds the engine image from your checkout's tracked files and pushes it to the environment's registry on your operator key. No run starts from the image until the `up` names it.
 2. Shows the plan, with drift made outside Pulumi and the main job's new image, and asks once whether to apply it. Answering no applies nothing.
 3. On a yes, applies the plan. Running machines stay in place, as no machine is a resource of the program. If another apply ran meanwhile, you see the new plan and confirm again.
-4. Records the engine it published in `applied.json`, with its description beside the hash, and fails when it cannot. It records its description on GitHub for the release PR's check ([Pull request check](#pull-request-check)). It verifies that the declared database privileges exist, and a mismatch fails the run. `pnpm cella infra --debug-provider` keeps the engine and provider log under `infra/.debug/`. Last, it starts a target whose last run ended blocked or apply needed.
+4. Records the engine it published in `applied.json`, with its description beside the hash, and fails when it cannot. It records its description on GitHub for the release PR's check ([Pull request check](#pull-request-check)). It verifies that the declared database privileges exist, and a mismatch fails the run. `pnpm cella infra --debug-provider` keeps the engine and provider log under `cella/infra/.debug/`. Last, it starts a target whose last run ended blocked or apply needed.
 
 When an identity differs from the declared ones, the apply stops before changing anything and names **Update identities**. `pnpm cella infra preview` shows the same plan without the question and changes nothing. Use it for a script or a look that must never apply.
 
@@ -35,7 +35,7 @@ A deploy reads what the last apply made, and stops with "an apply makes it" when
 
 A deploy runs the engine the last **Review & apply changes** built. It holds every release against the description that engine carries:
 
-- the app's [description.yml](../../../infra/description.yml)
+- the app's [description.yml](../../infra/description.yml)
 - the engine's fields of the app config: slugs, domain, origins, storage region, host, buckets and CDN URLs, each service's `enabled` and public URL, `singleVM` and backup days
 - the proxy's header values: a change to the CSP builder, or to a config field it reads, owes an apply
 - each derived secret's answer for a fixed input: a change to its function, or to what it calls, owes an apply
@@ -64,7 +64,7 @@ Each apply sets the repository variable `INFRA_APPLIED_DESCRIPTION_<MODE>` to it
 
 ## Identities
 
-An environment declares two identities. One is the deploy key's application. The other, where a service sets `s3Access` in [description.yml](../../../infra/description.yml), is the uploads application. Its policy reaches the objects of the upload buckets.
+An environment declares two identities. One is the deploy key's application. The other, where a service sets `s3Access` in [description.yml](../../infra/description.yml), is the uploads application. Its policy reaches the objects of the upload buckets.
 
 No machine and no builder has an identity, as they fetch and write through links the deploy key signs. No identity changes when you toggle `enabled` or `singleVM` or change a runtime secret's consumers.
 

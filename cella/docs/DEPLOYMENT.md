@@ -1,6 +1,6 @@
 # Deployment
 
-This document explains how a cella app deploys to [Scaleway](https://www.scaleway.com/en/docs/) with the [Infra CLI](../../infra/README.md).
+This document explains how a cella app deploys to [Scaleway](https://www.scaleway.com/en/docs/) with the [Infra CLI](../infra/README.md).
 
 ### TL;DR
 
@@ -67,7 +67,7 @@ Every deploy is a run of the environment's [main job](#the-main-job) for its **t
 
 ### What a deploy deploys
 
-Production deploys the newest release, the highest `x.y.z` tag. Staging is optional. It deploys only while the file `infra/environments` has a line for it. The file holds one line per environment:
+Production deploys the newest release, the highest `x.y.z` tag. Staging is optional. It deploys only while the file `cella/infra/environments` has a line for it. The file holds one line per environment:
 
 ```
 # <environment> <target> [retry <n>]
@@ -108,7 +108,7 @@ Each environment has a Serverless Jobs definition, `<slug>-main`. Every run of i
 - the **engine image** its runs start from, by digest
 - the [schedule](#the-schedule) that starts them
 
-**Deploy now** (`pnpm cella infra deploy-now`) starts a run on your operator key and follows it step by step to its end. It reads the target from this checkout's `infra/environments`, not the default branch's.
+**Deploy now** (`pnpm cella infra deploy-now`) starts a run on your operator key and follows it step by step to its end. It reads the target from this checkout's `cella/infra/environments`, not the default branch's.
 
 A run ends in one of five outcomes:
 
@@ -132,7 +132,7 @@ The target's code never runs beside the deploy key. The builder evaluates the ta
 
 ### The schedule
 
-Scaleway starts a run of the main job at the cadence each environment sets as `general.schedule.everyMinutes` in [description.yml](../../infra/description.yml). A release waits at most that long for its deploy.
+Scaleway starts a run of the main job at the cadence each environment sets as `general.schedule.everyMinutes` in [description.yml](../infra/description.yml). A release waits at most that long for its deploy.
 
 An apply writes the schedule, and nothing else needs setting up: it is part of the definition. A scheduled run that starts nothing leaves no record. **Full status** names a schedule that stopped, went missing or whose runs fail. Deploy logs says when the last scheduled run started.
 
@@ -219,7 +219,7 @@ The primary role owns migrations. The migrate companion runs at the boot of its 
 
 ## Replacement strategies
 
-Each service declares its `replacementStrategy` in [description.yml](../../infra/description.yml).
+Each service declares its `replacementStrategy` in [description.yml](../infra/description.yml).
 
 | Strategy | Services | Behavior | Downtime |
 | --- | --- | --- | --- |
@@ -246,7 +246,7 @@ The setup's first apply makes the load balancer, before any machine. Its pools, 
 
 ## Configuration
 
-What only a deployment knows lives in [description.yml](../../infra/description.yml), which the engine checks at load. A few fields take a per-mode map, such as a service's machine size. Every other field is one value. The applied description holds the file, the engine's fields of `appConfig`, the proxy's header values and each derived secret's answer for a fixed input ([What needs an apply](./deployment/CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). A release that changes one ends **apply needed** until an apply from a checkout with the change.
+What only a deployment knows lives in [description.yml](../infra/description.yml), which the engine checks at load. A few fields take a per-mode map, such as a service's machine size. Every other field is one value. The applied description holds the file, the engine's fields of `appConfig`, the proxy's header values and each derived secret's answer for a fixed input ([What needs an apply](./deployment/CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). A release that changes one ends **apply needed** until an apply from a checkout with the change.
 
 | Key | Owns | Applied by |
 | --- | --- | --- |

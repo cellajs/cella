@@ -5,7 +5,6 @@ export default defineProject({
   logLevel: 'error',
   test: {
     include: ['tests/**/*.test.ts'],
-    exclude: ['node_modules/**'],
     testTimeout: 5000,
   },
 });

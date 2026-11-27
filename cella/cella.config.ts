@@ -21,8 +21,8 @@ export default defineConfig({
   // NOTE: package.jsons, lockfile, this file, modules with `app` owner are also ignored, with their static assets
   ignored: [
     'README.md',
-    'infra/Pulumi.production.yaml',
-    'infra/environments',
+    'cella/infra/Pulumi.production.yaml',
+    'cella/infra/environments',
     'sdk/gen',
     'shared/config',
     'backend/drizzle',

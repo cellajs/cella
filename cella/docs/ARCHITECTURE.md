@@ -140,6 +140,5 @@ Flat-root monorepo:
 ├── sdk           Generated OpenAPI client, types, and Zod schemas
 ├── cdc           PostgreSQL change-data-capture worker
 ├── yjs           Optional collaborative-editing relay
-├── infra         Deploy engine and the infra CLI
-└── cella         Architecture, guides, changelog, and upgrade alignments
+└── cella         Architecture, guides, changelog, upgrade alignments, and the app's side of the CLI tools, infra included
 ```

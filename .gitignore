@@ -68,7 +68,7 @@ frontend/stats
 # Cella
 # DB exposure overlay: apply-time copy of the stack config carrying the
 # public-endpoint keys, written by the infra CLI expose/seed flows.
-infra/Pulumi.*.exposure.yaml
+cella/infra/Pulumi.*.exposure.yaml
 *storybook.log
 storybook-static
 .locales-cache
@@ -86,7 +86,7 @@ coverage/
 .nyc_output/
 
 # infra operator debug captures (pnpm cella infra --debug-provider)
-infra/.debug/
+cella/infra/.debug/
 
 # infra state exports the Unlock action saves before it edits the Pulumi state (rollback copies)
-infra/.state-backups/
+cella/infra/.state-backups/

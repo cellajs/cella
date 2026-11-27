@@ -5,18 +5,21 @@
   "tags": ["-testSeam", "-sideEffect"],
   "workspaces": {
     ".": {
-      // `pnpm cella align run` runs each alignment's codemod by path, and `pnpm cella a11y`, `pnpm cella shoot` and
-      // `pnpm cella pentest` load their adapters by path, so nothing imports them.
-      "entry": [
-        "cella/cella.config.ts",
-        "cella/a11y*.ts",
-        "cella/screenshots*.ts",
-        "cella/pentest*.ts",
-        "cella/skills/**/*.mjs",
-        "cella/alignments/*/*.ts"
-      ],
       // The CLI runs codemods and loads the adapters with the root's tsx.
       "ignoreDependencies": ["tsx"]
+    },
+    "cella": {
+      // Nothing imports these: `pnpm cella align run` runs each alignment's codemod by path, `pnpm cella a11y`,
+      // `pnpm cella shoot` and `pnpm cella pentest` load their adapters by path, and Pulumi.yaml runs program.mjs.
+      "entry": [
+        "cella.config.ts",
+        "a11y*.ts",
+        "screenshots*.ts",
+        "pentest*.ts",
+        "infra/program.mjs",
+        "skills/**/*.mjs",
+        "alignments/*/*.ts"
+      ]
     },
     "backend": {
       // The drizzle plugin makes every `*-db.ts` an entry, and knip reports no unused export of an entry. Off, the files
@@ -83,10 +86,6 @@
       ],
       // vite.config.ts aliases `#pdfjs` to react-pdf's own pdfjs-dist, which react-pdf pins exactly, so the app lists no copy.
       "ignoreDependencies": ["pdfjs-dist"]
-    },
-    "infra": {
-      // Pulumi.yaml runs program.mjs.
-      "entry": ["program.mjs"]
     },
     "shared": {
       // pino resolves transport targets by name.

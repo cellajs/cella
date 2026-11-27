@@ -8,7 +8,7 @@ Shared configuration, types, permissions, translations, and utilities used by al
 
 The app has one `origin` per mode, and every service serves under a path of it (`servicePaths`): the builder derives `frontendUrl`, `backendUrl`, `yjsUrl`, `mcpUrl` and `oauthUrl`, and `services.<slug>.publicUrl`, so no mode file and no app names a service URL. `APP_ORIGIN` in the environment replaces the origin, for a build or a container served elsewhere than the config names. `appConfig.isLocal` tells a stack on this machine (development, tunnel, test) from a deployed one (`isDeployed`: staging, production).
 
-`services` in `config/config.default.ts` says which services the app runs and the port each listens on. The same ports are the Vite proxy targets, the deployed containers' ports and the folded workers' ports under `singleVM`. `infra/description.yml` states each port and path again, and the deploy engine refuses one that differs from these.
+`services` in `config/config.default.ts` says which services the app runs and the port each listens on. The same ports are the Vite proxy targets, the deployed containers' ports and the folded workers' ports under `singleVM`. `cella/infra/description.yml` states each port and path again, and the deploy engine refuses one that differs from these.
 
 ## Dev ports
 

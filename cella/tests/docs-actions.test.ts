@@ -16,7 +16,7 @@ const DOCS = [
   'cella/docs/deployment/KEYS.md',
   'cella/docs/deployment/CHANGING_INFRASTRUCTURE.md',
   'cella/docs/deployment/RUNBOOKS.md',
-  'infra/README.md',
+  'cella/infra/README.md',
 ];
 
 describe('the docs name the infra CLI as the engine does', () => {

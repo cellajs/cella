@@ -31,7 +31,7 @@ Every key is named after its bearer, the way the Scaleway console shows it.
 | **Owner API key**: your own, as organization Owner | Everything. The one key that writes IAM | Any address | Nowhere: typed at the prompt | Made per occasion with an expiry of hours, revoked after |
 | **Operator**: `<app>-operator`, or your own user in `<app>-operators` | Every product in the app's projects, the engine image's push included, and IAM read. No IAM write | Any address, within the day | Nowhere: made by a first setup, then in the console at each sitting | Ends by itself. **Set up operators** rewrites the policy |
 | **Deploy**: `<slug>-<mode>-ci-deploy` | One environment's machines with their private NICs, and its boot-diag bucket but the final dumps. Reads the load balancer and the runtime folder | Any address | `deploy-key` in the engine folder | **Rotate keys** |
-| **Observer**: `<app>-observer` | Read-only on the app's projects, and on the boot accounts, run records and `control/` of the boot-diag bucket. No machine, archive, env file or state | Any address | `SCW_OBSERVER_*` in `infra/.env.<mode>` | Deleted in the console. **Update identities** makes a machine a new one |
+| **Observer**: `<app>-observer` | Read-only on the app's projects, and on the boot accounts, run records and `control/` of the boot-diag bucket. No machine, archive, env file or state | Any address | `SCW_OBSERVER_*` in `cella/infra/.env.<mode>` | Deleted in the console. **Update identities** makes a machine a new one |
 | **Uploads**: `<slug>-<mode>-uploads` | Objects of the two upload buckets: the backend's uploads and presigned URLs | Any address | The runtime folder, and the env file of each machine that signs uploads | **Rotate keys** |
 | **Transloadit**: `<app>-transloadit` | Writes objects of the upload buckets. No read, no list, no delete | Any address | Transloadit's Template Credentials. Shown once when made | A new key in the console ([Transloadit key](#transloadit-key)) |
 
@@ -87,7 +87,7 @@ An environment's secret folders sit at the root of its own Scaleway project. Eac
 - `/runtime/`: one container per value, read by the deploy key
 - `/engine/`: the deploy key's copy and the database passwords, read only by the operator
 
-`/runtime/` holds every runtime secret, the uploads key's two halves and the repository read key. A change of consumers writes no IAM, since a deploy composes each machine's env file from the values its services consume (`runtimeSecrets` in [description.yml](../../../infra/description.yml)).
+`/runtime/` holds every runtime secret, the uploads key's two halves and the repository read key. A change of consumers writes no IAM, since a deploy composes each machine's env file from the values its services consume (`runtimeSecrets` in [description.yml](../../infra/description.yml)).
 
 On a shared host the services share their secrets: they read one env file.
 
@@ -146,7 +146,7 @@ A machine keeps the env file of its first boot, and a deploy of the release it r
 
 ### Rotate secrets
 
-**Rotate secrets** (`pnpm cella infra rotate-secrets`, operator key) sets a fresh password on every database role. It also sets a fresh value for every generated secret marked `rotatable` in [description.yml](../../../infra/description.yml). The running machines keep the old values in their env files until the deploy replaces them. Meanwhile the database refuses the new connections they open.
+**Rotate secrets** (`pnpm cella infra rotate-secrets`, operator key) sets a fresh password on every database role. It also sets a fresh value for every generated secret marked `rotatable` in [description.yml](../../infra/description.yml). The running machines keep the old values in their env files until the deploy replaces them. Meanwhile the database refuses the new connections they open.
 
 **Env vars & secrets** lists the values infra makes as one row, with the date of the last rotation. That row opens **Rotate secrets**.
 

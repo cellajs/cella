@@ -23,7 +23,7 @@ export default defineConfig({
       'shared',
       'yjs',
       'cdc',
-      'infra',
+      'cella',
       'frontend',
       'sdk',
     ],
