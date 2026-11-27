@@ -1,4 +1,4 @@
-import { getTableName } from 'drizzle-orm';
+import { getColumns, getTableName } from 'drizzle-orm';
 import type { ActivityAction, EntityHierarchy } from 'shared';
 import { actionToVerb, entityIdColumnKey, hierarchy, recordFromKeys } from 'shared';
 import { getIsoDate } from '#/utils/iso-date';
@@ -11,6 +11,21 @@ import { getStringValue } from '../utils/get-string-value';
 
 /** Every channel id column of an activity, null: what the row names overrides them. */
 const nullChannelIds = recordFromKeys(channelIdColumnKeys, () => null);
+
+/**
+ * Who made a change, as its row tells: null when no actor made it, or when the row cannot tell who did.
+ * @param row - The new row, or the old one for a hard delete.
+ */
+function actorOf(tableMeta: TableMeta, row: Record<string, unknown>, action: ActivityAction): string | null {
+  // A tombstone names who deleted the row, which is no one when the retention run did.
+  if (getStringValue(row, 'deletedAt')) return getStringValue(row, 'deletedBy');
+  // A hard delete leaves the old row, which names its last writer and not who removed it.
+  if (action === 'delete') return null;
+  // Every write of a table with `auditColumns` sets `updatedBy`: a null one is a server-driven write.
+  if (action === 'update' && 'updatedAt' in getColumns(tableMeta.table)) return getStringValue(row, 'updatedBy');
+  // `revokedBy` is the api_keys update column; a create without writer columns names its user.
+  return getStringValue(row, 'updatedBy') ?? getStringValue(row, 'revokedBy') ?? getStringValue(row, 'createdBy') ?? getStringValue(row, 'userId');
+}
 
 /**
  * The activity of a change, from its row: who made it, what it is about, and the channels it belongs to. Warns for an
@@ -58,15 +73,7 @@ export function createActivity(
 
   return {
     tenantId,
-    // The actor: whoever last touched the row, and for a tombstone whoever deleted it, which is no one when the
-    // retention run did. `revokedBy` is the api_keys update column.
-    actorId: getStringValue(row, 'deletedAt')
-      ? (getStringValue(row, 'deletedBy') ?? null)
-      : (getStringValue(row, 'updatedBy') ??
-        getStringValue(row, 'revokedBy') ??
-        getStringValue(row, 'createdBy') ??
-        getStringValue(row, 'userId') ??
-        null),
+    actorId: actorOf(tableMeta, row, action),
     entityType,
     resourceType,
     action,

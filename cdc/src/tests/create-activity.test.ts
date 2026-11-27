@@ -28,6 +28,18 @@ describe('createActivity actor', () => {
     expect(activity).toMatchObject({ resourceType: 'service_account', actorId: 'p-editor', organizationId: null });
   });
 
+  it('names no actor for a server-driven update, not the row creator', () => {
+    const row = { id: 's1', tenantId: 't1', createdBy: 'p-owner', updatedAt: '2026-11-27T10:00:00.000Z', updatedBy: null };
+    const activity = createActivity(metaFor('service_accounts'), row, 'update');
+    // Naming the creator makes the server's write an own echo to the creator's tab whose stx the row still holds.
+    expect(activity.actorId).toBeNull();
+  });
+
+  it('names no actor for a hard delete, not the last writer', () => {
+    const row = { id: 'm1', tenantId: 't1', organizationId: 'o1', userId: 'u1', createdBy: 'p-admin', updatedBy: 'p-editor' };
+    expect(createActivity(metaFor('memberships'), row, 'delete').actorId).toBeNull();
+  });
+
   it('logs a system-wide oauth_client without a tenant', () => {
     const row = { id: 'c1', name: 'Portfolio', createdBy: 'p-admin' };
     const activity = createActivity(metaFor('oauth_clients'), row, 'create');
