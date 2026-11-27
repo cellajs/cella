@@ -1,5 +1,5 @@
 {
-  "remove": ["infra/Pulumi.production.yaml"],
+  "remove": ["cella/infra/Pulumi.production.yaml"],
   "empty": ["backend/drizzle"],
   "copy": {
     "frontend/.env.example": "frontend/.env"

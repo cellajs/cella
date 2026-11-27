@@ -1,0 +1,23 @@
+{
+  "name": "cella-tools",
+  "private": true,
+  "description": "The app's side of the cella CLI: its config, the infra description and the checks against the engine",
+  "type": "module",
+  "scripts": {
+    "test": "cd .. && vitest run --root cella",
+    "ts": "cd .. && tsgo -p cella/tsconfig.json --pretty"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1176.0",
+    "@aws-sdk/s3-request-presigner": "^3.1176.0",
+    "@cellajs/cli": "^0.11.0",
+    "@pulumi/pulumi": "^3.277.0",
+    "@pulumiverse/scaleway": "^1.62.1",
+    "shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "vitest": "^5.1.1"
+  }
+}

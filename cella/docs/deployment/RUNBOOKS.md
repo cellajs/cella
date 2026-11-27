@@ -59,7 +59,7 @@ No old machine is kept to switch back to: a rollback deploys an earlier release 
 1. Pick an earlier release. With your operator key it says whether the release's build is kept for the deploy to reuse, and whether the release describes the app as the applied engine does. One that does not needs an apply from a checkout at that release first ([Apply needed](#apply-needed)). One older than the applied engine cannot be deployed: roll forward then.
 2. Confirm, and it deploys the release and follows it as **Deploy now** does.
 
-The environment stays on that release, since a scheduled run never deploys a target again under a retry counter it already ran. Production holds until the next release, staging until its branch moves. After 60 days the target's run records expire, and the next scheduled run deploys the target again. To hold longer, add the line `<mode> <tag>` to `infra/environments`.
+The environment stays on that release, since a scheduled run never deploys a target again under a retry counter it already ran. Production holds until the next release, staging until its branch moves. After 60 days the target's run records expire, and the next scheduled run deploys the target again. To hold longer, add the line `<mode> <tag>` to `cella/infra/environments`.
 
 A rotation of keys or secrets keeps the rollback: it deploys the live release again and starts the target only when the target has no run yet. To leave a release behind for good, commit a revert and publish the next release.
 
@@ -69,7 +69,7 @@ A deploy or an operator action that dies holds its lease until it lapses within 
 
 1. `pnpm cella infra` → **More** → **Unlock** (`pnpm cella infra unlock`) removes an expired lease at once. It removes a live one only after you confirm. Check `pnpm cella infra logs` first, since a live lease most likely belongs to a run still going.
 2. A deploy that died mid-switch may have left a machine on the idle slot. You owe nothing for it: the next deploy drains and deletes it before it boots there.
-3. Unlock then lists the operations an interrupted apply left in the Pulumi state. When all of them are creates, it offers to drop them. It keeps a state export in `infra/.state-backups/` as the rollback. Check the Scaleway console for each resource first. A create that went through left a resource the state does not track.
+3. Unlock then lists the operations an interrupted apply left in the Pulumi state. When all of them are creates, it offers to drop them. It keeps a state export in `cella/infra/.state-backups/` as the rollback. Check the Scaleway console for each resource first. A create that went through left a resource the state does not track.
 4. An interrupted update or delete stays. Run the `pulumi refresh` that Unlock prints, logged in with the operator key, with `PULUMI_CONFIG_PASSPHRASE` set and empty.
 5. An apply may fail to delete a resource the program no longer declares, as its live object is gone already. **Remove from state** (`pnpm cella infra state-remove`) takes its URN out of the state.
 
@@ -83,7 +83,7 @@ The apex answers the worker script itself: that script replaces the kept worker 
 
 Sign-ins resolve the client IP to a country and network with DB-IP Lite data, under CC BY 4.0. The sessions list and the new sign-in notice show them. The image ships no data, and a refresh needs no release. Each API process downloads the data from the `geoip/` prefix of the public bucket at boot and checks for newer data.
 
-Every deploy refreshes stale data, and `pnpm cella infra deploy` of the live target runs that check again. A failed download or a bucket problem costs only the country line. Sign-ins never depend on it. `GEOIP_SOURCE_URL=off` disables the refresh, and another prefix or bucket as its value overrides the source.
+Every deploy refreshes stale data, and `pnpm cella infra deploy-now` of the live target runs that check again. A failed download or a bucket problem costs only the country line. Sign-ins never depend on it. `GEOIP_SOURCE_URL=off` disables the refresh, and another prefix or bucket as its value overrides the source.
 
 ## The system room
 
@@ -223,7 +223,7 @@ It keeps these, with their contents:
 
 Each kept bucket keeps its policy. Without the two kept keys, the dump's encrypted and hashed fields no longer read. The live record goes with the machines it named. A setup again asks for third-party keys, since they go with the other secrets.
 
-The project id stays in `infra/.env.<mode>`. Commit the deletion of `infra/Pulumi.<mode>.yaml`. A setup again (`pnpm cella infra --mode <mode>`) runs in the same project. Its first apply changes nothing about what the teardown kept: the setup adopts them before that apply.
+The project id stays in `cella/infra/.env.<mode>`. Commit the deletion of `cella/infra/Pulumi.<mode>.yaml`. A setup again (`pnpm cella infra --mode <mode>`) runs in the same project. Its first apply changes nothing about what the teardown kept: the setup adopts them before that apply.
 
 A destroy that stops halfway leaves what it had not reached in the state. Tear down again to finish.
 
@@ -243,7 +243,7 @@ To leave nothing of a torn-down environment, delete in the console what the tear
 
 1. Object Storage: the two upload buckets, the boot-diag bucket and `<slug>-pulumi-state`, emptied first. Bucket names stay reserved for several hours.
 2. Secret Manager, the environment's project: `data-encryption-key` and `pii-hash-secret` in `/runtime/`. With them goes every encrypted field of the final dump.
-3. The `SCW_DEFAULT_PROJECT_ID` line of `infra/.env.<mode>`. When nothing else lives in the project, delete it too.
+3. The `SCW_DEFAULT_PROJECT_ID` line of `cella/infra/.env.<mode>`. When nothing else lives in the project, delete it too.
 4. Revoke the Owner API key you pasted.
 
 The next `pnpm cella infra --mode <mode>` then sets the environment up from nothing.

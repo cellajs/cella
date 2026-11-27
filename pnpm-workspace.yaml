@@ -43,9 +43,9 @@ overrides:
 packages:
   - backend
   - cdc
+  - cella
   - shared
   - frontend
-  - infra
   - sdk
   - yjs
 updateConfig:

@@ -16,7 +16,7 @@ interface TableSpec {
  * Since the CDC worker needs REPLICA IDENTITY FULL for old-row diffs, we publish all columns.
  * The CDC worker strips large columns from the row data it sends the API (`cdc/src/utils/compact-row-data.ts`).
  *
- * Draft-lifecycle product tables get a ROW FILTER (PG 17+, see infra/README): the
+ * Draft-lifecycle product tables get a ROW FILTER (PG 17+, see cdc/README.md): the
  * replication stream then contains only the synced world. Publish edges arrive as
  * INSERTs, unpublishes as DELETEs, draft edits never arrive (`publication-filter.ts`).
  */
