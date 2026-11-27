@@ -66,7 +66,7 @@ A written row passes the same check as a read one. A soft delete writes a tombst
 
 | Role | RLS | Purpose |
 | --- | --- | --- |
-| `runtime_role` | Enforced | API requests and enabled workers using the runtime connection |
+| `runtime_role` | Enforced | API requests and enabled services using the runtime connection |
 | `admin_role` | Bypassed as table owner | Migrations, seeds, the nightly retention job, and CDC replication or stamping |
 
 `admin_role` also owns the activities. Its bypass never depends on the `BYPASSRLS` attribute, which managed providers such as Scaleway cannot grant. The dev and test roles are created without it to match. Migrations grant `runtime_role` what the application needs. They refuse to run when either role is missing.

@@ -13,6 +13,7 @@ import { InfoCards } from '~/modules/marketing/about/info-cards';
 import { Showcase } from '~/modules/marketing/about/showcase';
 import '~/modules/marketing/about/glow-button.css';
 import { AboutSection } from '~/modules/marketing/about/section';
+import { Standards } from '~/modules/marketing/about/standards';
 import { Why } from '~/modules/marketing/about/why';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { InfoGrid } from '~/modules/marketing/info-grid';
@@ -21,7 +22,7 @@ import { MarketingNav } from '~/modules/marketing/nav';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 
-const aboutSectionIds = ['welcome', 'benefits', 'stack', 'integrations', 'showcase', 'call-to-action'];
+const aboutSectionIds = ['welcome', 'benefits', 'stack', 'standards', 'integrations', 'showcase', 'call-to-action'];
 
 const installCommand = 'pnpm create @cellajs/cella';
 
@@ -96,11 +97,15 @@ export function AboutPage() {
           />
         </AboutSection>
 
-        <AboutSection sectionId="integrations" title="about:integrations.title" text="about:integrations.text">
+        <AboutSection sectionId="standards" title="about:standards.title" text="about:standards.text">
+          <Standards />
+        </AboutSection>
+
+        <AboutSection sectionId="integrations" title="about:integrations.title" text="about:integrations.text" alternate>
           <InfoCards />
         </AboutSection>
 
-        <AboutSection sectionId="showcase" title="about:showcase.title" text="about:showcase.text" alternate>
+        <AboutSection sectionId="showcase" title="about:showcase.title" text="about:showcase.text">
           <Showcase />
         </AboutSection>
 

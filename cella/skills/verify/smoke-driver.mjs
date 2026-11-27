@@ -144,7 +144,7 @@ try {
   }
   check('the frontend and the API answer', true, { base, api, ms: Date.now() - t0 });
 
-  // The API passes on what the CDC worker reports about itself. Connected is not enough: a worker kept from reading by
+  // The API passes on what CDC reports about itself. Connected is not enough: a CDC process kept from reading by
   // its setup check, or stuck at one change, is connected too, and then no change reaches another tab.
   const cdcDeadline = Date.now() + 60_000;
   let cdc = null;
@@ -156,7 +156,7 @@ try {
     if (cdc?.status === 'healthy' && cdc.details?.replication === 'active') break;
     await sleep(2000);
   }
-  check('the CDC worker is connected and reads the replication stream', cdc?.status === 'healthy' && cdc.details?.replication === 'active', {
+  check('CDC is connected and reads the replication stream', cdc?.status === 'healthy' && cdc.details?.replication === 'active', {
     status: cdc?.status ?? 'no answer',
     reason: cdc?.reason,
     replication: cdc?.details?.replication,

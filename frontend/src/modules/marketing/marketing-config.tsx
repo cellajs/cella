@@ -7,6 +7,7 @@ import {
   GaugeIcon,
   HeartPulseIcon,
   KeyRoundIcon,
+  PlugIcon,
   RadioTowerIcon,
   RocketIcon,
   ScaleIcon,
@@ -90,11 +91,23 @@ export const stackItems = [
   { id: 'pulumi' },
 ];
 
+// About - Standards (two-column spec sheet on /about): each row reads `about:standards.<id>`; a name and version stay untranslated.
+
+export const standardsItems: { id: string; name: string; version?: string }[] = [
+  { id: 'openapi', name: 'OpenAPI', version: '3.1' },
+  { id: 'mcp', name: 'MCP' },
+  { id: 'oauth', name: 'OAuth', version: '2.1' },
+  { id: 'lti', name: 'LTI', version: '1.3' },
+  { id: 'oidc', name: 'OpenID Connect' },
+  { id: 'otel', name: 'OpenTelemetry' },
+];
+
 // Features page (/features): each item reads `about:features.<id>` and `about:features.<id>.text`.
 
-export type FeatureCategory = 'security' | 'auth' | 'compliance' | 'ux' | 'dx' | 'deploy' | 'performance' | 'data';
+export type FeatureCategory = 'security' | 'auth' | 'compliance' | 'ux' | 'dx' | 'deploy' | 'performance' | 'data' | 'interop';
 
 export const featureCategoryIcons = {
+  interop: PlugIcon,
   security: ShieldCheckIcon,
   auth: KeyRoundIcon,
   compliance: ScaleIcon,
@@ -115,22 +128,29 @@ export const featuresPageItems: InfoGridItem<FeatureCategory>[] = [
   // Optional built-in product entities (can be removed in apps)
   { id: 'attachment', category: 'data' },
 
+  // Interoperability
+  { id: 'rest_api', category: 'interop', specs: ['aep.dev', 'RFC 9110', 'RFC 7396'] },
+  { id: 'openapi_sdk_docs', category: 'interop', specs: ['OpenAPI 3.1'] },
+  { id: 'oauth_server', category: 'interop', specs: ['OAuth 2.1', 'PKCE', 'RFC 9728'] },
+  { id: 'mcp', category: 'interop', specs: ['MCP'] },
+  { id: 'lti', category: 'interop', specs: ['LTI 1.3', 'Dynamic Registration', 'NRPS'] },
+  { id: 'service_accounts', category: 'interop' },
+
   // Security & multi-tenancy
   { id: 'tenant_isolation', category: 'security' },
   { id: 'permission_engine', category: 'security' },
   { id: 'guard_chain', category: 'security' },
   { id: 'secret_redaction', category: 'security' },
-  { id: 'rate_limiting', category: 'security' },
+  { id: 'rate_limiting', category: 'security', specs: ['RateLimit headers'] },
   { id: 'security_tests', category: 'security' },
 
   // Authentication
   { id: 'magic_link', category: 'auth' },
-  { id: 'passkey', category: 'auth' },
+  { id: 'passkey', category: 'auth', specs: ['WebAuthn'] },
   { id: 'oauth', category: 'auth' },
-  { id: 'sso_federation', category: 'auth' },
-  { id: 'mfa', category: 'auth' },
+  { id: 'sso_federation', category: 'auth', specs: ['OpenID Connect'] },
+  { id: 'mfa', category: 'auth', specs: ['RFC 6238'] },
   { id: 'session_management', category: 'auth' },
-  { id: 'service_accounts', category: 'auth' },
 
   // Privacy & compliance
   { id: 'retention', category: 'compliance' },
@@ -144,17 +164,15 @@ export const featuresPageItems: InfoGridItem<FeatureCategory>[] = [
   { id: 'i18n', category: 'ux' },
   { id: 'data_grid', category: 'ux' },
   { id: 'blocknote_editor', category: 'ux' },
-  { id: 'notifications', category: 'ux' },
+  { id: 'notifications', category: 'ux', specs: ['Web Push', 'RFC 8058'] },
 
   // Developer experience
   { id: 'cella_cli', category: 'dx' },
-  { id: 'openapi_sdk_docs', category: 'dx' },
-  { id: 'mcp', category: 'dx' },
-  { id: 'typed_errors', category: 'dx' },
+  { id: 'typed_errors', category: 'dx', specs: ['RFC 9457'] },
   { id: 'mock_generators', category: 'dx' },
   { id: 'email_templates', category: 'dx' },
   { id: 'storybook', category: 'dx' },
-  { id: 'agent_skills', category: 'dx' },
+  { id: 'agent_skills', category: 'dx', specs: ['AGENTS.md'] },
 
   // Deployment & infrastructure
   { id: 'pulumi_iac', category: 'deploy' },
@@ -163,7 +181,7 @@ export const featuresPageItems: InfoGridItem<FeatureCategory>[] = [
   { id: 'zero_downtime', category: 'deploy' },
 
   // Performance & observability
-  { id: 'otel', category: 'performance' },
+  { id: 'otel', category: 'performance', specs: ['OTLP', 'W3C Trace Context'] },
   { id: 'load_testing', category: 'performance' },
 ];
 
@@ -199,7 +217,7 @@ export const syncPageItems: SyncPageItem[] = [
   { id: 'offline_queue', category: 'offline', layers: ['client'] },
   { id: 'cache_persistence', category: 'offline', layers: ['client'] },
   { id: 'create_edit_coalescing', category: 'offline', layers: ['client'] },
-  { id: 'idempotent_mutations', category: 'offline', layers: ['client', 'api'] },
+  { id: 'idempotent_mutations', category: 'offline', layers: ['client', 'api'], specs: ['UUID v7'] },
 
   // Consistency & freshness
   { id: 'gap_detection', category: 'consistency', layers: ['cdc', 'api', 'client'] },
@@ -221,7 +239,6 @@ export const syncPageItems: SyncPageItem[] = [
 
 export const cards: InfoCard[] = [
   { name: 'Transloadit', country: 'DE', url: 'transloadit.com', id: 'transloadit' },
-  { name: 'BlockNote', country: 'NL', url: 'blocknotejs.org', id: 'blocknote' },
   { name: 'Scaleway', country: 'FR', url: 'scaleway.com', id: 'scaleway' },
   { name: 'Brevo', country: 'FR', url: 'brevo.com', id: 'brevo' },
   { name: 'Matrix', country: 'GB', url: 'matrix.org', id: 'matrix', invert: true },

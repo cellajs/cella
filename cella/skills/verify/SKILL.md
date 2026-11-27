@@ -9,10 +9,10 @@ description: Build, launch, and drive the cella frontend to verify UI changes at
 
 - Dev server: `cd frontend && pnpm dev` (plain HTTP). The main checkout serves `appConfig.frontendUrl`, http://localhost:3000 for app number 0; a linked git worktree runs on ports of its own, which Vite prints ([Dev ports](../../../shared/README.md#dev-ports)). Marketing pages (`/about`, `/features`, `/sync-engine`, `/docs`) render without the backend.
 - Never pass `--port`, and never start a server on the main checkout's ports from a worktree: the app URLs come from the config, so a server on another port fails with "Failed to fetch". Ports of another `devAppIndex` belong to other apps.
-- The configured ports are the developer's, in the main checkout too. Use the stack that answers on `appConfig.frontendUrl`, ask the developer to start it, or run your own with `DEV_PORT_OFFSET=50 pnpm dev` on the shared database (one CDC worker reads its slot: the second stack shows no live updates) or as a [throwaway stack](#a-throwaway-database). Keep it attached to your session, never `nohup`, and end it with `DEV_PORT_OFFSET=50 pnpm killports`: a stack left behind blocks the developer's `pnpm dev`.
-- A worktree's Vite proxies `/api` to the worktree's own backend, which migrates the database named in `.env` on boot: the main checkout's, unless the worktree has its own. Give a branch with migrations its own database first ([A throwaway database](#a-throwaway-database)), and never run a second CDC worker on a shared one: it waits for the slot the running one holds and reports degraded meanwhile.
+- The configured ports are the developer's, in the main checkout too. Use the stack that answers on `appConfig.frontendUrl`, ask the developer to start it, or run your own with `DEV_PORT_OFFSET=50 pnpm dev` on the shared database (one CDC process reads its slot: the second stack shows no live updates) or as a [throwaway stack](#a-throwaway-database). Keep it attached to your session, never `nohup`, and end it with `DEV_PORT_OFFSET=50 pnpm killports`: a stack left behind blocks the developer's `pnpm dev`.
+- A worktree's Vite proxies `/api` to the worktree's own backend, which migrates the database named in `.env` on boot: the main checkout's, unless the worktree has its own. Give a branch with migrations its own database first ([A throwaway database](#a-throwaway-database)), and never run a second CDC process on a shared one: it waits for the slot the running one holds and reports degraded meanwhile.
 - When you start the stack yourself, capture its stdout with a size cap: `pnpm dev 2>&1 | head -c 200000000 > <scratch>/dev-stack.log` (background; macOS `head` takes bytes only). pino writes no file, and backend errors are there.
-- Stack health: the API's `/health?depth=full` shows the `cdc` component `healthy`, or the `reason` it is not. The worker's own `curl http://localhost:<services.cdc.port>/health?depth=full` adds `replication.status` (`active` while it reads), `setupProblems` and `failure`.
+- Stack health: the API's `/health?depth=full` shows the `cdc` component `healthy`, or the `reason` it is not. CDC's own `curl http://localhost:<services.cdc.port>/health?depth=full` adds `replication.status` (`active` while it reads), `setupProblems` and `failure`.
 - Typecheck: `cd frontend && pnpm ts` (tsgo). Lint: `pnpm exec biome check <file>` from repo root.
 
 ## Worktree stacks
@@ -29,7 +29,7 @@ docker ps --format '{{.Names}}  {{.Ports}}'
 
 ## A throwaway database
 
-Clean seeded data, or a branch with migrations, beside the stack you already run. `pnpm testbed` is the short way: the whole app with a built frontend, the workers and the relay, on its own database that every start migrates. `pnpm testbed -- <command>` runs a command against it and stops it after. One testbed runs per app on a machine. The stack below is for a Vite dev server, or a database of a worktree's own.
+Clean seeded data, or a branch with migrations, beside the stack you already run. `pnpm testbed` is the short way: the whole app with a built frontend, the services and the relay, on its own database that every start migrates. `pnpm testbed -- <command>` runs a command against it and stops it after. One testbed runs per app on a machine. The stack below is for a Vite dev server, or a database of a worktree's own.
 
 Variables in the environment win over `.env`, so nothing in the checkout changes. Offset 50 and port 5440 are free, and a second throwaway stack takes offset 60, port 5450 and a container name of its own: the testbed takes 70 and 5470, and linked worktrees take the hundreds. Offset 40 puts a service on port 4045, which `fetch` refuses, so the config will not build.
 
@@ -48,7 +48,7 @@ pnpm seed                                                                  # mig
 ```
 
 - Every command runs with those exports: `pnpm seed` without them seeds the database you work in. An agent's shell keeps no exports between calls, so put them in a wrapper script that ends in `exec "$@"` and run each command through it.
-- The API and Vite serve pages and writes. Nothing here starts the CDC worker or the relay, so pages get no live updates.
+- The API and Vite serve pages and writes. Nothing here starts CDC or the relay, so pages get no live updates.
 - Both Vite servers share `frontend/node_modules/.vite`: the second re-bundles the dependencies there, and the first re-bundles once more at its next start.
 - Afterwards `DEV_PORT_OFFSET=50 pnpm killports` and `docker rm -fv scratch_db`.
 

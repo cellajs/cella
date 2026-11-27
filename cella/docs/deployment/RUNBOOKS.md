@@ -75,9 +75,9 @@ A deploy or an operator action that dies holds its lease until it lapses within 
 
 ## A page stuck on the apex
 
-A visitor who opens the bare domain sees an old release that loads nothing, while a fresh browser on the same address lands on `www`. Their browser keeps a worker from a deploy that served the apex, and that worker answers every visit from its cache without asking the server.
+A visitor who opens the bare domain sees an old release that loads nothing, while a fresh browser on the same address lands on `www`. Their browser keeps a service worker from a deploy that served the apex, and that service worker answers every visit from its cache without asking the server.
 
-The apex answers the worker script itself: that script replaces the kept worker on the visitor's next visit and moves the page to `www`. The smoke checks of every deploy fail when the apex stops redirecting or stops answering the script. A visitor still stuck clears the site data of the bare domain.
+The apex answers the service worker script itself: that script replaces the kept service worker on the visitor's next visit and moves the page to `www`. The smoke checks of every deploy fail when the apex stops redirecting or stops answering the script. A visitor still stuck clears the site data of the bare domain.
 
 ## GeoIP data
 
@@ -134,15 +134,15 @@ This is break-glass access from your laptop, for any operator task against the l
 
 While it is open, **Review & apply changes** (`pnpm cella infra apply`) refuses to run. Close it first: the apply's plan would remove the ACL and keep the endpoint.
 
-## A stopped CDC worker
+## CDC is down
 
-A stopped CDC worker's replication slot keeps WAL until the database volume fills. When the worker cannot be brought back, [open the database](#open-the-database) and drop the slot:
+While CDC is down, its replication slot keeps WAL until the database volume fills. When CDC cannot be brought back, [open the database](#open-the-database) and drop the slot:
 
 ```sql
 SELECT pg_drop_replication_slot('cdc_slot');
 ```
 
-The worker makes a new slot when it starts again. Every client then refetches once.
+CDC makes a new slot when it starts again. Every client then refetches once.
 
 ## Seed the admin by hand
 
@@ -161,7 +161,7 @@ ADMIN_EMAIL=you@example.com DATABASE_ADMIN_URL='<printed connection string>' SER
 
 `pnpm cella infra` → **More** → **Reset database** takes a backup, deletes and recreates the logical database, and re-grants both roles. It runs on your operator key. A reset that stopped after its delete finishes when you run it again. Then reboot the backend machine: [Scaleway console](https://console.scaleway.com/instance/servers) → the machine → **Reboot**. Its boot migrates the empty database and seeds the admin.
 
-Verify that `curl https://<your-app>/api/health?depth=full` reports every component `healthy`. The CDC worker makes a new replication slot and, on a restored database, rebuilds its sync books ([Verify and rebuild](../../../cdc/README.md#verify-and-rebuild)).
+Verify that `curl https://<your-app>/api/health?depth=full` reports every component `healthy`. CDC makes a new replication slot and, on a restored database, rebuilds its sync books ([Verify and rebuild](../../../cdc/README.md#verify-and-rebuild)).
 
 - **Nothing but you stops this.** Scaleway deletes a database in use, replication slot included.
 - **The typed name is the only guard.** You confirm by typing `<database>@<instance>`.

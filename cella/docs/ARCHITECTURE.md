@@ -1,26 +1,26 @@
 # Architecture
 
-This document explains the basics of Cella.
+This document explains how a Cella app fits together on [PostgreSQL](https://www.postgresql.org/docs/), [Hono](https://hono.dev/) and [TanStack Query](https://tanstack.com/query/latest): its services, entity hierarchy, trust boundaries, data lifecycle and scaling.
 
 ### TL;DR
 
 Cella is a **full-stack TypeScript project template for collaborative web apps**.
-PostgreSQL is the source of truth. A Hono API defines validated OpenAPI routes and generates the typed SDK used by the React app. Shared hierarchy configuration drives permissions and tenant boundaries, while TanStack Query keeps data synced and available offline.
+PostgreSQL is the source of truth. The API's OpenAPI routes generate the typed SDK your React app uses. Entities are declared once. Permissions and tenant boundaries follow from them. TanStack Query keeps your data synced and available offline.
 
 ## Overview
 
-Below is a typical production stack. Yjs, OAuth and MCP are optional. Every worker can be **cohosted on the backend machine** to reduce costs for staging or apps that don't have many users.
+Below is a typical production stack. Yjs, OAuth and MCP are optional. For staging or an app with few users, you can **run every service on the API machine** to save costs.
 
 ```
-   ┌──────────────┐                          ┌──────────────────────────────┐
-   │    Client    │ ◀─────── HTTP ─────────▶ │          API server          │
-   │ React Query  │ ◀╌╌╌╌╌╌╌╌ SSE ╌╌╌╌╌╌╌╌╌╌ │         OpenAPI spec         │
-   └──────────────┘                          └──────────────────────────────┘
+   ┌────────────────┐                        ┌──────────────────────────────┐
+   │     Client     │ ◀────── HTTP ────────▶ │          API server          │
+   │ TanStack Query │ ◀╌╌╌╌╌╌╌ SSE ╌╌╌╌╌╌╌╌╌ │         OpenAPI spec         │
+   └────────────────┘                        └──────────────────────────────┘
           ▲                                      ▲                    ▲
           ╎ WS · Yjs updates                 SQL │                    ╎ WS · changes
           ▼                                      ▼                    ╎
    ┌──────────────┐           ┌────────────────────────┐            ┌─┴────────────────┐
-   │  Yjs worker  │    SQL    │        Postgres        │    WAL     │    CDC worker    │
+   │  Yjs relay   │    SQL    │        Postgres        │    WAL     │       CDC        │
    │  (optional)  │ ◀────────▶│       (managed)        │╌╌╌╌╌╌╌╌╌╌╌▶│                  │
    │              │           │                        │◀───────────│                  │
    └──────────────┘           └────────────────────────┘    SQL     └──────────────────┘
@@ -30,15 +30,15 @@ Below is a typical production stack. Yjs, OAuth and MCP are optional. Every work
 
 ## Cella's core philosophy
 
-| Anchor | Promise |
+| Principle | What it means |
 | --- | --- |
-| **PostgreSQL owns truth** | Business data, relationships, audit history, and sync ordering start in one database. |
-| **OpenAPI owns the contract** | Zod-backed Hono routes generate the typed SDK used by the React app and external clients. |
-| **TanStack Query owns server state** | Reads, optimistic writes, realtime changes, and restored offline data converge in one cache. |
+| **PostgreSQL holds the truth** | Business data, relationships, audit history, and sync ordering start in one database. |
+| **OpenAPI defines the contract** | Hono routes with Zod schemas generate one OpenAPI 3.1 document, the source of the typed [SDK](../../sdk/README.md) and the API docs. Shared mocks serve docs, seeds, tests and load tests. |
+| **TanStack Query holds server state** | Reads, optimistic writes, realtime changes, and restored offline data converge in one cache. |
 | **One hierarchy configuration** | Configuration defines entities, their parents, roles, and the behavior derived from them. |
-| **Workers add capabilities** | Change data capture (CDC), Yjs, OAuth, MCP and jobs workers run separately or alongside the API. |
+| **Services add capabilities** | Change data capture (CDC), the Yjs relay, OAuth, MCP and the jobs service run separately or alongside the API. |
 
-Cella favors a narrow stack over replaceable abstractions. React, TanStack Router, TanStack Query, Zustand, Hono, Zod, Drizzle and Dexie stay visible. The default app is a client-rendered progressive web app (PWA) on open standards, deployable to European-owned cloud infrastructure through Scaleway and Pulumi.
+Cella favors a narrow, opinionated stack: it simply needs React, TanStack Router, TanStack Query, Zustand, Hono, Zod, Drizzle and Dexie. The default app is a client-rendered progressive web app (PWA) on open standards, deployable to European-owned cloud infrastructure through Scaleway and Pulumi.
 
 ## Entity hierarchy model
 
@@ -59,42 +59,39 @@ Cella favors a narrow stack over replaceable abstractions. React, TanStack Route
  └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-| In the map | Kind | Key characteristics |
+| In the map | Kind | What it is |
 | --- | --- | --- |
 | user | user entity | A person, outside any tenant. Joins channels through memberships. |
 | organization | channel entity | A place with roles and members. Other channels nest under the organization. |
 | attachment | product entity | Content that always belongs to a channel and inherits its access. Syncs live and works offline. |
 | tenant & more | resource | A tracked row outside the hierarchy. The tenant is the isolation and billing boundary. |
 
-The hierarchy is declared once, in [hierarchy-config.ts](../../shared/config/hierarchy-config.ts). The template starts with `organization -> attachment`. From the hierarchy the template derives:
+You declare entity hierarchy and relations in [hierarchy-config.ts](../../shared/config/hierarchy-config.ts). The template starts with just organizations and attachments. From the hierarchy the template derives:
 
 - the id columns
 - permission checks up the ancestor chain
 - row-level security
 - the CDC publication
 - counters
-- which streams hear a change
+- which clients receive a change
 - navigation
-
-Frontend and backend features live in matching modules.
 
 ## Selective sync engine
 
-Channel entities stay conventional CRUD. Product entities get live updates and offline use without a very different API or cache model. Because an offline client may outlive a deployment, breaking entity-shape changes have an explicit evolution path.
+Channel entities stay conventional CRUD. Product entities get live updates and offline use through the same API and query cache ([Sync engine](./SYNC_ENGINE.md)).
 
 ## Trust boundaries
 
-Accounts are identified by verified proofs, not email addresses.
-
 | Layer | Responsibility |
 | --- | --- |
+| **Sign-in** | Identify an account by a verified proof, not by its email address. |
 | **Request guards** | Establish the actor, the tenant and the channel context. |
 | **Permission engine** | Decide whether the actor may create, read, update, or delete the subject. |
 | **PostgreSQL row-level security** | Prevent tenant-scoped product reads from crossing the tenant boundary. |
-| **Foreign keys and triggers** | Keep tenant/channel relationships coherent and identity columns immutable. |
+| **Foreign keys and triggers** | Keep tenant and channel relationships coherent and identity columns immutable. |
 | **Secret columns** | One registry, [secret-columns.ts](../../backend/src/db/secret-columns.ts), keeps secrets out of API responses, logs and CDC row images. |
 
-The API and the optional Yjs relay share one permission engine in `shared/`. The frontend only shapes the interface with it. The backend decides.
+The permission engine is in `shared/` so that different parts of the web app can use it.
 
 ## Data lifecycle
 
@@ -105,40 +102,33 @@ What a delete or an archive does depends on the entity:
 - **Deleted tenant**: removed with everything in it after the deleted-tenant period, restorable until then.
 - **Nested channel**: removed at once, with the channels and products in it.
 - **Nested channel, archived**: readable, listed on request and closed to writes until unarchived.
-- **Rows with a period**: sessions, tokens, devices, API keys, passkey challenges, OIDC payloads, requests, invitations, rate limits and push subscriptions are swept nightly after it.
-- **Counters**: those of a removed channel or product are swept nightly.
-- **Unused LTI account**: one an LTI member import made and nobody signed in to goes after its period, once no membership or connection holds it.
-- **Row of an owned embedding**: deleted as a product once no host references it and its period has passed.
+- **Expiring rows**: Things like sessions, tokens, invitations are swept nightly.
 
 Whichever way a row leaves, the files and collaborative document it stored go after it.
 
-Every period lives in `appConfig.retention` and holds for every tenant. The privacy page states them. The jobs worker's nightly `retention` job calls `apply_retention()` over the admin connection, which removes rows past their period. Database backups, taken daily, and earlier versions of stored files go after the backup period. They serve disasters only.
-
-## Contracts
-
-Backend modules define Hono routes with Zod schemas. Together they generate an OpenAPI 3.1 document for the [sdk](../../sdk/README.md) and the API docs. Shared mocks serve docs, seeds, tests and load tests.
+Your app sets every period in `appConfig.retention`. The nightly `retention` job removes rows past their period. Daily database backups and earlier versions of stored files are kept for the backup period. They serve disaster recovery only.
 
 ## Scaling
 
-An app runs one API process per deployment and scales up and apart, not out. The CDC worker hands every change to one process. That process holds every stream.
+Cella is built and tested to handle small and medium-sized projects. It scales up and apart, not out: one API process per deployment keeps the design simple, which leaves room for the complexity of the sync engine.
+- **Up**: a bigger machine for the API and a bigger managed database.
+- **Apart**: each service moves to a machine of its own when the API machine gets busy.
 
-Up: a bigger machine for the API and a bigger managed database. Apart: each worker moves to a machine of its own when the API's machine gets busy.
-
-Every worker is a singleton. The CDC worker holds the one replication slot, the jobs worker the one scheduler.
+Every service is a singleton. CDC holds the one replication slot, the jobs service the one scheduler.
 
 The client carries work too. It keeps its own cache and fetches what the sync engine announces. The server spreads those fetches over time, and the readers of the same rows share one answer.
 
 ## Repository map
 
-Flat-root monorepo:
+A flat-root monorepo. Frontend and backend features live in matching modules.
 
 ```text
 .
 ├── backend       Hono API and the jobs, MCP and OAuth services, Drizzle schema, migrations, emails, seeds, and load tests
-├── frontend      React SPA/PWA with React Query client
+├── frontend      React SPA/PWA with TanStack Query client
 ├── shared        Hierarchy and entity config, permissions, types, translations, data files, and cross-tier utils
 ├── sdk           Generated OpenAPI client, types, and Zod schemas
-├── cdc           PostgreSQL change-data-capture worker
-├── yjs           Optional collaborative-editing relay
-└── cella         Architecture, guides, changelog, upgrade alignments, and the app's side of the CLI tools, infra included
+├── cdc           PostgreSQL change data capture
+├── yjs           Yjs relay for collaborative editing (optional)
+└── cella         Docs, agent skills, changelog, upgrade alignments, and the app's side of the CLI tools, infra included
 ```

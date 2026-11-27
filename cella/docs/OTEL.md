@@ -1,13 +1,13 @@
 # Observability
 
-This document explains how [OpenTelemetry](https://opentelemetry.io/docs/) traces, metrics and logs move between the services, and how to instrument a new worker.
+This document explains how [OpenTelemetry](https://opentelemetry.io/docs/) traces, metrics and logs move between the services, and how to instrument a new service.
 
 ### TL;DR
 
 Every Node service uses one setup for [OpenTelemetry](https://opentelemetry.io/) traces, metrics,
 and logs. They go to any OTLP endpoint. The browser reports errors and sessions to a DSN. One trace
 follows a request from a browser click through the backend. A second follows a database change from
-the database-change worker into the backend.
+CDC into the backend.
 
 ## Architecture
 
@@ -49,23 +49,23 @@ Each mode names the DSN in its config as `monitoring.dsn`, and a deployed mode's
 
 An error that reaches any React boundary counts as unhandled, and a failure the app caught and continued from as handled. A session names the signed-in user by id alone. No span, web vital, replay or cookie leaves the browser, and the privacy policy says so. A local tracer keeps the spans for the devtools.
 
-## Add a worker
+## Add a service
 
-Every worker needs the parts below. CDC is the reference:
+Every service needs the parts below. CDC is the reference:
 
-- [tracing.ts](../../cdc/src/lib/tracing.ts) starts the shared setup under the worker's service name.
+- [tracing.ts](../../cdc/src/lib/tracing.ts) starts the shared setup under the service's name.
 - [pino.ts](../../cdc/src/lib/pino.ts) ships logs to the same destination and prints readable lines in development.
 - [index.ts](../../cdc/src/index.ts) starts telemetry, then a graceful shutdown that flushes it on a signal.
-- A worker that serves HTTP mounts the shared health app ([health-app.ts](../../shared/src/health-app.ts)).
-- A worker that runs as a `SERVICE` of the backend image starts the backend's SDK from [tracing.ts](../../backend/src/lib/tracing.ts) and imports it on its entry's first line, as a bare import. A `pg` loaded before it makes no query span.
+- A service that serves HTTP mounts the shared health app ([health-app.ts](../../shared/src/health-app.ts)).
+- A service that runs as a `SERVICE` of the backend image starts the backend's SDK from [tracing.ts](../../backend/src/lib/tracing.ts) and imports it on its entry's first line, as a bare import. A `pg` loaded before it makes no query span.
 
 ### Metrics
 
 Use observable gauges for runtime state, and counters or histograms for request-scoped measurements. Name a metric without its unit and pass the unit as `unit`, such as `lens.transform.duration` with `unit: 'ms'`.
 
-A service started on its own reports its runtime, its process and its database pool once a minute, every 5 seconds in development. `OTEL_METRIC_EXPORT_INTERVAL` sets another interval in milliseconds. A worker passes its main pool to `createOtelSDK` as `pool`.
+A service started on its own reports its runtime, its process and its database pool once a minute, every 5 seconds in development. `OTEL_METRIC_EXPORT_INTERVAL` sets another interval in milliseconds. A service passes its main pool to `createOtelSDK` as `pool`.
 
-Under `singleVM` the API reports the runtime and the process once, under its own name, and its own pool alone. The workers folded into it report neither, and their pools go unreported.
+Under `singleVM` the API reports the runtime and the process once, under its own name, and its own pool alone. The services folded into it report neither, and their pools go unreported.
 
 An observable gauge exports only what its last callback observed: a value no callback reports any more is gone from the next export. A callback that reads elsewhere, such as the database, fits its read in `otel.callbackTimeoutMs`.
 
@@ -88,8 +88,8 @@ Span names are constants in [span-names.ts](../../shared/src/tracing/span-names.
 | HTTP server, outbound fetch, Postgres query | Backend | Every request, and every query that runs inside a span such as a request's, by the OTel conventions: a request's method, route, path and query, status and the caller's user agent, and a query's text without its values |
 | `nodejs.eventloop.*`, `v8js.*`, `process.*` | Every service | Event loop delay and use, heap and garbage collection, resident memory against its limit, CPU, uptime |
 | `db.client.connection.*` | Every service | Its main pool's connections in use and idle, its maximum, requests waiting |
-| `postgresql.*` | Jobs worker | The server's sessions by state against its limit, the oldest transaction, lock waits, the database's size, commits, rollbacks, deadlocks, temporary files, transaction id age, the WAL its replication slots hold |
-| `sync.*` | Backend | A change arriving from the CDC worker and its fan-out to streams |
+| `postgresql.*` | Jobs service | The server's sessions by state against its limit, the oldest transaction, lock waits, the database's size, commits, rollbacks, deadlocks, temporary files, transaction id age, the WAL its replication slots hold |
+| `sync.*` | Backend | A change arriving from CDC and its fan-out to streams |
 | `lens.*`, `schema.*` | Backend | Schema evolution: transform time, warnings, client versions seen |
 | `cdc.*` | CDC | Each WAL message and recorded activity, replication status, the socket to the API |
 | `yjs.*` | Yjs | Open connections, documents and clients |
@@ -124,4 +124,4 @@ Every HTTP service answers `GET /health` with a shallow 204 for the agent behind
 | CDC | Its grade and reasons, replication and slot state, the socket to the API |
 | Yjs | Connection, document and client counts |
 
-The diagnostics are a JSON body of the app's own, not the `application/health+json` format of the health-check draft. A component is `healthy`, `degraded` or `unhealthy`. Degraded is slow, not down. It warns and passes a deploy. Unhealthy needs a person and fails a deploy's smoke step. Each worker grades itself and the backend passes the grade on.
+The diagnostics are a JSON body of the app's own, not the `application/health+json` format of the health-check draft. A component is `healthy`, `degraded` or `unhealthy`. Degraded is slow, not down. It warns and passes a deploy. Unhealthy needs a person and fails a deploy's smoke step. Each service grades itself and the backend passes the grade on.

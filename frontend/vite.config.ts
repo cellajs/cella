@@ -396,6 +396,7 @@ const viteConfig = {
               langs: ['typescript', 'bash', 'text'],
               defaultLanguage: 'text',
               fallbackLanguage: 'text',
+              addLanguageClass: true,
             },
           ],
         ],

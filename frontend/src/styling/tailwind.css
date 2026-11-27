@@ -688,6 +688,11 @@
   @apply link-inline;
 }
 
+/* A list reads as one block between paragraphs: its items sit closer than typography's 0.5em. */
+.prose li:not(:where(.not-prose, .not-prose *)) {
+  margin-block: 0.25em;
+}
+
 /* A docs intro is a scope sentence, then `### TL;DR` and one paragraph up to the first h2. Markdown stays plain, so the
    rules key on the heading's slug. A margin inside the block would break the line, and `--border` is too faint to read
    as a line in dark mode. */
@@ -731,6 +736,12 @@
   overflow-wrap: anywhere;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
+}
+
+/* A fence without a language holds a diagram, a tree or output, read like the prose around it. Shiki leaves its tokens
+   unstyled under the theme's support step on the pre. */
+.prose pre code.language-text {
+  color: var(--foreground-soft);
 }
 
 @layer base {

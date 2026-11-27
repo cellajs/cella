@@ -4,7 +4,7 @@ Load testing for the backend, cdc, and yjs services: the app's scenarios and che
 
 ### TL;DR
 
-Bench load-tests your running development app with repeatable scenarios and reusable seed data, its users already signed in. A run passes on what the stack did with the load, not on a laptop's speed: responses accepted, every written row recorded by the CDC worker, counters still right. Latencies are saved and compared with the previous run, as trends.
+Bench load-tests your running development app with repeatable scenarios and reusable seed data, its users already signed in. A run passes on what the stack did with the load, not on a laptop's speed: responses accepted, every written row recorded by CDC, counters still right. Latencies are saved and compared with the previous run, as trends.
 
 ## Prerequisites
 
@@ -111,7 +111,7 @@ A failed run is neither compared nor saved. A run fails when one of these fails:
 - **Thresholds.** `thresholds` caps any recorded latency, such as `'http.response_time.p95': 3000`. `--short` skips them.
 - **Counters.** `expect` names counters that must have counted, `forbid` counters that must stay at zero.
 - **Counters with `--short`.** Only `forbid` is checked, since each role plays once.
-- **Activities.** `bench.rows_written` must match the activities the CDC worker recorded in the bench organization.
+- **Activities.** `bench.rows_written` must match the activities CDC recorded in the bench organization.
 - **Counts.** `bench.rows_created.<type>` minus `bench.rows_deleted.<type>` must equal the change in `channel_counters`.
 - **Books.** A full run ends with `pnpm sync:verify`, which must find every counter matching its table in time.
 - **Convergence.** A sync scenario forbids `bench.rows_diverged`: a row a client holds that differs from the database.

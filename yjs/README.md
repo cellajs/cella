@@ -1,10 +1,10 @@
-# Yjs worker
+# Yjs relay
 
-This document covers the Yjs worker: a WebSocket relay for real-time collaborative editing of BlockNote descriptions with [Yjs](https://docs.yjs.dev).
+This document covers the Yjs relay: the WebSocket service for real-time collaborative editing of BlockNote descriptions with [Yjs](https://docs.yjs.dev).
 
 ### TL;DR
 
-During collaborative editing, the Yjs service saves the shared editing state. It starts each
+During collaborative editing, the Yjs relay saves the shared editing state. It starts each
 session from the stored description, sends edits to connected clients, and turns the merged result
 into normal stored entity data through the backend. A description written through the API ends nobody's editing
 session: it joins the live document.

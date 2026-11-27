@@ -1,11 +1,11 @@
-# MCP worker
+# MCP
 
-This document covers the MCP worker: one [Model Context Protocol](https://modelcontextprotocol.io) endpoint per organization, exposing opted-in routes as MCP tools.
+This document covers the MCP service: one [Model Context Protocol](https://modelcontextprotocol.io) endpoint per organization, exposing opted-in routes as MCP tools.
 
 ### TL;DR
 
 An AI client connects to `<mcpUrl>/tenants/<tenant>/organizations/<org>/mcp` with an access token from the OAuth
-worker and nothing else. MCP tools are ordinary routes that carry `xTool`, run as the person or service account behind
+service and nothing else. MCP tools are ordinary routes that carry `xTool`, run as the person or service account behind
 the token. A call outside the token's scopes answers with the scope to step up to.
 
 ## How it fits
@@ -23,9 +23,9 @@ MCP endpoint  /tenants/<tenant>/organizations/<org>/mcp
 the route: its guards, limiters and handler, as for a REST request
 ```
 
-The worker is a `SERVICE` of the backend image. The reverse proxy routes `/mcp/*` to it. It mounts the module routes for tool calls, but serves only the MCP routes.
+The MCP service runs from the backend image as a `SERVICE`. The reverse proxy routes `/mcp/*` to it. It mounts the module routes for tool calls, but serves only the MCP routes.
 
-`pnpm dev` starts the worker beside the API. Error codes, limits and schema details are documented there, at their declarations.
+`pnpm dev` starts it beside the API. Error codes, limits and schema details are documented there, at their declarations.
 
 ## Discovery and tokens
 
@@ -37,7 +37,7 @@ The worker is a `SERVICE` of the backend image. The reverse proxy routes `/mcp/*
 | A token for another tenant or another organization's endpoint | 401: the audience must be this endpoint or the tenant's REST API |
 | `tools/call` outside the token's scopes | 403 with a challenge and a JSON-RPC error, both naming the scope to step up to |
 
-A client follows the challenge to the OAuth worker and retries with a token bound to this organization's resource. A 403 step-up works the same way. Its challenge names only the scope the call lacks, never the scopes the token holds. A client asks for both when it consents again.
+A client follows the challenge to the OAuth service and retries with a token bound to this organization's resource. A 403 step-up works the same way. Its challenge names only the scope the call lacks, never the scopes the token holds. A client asks for both when it consents again.
 
 Sessions and API keys are refused here on purpose. The MCP face takes only tokens. Every call traces to a consent or to a service account's `client_credentials` grant.
 
@@ -86,7 +86,7 @@ JSON-RPC 2.0 over Streamable HTTP, with JSON responses:
 
 ## Operational constraints
 
-- **Needs the OAuth worker.** Without `services.oauth` every call is a 401, since no token can exist.
+- **Needs the OAuth service.** Without `services.oauth` every call is a 401, since no token can exist.
 - **Limits.** A tool call spends the route's limits, plus the endpoint's own limit per account.
 - **No internals.** A server error reaches the model without its message.
 - **Tool descriptions are model-facing English.** They are not translated.
