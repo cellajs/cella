@@ -65,11 +65,6 @@ jobs:
       - name: Check for unused files and dependencies
         run: pnpm unused
 
-      # compose.gen.yml is a committed artifact read at deploy time
-      # (the switch step of cella-cli:src/infra/tasks/deploy-run.ts), so a stale copy must fail the PR.
-      - name: Check compose model artifact is committed
-        run: pnpm --filter infra compose:check
-
       # The pre-commit hook regenerates sdk/gen and stages it; a commit made with --no-verify records a stale SDK, which
       # the build-services typecheck and the schema-bust-gate (it reads the committed spec) would then judge in place of
       # the routes. Here and not in build-services: this job ends a minute earlier.
@@ -144,14 +139,15 @@ jobs:
           path: .base
           persist-credentials: false
 
+      # `infra...` selects the engine's packages of a base from before the move to cella/infra/, where the package `cella-tools` is missing.
       - name: Install the base
         if: ${{ !cancelled() }}
         working-directory: .base
-        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+        run: pnpm install --frozen-lockfile --filter cella-tools... --filter infra... --filter shared...
 
       - name: Say what the change owes
         if: ${{ !cancelled() }}
-        run: pnpm --silent --filter infra privileged-check --base "$GITHUB_WORKSPACE/.base"
+        run: pnpm --silent cella infra privileged-check --base "$GITHUB_WORKSPACE/.base"
 
   # The frontend as the builder machine builds it at a deploy: the builder's own script (cella-cli:src/infra/lib/builder/builder-machine.ts), in the
   # deployed mode, which generates the environment's OpenAPI spec from the example env first and then builds. Runs on every PR (~2 min),
@@ -177,7 +173,7 @@ jobs:
         env:
           APP_MODE: production
         run: |
-          pnpm --silent --filter infra builder-script frontend > "$RUNNER_TEMP/builder-frontend.sh"
+          pnpm --silent cella infra builder-script frontend > "$RUNNER_TEMP/builder-frontend.sh"
           bash -eo pipefail "$RUNNER_TEMP/builder-frontend.sh"
 
   # Typecheck plus the three service bundles (backend, cdc, yjs), each booted once. Nothing else in CI typechecks (the
@@ -333,12 +329,12 @@ jobs:
       - name: Install the workspace
         uses: ./.github/actions/install-workspace
         with:
-          filter: --filter infra... --filter shared...
+          filter: --filter cella-tools... --filter shared...
 
       - name: Compare the release with the last apply
         env:
           REPOSITORY_VARIABLES: ${{ toJSON(vars) }}
-        run: pnpm --silent --filter infra release-applied-check
+        run: pnpm --silent cella infra release-applied-check
 
   # The `main` ruleset requires this job and `pr-title`, so a job of this workflow joins the merge gate by joining
   # `needs`. A skipped job passes (the heavy suites skip on feature PRs); a failed or cancelled one fails the check.

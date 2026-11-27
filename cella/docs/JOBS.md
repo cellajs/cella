@@ -66,4 +66,4 @@ Index rebuilds are left to an operator, since the maintainer runs as the runtime
 
 ### Connection budget
 
-Every pool of every process draws on the database's one `max_connections`, the job store's included. Pool maxima are ceilings, not footprints. The managed database's metrics show the real count. Shrink pools before raising the limit: raising it restarts an instance that has no standby. A deployed service's pool size is in its `env` in [services.config.ts](../../infra/config/services.config.ts).
+Every pool of every process draws on the database's one `max_connections`, the job store's included. Pool maxima are ceilings, not footprints. The managed database's metrics show the real count. Shrink pools before raising the limit: raising it restarts an instance that has no standby. A deployed service's pool size is in its `env` in [description.yml](../infra/description.yml).

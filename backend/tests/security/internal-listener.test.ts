@@ -233,7 +233,8 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
   });
 
   it('answers the health path the internal load balancer pool probes, or the pool takes every backend out', async () => {
-    // The pool expects the backend's `healthExpectStatus` (infra/config/services.config.ts).
+    // The pool's check asks the machine's agent, which probes the backend's public port (cella-cli:src/infra/agent/src/health.ts).
+    // This fetch is the private side of the refusals above: a loopback peer, as a co-hosted worker is, reaches `/health` here.
     const response = await fetch(`http://127.0.0.1:${internalPort}/health`);
     expect(response.status).toBe(204);
   });

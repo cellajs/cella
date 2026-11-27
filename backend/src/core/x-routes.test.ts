@@ -45,6 +45,27 @@ describe('route helpers', () => {
     expect(routes.createThing.operationId).toBe('thingCreate');
   });
 
+  it('puts a route’s scope, or every scope of its list, on the key and the token, never on the session', () => {
+    const scoped = (xScope: Parameters<typeof createXRoute>[0]['xScope']) =>
+      createXRoute({
+        operationId: 'scoped',
+        method: 'get',
+        path: '/{tenantId}/scoped',
+        xGuard: [actorGuard],
+        xScope,
+        tags: ['things'],
+        summary: 'Scoped',
+        responses: { 200: json('Thing', itemSchema) },
+      });
+
+    expect(scoped('organization:read')).toMatchObject({
+      security: [{ cookieAuth: [] }, { apiKey: ['organization:read'] }, { oauth2: ['organization:read'] }],
+    });
+    expect(scoped(['organization:read', 'user:read'])).toMatchObject({
+      security: [{ cookieAuth: [] }, { apiKey: ['organization:read', 'user:read'] }, { oauth2: ['organization:read', 'user:read'] }],
+    });
+  });
+
   it('documents the error statuses the chain answers with beside the route’s own: validation for a request, the body limit and the media type gate for a body, the read limiter for a read', () => {
     expect(Object.keys(routes.getThing.responses)).toEqual(['200', '400', '429']);
     expect(routes.createThing.responses).toMatchObject({

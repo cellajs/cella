@@ -3,7 +3,10 @@
   "compilerOptions": {
     "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
     "lib": ["es2024", "DOM", "DOM.Iterable"],
-    "types": []
+    "types": ["node"],
+    // Indexed access (obj[key], arr[i]) yields T | undefined so unchecked lookups fail the typecheck. The workspace
+    // root does not set it.
+    "noUncheckedIndexedAccess": true
   },
-  "include": ["a11y.ts", "a11y.app.ts", "screenshots.ts", "screenshots.app.ts"]
+  "include": ["a11y.ts", "a11y.app.ts", "screenshots.ts", "screenshots.app.ts", "vitest.config.ts", "tests/**/*.ts"]
 }

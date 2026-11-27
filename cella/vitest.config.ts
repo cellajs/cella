@@ -5,10 +5,8 @@ export default defineProject({
   logLevel: 'error',
   test: {
     include: ['tests/**/*.test.ts'],
-    exclude: ['node_modules/**'],
+    // The engine finds the app from the working directory: a run started inside cella/ (an IDE, `pnpm exec`) runs from the app's root too.
+    setupFiles: ['./tests/app-root.ts'],
     testTimeout: 5000,
-    // A registry the engine built holds the same functions the tests import: the engine loads the app's config through
-    // the tests' module graph
-    server: { deps: { inline: ['@cellajs/cli'] } },
   },
 });

@@ -23,7 +23,7 @@ export default defineConfig({
       'shared',
       'yjs',
       'cdc',
-      'infra',
+      'cella',
       'frontend',
       'sdk',
     ],
@@ -41,7 +41,6 @@ export default defineConfig({
         'frontend/src/**/*.{ts,tsx}',
         'yjs/src/**/*.ts',
         'shared/**/*.ts',
-        'infra/config/**/*.ts',
         'sdk/src/**/*.ts',
       ],
       exclude: [

@@ -89,10 +89,11 @@ export const toolAction = (method: string): EntityActionType => (method.toUpperC
  */
 export type XRouteProps = {
   /**
-   * The scope a scoped API key or access token needs on a route whose guards accept one; it fills that route's
-   * security requirements. An MCP tool route leaves it out: its scope follows from `xTool`, as the MCP server enforces it.
+   * The scope a scoped API key or access token needs on a route whose guards accept one, or every scope of a list; it
+   * fills that route's security requirements. An MCP tool route leaves it out: its scope follows from `xTool`, as the
+   * MCP server enforces it.
    */
-  xScope?: AccessScope;
+  xScope?: AccessScope | readonly AccessScope[];
   /** The config switch the route belongs to; `createXRoute` refuses the route while it is off, before its guards. */
   xEnabledBy?: ConfigSwitch;
   /** Runs ahead of the guards and may answer in their place, as `sharedRangeAnswers` does for a key that stands for a read scope. */

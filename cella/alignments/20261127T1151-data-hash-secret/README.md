@@ -30,14 +30,15 @@ No script: manual.
 ## Manual steps
 
 1. In each developer's `.env`, rename the `PII_HASH_SECRET` line to `DATA_HASH_SECRET` and keep its value.
-2. Replace `serviceSecret('PII_HASH_SECRET')` in app code with `serviceSecret('DATA_HASH_SECRET')`: the typecheck names each site.
-3. Replace an app's own SHA-256 of a session token, link or API key (`createHash('sha256')`) with `hashToken` from `#/utils/hash-token`.
-4. After the deploy, revoke each API key and issue a new one: an old key fails but stays listed as live.
-5. After the deploy, resend each pending invitation: its emailed link no longer opens.
+2. In the app's `cella/infra/description.yml`, rename the `PII_HASH_SECRET` key under `runtimeSecrets` to `DATA_HASH_SECRET` and keep its `secretName: pii-hash-secret`.
+3. Replace `serviceSecret('PII_HASH_SECRET')` in app code with `serviceSecret('DATA_HASH_SECRET')`: the typecheck names each site.
+4. Replace an app's own SHA-256 of a session token, link or API key (`createHash('sha256')`) with `hashToken` from `#/utils/hash-token`.
+5. After the deploy, revoke each API key and issue a new one: an old key fails but stays listed as live.
+6. After the deploy, resend each pending invitation: its emailed link no longer opens.
 
 ## Verify
 
 ```sh
-pnpm --filter infra test
+pnpm --filter cella-tools test
 pnpm check
 ```

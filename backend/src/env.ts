@@ -71,7 +71,7 @@ const envSchema = z
     DATABASE_ADMIN_URL: appConfig.isLocal ? localDatabase('postgres') : z.url().optional(),
     // admin_role's password when the roles are created; unset, it takes the runtime role's from DATABASE_URL.
     DATABASE_ADMIN_ROLE_PASSWORD: z.string().optional(),
-    // The runtime pool's ceiling. A deployed service sets its own in infra/config/services.config.ts, sized with every
+    // The runtime pool's ceiling. A deployed service sets its own in cella/infra/description.yml, sized with every
     // other pool against the database's max_connections.
     DATABASE_POOL_MAX: z.coerce.number().default(20),
     // PEM CA cert for the managed PostgreSQL TLS connection: required in production, where the DB client fails fast without it.
