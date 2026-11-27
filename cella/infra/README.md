@@ -127,7 +127,7 @@ The engine checks the file at load and stops with the path of the key it refuses
 
 To add a service:
 
-1. Add an entry under `services` in [description.yml](description.yml), with its port and, behind a path route, its path prefix.
+1. Add an entry under `services` in [description.yml](description.yml), with its port and, behind a path route, its path prefix. A service that opens a database pool sets its size in `env`, by the rule the file states.
 2. Set its `enabled` flag and the same ports under `services` in [shared/config/config.default.ts](../../shared/config/config.default.ts).
 3. Set the same path prefix in [shared/src/config-builder/service-paths.ts](../../shared/src/config-builder/service-paths.ts).
 4. Add it to the `services` of each runtime secret it reads.

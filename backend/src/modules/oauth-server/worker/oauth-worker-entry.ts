@@ -1,3 +1,4 @@
+import '#/lib/tracing';
 import { createServer, type Server } from 'node:http';
 import { appConfig } from 'shared';
 import { listenHost } from 'shared/utils/listen-host';

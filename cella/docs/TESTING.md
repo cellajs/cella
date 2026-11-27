@@ -79,7 +79,7 @@ pnpm test
 | `pnpm test` | Everything, with a coverage summary, through `test:full` |
 | `pnpm test:core` | Skips only the integration tests. Rarely needed. A direct vitest run without `--silent=passed-only` shows full output |
 | `pnpm test:storybook` | Storybook component tests in headless Chromium. Not part of `pnpm test` ([see below](#storybook)) |
-| `pnpm app-shape:check` | The core suites again under a config shaped like an app's. Runs on the release PR |
+| `pnpm app-shape:check` | The core suites again under a config shaped like an app's. Runs on the release PR and nightly |
 | `pnpm story` | Interactive Storybook dev server. Runs no tests. |
 
 The `TEST_MODE` env var selects `core` or `full`. A test can self-gate with `describe.skipIf(process.env.TEST_MODE !== 'full')`.
@@ -131,4 +131,4 @@ pnpm sdk
 pnpm test:storybook
 ```
 
-Every story is render-tested in headless Chromium. A story's `play` function runs too. CI runs this project on the release PR only. Run it yourself before merging a frontend change.
+Every story is render-tested in headless Chromium. A story's `play` function runs too. CI runs this project on the release PR and nightly on `main`. Run it yourself before merging a frontend change.

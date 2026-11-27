@@ -17,6 +17,8 @@ both. Merging it tags the release for production to deploy. Never set versions o
 
 Feature PRs run the quick checks. A draft release PR runs no check. Marking it ready for review runs the quick checks and the slow suites in [ci.yml](../../.github/workflows/ci.yml), and so does every merge while it is ready. A broken `main` blocks the release before anything is tagged or deployed. The release PR also fails while its description of the app differs from the last apply ([Pull request check](./deployment/CHANGING_INFRASTRUCTURE.md#pull-request-check)).
 
+The test suites also run nightly on `main`. A test that a feature PR broke then fails within a day, not at the release PR.
+
 ## Setup
 
 1. Create a GitHub App with `Contents` and `Pull requests` read and write, and install it on the repo.

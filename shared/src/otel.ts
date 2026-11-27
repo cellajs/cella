@@ -47,10 +47,13 @@ import { createRedactingSpanProcessor } from './tracing/redacting-span-processor
  * nothing here runs, each patching module loading at boot and producing no spans. Adding one means
  * a line here plus a dependency in each workspace whose bundle keeps @opentelemetry external.
  *
+ * A query traces only inside a span, such as a request's: the job store's polling and every other query outside one
+ * starts no trace of its own.
+ *
  * Pino is deliberately absent: `createLogger` in ./pino.ts already stamps trace_id and span_id onto
  * every line through its `mixin`, which is what instrumentation-pino would add.
  */
-const instrumentations = () => [new HttpInstrumentation(), new UndiciInstrumentation(), new PgInstrumentation()];
+const instrumentations = () => [new HttpInstrumentation(), new UndiciInstrumentation(), new PgInstrumentation({ requireParentSpan: true })];
 
 // The standard OTLP variables are the one destination.
 const exportOffMsg = '[otel] no OTEL_EXPORTER_OTLP_ENDPOINT set: telemetry export is off';

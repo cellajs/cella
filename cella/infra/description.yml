@@ -8,9 +8,14 @@ general:
   # Each scheduled run is billed: every minute costs about nine euro a month past the free tier, every five stays inside it.
   schedule: { everyMinutes: { production: 1, staging: 5 } }
 
-# The singleVM host takes on each co-hosted worker's env except these variables, which pick a container's process.
-processIdentityEnv: [SERVICE]
+# The singleVM host takes on each co-hosted worker's env except these variables, which a process reads as its own:
+# the service it boots and the size of its runtime pool.
+processIdentityEnv: [SERVICE, DATABASE_POOL_MAX]
 
+# A service's `env` sizes its database pool (`DATABASE_POOL_MAX`, `YJS_DATABASE_POOL_MAX`). Every pool's ceiling at
+# rest, plus what the largest overlap of one deploy adds, stays within 87 connections with every service enabled,
+# split or under `singleVM`: Postgres's default `max_connections` of 100, less its 3 reserved slots and 10 for
+# operator sessions. A service of the app's own takes a size by the same rule.
 services:
   backend:
     dockerfile: Dockerfile
@@ -28,7 +33,8 @@ services:
     pathPrefix: /api
     s3Access: true
     instanceType: { production: DEV1-S, staging: DEV1-S }
-    env: { APP_ORIGIN: '@{frontend.url}' }
+    # Under `singleVM` this pool also serves the folded jobs, mcp and oauth workers.
+    env: { APP_ORIGIN: '@{frontend.url}', DATABASE_POOL_MAX: '12' }
   cdc:
     dockerfile: Dockerfile
     target: cdc
@@ -53,7 +59,10 @@ services:
     lbWebsockets: true
     instanceType: DEV1-S
     coHosted: true
-    env: { APP_ORIGIN: '@{frontend.url}', BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}' }
+    env:
+      APP_ORIGIN: '@{frontend.url}'
+      BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}'
+      YJS_DATABASE_POOL_MAX: '5'
   mcp:
     port: 4003
     startPeriod: 15s
@@ -65,7 +74,7 @@ services:
     pathPrefix: /mcp
     instanceType: DEV1-S
     coHosted: true
-    env: { SERVICE: mcp, APP_ORIGIN: '@{frontend.url}' }
+    env: { SERVICE: mcp, APP_ORIGIN: '@{frontend.url}', DATABASE_POOL_MAX: '5' }
   oauth:
     port: 4004
     startPeriod: 15s
@@ -77,7 +86,7 @@ services:
     pathPrefix: /oauth
     instanceType: DEV1-S
     coHosted: true
-    env: { SERVICE: oauth, APP_ORIGIN: '@{frontend.url}' }
+    env: { SERVICE: oauth, APP_ORIGIN: '@{frontend.url}', DATABASE_POOL_MAX: '5' }
   jobs:
     port: 4006
     startPeriod: 15s
@@ -86,7 +95,7 @@ services:
     reusesImageOf: backend
     instanceType: DEV1-S
     coHosted: true
-    env: { SERVICE: jobs, APP_ORIGIN: '@{frontend.url}' }
+    env: { SERVICE: jobs, APP_ORIGIN: '@{frontend.url}', DATABASE_POOL_MAX: '8' }
   frontend:
     dockerfile: engine:proxy
     headers: shared/src/config-builder/frontend-csp.ts#frontendHeaders

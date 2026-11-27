@@ -26,20 +26,14 @@ importers:
         specifier: ^2.6.4
         version: 2.6.4
       '@cellajs/cli':
-        specifier: ^0.10.0
-        version: 0.10.0(@aws-sdk/client-s3@3.1176.0)(@aws-sdk/s3-request-presigner@3.1176.0)(@pulumi/pulumi@3.277.0(typescript@6.0.3))(@pulumiverse/scaleway@1.62.1(typescript@6.0.3))(@shikijs/themes@4.6.0)(@types/node@26.6.6)(infra@infra)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@typescript/native-preview':
-        specifier: 7.0.0-dev.20260707.2
-        version: 7.0.0-dev.20260707.2
+        specifier: ^0.11.0
+        version: 0.11.0(@aws-sdk/client-s3@3.1176.0)(@aws-sdk/s3-request-presigner@3.1176.0)(@pulumi/pulumi@3.277.0(typescript@6.0.3))(@pulumiverse/scaleway@1.62.1(typescript@6.0.3))(@shikijs/themes@4.6.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@vitest/coverage-v8':
         specifier: ^5.1.1
         version: 5.1.1(@opentelemetry/api@1.10.0)(@vitest/browser-playwright@5.1.1)(@vitest/browser@5.1.1)(@vitest/ui@5.1.1)(vitest@5.1.1)
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
-      infra:
-        specifier: workspace:*
-        version: link:infra
       knip:
         specifier: ^6.48.0
         version: 6.48.0
@@ -391,6 +385,37 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
 
+  cella:
+    dependencies:
+      '@aws-sdk/client-s3':
+        specifier: ^3.1176.0
+        version: 3.1176.0
+      '@aws-sdk/s3-request-presigner':
+        specifier: ^3.1176.0
+        version: 3.1176.0
+      '@cellajs/cli':
+        specifier: ^0.11.0
+        version: 0.11.0(@aws-sdk/client-s3@3.1176.0)(@aws-sdk/s3-request-presigner@3.1176.0)(@pulumi/pulumi@3.277.0(typescript@6.0.3))(@pulumiverse/scaleway@1.62.1(typescript@6.0.3))(@shikijs/themes@4.6.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@pulumi/pulumi':
+        specifier: ^3.277.0
+        version: 3.277.0(typescript@6.0.3)
+      '@pulumiverse/scaleway':
+        specifier: ^1.62.1
+        version: 1.62.1(typescript@6.0.3)
+      shared:
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      '@types/node':
+        specifier: ^26.6.6
+        version: 26.6.6
+      '@typescript/native-preview':
+        specifier: 7.0.0-dev.20260707.2
+        version: 7.0.0-dev.20260707.2
+      vitest:
+        specifier: ^5.1.1
+        version: 5.1.1(@opentelemetry/api@1.9.1)(@types/node@26.6.6)(@vitest/browser-playwright@5.1.1)(@vitest/browser@5.1.1)(@vitest/coverage-v8@5.1.1)(@vitest/ui@5.1.1)(jsdom@31.0.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+
   frontend:
     dependencies:
       '@atlaskit/pragmatic-drag-and-drop':
@@ -739,37 +764,6 @@ importers:
       yaml:
         specifier: ^2.9.1
         version: 2.9.1
-
-  infra:
-    dependencies:
-      '@aws-sdk/client-s3':
-        specifier: ^3.1176.0
-        version: 3.1176.0
-      '@aws-sdk/s3-request-presigner':
-        specifier: ^3.1176.0
-        version: 3.1176.0
-      '@cellajs/cli':
-        specifier: ^0.10.0
-        version: 0.10.0(@aws-sdk/client-s3@3.1176.0)(@aws-sdk/s3-request-presigner@3.1176.0)(@pulumi/pulumi@3.277.0(typescript@6.0.3))(@pulumiverse/scaleway@1.62.1(typescript@6.0.3))(@shikijs/themes@4.6.0)(@types/node@26.6.6)(infra@infra)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@pulumi/pulumi':
-        specifier: ^3.277.0
-        version: 3.277.0(typescript@6.0.3)
-      '@pulumiverse/scaleway':
-        specifier: ^1.62.1
-        version: 1.62.1(typescript@6.0.3)
-      shared:
-        specifier: workspace:*
-        version: link:../shared
-    devDependencies:
-      '@types/node':
-        specifier: ^26.6.6
-        version: 26.6.6
-      '@typescript/native-preview':
-        specifier: 7.0.0-dev.20260707.2
-        version: 7.0.0-dev.20260707.2
-      vitest:
-        specifier: ^5.1.1
-        version: 5.1.1(@opentelemetry/api@1.9.1)(@types/node@26.6.6)(@vitest/browser-playwright@5.1.1)(@vitest/browser@5.1.1)(@vitest/coverage-v8@5.1.1)(@vitest/ui@5.1.1)(jsdom@31.0.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
 
   sdk:
     dependencies:
@@ -1328,8 +1322,8 @@ packages:
       react-dom: ^18.0 || ^19.0 || >= 19.0.0-rc
       tailwindcss: ^4.1.12
 
-  '@cellajs/cli@0.10.0':
-    resolution: {integrity: sha512-K62ddzejVfc9M0SiGuxcqxGRTOqcqom6pBPNrmzhCS7zoBlyQ/wfTNKiUbQr1s0+KeZqO3bineakBsNJWO4ssA==}
+  '@cellajs/cli@0.11.0':
+    resolution: {integrity: sha512-brguUw/VQUuKYIcDGz5FOl+b1UjXFkyS/IRhb7se7d5Gi43JXAp1YFGoHLUesgsK2AFU2q1WLuJyJaj+Y0L+ag==}
     engines: {node: '>=26'}
     os: [darwin, linux]
     hasBin: true
@@ -1338,7 +1332,6 @@ packages:
       '@aws-sdk/s3-request-presigner': ^3.1176.0
       '@pulumi/pulumi': ^3.277.0
       '@pulumiverse/scaleway': ^1.62.1
-      infra: '*'
     peerDependenciesMeta:
       '@aws-sdk/client-s3':
         optional: true
@@ -1347,8 +1340,6 @@ packages:
       '@pulumi/pulumi':
         optional: true
       '@pulumiverse/scaleway':
-        optional: true
-      infra:
         optional: true
 
   '@corvu/utils@0.4.2':
@@ -8393,7 +8384,7 @@ snapshots:
       - y-protocols
       - yjs
 
-  '@cellajs/cli@0.10.0(@aws-sdk/client-s3@3.1176.0)(@aws-sdk/s3-request-presigner@3.1176.0)(@pulumi/pulumi@3.277.0(typescript@6.0.3))(@pulumiverse/scaleway@1.62.1(typescript@6.0.3))(@shikijs/themes@4.6.0)(@types/node@26.6.6)(infra@infra)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@cellajs/cli@0.11.0(@aws-sdk/client-s3@3.1176.0)(@aws-sdk/s3-request-presigner@3.1176.0)(@pulumi/pulumi@3.277.0(typescript@6.0.3))(@pulumiverse/scaleway@1.62.1(typescript@6.0.3))(@shikijs/themes@4.6.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@inquirer/checkbox': 5.3.1(@types/node@26.6.6)
       '@inquirer/core': 12.1.1(@types/node@26.6.6)
@@ -8410,7 +8401,6 @@ snapshots:
       '@aws-sdk/s3-request-presigner': 3.1176.0
       '@pulumi/pulumi': 3.277.0(typescript@6.0.3)
       '@pulumiverse/scaleway': 1.62.1(typescript@6.0.3)
-      infra: link:infra
     transitivePeerDependencies:
       - '@shikijs/themes'
       - '@types/node'

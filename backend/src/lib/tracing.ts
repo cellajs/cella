@@ -22,7 +22,11 @@ const sessionBaggage: SpanProcessor = {
   shutdown: () => Promise.resolve(),
 };
 
-/** Backend OTel SDK from the shared factory. */
+/**
+ * Backend OTel SDK from the shared factory. Every entry that starts it imports this module first, as a bare import: the
+ * pg instrumentation it constructs patches only a `pg` loaded after it, and Biome sorts a named import back behind the
+ * imports that load `pg`.
+ */
 export const otel: OtelSDK = createOtelSDK({
   serviceName,
   serviceVersion: env.RELEASE_SHA,

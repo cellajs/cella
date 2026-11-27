@@ -1,3 +1,4 @@
+import '#/lib/tracing';
 import { sql } from 'drizzle-orm';
 import pc from 'picocolors';
 import { appConfig, isStrategyEnabled } from 'shared';
