@@ -17,10 +17,16 @@ export const listSearchDefaults = <E extends z.ZodEnum>({ shape }: ListQuery<E>)
 
 /**
  * A list route's search, with the API's own `orderBy` (`name desc`): an absent or unknown value (an old bookmark) reads
- * as `defaults`, the API's unless a view opens on its own.
+ * as `defaults`, the API's unless a view opens on its own. A `q` longer than the API takes keeps as many characters as
+ * it takes.
  */
-export const listSearchSchema = <E extends z.ZodEnum>(query: ListQuery<E>, defaults = listSearchDefaults(query)) =>
-  z.object({ q: query.shape.q, orderBy: query.shape.orderBy.unwrap().default(defaults.orderBy).catch(defaults.orderBy) });
+export const listSearchSchema = <E extends z.ZodEnum>(query: ListQuery<E>, defaults = listSearchDefaults(query)) => {
+  const maxLength = query.shape.q.unwrap().maxLength ?? undefined;
+  return z.object({
+    q: query.shape.q.catch(({ value }) => String(value).slice(0, maxLength)),
+    orderBy: query.shape.orderBy.unwrap().default(defaults.orderBy).catch(defaults.orderBy),
+  });
+};
 
 /** A boolean search param: `true` or `false` in the URL, absent when unset; a navigate may pass the boolean. */
 export const booleanSearchParam = z
