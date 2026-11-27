@@ -13,8 +13,14 @@ export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'd
 // A deployed mode requires a verified TLS connection to the managed PostgreSQL.
 const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, appConfig.isDeployed && !env.NODB);
 
-const connect = (connectionString: string, max: number, sessionTimeouts?: SessionTimeouts): DB =>
-  createPgConnection(connectionString, { max, sslCa, debug: env.DEBUG, sessionTimeouts });
+const connect = (connectionString: string, max: number, limits: { sessionTimeouts?: SessionTimeouts; clientDeadlineMs?: number } = {}): DB =>
+  createPgConnection(connectionString, { max, sslCa, debug: env.DEBUG, ...limits });
+
+/**
+ * The runtime pool's client deadline, for a process that serves requests. The migrate companion takes the API's env,
+ * and under `singleVM` the folded jobs worker shares this pool: both wait as long as the server.
+ */
+const clientDeadlineMs = appConfig.singleVM || env.SERVICE === 'migrate' ? undefined : env.DATABASE_CLIENT_DEADLINE_MS;
 
 /** Probes exempt from the NODB throw: `prepared.ts` reads `select`, the pool probe reads `$client`. */
 const noDbProbeKeys: ReadonlySet<string | symbol> = new Set(['select', '$client']);
@@ -28,7 +34,7 @@ const createNoDbStub = (): DB =>
   });
 
 /** The runtime pool (RLS-subject `runtime_role`): every request handler and worker query goes through this. */
-export const baseDb: DB = env.NODB ? createNoDbStub() : connect(env.DATABASE_URL, env.DATABASE_POOL_MAX);
+export const baseDb: DB = env.NODB ? createNoDbStub() : connect(env.DATABASE_URL, env.DATABASE_POOL_MAX, { clientDeadlineMs });
 
 /** Waiting clients relative to pool size (0 = idle, 1 or more = queueing). */
 export const dbPoolPressure = (): number => {
@@ -66,7 +72,7 @@ export const getAdminDb = (purpose: string): DB => {
   if (env.NODB) throw new Error(`Admin database access (${purpose}) attempted while NODB is set.`);
   if (!env.DATABASE_ADMIN_URL) throw new Error(`DATABASE_ADMIN_URL is required for ${purpose}`);
   // The migrate companion bounds every admin statement, so a blocked lock fails the release with a named error.
-  adminConnection ??= connect(env.DATABASE_ADMIN_URL, 5, env.SERVICE === 'migrate' ? migrateSessionTimeouts : undefined);
+  adminConnection ??= connect(env.DATABASE_ADMIN_URL, 5, { sessionTimeouts: env.SERVICE === 'migrate' ? migrateSessionTimeouts : undefined });
   return adminConnection;
 };
 

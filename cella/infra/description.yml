@@ -9,13 +9,15 @@ general:
   schedule: { everyMinutes: { production: 1, staging: 5 } }
 
 # The singleVM host takes on each co-hosted worker's env except these variables, which a process reads as its own:
-# the service it boots and the size of its runtime pool.
-processIdentityEnv: [SERVICE, DATABASE_POOL_MAX]
+# the service it boots, the size of its runtime pool and that pool's client deadline.
+processIdentityEnv: [SERVICE, DATABASE_POOL_MAX, DATABASE_CLIENT_DEADLINE_MS]
 
 # A service's `env` sizes its database pool (`DATABASE_POOL_MAX`, `YJS_DATABASE_POOL_MAX`). Every pool's ceiling at
 # rest, plus what the largest overlap of one deploy adds, stays within 87 connections with every service enabled,
 # split or under `singleVM`: Postgres's default `max_connections` of 100, less its 3 reserved slots and 10 for
 # operator sessions. A service of the app's own takes a size by the same rule.
+# A service that serves requests also sets `DATABASE_CLIENT_DEADLINE_MS`: a statement unanswered for 120 s makes its
+# client ask the server after it, so a frozen database ends a request. The jobs worker sets none.
 services:
   backend:
     dockerfile: Dockerfile
@@ -34,7 +36,7 @@ services:
     s3Access: true
     instanceType: { production: DEV1-S, staging: DEV1-S }
     # Under `singleVM` this pool also serves the folded jobs, mcp and oauth workers.
-    env: { APP_ORIGIN: '@{frontend.url}', DATABASE_POOL_MAX: '12' }
+    env: { APP_ORIGIN: '@{frontend.url}', DATABASE_POOL_MAX: '12', DATABASE_CLIENT_DEADLINE_MS: '120000' }
   cdc:
     dockerfile: Dockerfile
     target: cdc
@@ -74,7 +76,7 @@ services:
     pathPrefix: /mcp
     instanceType: DEV1-S
     coHosted: true
-    env: { SERVICE: mcp, APP_ORIGIN: '@{frontend.url}', DATABASE_POOL_MAX: '5' }
+    env: { SERVICE: mcp, APP_ORIGIN: '@{frontend.url}', DATABASE_POOL_MAX: '5', DATABASE_CLIENT_DEADLINE_MS: '120000' }
   oauth:
     port: 4004
     startPeriod: 15s
@@ -86,7 +88,7 @@ services:
     pathPrefix: /oauth
     instanceType: DEV1-S
     coHosted: true
-    env: { SERVICE: oauth, APP_ORIGIN: '@{frontend.url}', DATABASE_POOL_MAX: '5' }
+    env: { SERVICE: oauth, APP_ORIGIN: '@{frontend.url}', DATABASE_POOL_MAX: '5', DATABASE_CLIENT_DEADLINE_MS: '120000' }
   jobs:
     port: 4006
     startPeriod: 15s
