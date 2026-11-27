@@ -15,8 +15,8 @@ export function embedFrameAncestors(config: BuiltConfig): string {
 
 /**
  * The frontend's Content-Security-Policy for one environment's config: the app origin, the services off it, the buckets,
- * the map styles and the monitoring DSN. A document under `/embed/` passes `embedFrameAncestors`; every other one is
- * framed by the app alone.
+ * the map styles, the monitoring DSN, and the support chat's and the upload service's hosts while `has` turns each on. A
+ * document under `/embed/` passes `embedFrameAncestors`; every other one is framed by the app alone.
  */
 export function frontendCsp(config: BuiltConfig, frameAncestors = "'self'"): string {
   const isEnabled = (slug: 'yjs' | 'mcp'): boolean => config.services[slug].enabled !== false;
@@ -52,6 +52,9 @@ export function frontendCsp(config: BuiltConfig, frameAncestors = "'self'"): str
           .map((url) => new URL(url).origin),
       ),
     ].join(' '),
+    chatSupport: config.has.chatSupport ? '*.gleap.io' : '',
+    chatSocket: config.has.chatSupport ? 'wss://ws.gleap.io' : '',
+    uploadService: config.has.uploads ? 'https://*.transloadit.com wss://*.transloadit.com https://transloaditstatus.com' : '',
   };
 
   const connectSrc = [
@@ -65,34 +68,32 @@ export function frontendCsp(config: BuiltConfig, frameAncestors = "'self'"): str
     cspOrigins.s3Private,
     cspOrigins.maps,
     cspOrigins.monitoring,
-    'https://*.transloadit.com',
-    'wss://*.transloadit.com',
-    'https://transloaditstatus.com',
-    '*.gleap.io',
-    'wss://ws.gleap.io',
+    cspOrigins.uploadService,
+    cspOrigins.chatSupport,
+    cspOrigins.chatSocket,
   ]
     .filter(Boolean)
     .join(' ');
 
   return [
     `default-src 'self'`,
-    `script-src 'self' *.gleap.io`,
+    `script-src 'self' ${cspOrigins.chatSupport}`,
     `worker-src 'self' blob:`,
     `style-src 'self' 'unsafe-inline'`,
     connectSrc,
     `img-src 'self' blob: https: data:`,
-    `media-src 'self' blob: data: https://i.ytimg.com *.gleap.io ${cspOrigins.s3Buckets} ${cspOrigins.s3Public} ${cspOrigins.s3Private}`,
+    `media-src 'self' blob: data: https://i.ytimg.com ${cspOrigins.chatSupport} ${cspOrigins.s3Buckets} ${cspOrigins.s3Public} ${cspOrigins.s3Private}`,
     // As an LTI platform the app frames the LTI tools its tenants install, from whatever HTTPS origin they registered.
-    `frame-src 'self' *.youtube.com *.vimeo.com *.gleap.io${config.has.ltiPlatform ? ' https:' : ''}`,
+    `frame-src 'self' *.youtube.com *.vimeo.com ${cspOrigins.chatSupport}${config.has.ltiPlatform ? ' https:' : ''}`,
     `font-src 'self' data:`,
     `frame-ancestors ${frameAncestors}`,
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,
   ]
+    .map((directive) => directive.trim())
     .join('; ')
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/\s+/g, ' ');
 }
 
 /** The frontend's Permissions-Policy: a page of the app may use the camera and microphone (the uploader), and none asks for a location. */
