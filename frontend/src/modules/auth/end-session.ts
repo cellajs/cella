@@ -57,9 +57,9 @@ export const sweepForgottenUserDbs = async (): Promise<void> => {
 };
 
 /**
- * Ends the session on the server. What needs the session goes first, while it lasts: pending seen marks would beacon
- * after the cookie is gone, and this device's push subscription would bring the account's notifications to the next
- * person here. Nothing on this device can hold it up.
+ * Ends the session on the server. What needs the session goes first, while it lasts: pending seen marks sent after
+ * the cookie is gone would be refused, and this device's push subscription would bring the account's notifications to
+ * the next person here. Nothing on this device can hold it up.
  * @throws when the request failed or went unanswered: the session may still work. A 401 says no session is left to end
  * and counts as signed out.
  */

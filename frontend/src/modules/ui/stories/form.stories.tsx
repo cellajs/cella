@@ -29,7 +29,7 @@ function ProfileForm(args: Story['args']) {
   }
   return (
     <Form {...args} {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-8">
         <FormField
           control={form.control}
           name="username"
@@ -43,7 +43,9 @@ function ProfileForm(args: Story['args']) {
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button type="submit" className="self-start">
+          Submit
+        </Button>
       </form>
     </Form>
   );

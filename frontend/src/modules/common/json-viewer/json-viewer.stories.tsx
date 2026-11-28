@@ -129,7 +129,7 @@ export const WithSearch: Story = {
   render: function Render(args) {
     const [searchText, setSearchText] = useState('');
     return (
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <input
           type="text"
           placeholder="Search JSON..."
@@ -204,7 +204,7 @@ export const AllFeatures: Story = {
   render: function Render(args) {
     const [searchText, setSearchText] = useState('');
     return (
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <input
           type="text"
           placeholder="Search..."

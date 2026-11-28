@@ -11,7 +11,7 @@ const meta: Meta<typeof Checkbox> = {
   argTypes: {},
   args: { id: 'terms', disabled: false },
   render: (args) => (
-    <div className="flex space-x-2">
+    <div className="flex gap-2">
       <Checkbox {...args} />
       <Label htmlFor={args.id}>Accept terms and conditions</Label>
     </div>

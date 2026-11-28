@@ -133,7 +133,7 @@ export const CustomStyling: Story = {
   render: function Render() {
     const [value, setValue] = useState('');
     return (
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <InputOTP length={6} value={value} onValueChange={(value) => setValue(value)} className="gap-4">
           <InputOTPGroup>
             <InputOTPSlot className="size-12 text-lg" />
@@ -166,13 +166,13 @@ export const AuthForm: Story = {
     const isComplete = value.length === 6;
 
     return (
-      <div className="w-full max-w-sm space-y-6">
-        <div className="space-y-2 text-center">
+      <div className="flex w-full max-w-sm flex-col gap-6">
+        <div className="flex flex-col gap-2 text-center">
           <h2 className="text-2xl font-semibold">Verify your identity</h2>
           <p className="text-muted-foreground text-sm">Enter the 6-digit code sent to your device</p>
         </div>
 
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           <InputOTP length={6} value={value} onValueChange={(value) => setValue(value)} className="justify-center">
             <InputOTPGroup>
               <InputOTPSlot />
@@ -209,15 +209,15 @@ export const RecoveryCodes: Story = {
     };
 
     return (
-      <div className="w-full max-w-md space-y-6">
-        <div className="space-y-2">
+      <div className="flex w-full max-w-md flex-col gap-6">
+        <div className="flex flex-col gap-2">
           <h3 className="text-lg font-semibold">Enter Recovery Codes</h3>
           <p className="text-muted-foreground text-sm">Enter any 3 of your 8-character recovery codes</p>
         </div>
 
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           {codes.map((code, index) => (
-            <div key={index} className="flex items-center space-x-2">
+            <div key={index} className="flex items-center gap-2">
               <span className="w-20 text-sm font-medium">Code {index + 1}:</span>
               <InputOTP length={8} validationType="alphanumeric" value={code} onValueChange={(value) => handleCodeChange(index, value)}>
                 <InputOTPGroup>

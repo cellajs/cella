@@ -106,7 +106,7 @@ export const DifferentButtonVariants: Story = {
     const [date, setDate] = useState<Date | undefined>(new Date());
 
     return (
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <div>
           <h3 className="mb-2 text-sm font-medium">Default buttons</h3>
           <Calendar

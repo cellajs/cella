@@ -13,7 +13,7 @@ interface HashUrlButtonProps {
   className?: string;
 }
 
-/** Copies the link to a section of the current page. Invisible until the parent carrying `group/hash-url` is hovered. */
+/** Copies the link to a section of the current page. Shows while the parent carrying `group/hash-url` is hovered, and always on touch. */
 export function HashUrlButton({ hash, href, className }: HashUrlButtonProps) {
   const { t } = useTranslation();
   const { copyToClipboard, copied } = useCopyToClipboard();
@@ -24,7 +24,7 @@ export function HashUrlButton({ hash, href, className }: HashUrlButtonProps) {
       tabIndex={-1}
       size="xs"
       onClick={() => copyToClipboard(`${window.location.origin}${href ?? `${window.location.pathname}${window.location.search}#${hash}`}`)}
-      className={cn('opacity-0 transition-opacity group-hover/hash-url:opacity-70 hover:opacity-100', className)}
+      className={cn('opacity-0 transition-opacity group-hover/hash-url:opacity-70 hover:opacity-100 pointer-coarse:opacity-70', className)}
       aria-label={t('c:copy_link')}
     >
       <CopiedIcon copied={copied} icon={HashIcon} />

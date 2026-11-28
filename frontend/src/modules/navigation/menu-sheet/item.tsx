@@ -63,15 +63,15 @@ export function MenuSheetItem({ item, isSubitem, unseenCount: givenCount }: Menu
       resetScroll={false}
       activeOptions={{ exact: false, includeHash: false, includeSearch: false }}
       activeProps={{ 'data-link-active': true }}
-      className="group/menu-sheet-item group-not-has-[:is(a,button):not([data-link-active]):hover]/menu-sheet:data-[link-active=true]:bg-hover standalone:[-webkit-touch-callout:none] focus-effect focus-inset active:bg-accent sm:hover:bg-hover sm:hover:text-foreground relative flex h-12 w-full items-center gap-1 rounded-sm select-none data-[compact=true]:h-10"
+      className="group/menu-sheet-item group-not-has-[:is(a,button):not([data-link-active]):hover]/menu-sheet:data-link-active:bg-hover standalone:[-webkit-touch-callout:none] focus-effect focus-inset active:bg-accent sm:hover:bg-hover sm:hover:text-foreground relative flex h-12 w-full items-center gap-1 rounded-sm select-none data-[compact=true]:h-10"
     >
-      <span className="bg-primary absolute inset-y-3 left-0 w-1 rounded-lg opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
+      <span className="bg-primary absolute inset-y-3 left-0 w-1 rounded-lg opacity-0 transition-opacity group-data-link-active/menu-sheet-item:opacity-100" />
       {/* Every avatar gap is 1rem: half below the row above, half above this avatar */}
       {isSubitem && isInActiveGroup && <SubmenuConnector />}
       <span className="relative mx-3 my-2 size-8 shrink-0 group-data-[compact=true]/menu-sheet-item:mx-4 group-data-[compact=true]/menu-sheet-item:size-6">
         <EntityAvatar
           className={cn(
-            'bg-card size-8 group-hover/menu-sheet-item:opacity-100 group-data-[compact=true]/menu-sheet-item:size-6 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80',
+            'bg-card size-8 group-hover/menu-sheet-item:opacity-100 group-data-link-active/menu-sheet-item:opacity-100 group-data-[compact=true]/menu-sheet-item:size-6 sm:opacity-80',
             Icon && 'bg-transparent shadow-none',
           )}
           entity={item}
@@ -79,7 +79,7 @@ export function MenuSheetItem({ item, isSubitem, unseenCount: givenCount }: Menu
         />
         {mark?.badge}
       </span>
-      <span className="text-md group-data-[compact=true]/menu-sheet-item:text-foreground-soft group-[[data-compact=true][data-link-active=true]]/menu-sheet-item:text-foreground grow truncate pr-2 leading-5 font-medium group-data-[compact=true]/menu-sheet-item:text-sm group-data-[compact=true]/menu-sheet-item:font-normal group-[[data-compact=true][data-link-active=true]]/menu-sheet-item:font-medium">
+      <span className="text-md group-data-[compact=true]/menu-sheet-item:text-foreground-soft group-[[data-compact=true][data-link-active]]/menu-sheet-item:text-foreground grow truncate pr-2 leading-5 font-medium group-data-[compact=true]/menu-sheet-item:text-sm group-data-[compact=true]/menu-sheet-item:font-normal group-[[data-compact=true][data-link-active]]/menu-sheet-item:font-medium">
         {item.name}
       </span>
       {isMuted && (

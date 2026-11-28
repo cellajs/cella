@@ -102,7 +102,7 @@ export function InfoGrid<C extends string>({
     }, []);
 
     return (
-      <div className="space-y-16">
+      <div className="flex flex-col gap-16">
         {categories.map((category) => {
           const CategoryIcon: IconComponent = categoryIcons[category];
           const categoryItems = items.filter((item) => item.category === category);

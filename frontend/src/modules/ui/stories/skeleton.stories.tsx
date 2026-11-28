@@ -13,9 +13,9 @@ type Story = StoryObj<typeof Skeleton>;
 /** The default form of the skeleton. */
 export const Default: Story = {
   render: (args) => (
-    <div className="flex items-center space-x-4">
+    <div className="flex items-center gap-4">
       <Skeleton {...args} className="size-12 rounded-full" />
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2">
         <Skeleton {...args} className="h-4 w-[250px]" />
         <Skeleton {...args} className="h-4 w-[200px]" />
       </div>

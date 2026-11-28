@@ -1,4 +1,5 @@
 import { appConfig } from 'shared';
+import { isRecord } from 'shared/utils/as-record';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { idbKvStorage } from '~/query/idb-kv-storage';
@@ -54,6 +55,10 @@ export const useOfflineFilesStore = create<OfflineFilesState>()(
       name: 'offline-files',
       skipHydration: true,
       partialize: ({ tier }) => ({ tier }),
+      merge: (persisted, current) => {
+        const stored = isRecord(persisted) ? persisted.tier : null;
+        return { ...current, tier: offlineFilesTiers.find((tier) => tier === stored) ?? null };
+      },
       storage: createJSONStorage(() => idbKvStorage('offline-files')),
     },
   ),

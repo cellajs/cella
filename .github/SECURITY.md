@@ -7,6 +7,7 @@ Report security issues to [security@cellajs.com](mailto:security@cellajs.com).
 ## Security monitoring
 
 - `pnpm cella audit`: reports outdated packages, known CVEs, and unneeded `pnpm.overrides`; `pnpm cella audit fix` asks which to take and writes them
+- `pnpm cella pentest`: before a release, runs a cross-tenant access probe, Nuclei and ZAP against a throwaway testbed; `pnpm cella pentest report` prints the last run's findings
 - `pnpm test:full`: full suite including authentication guards, RBAC, and protected route enforcement
 
 ## Resources

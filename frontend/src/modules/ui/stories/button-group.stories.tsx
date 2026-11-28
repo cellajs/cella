@@ -76,7 +76,7 @@ export const WithIcons: Story = {
 /** Button group with text sections and separators. */
 export const WithTextAndSeparators: Story = {
   render: () => (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <ButtonGroup>
         <Button variant="outline">File</Button>
         <Button variant="outline">Edit</Button>
@@ -120,7 +120,7 @@ export const WithSelect: Story = {
 /** Button group with disabled states. */
 export const DisabledStates: Story = {
   render: () => (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <ButtonGroup>
         <Button>Enabled</Button>
         <Button disabled>Disabled</Button>
@@ -145,7 +145,7 @@ export const DisabledStates: Story = {
 /** Button group with different sizes. */
 export const DifferentSizes: Story = {
   render: () => (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <ButtonGroup>
         <Button size="sm">Small</Button>
         <Button size="sm">Small</Button>
