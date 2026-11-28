@@ -39,6 +39,7 @@ type ForwardedGridProps<TData> = Pick<
   | 'canDropRow'
   | 'renderRowDragPreview'
   | 'rowClass'
+  | 'treeRow'
   | 'enableStickyHeader'
   | 'enableDragAutoScroll'
 >;

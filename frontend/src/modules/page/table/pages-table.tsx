@@ -10,7 +10,7 @@ import { reorderColumn } from '~/modules/common/data-table/reorder-column';
 import { RowDragPreview } from '~/modules/common/data-table/row-drag-preview';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import { TreeProvider } from '~/modules/common/data-table/tree/tree-context';
-import { siblingPosition, useTreeRows } from '~/modules/common/data-table/tree/use-tree-rows';
+import { siblingPosition, treeRowAttributes, useTreeRows } from '~/modules/common/data-table/tree/use-tree-rows';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { SearchScope } from '~/modules/common/match-highlight/match-scope';
@@ -117,6 +117,7 @@ export function PagesTable() {
             rowHeight={tree.rowHeight}
             rowKeyGetter={rowKeyById}
             columns={columns}
+            treeRow={(rowIdx) => treeRowAttributes(rows, rowIdx)}
             enableVirtualization
             isFiltered={!!q}
             onResetFilters={() => setSearch({ q: '' })}

@@ -262,6 +262,17 @@ export interface RenderRowProps<TRow, TSummaryRow = unknown> extends BaseRenderR
   renderCell: (key: Key, props: CellRendererProps<TRow, TSummaryRow>) => ReactNode;
 }
 
+/** A treegrid row's place in its tree, as the APG treegrid pattern puts it on each row. */
+export interface TreeRowAttributes {
+  /** 1 for a root row. */
+  'aria-level': number;
+  /** Whether its child rows show; absent on a row without children. */
+  'aria-expanded'?: boolean;
+  /** From 1, among the rows with the same parent. */
+  'aria-posinset': number;
+  'aria-setsize': number;
+}
+
 export interface RowsChangeData<R, SR = unknown> {
   indexes: number[];
   column: CalculatedColumn<R, SR>;

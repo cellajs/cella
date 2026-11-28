@@ -31,7 +31,7 @@ export function RenderExternalEditor<TRow>({ open, onClose }: Props<TRow>) {
  * is unmounted the moment edit mode ends, so focus restoration needs its successor.
  */
 export function liveCellRef(cell: HTMLElement | null): RefObject<HTMLElement | null> {
-  const grid = cell?.closest<HTMLElement>('[role="grid"]') ?? null;
+  const grid = cell?.closest<HTMLElement>('[role="grid"], [role="treegrid"]') ?? null;
   const rowIndex = cell?.closest('[role="row"]')?.getAttribute('aria-rowindex');
   const colIndex = cell?.getAttribute('aria-colindex');
 
