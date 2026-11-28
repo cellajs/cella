@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { actionLabel, documentedTasks, isOperatorActionId, menuRows, operatorActions } from '@cellajs/cli/infra/contract';
+import { documentedTasks, isOperatorActionId, menuRows, operatorActions } from '@cellajs/cli/infra/contract';
 import { describe, expect, it } from 'vitest';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 
-const labels = Object.keys(operatorActions).filter(isOperatorActionId).map(actionLabel);
+const ids = Object.keys(operatorActions).filter(isOperatorActionId);
 const rowLabels = Object.values(menuRows).map((row) => row.label);
 const tasks = new Set<string>(documentedTasks);
 
@@ -21,7 +21,7 @@ const DOCS = [
 
 describe('the docs name the infra CLI as the engine does', () => {
   it('points the docs at menu entries and commands that exist', () => {
-    const known = new Set<string>([...labels, ...rowLabels]);
+    const known = new Set<string>([...ids, ...rowLabels]);
     const unknown: string[] = [];
     for (const file of DOCS) {
       const text = readFileSync(path.join(repoRoot, file), 'utf8');

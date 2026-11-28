@@ -68,9 +68,9 @@ Pulls upstream updates without overwriting local changes. Updates can contain al
 pnpm cella
 ```
 
-## Setup & deploy
+## Install & deploy
 
-Set up and deploy the complete stack for your app on Scaleway ([infra guide](../infra/README.md)).
+Install and deploy the complete stack for your app on Scaleway ([infra guide](../infra/README.md)).
 
 ```bash
 pnpm cella infra

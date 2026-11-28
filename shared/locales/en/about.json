@@ -122,7 +122,7 @@
   "features.permission_engine": "Permission engine",
   "features.permission_engine.text": "Role-based access that understands your hierarchy, resolving who can do what by walking memberships up the tree.",
   "features.pulumi_iac": "Deploy workflow with CLI",
-  "features.pulumi_iac.text": "An interactive CLI guides you through setup, preview, deploy and secrets, with Pulumi keeping the foundation as repeatable infrastructure as code.",
+  "features.pulumi_iac.text": "An interactive CLI guides you through install, preview, deploy and secrets, with Pulumi keeping the foundation as repeatable infrastructure as code.",
   "features.pwa": "Progressive Web App",
   "features.pwa.text": "An installable app that works offline, with assets cached for true offline use.",
   "features.rate_limiting": "Rate limiting",
@@ -257,7 +257,7 @@
   "try_me": "Try me",
   "why.text_1": "Auth, permissions, UI components, automated SDK & docs, CLI to pull template changes, <featuresLink>and more</featuresLink>.",
   "why.text_2": "Some data is <syncEngineLink>synced in real-time</syncEngineLink> to clients, some is just fetched. All data passes through Postgres, API & React Query.",
-  "why.text_3": "A simple CLI to setup and deploy using only EU-based hosting & vendors. GDPR compliant.",
+  "why.text_3": "A simple CLI to install and deploy using only EU-based hosting & vendors. GDPR compliant.",
   "why.title_1": "Batteries included template",
   "why.title_2": "Selective sync engine",
   "why.title_3": "100% EU-hosted"
