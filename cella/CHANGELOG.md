@@ -1,5 +1,75 @@
 # Changelog
 
+## [0.50.0](https://github.com/cellajs/cella/compare/0.49.0...0.50.0) (2026-11-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* the read scope is always one SQL predicate, the hierarchy has no relatedChannels, and the data grid loses what nothing uses ([#1936](https://github.com/cellajs/cella/issues/1936))
+* **backend:** pnpm dev runs the migrate companion first, the API never migrates, and pnpm offline starts its packages through pnpm ([#1931](https://github.com/cellajs/cella/issues/1931))
+* **attachment:** a file uploaded into an unpublished document is a draft only its uploader can read ([#1928](https://github.com/cellajs/cella/issues/1928))
+* one tenant policy checks writes too, token hashes are keyed by DATA_HASH_SECRET, and a channel reference carries its tenant ([#1923](https://github.com/cellajs/cella/issues/1923))
+* **infra:** the app describes its deployment in cella/infra/description.yml, which the engine checks against appConfig ([#1920](https://github.com/cellajs/cella/issues/1920))
+* each service sizes its database pool, the suites run nightly on main, and a Postgres query traces inside a span ([#1919](https://github.com/cellajs/cella/issues/1919))
+* **frontend:** offline is a mark on the menu button, the info panel reads offline as status unknown, and the docs strike switched-off operations ([#1918](https://github.com/cellajs/cella/issues/1918))
+* **legal:** the privacy policy says what the browser and the servers send to monitoring ([#1917](https://github.com/cellajs/cella/issues/1917))
+* **frontend:** the template counts no page views: onedollarstats leaves the about page, the frontend, its CSP and the privacy policy ([#1916](https://github.com/cellajs/cella/issues/1916))
+* a channel arranges the tabs of the channels below it, and a narrower channel cannot show what a broader one hides ([#1914](https://github.com/cellajs/cella/issues/1914))
+* **frontend:** the browser reports errors and sessions to a DSN in the Sentry envelope protocol, in place of Maple's SDK ([#1913](https://github.com/cellajs/cella/issues/1913))
+* telemetry goes to the standard OTLP variables alone, every service reports its runtime, process and pool, and a request span names its tenant, organization and user ([#1907](https://github.com/cellajs/cella/issues/1907))
+* **infra:** the deploy engine ships in @cellajs/cli, and infra/ keeps only the app's part ([#1905](https://github.com/cellajs/cella/issues/1905))
+
+### 🎉 New features
+
+* a channel arranges the tabs of the channels below it, and a narrower channel cannot show what a broader one hides ([#1914](https://github.com/cellajs/cella/issues/1914)) ([e6a4e1e](https://github.com/cellajs/cella/commit/e6a4e1e783ac3b41352cdaa6e83d0d60109ab6ea))
+* development reports to the config's DSN when the machine names none, and a portless localhost DSN takes the app's origin ([#1915](https://github.com/cellajs/cella/issues/1915)) ([375aa5e](https://github.com/cellajs/cella/commit/375aa5e4a67220b3ce4dbfd91cce63d26f5911bd))
+* **frontend:** offline is a mark on the menu button, the info panel reads offline as status unknown, and the docs strike switched-off operations ([#1918](https://github.com/cellajs/cella/issues/1918)) ([19077e6](https://github.com/cellajs/cella/commit/19077e636484eadd9eb04a05abfc81d03fe94cf7))
+* **frontend:** the browser reports errors and sessions to a DSN in the Sentry envelope protocol, in place of Maple's SDK ([#1913](https://github.com/cellajs/cella/issues/1913)) ([ea914e7](https://github.com/cellajs/cella/commit/ea914e7eaf37d0c65dcb863a961a723bbdf9dc44))
+* **frontend:** the template counts no page views: onedollarstats leaves the about page, the frontend, its CSP and the privacy policy ([#1916](https://github.com/cellajs/cella/issues/1916)) ([eb622cd](https://github.com/cellajs/cella/commit/eb622cdd5c5214147f2a6aa3893ad104b3299b93))
+* **hierarchy:** a channel names the role people start at apart from its least privileged role ([#1908](https://github.com/cellajs/cella/issues/1908)) ([3c521f4](https://github.com/cellajs/cella/commit/3c521f46036e7e12794d1cb8b7261f53604ae54b))
+* **infra:** the app describes its deployment in cella/infra/description.yml, which the engine checks against appConfig ([#1920](https://github.com/cellajs/cella/issues/1920)) ([f2f5a8e](https://github.com/cellajs/cella/commit/f2f5a8edf40b9874b6957aa7cdbadc8a5e03b450))
+* **infra:** the deploy engine ships in @cellajs/cli, and infra/ keeps only the app's part ([#1905](https://github.com/cellajs/cella/issues/1905)) ([05c846a](https://github.com/cellajs/cella/commit/05c846a088bc53e359c869c91ff4eb66392c292c))
+* **routes:** a route may name several scopes ([#1921](https://github.com/cellajs/cella/issues/1921)) ([86f833b](https://github.com/cellajs/cella/commit/86f833beb59cb7360dd21464b0f49d99fa3a8c8e))
+* telemetry goes to the standard OTLP variables alone, every service reports its runtime, process and pool, and a request span names its tenant, organization and user ([#1907](https://github.com/cellajs/cella/issues/1907)) ([23a0be2](https://github.com/cellajs/cella/commit/23a0be2a7aa3d9b7cda8577a12dc352713ac0823))
+* **yjs:** a module can close collaborative editing of a row its user may still update ([#1929](https://github.com/cellajs/cella/issues/1929)) ([a73bb90](https://github.com/cellajs/cella/commit/a73bb909775aa11c93972d5b1ddeaa570c99fe59))
+
+
+### 🐞 Bug fixes
+
+* a probe with an unknown status is unhealthy, stored values are checked on read, and section links show on touch ([#1935](https://github.com/cellajs/cella/issues/1935)) ([e47bb25](https://github.com/cellajs/cella/commit/e47bb25e00913126b9b81b7da78d11d9e4b74a5e))
+* **attachment:** a file uploaded into an unpublished document is a draft only its uploader can read ([#1928](https://github.com/cellajs/cella/issues/1928)) ([74d5878](https://github.com/cellajs/cella/commit/74d58784840fa14036ec5fe56542b4e639c0d47f))
+* **attachment:** a share link to a private file unfurls with nothing of the file or its channel ([#1924](https://github.com/cellajs/cella/issues/1924)) ([16c6d6f](https://github.com/cellajs/cella/commit/16c6d6f9c5fa383cd66281f83662a10a9a0d07f8))
+* **cdc:** an activity names no actor for a server-driven update or a hard delete ([#1922](https://github.com/cellajs/cella/issues/1922)) ([a045f48](https://github.com/cellajs/cella/commit/a045f4853bad9092d75bffc8d2bc15da98603f4a))
+* **db:** a database that cannot be reached answers a retryable 503, and a frozen one ends a request at the client's deadline ([#1926](https://github.com/cellajs/cella/issues/1926)) ([d84b785](https://github.com/cellajs/cella/commit/d84b7850b5a0c4aaefffe85bbfa5ab586b9d2b7a))
+* **docker:** the service images copy infra/package.json, which the root links for @cellajs/cli's peer ([#1911](https://github.com/cellajs/cella/issues/1911)) ([50d5101](https://github.com/cellajs/cella/commit/50d510163ecd298176bbef7a8e390a9c196d134b))
+* each service sizes its database pool, the suites run nightly on main, and a Postgres query traces inside a span ([#1919](https://github.com/cellajs/cella/issues/1919)) ([3f18c53](https://github.com/cellajs/cella/commit/3f18c53f18444a06007f23941b0ca8511bb4c97e))
+* **frontend:** a tree table is a treegrid whose rows name their level ([#1927](https://github.com/cellajs/cella/issues/1927)) ([00e00d4](https://github.com/cellajs/cella/commit/00e00d42d912e1ac8b3933e282806365ae156ac2))
+* **infra:** an apply grants a database role only when it holds no privilege, and each side-effects migration revokes the runtime role's grants before it grants its classes ([#1903](https://github.com/cellajs/cella/issues/1903)) ([4a75bc5](https://github.com/cellajs/cella/commit/4a75bc5443e72a46342b0c6f3099e73fe5d50563))
+* **legal:** the privacy policy says what the browser and the servers send to monitoring ([#1917](https://github.com/cellajs/cella/issues/1917)) ([aa89ac4](https://github.com/cellajs/cella/commit/aa89ac4570321b42725188ed8a8035f872edba4f))
+* **lti:** the brought-along role check runs at API boot, and judges an app's map only when a mode of the app turns lti on ([#1909](https://github.com/cellajs/cella/issues/1909)) ([52a253c](https://github.com/cellajs/cella/commit/52a253c840c89fc81eb87c732fa20a9ac69197e4))
+* one tenant policy checks writes too, token hashes are keyed by DATA_HASH_SECRET, and a channel reference carries its tenant ([#1923](https://github.com/cellajs/cella/issues/1923)) ([9111591](https://github.com/cellajs/cella/commit/91115917fea1ead595a5099ff58912b242a34706))
+* package scripts run in cmd.exe, pnpm check typechecks every package there, and tsperf keeps the build cache ([#1932](https://github.com/cellajs/cella/issues/1932)) ([9556ea9](https://github.com/cellajs/cella/commit/9556ea9b2095a5b559168f5ad4fd1e511e63e6cc))
+* ten template defects, among them a frozen form draft, RLS policies lost in a partition conversion, a boot check that failed with yjs off and an activities index without its subject ([#1906](https://github.com/cellajs/cella/issues/1906)) ([4615a18](https://github.com/cellajs/cella/commit/4615a1801c1d76c926eb311ee90c6242381326ed))
+* **test:** the auth boundary names the API's boot check of the lti role map as its one flow import ([#1912](https://github.com/cellajs/cella/issues/1912)) ([8e49556](https://github.com/cellajs/cella/commit/8e4955628e05cb5c734b461b13708aaa80a00d79))
+* thirteen template defects, among them a long list search that shows the error page, Drizzle Studio's port in a service block and a CSP that allows the hosts of switched-off features ([#1925](https://github.com/cellajs/cella/issues/1925)) ([039900f](https://github.com/cellajs/cella/commit/039900fbea1475daf1d64789c5cb8e1ea67fa7af))
+
+
+### 🔧 Small improvements
+
+* **backend:** pnpm dev runs the migrate companion first, the API never migrates, and pnpm offline starts its packages through pnpm ([#1931](https://github.com/cellajs/cella/issues/1931)) ([0c91586](https://github.com/cellajs/cella/commit/0c91586026de32ddffc893d01ebc2ec999621682))
+* **infra:** engine code reads the app's config by package name, and callers run infra tasks by script name ([#1900](https://github.com/cellajs/cella/issues/1900)) ([4e96612](https://github.com/cellajs/cella/commit/4e966121b23def553c03f6d128ec418b298fbb95))
+* the read scope is always one SQL predicate, the hierarchy has no relatedChannels, and the data grid loses what nothing uses ([#1936](https://github.com/cellajs/cella/issues/1936)) ([53e33ae](https://github.com/cellajs/cella/commit/53e33aedc13ee75a3de70f010e7ddeff633dceee))
+
+
+### 📖 Documentation
+
+* a deployed process is a service called by its name, and /about lists the open standards the template follows ([#1930](https://github.com/cellajs/cella/issues/1930)) ([6518e41](https://github.com/cellajs/cella/commit/6518e41d238b0168527dc0938f14f09a0c1729e3))
+
+
+### 🧹 Chores
+
+* **deps:** @cellajs/cli 0.9.1, whose release check fails a release PR that owes an apply ([#1910](https://github.com/cellajs/cella/issues/1910)) ([ebd7e4a](https://github.com/cellajs/cella/commit/ebd7e4aa04d35d67fd58bf50e492aa7b87bf3fc5))
+
 ## [0.49.0](https://github.com/cellajs/cella/compare/0.48.0...0.49.0) (2026-11-25)
 
 
