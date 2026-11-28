@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development vite --mode development",
     "test": "vitest run",
-    "ts": "cd .. && tsgo -p frontend/tsconfig.json --pretty",
+    "ts": "cd .. && tsgo -p frontend/tsconfig.json --pretty --checkers 2",
     "tsperf": "cross-env NODE_ENV=development tsgo --noEmit --incremental false --extendedDiagnostics",
     "build": "cross-env NODE_ENV=production vite build",
     "offline": "cross-env APP_MODE=development NODE_ENV=production vite build --mode development && cross-env APP_MODE=development NODE_ENV=production vite preview --mode development",

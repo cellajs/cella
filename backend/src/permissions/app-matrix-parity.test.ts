@@ -181,10 +181,8 @@ describe.each([projectsMatrixFixture, coursesMatrixFixture])('$name matrix: comp
 
       const sqlIds = async (requested?: { homeChannelId: string }) => {
         const filter = resolveCollectionReadFilter(access, product as ProductEntityType, rootId, requested, rules);
-        const where = buildCollectionReadWhere(filter, table, access);
-        if (where.kind === 'none') return [];
-        const query = seedDb.select({ id: table.id }).from(table);
-        return (where.kind === 'all' ? await query : await query.where(where.where)).map(({ id }) => id).sort();
+        const where = buildCollectionReadWhere(filter, table, access, rootId);
+        return (await seedDb.select({ id: table.id }).from(table).where(where)).map(({ id }) => id).sort();
       };
 
       expect(await sqlIds(), label).toEqual(engineRows.map(({ id }) => id).sort());

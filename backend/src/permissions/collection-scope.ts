@@ -43,7 +43,7 @@ export interface ReadRules {
   hierarchy?: EntityHierarchy;
 }
 
-/** Whether the resolved filter yields no readable rows at all (op should return an empty list). */
+/** Whether the caller's grants read no row of the type in the organization, whichever rows exist. */
 export const hasNoReadScope = (filter: CollectionReadFilter): boolean => !filter.orgWide && filter.scopes.length === 0;
 
 /**

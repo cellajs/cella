@@ -4590,14 +4590,14 @@ export type CatchUpMyStreamResponses = {
    */
   200: {
     /**
-     * Per organization: signal versions, propagation hints and the spread window, { [organizationId]: { signals?, propagation?, spreadWindow? } }
+     * Per organization: signal versions, propagation hints and the spread window, { [organizationId]: { signals, propagation?, spreadWindow? } }
      */
     organizations: {
       [key: string]: {
         /**
          * Versions by signal type: bump-only counters a client compares with the ones it stored
          */
-        signals?: {
+        signals: {
           [key: string]: number;
         };
         propagation?: Array<{
@@ -4620,7 +4620,7 @@ export type CatchUpMyStreamResponses = {
           /**
            * Highest sequence position among the rows the hint read, which the caller may all read: a client whose view of the embedded product is opaque takes it as that view's cursor
            */
-          untilSeq?: number;
+          untilSeq: number;
         }>;
         /**
          * The window, in ms, over which this organization's online audience spreads the reads a catchup gap or a new generation owes; the same a change frame carries. Absent or 0: read at once

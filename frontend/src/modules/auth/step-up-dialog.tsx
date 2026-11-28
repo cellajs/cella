@@ -29,15 +29,18 @@ const isFactor = (method: StepUpMethod): method is Factor => method === 'passkey
 /** A user without a factor, asked for one, starts at setting one up; everyone else at the ways to confirm. */
 const firstView = (methods: StepUpMethod[]): View => (methods.includes('enroll') && !methods.some(isFactor) ? 'add' : 'choose');
 
+const confirmHeading = () => ({ title: i18n.t('c:step_up'), description: i18n.t('c:step_up.text') });
+
 /** The dialog's title and description per view; setting up reads as a replacement for a user who holds a factor. */
-const headings = (view: View, holdsFactor: boolean) => {
-  if (view === 'code')
-    return { title: i18n.t('c:step_up_code'), description: i18n.t('c:step_up_code.text', { email: getCurrentUser().email ?? '' }) };
-  if (view === 'add') {
-    return { title: i18n.t('c:step_up_add_factor'), description: i18n.t(holdsFactor ? 'c:step_up_new_factor.text' : 'c:step_up_add_factor.text') };
-  }
-  if (view === 'totp-setup') return { title: i18n.t('c:totp_qr'), description: i18n.t('c:totp_qr.text') };
-  return { title: i18n.t('c:step_up'), description: i18n.t('c:step_up.text') };
+const headings: Record<View, (holdsFactor: boolean) => { title: string; description: string }> = {
+  choose: confirmHeading,
+  totp: confirmHeading,
+  code: () => ({ title: i18n.t('c:step_up_code'), description: i18n.t('c:step_up_code.text', { email: getCurrentUser().email ?? '' }) }),
+  add: (holdsFactor) => ({
+    title: i18n.t('c:step_up_add_factor'),
+    description: i18n.t(holdsFactor ? 'c:step_up_new_factor.text' : 'c:step_up_add_factor.text'),
+  }),
+  'totp-setup': () => ({ title: i18n.t('c:totp_qr'), description: i18n.t('c:totp_qr.text') }),
 };
 
 /**
@@ -52,7 +55,7 @@ function StepUpDialog({ methods, onStepUp }: { methods: StepUpMethod[]; onStepUp
   // The first view's headings come with the dialog's creation
   const setView = (nextView: View) => {
     setViewState(nextView);
-    dialoger.getState().update(dialogId, headings(nextView, holdsFactor));
+    dialoger.getState().update(dialogId, headings[nextView](holdsFactor));
   };
   // The factor to set up once the emailed code is in; null when the code is the step-up itself.
   const [next, setNext] = useState<Factor | null>(null);
@@ -212,7 +215,7 @@ export const openStepUpDialog = (methods: StepUpMethod[]) =>
         id: dialogId,
         triggerRef: { current: null },
         className: 'sm:max-w-md',
-        ...headings(firstView(methods), methods.some(isFactor)),
+        ...headings[firstView(methods)](methods.some(isFactor)),
         onClose: () => {
           if (!steppedUp) reject(new StepUpDismissedError());
         },

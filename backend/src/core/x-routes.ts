@@ -176,10 +176,7 @@ export const assertMountPath = (path: string, routePaths: string[]) => {
 const pickShared = <C extends ErrorCode>(codes: Iterable<C>): Pick<typeof sharedErrorResponses, C> =>
   Object.fromEntries([...codes].map((code) => [code, sharedErrorResponses[code]])) as Pick<typeof sharedErrorResponses, C>;
 
-/**
- * The error statuses a route's chain answers with before its handler, each with what answers it. The switch gate
- * answers 400 for a sign-in method and 404 for any other switch.
- */
+/** The error statuses a route's chain answers with before its handler, each with what answers it. */
 const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], preconditioned: boolean, gated: boolean): Map<ErrorCode, string> => {
   const owners = new Map<ErrorCode, string>();
   const claim = (code: ErrorCode, owner: string) => {
@@ -190,7 +187,6 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], p
     claim(413, 'the body limit');
     claim(415, 'request validation');
   }
-  if (config.xEnabledBy) claim('strategy' in config.xEnabledBy ? 400 : 404, 'xEnabledBy');
   if (preconditioned) for (const code of [400, 412] as const) claim(code, 'the preconditions');
   for (const mw of xMiddlewares) for (const code of mw.__errors ?? []) claim(code, mw.name);
   if (gated) claim(403, 'the anonymous gate');
@@ -208,14 +204,14 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], p
  * A GET route that declares no limiter takes `readLimiter`, and a limiter a guard runs itself (`limiters`) is
  * documented on every route that lists the guard.
  * The route documents the error statuses its chain answers with (`chainErrors`) beside its own responses, where
- * `errors()` lists what the handler throws; a status the route declares keeps the route's own response. Where
- * authoring rules are checked, `errors()` of a status the chain already answers is refused at load, so every listed
- * status has one owner, and the error handler answers an undocumented status as a 500 in tests.
+ * `errors()` lists what the handler throws; a status the route declares keeps the route's own response. `errors()` of
+ * a status the chain already answers is refused at load: every listed status has one owner. The error handler
+ * answers an undocumented status as a 500 in tests.
  * @link https://github.com/honojs/middleware/tree/main/packages/zod-openapi#configure-middleware-for-each-endpoint
  */
 export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>(config: R): XRoute<R> => {
   const route = `${config.operationId} (${config.method} ${config.path})`;
-  if (checksAuthoringRules) assertRouteShape(route, config);
+  assertRouteShape(route, config);
   const verb = /\/~([^/]+)$/.exec(config.path)?.[1];
   if (verb) recordCustomVerb(verb);
   const patchMedia = config.method === 'patch' ? config.request?.body?.content['application/json'] : undefined;
@@ -234,11 +230,11 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   const isMarked = (mw: MiddlewareHandler<Env>): mw is XMiddlewareHandler => '__extensionType' in mw && typeof mw.__extensionType === 'string';
 
   // Each marked middleware, then the limiters a guard runs itself, so the document lists them and their errors.
-  const xMiddlewares = [...extensionMiddleware, ...existing].filter(isMarked).flatMap((mw) => [mw, ...(mw.__limiters ?? [])]);
+  const xMiddlewares = [...switchGate, ...extensionMiddleware, ...existing.filter(isMarked)].flatMap((mw) => [mw, ...(mw.__limiters ?? [])]);
   const provided = assertGuardOrder(route, xMiddlewares);
   const gated = keepsAnonymousOut(route, provided, config.xAnonymous === true);
   // An anonymous session is refused for what it is: the gate follows the guard that authenticates the session, ahead of any guard after it.
-  const gateAt = extensionMiddleware.findIndex((mw) => isMarked(mw) && mw.__provides?.includes('actor')) + 1;
+  const gateAt = extensionMiddleware.findIndex((mw) => mw.__provides?.includes('actor')) + 1;
   const guarded = gated ? [...extensionMiddleware.slice(0, gateAt), anonymousGate, ...extensionMiddleware.slice(gateAt)] : extensionMiddleware;
   const middleware = [...operation, ...errorPage, ...switchGate, ...guarded, ...preconditions, ...existing];
   const specificationExtensions = createSpecificationExtensions((key) =>
@@ -246,11 +242,9 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   );
 
   const owners = chainErrors(config, xMiddlewares, !!target, gated);
-  if (checksAuthoringRules) {
-    for (const [code, owner] of owners) {
-      if (config.responses[code] === sharedErrorResponses[code]) {
-        throw new Error(`[routes] ${route}: errors(${code}) repeats the ${code} that ${owner} answers with. Drop it.`);
-      }
+  for (const [code, owner] of owners) {
+    if (config.responses[code] === sharedErrorResponses[code]) {
+      throw new Error(`[routes] ${route}: errors(${code}) repeats the ${code} that ${owner} answers with. Drop it.`);
     }
   }
   const responses = { ...pickShared(owners.keys()), ...config.responses, ...(target && preconditionResponses(target, config.responses[200])) };
@@ -316,13 +310,13 @@ export const errors = <C extends ErrorCode>(...codes: C[]): Pick<typeof sharedEr
 type JsonBody<S extends z.ZodType> = { required: true; content: { 'application/json': { schema: S; example?: unknown } } };
 
 /**
- * A required JSON request body: `ctx.req.valid('json')` is typed from `schema`. An `example` shows a caller a valid body;
- * in development and tests it must parse with `schema` when the route module loads.
+ * A required JSON request body: `ctx.req.valid('json')` is typed from `schema`. An `example` shows a caller a valid body,
+ * and it must parse with `schema` when the route module loads.
  */
 export const jsonBody = <S extends z.ZodType>(schema: S, example?: z.input<S>): JsonBody<S> => {
   if (example === undefined) return { required: true, content: { 'application/json': { schema } } };
-  const parsed = checksAuthoringRules ? schema.safeParse(example) : undefined;
-  if (parsed && !parsed.success) throw new Error(`A request body example does not match its schema: ${parsed.error.message}`);
+  const parsed = schema.safeParse(example);
+  if (!parsed.success) throw new Error(`A request body example does not match its schema: ${parsed.error.message}`);
   return { required: true, content: { 'application/json': { schema, example } } };
 };
 

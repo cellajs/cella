@@ -27,22 +27,17 @@ const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable, acces
   }
 };
 
-/** WHERE clause for a collection read, discriminated so an empty scope cannot become a bare `undefined` that leaks the table. */
-export type CollectionReadWhere =
-  /** Org-wide unconditional read: no scope restriction needed. */
-  | { kind: 'all' }
-  /** No readable scope: the operation returns an empty list without querying. */
-  | { kind: 'none' }
-  | { kind: 'where'; where: SQL };
-
 /**
- * OR-combines the resolved collection scopes into the predicate of a product list: per scope, its level's id column
- * in its ids, its condition, and NULL in the columns of `deeperChannels`.
+ * The predicate of a product list, never unset: an empty scope cannot become a missing filter that leaks the table.
+ * An org-wide filter reads the rows of `organizationId`, a filter without scopes reads none, and any other filter
+ * OR-combines its scopes: per scope, its level's id column in its ids, its condition, and NULL in the columns of
+ * `deeperChannels`.
+ * @param organizationId - The organization the filter was resolved for.
  */
-export const buildCollectionReadWhere = (filter: CollectionReadFilter, table: AnyPgTable, access: Access): CollectionReadWhere => {
-  if (filter.orgWide) return { kind: 'all' };
-
+export const buildCollectionReadWhere = (filter: CollectionReadFilter, table: AnyPgTable, access: Access, organizationId: string): SQL => {
   const levelColumn = (channelType: string): PgColumn => resolveColumn(table, entityIdColumnKey(channelType), `${channelType} scope`);
+
+  if (filter.orgWide) return eq(levelColumn('organization'), organizationId);
 
   const clauses = filter.scopes.flatMap(({ channelType, channelIds, condition, deeperChannels = [] }) => {
     const scoped = and(
@@ -53,6 +48,6 @@ export const buildCollectionReadWhere = (filter: CollectionReadFilter, table: An
     return scoped ? [scoped] : [];
   });
 
-  const where = or(...clauses);
-  return where ? { kind: 'where', where } : { kind: 'none' };
+  // A fresh predicate each time: a caller may append to the one it gets.
+  return or(...clauses) ?? sql`false`;
 };

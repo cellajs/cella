@@ -80,11 +80,8 @@ export interface Column<TRow, TSummaryRow = unknown> {
   readonly renderEditCell?: Maybe<(props: RenderEditCellProps<TRow, TSummaryRow>) => ReactNode>;
   /** Enables cell editing; without `renderEditCell` a text input is used. */
   readonly editable?: Maybe<boolean | ((row: TRow) => boolean)>;
-  readonly colSpan?: Maybe<(args: ColSpanArgs<TRow, TSummaryRow>) => Maybe<number>>;
-  readonly frozen?: Maybe<boolean>;
   readonly resizable?: Maybe<boolean>;
   readonly sortable?: Maybe<boolean>;
-  readonly draggable?: Maybe<boolean>;
   /** Mark cells as row drag sources; drop targets remain active on every column. */
   readonly rowDragHandle?: Maybe<boolean>;
   readonly sortDescendingFirst?: Maybe<boolean>;
@@ -110,22 +107,16 @@ export interface Column<TRow, TSummaryRow = unknown> {
     readonly displayCellContent?: Maybe<boolean>;
     /** Commit changes when clicking outside the cell. @default true */
     readonly commitOnOutsideClick?: Maybe<boolean>;
-    /** Close the editor when the row value changes externally. @default true */
-    readonly closeOnExternalRowChange?: Maybe<boolean>;
   }>;
 }
 
 export interface CalculatedColumn<TRow, TSummaryRow = unknown> extends Column<TRow, TSummaryRow> {
-  readonly parent: CalculatedColumnParent<TRow, TSummaryRow> | undefined;
   readonly idx: number;
-  readonly level: number;
   readonly width: number | string;
   readonly minWidth: number;
   readonly maxWidth: number | undefined;
   readonly resizable: boolean;
   readonly sortable: boolean;
-  readonly draggable: boolean;
-  readonly frozen: boolean;
   readonly focusable: boolean;
   readonly renderCell: (props: RenderCellProps<TRow, TSummaryRow>) => ReactNode;
   readonly renderHeaderCell: (props: RenderHeaderCellProps<TRow, TSummaryRow>) => ReactNode;
@@ -133,27 +124,8 @@ export interface CalculatedColumn<TRow, TSummaryRow = unknown> extends Column<TR
   readonly mergedSlots?: Maybe<MergedSlots<TRow, TSummaryRow>>;
 }
 
-interface ColumnGroup<R, SR = unknown> {
-  /** Displayed in the group header cell. */
-  readonly name: string | ReactElement;
-  readonly headerCellClass?: Maybe<string>;
-  readonly children: readonly ColumnOrColumnGroup<R, SR>[];
-  /** Reactive hide flag; see {@link Column.hidden}. When true the whole group is excluded. */
-  readonly hidden?: boolean;
-}
-
-export interface CalculatedColumnParent<R, SR> {
-  readonly name: string | ReactElement;
-  readonly parent: CalculatedColumnParent<R, SR> | undefined;
-  readonly idx: number;
-  readonly colSpan: number;
-  readonly level: number;
-  readonly headerCellClass?: Maybe<string>;
-}
-
-export type ColumnOrColumnGroup<R, SR = unknown> = Column<R, SR> | ColumnGroup<R, SR>;
-
-export type CalculatedColumnOrColumnGroup<R, SR> = CalculatedColumnParent<R, SR> | CalculatedColumn<R, SR>;
+/** The name apps import column lists by; the grid has no column groups. */
+export type ColumnOrColumnGroup<R, SR = unknown> = Column<R, SR>;
 
 export interface RenderCellProps<TRow, TSummaryRow = unknown> {
   column: CalculatedColumn<TRow, TSummaryRow>;
@@ -181,10 +153,7 @@ export interface RenderHeaderCellProps<TRow, TSummaryRow = unknown> {
 }
 
 interface BaseCellRendererProps<TRow, TSummaryRow = unknown> extends Omit<React.ComponentProps<'div'>, 'children'> {
-  onCellMouseDown?: CellMouseEventHandler<TRow, TSummaryRow>;
   onCellClick?: CellMouseEventHandler<TRow, TSummaryRow>;
-  onCellDoubleClick?: CellMouseEventHandler<TRow, TSummaryRow>;
-  onCellContextMenu?: CellMouseEventHandler<TRow, TSummaryRow>;
   rowIdx: number;
   selectCell: (position: Position, options?: SelectCellOptions) => void;
 }
@@ -192,7 +161,6 @@ interface BaseCellRendererProps<TRow, TSummaryRow = unknown> extends Omit<React.
 export interface CellRendererProps<TRow, TSummaryRow> extends BaseCellRendererProps<TRow, TSummaryRow> {
   column: CalculatedColumn<TRow, TSummaryRow>;
   row: TRow;
-  colSpan: number | undefined;
   isDraggedOver: boolean;
   isCellSelected: boolean;
   onRowChange: (column: CalculatedColumn<TRow, TSummaryRow>, rowIdx: number, newRow: TRow) => void;
@@ -202,40 +170,11 @@ export type CellEvent<E extends React.SyntheticEvent<HTMLDivElement>> = E & { pr
 
 export type CellMouseEvent = CellEvent<React.MouseEvent<HTMLDivElement>>;
 
-export type CellKeyboardEvent = CellEvent<React.KeyboardEvent<HTMLDivElement>>;
-
-export type CellClipboardEvent = React.ClipboardEvent<HTMLDivElement>;
-
 export interface CellMouseArgs<TRow, TSummaryRow = unknown> {
   column: CalculatedColumn<TRow, TSummaryRow>;
   row: TRow;
   rowIdx: number;
   selectCell: (enableEditor?: boolean) => void;
-}
-
-interface SelectCellKeyDownArgs<TRow, TSummaryRow = unknown> {
-  mode: 'SELECT';
-  column: CalculatedColumn<TRow, TSummaryRow>;
-  row: TRow;
-  rowIdx: number;
-  selectCell: (position: Position, options?: SelectCellOptions) => void;
-}
-
-export interface EditCellKeyDownArgs<TRow, TSummaryRow = unknown> {
-  mode: 'EDIT';
-  column: CalculatedColumn<TRow, TSummaryRow>;
-  row: TRow;
-  rowIdx: number;
-  navigate: () => void;
-  onClose: (commitChanges?: boolean, shouldFocusCell?: boolean) => void;
-}
-
-export type CellKeyDownArgs<TRow, TSummaryRow = unknown> = SelectCellKeyDownArgs<TRow, TSummaryRow> | EditCellKeyDownArgs<TRow, TSummaryRow>;
-
-export interface CellSelectArgs<TRow, TSummaryRow = unknown> {
-  rowIdx: number;
-  row: TRow | undefined;
-  column: CalculatedColumn<TRow, TSummaryRow>;
 }
 
 export type CellMouseEventHandler<R, SR> = Maybe<(args: CellMouseArgs<NoInfer<R>, NoInfer<SR>>, event: CellMouseEvent) => void>;
@@ -255,7 +194,6 @@ export interface RenderRowProps<TRow, TSummaryRow = unknown> extends BaseRenderR
   height: number;
   /** Animates order changes with a motion layout transition. */
   animateReorder?: boolean;
-  lastFrozenColumnIndex: number;
   selectedCellEditor: ReactElement<RenderEditCellProps<TRow>> | undefined;
   onRowChange: (column: CalculatedColumn<TRow, TSummaryRow>, rowIdx: number, newRow: TRow) => void;
   rowClass: Maybe<(row: TRow, rowIdx: number) => Maybe<string>>;
@@ -288,21 +226,6 @@ export interface SelectHeaderRowEvent {
   checked: boolean;
 }
 
-interface CellCopyPasteArgs<TRow, TSummaryRow = unknown> {
-  column: CalculatedColumn<TRow, TSummaryRow>;
-  row: TRow;
-  rowIdx: number;
-}
-
-export interface CellCopyArgs<TRow, TSummaryRow = unknown> extends CellCopyPasteArgs<TRow, TSummaryRow> {
-  /** The value being copied */
-  value: unknown;
-}
-
-export interface CellPasteArgs<TRow, TSummaryRow = unknown> extends CellCopyPasteArgs<TRow, TSummaryRow> {
-  pastedValue: string;
-}
-
 export interface SortColumn {
   readonly columnKey: string;
   readonly direction: SortDirection;
@@ -310,8 +233,6 @@ export interface SortColumn {
 
 export type CellNavigationMode = 'NONE' | 'CHANGE_ROW';
 type SortDirection = 'ASC' | 'DESC';
-
-export type ColSpanArgs<TRow, TSummaryRow> = { type: 'HEADER' } | { type: 'ROW'; row: TRow } | { type: 'SUMMARY'; row: TSummaryRow };
 
 export interface Renderers<TRow, TSummaryRow> {
   renderCell?: Maybe<(key: Key, props: CellRendererProps<TRow, TSummaryRow>) => ReactNode>;
@@ -324,16 +245,12 @@ export interface SelectCellOptions {
   shouldFocusCell?: Maybe<boolean>;
 }
 
-export interface ColumnWidth {
-  readonly type: 'resized' | 'measured';
-  readonly width: number;
-}
-
-export type ColumnWidths = ReadonlyMap<string, ColumnWidth>;
+/** Pixel widths by column key; a column without an entry takes its declared width. */
+export type ColumnWidths = ReadonlyMap<string, number>;
 
 export type ResizedWidth = number | 'max-content';
 
 export type DefaultColumnOptions<R, SR> = Pick<
   Column<R, SR>,
-  'renderCell' | 'renderHeaderCell' | 'width' | 'minWidth' | 'maxWidth' | 'resizable' | 'sortable' | 'draggable'
+  'renderCell' | 'renderHeaderCell' | 'width' | 'minWidth' | 'maxWidth' | 'resizable' | 'sortable'
 >;

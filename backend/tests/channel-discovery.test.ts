@@ -135,7 +135,7 @@ const listChannels = async (userId: string, opts: ListOpts = {}): Promise<Listed
   const where: SQL[] = [
     eq(channelsTable.organizationId, ORG_ID),
     ...(opts.courseId ? [eq(channelsTable.courseId, opts.courseId)] : []),
-    ...(scopeWhere.kind === 'where' ? [scopeWhere.where] : []),
+    scopeWhere,
     ...[excludeHiddenWhere(readColumns)].filter((c): c is SQL => c !== undefined),
   ];
 

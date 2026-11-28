@@ -1,22 +1,22 @@
 # Bench
 
-Load testing for the backend, cdc, and yjs services: the app's scenarios and checks, run by `pnpm cella bench`.
+This document explains how to load-test the API, CDC and the Yjs relay with `pnpm cella bench`: the scenarios, their checks and their results.
 
 ### TL;DR
 
-Bench load-tests your running development app with repeatable scenarios and reusable seed data, its users already signed in. A run passes on what the stack did with the load, not on a laptop's speed: responses accepted, every written row recorded by CDC, counters still right. Latencies are saved and compared with the previous run, as trends.
+Bench load-tests your running development app with repeatable scenarios and reusable seed data. A run passes on what the stack did with the load, not on a laptop's speed: responses accepted, every written row recorded by CDC, counters still right. Latencies are saved and compared with the previous run, as trends.
 
 ## Prerequisites
 
-A run measures the stack this checkout runs: Postgres from `pnpm docker`, seeded by `pnpm seed`, and the
-services of `pnpm dev`.
+A run measures the stack this checkout runs. Before a run, start Postgres with `pnpm docker`, seed it with `pnpm seed`
+and start the services with `pnpm dev`.
 
-With `--isolated` a run needs neither. It then starts a testbed for the run and stops it after.
-A testbed is a copy of the app on a database and ports of its own, as `pnpm testbed` starts it.
+With `--isolated` you need none of them. The run then starts a testbed and stops it after: a copy of the app on a
+database and ports of its own, as `pnpm testbed` starts it.
 
 ## Commands
 
-| Command | Description |
+| Command | What it does |
 | --- | --- |
 | `pnpm cella bench` | Pick a scenario from a list |
 | `pnpm cella bench <name>` | Run one scenario |
@@ -38,10 +38,10 @@ Each scenario asks one question of the stack, as a TypeScript module in `scenari
 | --- | --- | --- |
 | `get-me` | What the guard chain alone costs: the cheapest signed-in request, repeated | Responses |
 | `page-load` | How the read path holds when every visitor also reads data, a product list included | Responses |
-| `detail-read` | What a few hundred signed-in readers of one row at once cost the detail route | Responses |
+| `detail-read` | What many signed-in readers of one row at once cost the detail route | Responses |
 | `attachment-edit` | How many edits per second the write path takes | Responses, one activity per edit |
-| `attachment-churn` | Whether creating and deleting rows in batches keeps the books right | Responses, one activity per row, the attachment count |
-| `sse-fanout` | Whether every subscriber of an organization hears of a change and can fetch it, and how long until all have heard | Responses, one activity per edit, notifications heard, no stream errors |
+| `attachment-churn` | Whether creating and deleting rows in batches keeps activities and counts right | Responses, one activity per row, the attachment count |
+| `sse-fanout` | Whether every subscriber of an organization hears of a change and can fetch it, and how long until all have heard | Responses, one activity per edit, changes heard, no stream errors |
 | `yjs-typing` | How the Yjs relay holds under people typing together | Documents converged, saved and written to their rows |
 | `edit-propagation` | How long until a reader viewing the channel holds an edit, with the stack at rest | Every edit seen, the reader's row equals the database's |
 | `edit-propagation-busy` | The same while other writers edit at a steady rate | As `edit-propagation` |
@@ -52,7 +52,7 @@ Each scenario asks one question of the stack, as a TypeScript module in `scenari
 
 ## Writing a scenario
 
-A scenario declares its load as phases and what one virtual user (VU) does. New VUs arrive on schedule whether or not earlier ones are done, as visitors do.
+You declare a scenario's load as phases and what one virtual user (VU) does. New VUs arrive on schedule whether or not earlier ones are done, as visitors do.
 
 ```ts
 import { defineScenario } from '@cellajs/cli/bench';
@@ -82,7 +82,7 @@ export default defineScenario({
 - **Phases** start `arrivalRate` VUs per second for `duration` seconds, or `arrivalCount` VUs over the duration.
 - **Ramps.** `rampTo` ramps a phase's arrival rate.
 - **What a VU does** is `vu`, `roles` for a mix of VUs, or `run` for a scenario that drives its own clients once.
-- **The VU** carries HTTP, event-stream and WebSocket clients and counters. A VU that throws counts as failed.
+- **The VU** carries HTTP, event-stream and WebSocket clients and counters.
 - **More people in one VU.** `vu.client()` gives a `run` scenario one more person on a connection of its own.
 - **Users.** `benchUser(vu.index)` hands each VU a seeded user.
 - **Names are declared.** `counters` and `histograms` list every name the scenario records.
@@ -91,9 +91,9 @@ export default defineScenario({
 
 ## Sync scenarios
 
-The sync scenarios drive `sync/client.ts`, one person's sync engine at the protocol level: the stream, a catchup on every connect, range reads from a cursor, and the rows it holds. It reads what it hears at once, as a viewed channel does, or in the slot the frontend's scheduler would take. Each scenario ends by comparing what its clients hold with the database.
+The sync scenarios measure the sync engine as its clients see it. They drive `sync/client.ts`, one person's sync engine at the protocol level: the stream, catchup and range reads.
 
-They edit and read the product the scenario file passes: the template's is the attachment (`attachmentProduct` in `attachment-requests.ts`). An app runs them on its own product with a scenario file of its own that passes its `BenchProduct` entry.
+They edit and read the product the scenario file passes: the template's is the attachment (`attachmentProduct` in `attachment-requests.ts`). To run them on your app's own product, you write a scenario file that passes the product's `BenchProduct` entry.
 
 ## Files
 
@@ -104,19 +104,19 @@ They edit and read the product the scenario file passes: the template's is the a
 
 ## Checks
 
-A failed run is neither compared nor saved. A run fails when one of these fails:
+Checks decide whether a run passes. A failed run is neither compared nor saved. A run fails when one of these fails:
 
 - **Responses.** More non-2xx responses than `maxRejectedShare` allows, also with `--short`.
 - **VU failures.** More VUs did not complete than `maxErrorShare` allows.
-- **Thresholds.** `thresholds` caps any recorded latency, such as `'http.response_time.p95': 3000`. `--short` skips them.
+- **Thresholds.** `thresholds` caps any recorded latency. `--short` skips them.
 - **Counters.** `expect` names counters that must have counted, `forbid` counters that must stay at zero.
 - **Counters with `--short`.** Only `forbid` is checked, since each role plays once.
 - **Activities.** `bench.rows_written` must match the activities CDC recorded in the bench organization.
 - **Counts.** `bench.rows_created.<type>` minus `bench.rows_deleted.<type>` must equal the change in `channel_counters`.
-- **Books.** A full run ends with `pnpm sync:verify`, which must find every counter matching its table in time.
+- **Books.** A full run ends with the books check that `pnpm sync:verify` runs: every counter must match its table.
 - **Convergence.** A sync scenario forbids `bench.rows_diverged`: a row a client holds that differs from the database.
 
-A scenario of your own gets the response check for free. It gets the CDC checks by counting those rows. `--all` pauses between scenarios, so a saturating one does not slow the next.
+Your own scenario gets the response check for free, and the CDC checks once it counts the rows it writes, creates and deletes.
 
 ## Reading a run
 
@@ -133,21 +133,26 @@ attachment-edit · hold 50 · 14s/40s
 - Latencies are time to first byte.
 - `gen lag` is the load generator's own event-loop delay.
 
-The summary at the end has a row per endpoint, the scenario's own numbers, every check and the change from the last baseline. A run also writes a JSON log at the path the summary prints.
+The summary at the end has a row per endpoint, the scenario's own numbers, every check and the change from the last baseline.
 
 ## Baselines and logs
 
-A passing full run appends to `baselines/<scenario>.json`. The next run compares its `primary` latency with it, by default the p95 response time. A scenario can pick another, such as `yjs-typing`'s peer latency. A run with `--rtt` compares only with runs of the same round trip. `logs/` keeps the recent logs per scenario.
+A baseline shows whether a change made a scenario slower. Three rules decide what a run compares with:
 
-Baselines and logs live in `cella-bench/` inside the git directory that `git rev-parse --git-common-dir` prints. Every worktree of the clone shares it, and `git status` never shows it.
+- A passing full run appends to `baselines/<scenario>.json`.
+- The next run compares its `primary` latency with it, by default the p95 response time. A scenario can pick another, such as `yjs-typing`'s peer latency.
+- A run with `--rtt` compares only with runs of the same round trip.
+
+Say you add a check to the guard chain and run `get-me`, which measures what the guard chain alone costs. The summary shows the check's cost as the change in p95 response time from the baseline.
+
+`logs/` keeps the recent logs per scenario. Baselines and logs live in `cella-bench/` inside the git directory that `git rev-parse --git-common-dir` prints.
 
 ## Interpreting results
 
-Bench measures a live stack: the dev stack, or a testbed with `--isolated`. Before calling a result a regression:
+Bench measures a live stack: the dev stack, or a testbed with `--isolated`. Before you call a result a regression, weigh what else shapes it:
 
 - **Auth and tenant transactions.** Writes are bound by the database pool and round trips, not handler CPU.
-- **Rate limiting is effectively off.** The bench tenant's budget is very high, and user budgets start cleared.
-- **Saturation.** `attachment-edit` and `page-load` saturate a laptop that also runs the stack.
-- **Queueing.** A saturated laptop's latencies show queueing, not the endpoint.
-- **One generator thread.** All load comes from one Node thread. A high `gen lag` means that thread is the limit.
+- **Rate limiting** is effectively off.
+- **Saturation.** `attachment-edit` and `page-load` saturate a laptop that also runs the stack. A saturated laptop's latencies show queueing, not the endpoint. `--all` pauses between scenarios, so a saturating one does not slow the next.
+- **One generator thread.** A high `gen lag` means that thread is the limit.
 - **A worktree's own stack.** A worktree's run follows its port offset and never measures the main checkout.

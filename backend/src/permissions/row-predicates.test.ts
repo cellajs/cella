@@ -31,7 +31,7 @@ import { canReceiveProductEvent } from '#/modules/entities/helpers/dispatch-to-s
 import type { StreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
-import { resolveCollectionReadFilter } from './collection-scope';
+import { type CollectionReadFilter, resolveCollectionReadFilter } from './collection-scope';
 import { buildCollectionReadWhere } from './row-predicates';
 import { actorMembership } from './tests/actor-membership';
 
@@ -216,11 +216,8 @@ const sqlReadableIds = async (scenario: Scenario): Promise<Set<string>> => {
     policies: scenario.policies,
     publicGrants: scenario.publicGrants,
   });
-  const where = buildCollectionReadWhere(filter, parityTable, access);
-
-  if (where.kind === 'none') return new Set();
-  const query = seedDb.select({ id: parityTable.id }).from(parityTable);
-  const rows = where.kind === 'all' ? await query : await query.where(where.where);
+  const where = buildCollectionReadWhere(filter, parityTable, access, rootId);
+  const rows = await seedDb.select({ id: parityTable.id }).from(parityTable).where(where);
   return new Set(rows.map((r) => r.id));
 };
 
@@ -302,16 +299,8 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL', () => {
           continue;
         }
 
-        const where = buildCollectionReadWhere(filter, parityTable, access);
-        const fromSqlAll =
-          where.kind === 'none'
-            ? new Set<string>()
-            : new Set(
-                (where.kind === 'all'
-                  ? await seedDb.select({ id: parityTable.id }).from(parityTable)
-                  : await seedDb.select({ id: parityTable.id }).from(parityTable).where(where.where)
-                ).map((r) => r.id),
-              );
+        const where = buildCollectionReadWhere(filter, parityTable, access, rootId);
+        const fromSqlAll = new Set((await seedDb.select({ id: parityTable.id }).from(parityTable).where(where)).map((r) => r.id));
 
         // Narrowed SQL result == engine-readable rows of the requested home-channel.
         const fromEngine = engineReadableIds(scenario);
@@ -365,6 +354,16 @@ const deepRows: DeepParityRow[] = [...users, null].flatMap((createdBy) =>
     createdBy,
   })),
 );
+
+/** A row of another organization, seeded beside `deepRows`: no read of `rootId` returns it. */
+const foreignDeepRow: DeepParityRow = {
+  id: 'u1:other-org',
+  organizationId: 'org-other',
+  courseId: null,
+  courseSectionId: null,
+  projectId: null,
+  createdBy: 'u1',
+};
 
 const deepMembership = (channelType: DeepChannelType, channelId: string, role: string) => actorMembership(channelType, channelId, role, rootId);
 
@@ -424,11 +423,8 @@ const deepSqlReadableIds = async (scenario: DeepScenario, deepHierarchy: EntityH
     publicGrants: {},
     hierarchy: deepHierarchy,
   });
-  const where = buildCollectionReadWhere(filter, deepParityTable, access);
-
-  if (where.kind === 'none') return new Set();
-  const query = seedDb.select({ id: deepParityTable.id }).from(deepParityTable);
-  const rows = where.kind === 'all' ? await query : await query.where(where.where);
+  const where = buildCollectionReadWhere(filter, deepParityTable, access, rootId);
+  const rows = await seedDb.select({ id: deepParityTable.id }).from(deepParityTable).where(where);
   return new Set(rows.map((r) => r.id));
 };
 
@@ -449,11 +445,25 @@ beforeAll(async () => {
       created_by varchar
     )
   `);
-  await seedDb.insert(deepParityTable).values(deepRows);
+  await seedDb.insert(deepParityTable).values([...deepRows, foreignDeepRow]);
 });
 
 afterAll(async () => {
   await seedDb.execute(sql`drop table if exists test_permission_parity_deep_rows`);
+});
+
+// A consumer that pushes the predicate alone still stops at the organization, and a filter without scopes reads nothing.
+describe('the bounds of a collection read', () => {
+  const reader: Access<MembershipBaseModel> = { actorId: 'u1', isSystemAdmin: false, memberships: [], scopes: null };
+  const idsFor = async (filter: CollectionReadFilter) => {
+    const where = buildCollectionReadWhere(filter, deepParityTable, reader, rootId);
+    return new Set((await seedDb.select({ id: deepParityTable.id }).from(deepParityTable).where(where)).map((r) => r.id));
+  };
+
+  it("reads no row without a scope, and only the organization's rows org-wide", async () => {
+    expect(await idsFor({ orgWide: false, scopes: [] })).toEqual(new Set());
+    expect(await idsFor({ orgWide: true, scopes: [] })).toEqual(new Set(deepRows.map((r) => r.id)));
+  });
 });
 
 // Every role elevated: each grant reaches its channel's whole subtree, so intermediate grants cover deeper rows.
@@ -478,10 +488,8 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
     const sqlIdsFor = async (requested: { homeChannelId?: string; homeChannelIds?: string[] }) => {
       const rules = { policies: deepPolicies(() => 0), publicGrants: {}, hierarchy: deepSubtreeHierarchy };
       const filter = resolveCollectionReadFilter(sysadmin, deepItem, rootId, requested, rules);
-      const where = buildCollectionReadWhere(filter, deepParityTable, sysadmin);
-      if (where.kind === 'none') return new Set<string>();
-      const query = seedDb.select({ id: deepParityTable.id }).from(deepParityTable);
-      const rows = where.kind === 'all' ? await query : await query.where(where.where);
+      const where = buildCollectionReadWhere(filter, deepParityTable, sysadmin, rootId);
+      const rows = await seedDb.select({ id: deepParityTable.id }).from(deepParityTable).where(where);
       return new Set(rows.map((r) => r.id));
     };
     const homedAt = (...projectIds: string[]) =>
@@ -604,9 +612,8 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
       const access: Access<MembershipBaseModel> = { actorId: userId, isSystemAdmin, memberships, scopes: null };
 
       const filter = resolveCollectionReadFilter(access, 'attachment', rootId);
-      const where = buildCollectionReadWhere(filter, parityTable, access);
-      const query = seedDb.select({ id: parityTable.id }).from(parityTable);
-      const fromSql = new Set(where.kind === 'none' ? [] : (where.kind === 'all' ? await query : await query.where(where.where)).map((r) => r.id));
+      const where = buildCollectionReadWhere(filter, parityTable, access, rootId);
+      const fromSql = new Set((await seedDb.select({ id: parityTable.id }).from(parityTable).where(where)).map((r) => r.id));
 
       for (const row of parityRows) {
         // Same subject shape dispatch builds: ancestor scope + the row itself

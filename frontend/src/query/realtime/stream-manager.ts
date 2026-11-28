@@ -139,10 +139,12 @@ class StreamManager {
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private abortController: AbortController | null = null;
   private consecutiveFailures = 0;
-  private circuitOpen = false;
-  /** Opened by a refused session: no cooldown check and no back-online reconnect, only a tab that becomes visible looks again. */
-  private circuitPermanent = false;
-  private circuitOpenedAt: number | null = null;
+  /**
+   * Open after repeated failures: no reconnect until the cooldown ends and a health check passes. A `permanent` one,
+   * opened by a refused session, gets no cooldown check and no back-online reconnect: a tab that becomes visible or a
+   * forced reconnect (`reconnect`) looks again.
+   */
+  private circuit: { openedAt: number; permanent: boolean } | null = null;
   private currentBackoff = initialBackoffMs;
   private connectedAt: number | null = null;
   private healthCheckInProgress = false;
@@ -155,10 +157,11 @@ class StreamManager {
   /** What the stream last said of the server's CDC worker. A stream that is down says nothing new, and the first ping of the next one does. */
   private workerAway = false;
 
-  /** Changes arriving between SSE open and catchup completion, drained in arrival order so a change committed while catchup reads is not lost. */
-  private pendingChanges: StreamChange[] = [];
-  private buffering = false;
-  private bufferOverflowed = false;
+  /**
+   * Changes arriving between SSE open and catchup completion, drained in arrival order so a change committed while
+   * catchup reads is not lost; `overflowed` once more arrived than it holds, and null while changes apply as they arrive.
+   */
+  private buffer: StreamChange[] | 'overflowed' | null = null;
 
   readonly store = createStreamStore();
 
@@ -181,7 +184,7 @@ class StreamManager {
     const { state } = this.store.getState();
     if (state === 'catching-up' || state === 'connecting' || state === 'live') return;
 
-    if (this.circuitOpen) {
+    if (this.circuit) {
       console.debug(`[${streamName}] Circuit breaker open, not attempting reconnect`);
       return;
     }
@@ -242,11 +245,10 @@ class StreamManager {
         if (signal.aborted || this.eventSource !== eventSource) return;
         console.debug(`[${streamName}] Catchup complete`);
 
-        if (!this.bufferOverflowed) break;
+        if (this.buffer !== 'overflowed') break;
         if (round >= 1) throw new Error('Change buffer overflowed twice during catchup');
         // A second catchup reads after every dropped change, so it covers them.
-        this.bufferOverflowed = false;
-        this.pendingChanges = [];
+        this.buffer = [];
         console.debug(`[${streamName}] Change buffer overflowed, re-running catchup`);
       }
 
@@ -254,9 +256,8 @@ class StreamManager {
       resolveInitialCatchupGate();
 
       // Drain is synchronous, so no change interleaves; arrivals after this point process directly.
-      this.buffering = false;
-      const buffered = this.pendingChanges;
-      this.pendingChanges = [];
+      const buffered = this.buffer ?? [];
+      this.buffer = null;
       for (const change of buffered) this.applyChange(change);
 
       // Backoff itself resets only after minUptimeMs of uptime, checked in handleStreamFailure.
@@ -319,9 +320,7 @@ class StreamManager {
     // A stream that is still open here is replaced, and its watchdog goes with it.
     this.closeEventSource();
     this.store.getState().setState('connecting');
-    this.buffering = true;
-    this.bufferOverflowed = false;
-    this.pendingChanges = [];
+    this.buffer = [];
     let catchupStarted = false;
     const eventSource = new EventSource(streamUrl(), { withCredentials: true });
     const noteActivity = () => {
@@ -339,14 +338,10 @@ class StreamManager {
         const change = readFrame(zStreamChange, JSON.parse(event.data), 'change');
         if (!change) return;
 
-        if (this.buffering) {
-          if (this.bufferOverflowed) return;
-          if (this.pendingChanges.length >= changeBufferCap) {
-            this.bufferOverflowed = true;
-            this.pendingChanges = [];
-            return;
-          }
-          this.pendingChanges.push(change);
+        if (this.buffer === 'overflowed') return;
+        if (this.buffer) {
+          if (this.buffer.length >= changeBufferCap) this.buffer = 'overflowed';
+          else this.buffer.push(change);
           return;
         }
 
@@ -460,9 +455,7 @@ class StreamManager {
   }
 
   private openCircuit(reason: string, permanent = false) {
-    this.circuitOpen = true;
-    this.circuitOpenedAt = Date.now();
-    this.circuitPermanent = permanent;
+    this.circuit = { openedAt: Date.now(), permanent };
     console.warn(`[${streamName}] Circuit breaker opened:`, reason);
     // The stream stopped reconnecting until the cooldown ends: paused mutations replay through the API, which arbitrates them by their `replayed` stx.
     resolveInitialCatchupGate();
@@ -477,7 +470,7 @@ class StreamManager {
 
   /** A tab that stays visible, or a hidden leader whose followers are in view, hears no visibilitychange: the end of the cooldown runs the same health-gated attempt. */
   private scheduleCooldownCheck(delay: number) {
-    if (this.circuitPermanent) return;
+    if (this.circuit?.permanent) return;
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
@@ -486,7 +479,7 @@ class StreamManager {
   }
 
   private scheduleReconnect() {
-    if (this.reconnectTimeout || this.circuitOpen) return;
+    if (this.reconnectTimeout || this.circuit) return;
 
     const jitter = Math.random() * reconnectJitterMs;
     const delay = this.currentBackoff + jitter;
@@ -501,12 +494,12 @@ class StreamManager {
 
   /** Reconnect gated by circuit breaker and health check; visibility and leader handlers use this path, `reconnect()` forces. */
   private async attemptReconnect() {
-    if (!this.circuitOpen) {
+    if (!this.circuit) {
       this.connect();
       return;
     }
 
-    const elapsed = Date.now() - (this.circuitOpenedAt ?? 0);
+    const elapsed = Date.now() - this.circuit.openedAt;
     if (elapsed < circuitCooldownMs) {
       const secondsRemaining = Math.round((circuitCooldownMs - elapsed) / 1000);
       console.debug(`[${streamName}] Circuit cooldown:`, secondsRemaining, 's remaining');
@@ -522,21 +515,20 @@ class StreamManager {
     // A disconnect or a forced reconnect while the check runs ends this connect cycle, and the answer with it.
     const cycle = this.abortController;
     try {
-      const response = await fetch(healthUrl);
+      const healthy = await fetch(healthUrl).then(
+        (response) => response.ok,
+        () => false,
+      );
       if (this.abortController !== cycle) return;
-      if (response.ok) {
+      if (healthy) {
         console.debug(`[${streamName}] Health check passed, reconnecting`);
         this.reconnect();
-      } else {
-        this.circuitOpenedAt = Date.now();
-        this.scheduleCooldownCheck(circuitCooldownMs);
-        console.debug(`[${streamName}] Health check failed, extending cooldown`);
+        return;
       }
-    } catch {
-      if (this.abortController !== cycle) return;
-      this.circuitOpenedAt = Date.now();
+      // A sign-in clears the circuit without ending this cycle: a check that fails after it extends no circuit.
+      if (this.circuit) this.circuit.openedAt = Date.now();
       this.scheduleCooldownCheck(circuitCooldownMs);
-      console.debug(`[${streamName}] Health check unreachable, extending cooldown`);
+      console.debug(`[${streamName}] Health check failed or unreachable, extending cooldown`);
     } finally {
       this.healthCheckInProgress = false;
     }
@@ -584,7 +576,7 @@ class StreamManager {
     this.onlineUnsubscribe = onlineManager.subscribe((online) => {
       const cameBack = online && !wasOnline;
       wasOnline = online;
-      if (cameBack && isLeader() && !this.isConnected() && !this.circuitPermanent) {
+      if (cameBack && isLeader() && !this.isConnected() && !this.circuit?.permanent) {
         console.debug(`[${streamName}] Back online, reconnecting...`);
         this.reconnect();
       }
@@ -607,9 +599,7 @@ class StreamManager {
     this.stopLeaderReconnect();
     this.stopOnlineReconnect();
 
-    this.buffering = false;
-    this.bufferOverflowed = false;
-    this.pendingChanges = [];
+    this.buffer = null;
 
     this.abortController?.abort();
     this.abortController = null;
@@ -627,9 +617,7 @@ class StreamManager {
   /** Clears the circuit and the backoff; call when the auth state changes. */
   resetCircuitBreaker() {
     this.consecutiveFailures = 0;
-    this.circuitOpen = false;
-    this.circuitPermanent = false;
-    this.circuitOpenedAt = null;
+    this.circuit = null;
     this.connectedAt = null;
     this.currentBackoff = initialBackoffMs;
   }

@@ -217,8 +217,7 @@ const keyPath = (entityId: string) => ['attachment', entityId] as ['attachment',
 /** Stores a document as an earlier page left it: `text`, of `generation`, with its edit unsynced when asked. */
 async function seedStored(entityId: string, text: string, opts: { generation?: string; unsynced?: boolean } = {}) {
   const doc = new Y.Doc();
-  const writer = createYDocWriter({ ...keyOf(entityId), ...scope });
-  writer?.start(doc, opts.generation ?? 'gen-1', false);
+  const writer = createYDocWriter({ ...keyOf(entityId), ...scope }, doc, opts.generation ?? 'gen-1');
   await flushYjsStore();
   let update: Uint8Array = new Uint8Array();
   doc.once('update', (u: Uint8Array) => {
@@ -303,6 +302,21 @@ describe('yjs connection with the store: loading before connect', () => {
     expect(await db.yDocs.get(keyPath('slow-2'))).toBeUndefined();
     expect(provider.doc.getText('t').toString()).toBe('');
     expect(conn().generation).toBe('gen-2');
+  });
+
+  it('must not connect once a slow load answers when a token refusal stopped the connection meanwhile', async () => {
+    await seedStored('refused-early', 'stored text');
+    let open = () => {};
+    loadGate = new Promise((resolve) => {
+      open = resolve;
+    });
+    const { entityId, provider, state, conn } = await mountConnection('refused-early');
+    await act(async () => settleTokenQuery(entityId, { error: { status: 403 } }));
+    expect(state()?.stopped).toBe(true);
+
+    await act(async () => open());
+    await vi.waitFor(() => expect(conn().loaded).toBe(true));
+    expect(provider.connect).not.toHaveBeenCalled();
   });
 });
 

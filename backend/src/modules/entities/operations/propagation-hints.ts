@@ -55,8 +55,7 @@ export async function buildPropagationHints(
       if (frontier <= clientCursor) continue;
 
       const readFilter = resolveCollectionReadFilter(access, embeddedProductType, organizationId);
-      const readWhere = buildCollectionReadWhere(readFilter, getEntityTable(embeddedProductType), access);
-      if (readWhere.kind === 'none') continue;
+      const readWhere = buildCollectionReadWhere(readFilter, getEntityTable(embeddedProductType), access, organizationId);
 
       const { updatedIds, deletedIds, untilSeq } = await tenantRead(
         ctx,
@@ -65,7 +64,7 @@ export async function buildPropagationHints(
             entityType: embeddedProductType,
             organizationId,
             afterSeq: clientCursor,
-            readWhere: readWhere.kind === 'where' ? readWhere.where : undefined,
+            readWhere,
             limit: maxHintRows + 1,
           }),
         { tenantId, includeDeleted: true },

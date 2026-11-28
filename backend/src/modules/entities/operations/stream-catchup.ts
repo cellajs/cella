@@ -33,9 +33,8 @@ export async function streamCatchupOp(ctx: UserContext, { views = [] }: z.infer<
 
   const organizations: StreamCatchupResponse['organizations'] = {};
   for (const organizationId of organizationIds) {
-    const signals = counters.get(organizationId)?.signals ?? {};
     organizations[organizationId] = {
-      signals: Object.keys(signals).length > 0 ? signals : undefined,
+      signals: counters.get(organizationId)?.signals ?? {},
       spreadWindow: computeSpreadWindow(organizationId),
     };
   }

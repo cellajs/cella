@@ -27,13 +27,11 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
 
   const access = accessFrom(ctx);
   const readFilter = resolveCollectionReadFilter(access, 'attachment', organizationId);
-  const scopeWhere = buildCollectionReadWhere(readFilter, attachmentsTable, access);
-
-  if (scopeWhere.kind === 'none') return { items: [], total: 0 };
-
-  // Trusted tenant + organization predicate from guarded context, independent of RLS.
-  const filters: SQL[] = [requestScopeWhere(ctx, attachmentsTable, 'attachment')];
-  if (scopeWhere.kind === 'where') filters.push(scopeWhere.where);
+  const filters: SQL[] = [
+    // Trusted tenant + organization predicate from guarded context, independent of RLS.
+    requestScopeWhere(ctx, attachmentsTable, 'attachment'),
+    buildCollectionReadWhere(readFilter, attachmentsTable, access, organizationId),
+  ];
 
   // A channel narrows the read to the rows homed at or below it, on top of the read scope and never through it;
   // the organization itself covers every row.
@@ -47,7 +45,7 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
       findAttachmentsPaginated(readCtx, {
         organizationId,
         filters,
-        orgWide: scopeWhere.kind === 'all' && !narrowed,
+        orgWide: readFilter.orgWide && !narrowed,
         q,
         ...orderBy,
         limit,

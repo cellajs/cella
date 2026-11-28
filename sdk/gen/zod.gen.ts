@@ -1960,7 +1960,7 @@ export const zCatchUpMyStreamResponse = z.object({
   organizations: z.record(
     z.string(),
     z.object({
-      signals: z.record(z.string(), z.int()).optional(),
+      signals: z.record(z.string(), z.int()),
       propagation: z
         .array(
           z.object({
@@ -1968,7 +1968,7 @@ export const zCatchUpMyStreamResponse = z.object({
             update: z.array(z.string()),
             remove: z.array(z.string()),
             overflow: z.boolean().optional(),
-            untilSeq: z.int().optional(),
+            untilSeq: z.int(),
           }),
         )
         .optional(),

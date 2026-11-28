@@ -28,7 +28,7 @@ const databaseCache = new TTLCache<{ connected: boolean; latencyMs: number | nul
 /** Checks that the database answers, on a connection of its own: a frozen server is unreachable within the ask's deadline. */
 function checkDatabase(): Promise<{ connected: boolean; latencyMs: number | null }> {
   const pool: unknown = baseDb.$client;
-  if (env.NODB || !isPool(pool)) return Promise.resolve({ connected: false, latencyMs: null });
+  if (!isPool(pool)) return Promise.resolve({ connected: false, latencyMs: null });
   return databaseCache.load('database', async () => {
     const startedAt = Date.now();
     const connected = await databaseAnswers(pool.options);

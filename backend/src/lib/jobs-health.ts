@@ -1,6 +1,5 @@
 import { sql } from 'drizzle-orm';
 import { baseDb } from '#/db/db';
-import { env } from '#/env';
 import type { HealthComponent } from '#/lib/health-helpers';
 import { jobsSchema } from '#/lib/pg-boss';
 
@@ -49,7 +48,6 @@ interface QueueRow extends Record<string, unknown> {
 export async function readJobsHealth(): Promise<JobsHealthSnapshot> {
   const schema = sql.raw(jobsSchema);
   const empty: JobsHealthSnapshot = { installed: false, schema: jobsSchema, cronOn: null, cronAgeMs: null, queues: [] };
-  if (env.NODB) return empty;
 
   const { rows: versions } = await baseDb.execute<{ cron_on: Date | null }>(sql`
     SELECT v.cron_on FROM pg_namespace n

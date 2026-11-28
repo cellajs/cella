@@ -4,7 +4,7 @@ import type { Env } from '#/core/context';
 import type { RateLimitPolicy } from '#/middlewares/rate-limiter/types';
 import type { ErrorCode } from '#/schemas/error-response-schemas';
 
-type MiddlewareArray<E extends Env = Env> = readonly MiddlewareHandler<E>[];
+type MiddlewareArray<E extends Env = Env> = readonly XMiddlewareHandler<E>[];
 
 type ExtensionMetadata = {
   /** Identifier for route property names, e.g., 'xGuard' */
@@ -111,7 +111,7 @@ export type XRouteProps = {
 export type ExtensionPropId = keyof XRouteProps;
 
 /** The middleware a route's extension props hold (`xCache`, `xGuard`, `xRateLimiter`), in the order they apply. */
-export const collectExtensionMiddleware = (config: XRouteProps): MiddlewareHandler<Env>[] =>
+export const collectExtensionMiddleware = (config: XRouteProps): XMiddlewareHandler[] =>
   Object.values(extensionMap)
     .filter((extension) => extension.kind === 'middleware')
     .flatMap(({ id }) => config[id] ?? []);

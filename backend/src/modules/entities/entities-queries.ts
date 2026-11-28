@@ -94,26 +94,32 @@ interface GetOrganizationEntityCountOpts {
 }
 
 /**
- * Reads `e:c:{entityType}` from the org's counter row. Draft-lifecycle tables fall back to a
- * direct COUNT including drafts, since that counter tracks published rows only. A product table sits
- * under RLS, where a bare connection reads no row, so on one the count opens its own tenant transaction.
+ * Reads `e:c:{entityType}` from the org's counter row: the organization's live rows of the type, and of a product
+ * that keeps drafts the published ones alone. The total of a list that shows no draft to anyone.
  */
-export const getOrganizationEntityCount = async (ctx: ActorContext, { organizationId, entityType }: GetOrganizationEntityCountOpts) => {
-  const table = isProduct(entityType) ? getEntityTable(entityType) : null;
-  if (table && hasPublishedAt(table)) {
-    const countRows = async (readCtx: DbContext) => {
-      const deletedFilter = hasDeletedAt(table) ? sql.raw(' AND deleted_at IS NULL') : sql.raw('');
-      const [row] = await readCtx.var.db.select({ count: count() }).from(table).where(sql`organization_id = ${organizationId}${deletedFilter}`);
-      return row.count;
-    };
-    return tenantRead(ctx, countRows);
-  }
-
+export const getOrganizationPublishedCount = async (ctx: DbContext, { organizationId, entityType }: GetOrganizationEntityCountOpts) => {
   const [row] = await ctx.var.db
     .select({ count: sql<number>`${sql.raw(jsonbIntRaw('"channel_counters"."counts"', `e:c:${entityType}`))}` })
     .from(channelCountersTable)
     .where(eq(channelCountersTable.channelKey, organizationId));
   return row?.count ?? 0;
+};
+
+/**
+ * The organization's live rows of the type, drafts included. A product that keeps drafts is counted on its table,
+ * since its counter follows published rows only; any other type reads the counter. A product table sits under RLS,
+ * where a bare connection reads no row: on one the count opens its own tenant transaction.
+ */
+export const getOrganizationEntityCount = async (ctx: ActorContext, { organizationId, entityType }: GetOrganizationEntityCountOpts) => {
+  const table = isProduct(entityType) ? getEntityTable(entityType) : null;
+  if (!table || !hasPublishedAt(table)) return getOrganizationPublishedCount(ctx, { organizationId, entityType });
+
+  const countRows = async (readCtx: DbContext) => {
+    const deletedFilter = hasDeletedAt(table) ? sql.raw(' AND deleted_at IS NULL') : sql.raw('');
+    const [row] = await readCtx.var.db.select({ count: count() }).from(table).where(sql`organization_id = ${organizationId}${deletedFilter}`);
+    return row.count;
+  };
+  return tenantRead(ctx, countRows);
 };
 
 /**
@@ -219,8 +225,8 @@ interface FindChangedEntityDeltaIdsOpts {
   entityType: ProductEntityType;
   organizationId: string;
   afterSeq: number;
-  /** The rows the caller may read (`buildCollectionReadWhere`); unset reads every row of the organization. */
-  readWhere?: SQL;
+  /** The rows the caller may read (`buildCollectionReadWhere`). */
+  readWhere: SQL;
   /** The most rows read, in no order. */
   limit: number;
 }
@@ -242,7 +248,7 @@ export const findChangedEntityDeltaIds = async (
   const result = await ctx.var.db.execute<{ id: string; deletedAt: Date | null; seq: string }>(sql`
     SELECT id, ${deletedAtSelect} AS "deletedAt", seq
     FROM ${table}
-    WHERE seq > ${afterSeq} AND organization_id = ${organizationId}${published ? sql` AND ${published}` : sql``}${readWhere ? sql` AND ${readWhere}` : sql``}
+    WHERE seq > ${afterSeq} AND organization_id = ${organizationId}${published ? sql` AND ${published}` : sql``} AND ${readWhere}
     LIMIT ${limit}
   `);
 

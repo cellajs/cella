@@ -14,7 +14,7 @@ import type { yjsTokenResponseSchema } from '#/modules/yjs/yjs-schema';
 import { attachmentProduct } from './attachment-requests';
 import { benchCookie, ORG_PATH } from './bench-user';
 import { BACKEND_PORT, CDC_HEALTH_PORT, CDC_HEALTH_URL, DB_URL, YJS_HEALTH_URL, YJS_PORT, YJS_TYPING, YJS_URL } from './config';
-import { attachmentId, TENANT_ID } from './seeds/ids';
+import { attachmentId } from './seeds/ids';
 import { TOTAL_USERS } from './seeds/user-constants';
 import { type DbCounters, startStackSampler, type WindowSummary, walBytesBetween } from './stack-sampler';
 import { createSyncClient, type SyncClient, waitFor } from './sync/client';
@@ -165,7 +165,7 @@ function openClient(run: RunState, role: Client['role'], docIndex: number, token
     connect: false,
     // Node has BroadcastChannel: without this, clients in this process would sync past the relay.
     disableBc: true,
-    params: { token, entityType: 'attachment', tenantId: TENANT_ID },
+    params: { token },
     maxBackoffTime: 30_000,
     WebSocketPolyfill: ledgerSocket(ledger),
   });

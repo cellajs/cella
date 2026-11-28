@@ -4,7 +4,7 @@ import type { UserContext } from '#/core/context';
 import { tenantRead } from '#/db/tenant-context';
 import { findUnseenCountsByUser, seenWindowStart } from '#/modules/seen/seen-queries';
 import { accessFrom } from '#/permissions/access';
-import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
+import { hasNoReadScope, resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getEntityTable } from '#/tables';
 
@@ -35,18 +35,17 @@ export async function getUnseenCountsOp(ctx: UserContext) {
   const results: Record<string, Record<string, number>> = {};
 
   for (const [organizationId, { tenantId, channels }] of orgGroups) {
-    const scopeWhereByType: Partial<Record<SeenTrackedProductType, SQL | undefined>> = {};
+    const scopeWhereByType: Partial<Record<SeenTrackedProductType, SQL>> = {};
     const readableTypes: SeenTrackedProductType[] = [];
 
     for (const productType of appConfig.seenTrackedProductTypes) {
       // No badge counts the rows of a product that is switched off.
       if (!isSwitchOn({ product: productType })) continue;
       const readFilter = resolveCollectionReadFilter(access, productType, organizationId);
-      const entityTable = getEntityTable(productType);
-      const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, access);
-      if (scopeWhere.kind === 'none') continue;
+      // A type the user reads no row of runs no count query.
+      if (hasNoReadScope(readFilter)) continue;
       readableTypes.push(productType);
-      if (scopeWhere.kind === 'where') scopeWhereByType[productType] = scopeWhere.where;
+      scopeWhereByType[productType] = buildCollectionReadWhere(readFilter, getEntityTable(productType), access, organizationId);
     }
     if (readableTypes.length === 0) continue;
 

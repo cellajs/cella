@@ -12,7 +12,7 @@
     "dev:oauth": "cross-env SERVICE=oauth NODE_ENV=development NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx --watch-path=src --watch-path=../shared/src --watch-path=../shared/config src/main.ts",
     "dev:jobs": "cross-env SERVICE=jobs NODE_ENV=development NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx --watch-path=src --watch-path=../shared/src --watch-path=../shared/config src/main.ts",
     "offline": "pnpm dev",
-    "ts": "cd .. && tsgo -p backend/tsconfig.json --pretty",
+    "ts": "cd .. && tsgo -p backend/tsconfig.json --pretty --checkers 2",
     "tsperf": "tsgo --incremental false --extendedDiagnostics",
     "build": "cross-env NODE_ENV=production rolldown -c",
     "stop": "tsx scripts/stop-database.ts",

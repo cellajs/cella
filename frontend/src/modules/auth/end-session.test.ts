@@ -105,8 +105,7 @@ describe('endSession', () => {
   it("must not lose a collaborative edit still queued at a lost session: it is stored first, unsynced, for the user's next one", async () => {
     userStore.setState({ user: person as never, lastUser: person });
     const doc = new Y.Doc();
-    const writer = createYDocWriter({ entityType: 'attachment', entityId: 'doc-1', tenantId: 'tenant-1', organizationId: 'org-1' });
-    writer?.start(doc, 'gen-1', false);
+    const writer = createYDocWriter({ entityType: 'attachment', entityId: 'doc-1', tenantId: 'tenant-1', organizationId: 'org-1' }, doc, 'gen-1');
     doc.on('update', (update: Uint8Array) => writer?.append(update, true));
     doc.getText('t').insert(0, 'typed just before the session ended');
 

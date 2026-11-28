@@ -26,8 +26,8 @@ interface FindUnseenCountsByUserOpts {
   /** The home channels to count, each with the moment after which its rows count. */
   channels: { id: string; cutoff: string }[];
   productTypes: readonly SeenTrackedProductType[];
-  /** Per-type collection read filter. An `undefined` value or an absent type counts unrestricted, so callers pre-drop types scoped `none`. */
-  scopeWhereByType?: Partial<Record<SeenTrackedProductType, SQL | undefined>>;
+  /** Per-type read scope (`buildCollectionReadWhere`). A type without one counts nothing. */
+  scopeWhereByType: Partial<Record<SeenTrackedProductType, SQL>>;
 }
 
 /**
@@ -42,6 +42,8 @@ export const findUnseenCountsByUser = async (ctx: DbContext, { userId, channels,
   const cutoffGroups = [...Map.groupBy(channels, ({ cutoff }) => cutoff)].map(([cutoff, group]) => ({ cutoff, ids: group.map(({ id }) => id) }));
 
   for (const productType of productTypes) {
+    const scopeWhere = scopeWhereByType[productType];
+    if (!scopeWhere) continue;
     const entityTable = getEntityTable(productType);
     const orgTable = entityTable as OrgScopedEntityTable;
 
@@ -54,7 +56,7 @@ export const findUnseenCountsByUser = async (ctx: DbContext, { userId, channels,
       hasDeletedAt(entityTable) ? isNull(entityTable.deletedAt) : undefined,
       // Feed parity: unpublished drafts are hidden from every feed, so they are never unseen.
       publishedRowsPredicate(entityTable),
-      scopeWhereByType?.[productType],
+      scopeWhere,
     ];
 
     const entityRows = await ctx.var.db

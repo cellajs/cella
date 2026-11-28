@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import { CopyIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
@@ -97,7 +98,14 @@ export function AboutPage() {
           />
         </AboutSection>
 
-        <AboutSection sectionId="standards" title="about:standards.title" text="about:standards.text">
+        <AboutSection
+          sectionId="standards"
+          title="about:standards.title"
+          text="about:standards.text"
+          textComponents={{
+            interoperabilityLink: <Link to="/docs/page/$" params={{ _splat: 'interoperability' }} className="link-inline hover:text-primary" />,
+          }}
+        >
           <Standards />
         </AboutSection>
 

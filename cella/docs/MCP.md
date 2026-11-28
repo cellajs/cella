@@ -1,12 +1,10 @@
 # MCP
 
-This document covers the MCP service: one [Model Context Protocol](https://modelcontextprotocol.io) endpoint per organization, exposing opted-in routes as MCP tools.
+This document covers the MCP service: one [Model Context Protocol](https://modelcontextprotocol.io) endpoint per organization, exposing opted-in routes as MCP tools to clients with an [OAuth 2.1](https://oauth.net/2.1/) access token.
 
 ### TL;DR
 
-An AI client connects to `<mcpUrl>/tenants/<tenant>/organizations/<org>/mcp` with an access token from the OAuth
-service and nothing else. MCP tools are ordinary routes that carry `xTool`, run as the person or service account behind
-the token. A call outside the token's scopes answers with the scope to step up to.
+An AI client connects to `<mcpUrl>/tenants/<tenant>/organizations/<org>/mcp` with an access token from the OAuth service and nothing else. You turn an ordinary route into an MCP tool with `xTool`, and it runs as the person or service account behind the token. A call outside the token's scopes gets an answer naming the scope to step up to.
 
 ## How it fits
 
@@ -23,11 +21,11 @@ MCP endpoint  /tenants/<tenant>/organizations/<org>/mcp
 the route: its guards, limiters and handler, as for a REST request
 ```
 
-The MCP service runs from the backend image as a `SERVICE`. The reverse proxy routes `/mcp/*` to it. It mounts the module routes for tool calls, but serves only the MCP routes.
-
-`pnpm dev` starts it beside the API. Error codes, limits and schema details are documented there, at their declarations.
+The reverse proxy routes `/mcp/*` to the MCP service. It mounts the module routes for tool calls, but serves only the MCP routes. `pnpm dev` starts it beside the API.
 
 ## Discovery and tokens
+
+The MCP endpoint takes only access tokens. Sessions and API keys are refused on purpose: every call traces to a consent or to a service account's `client_credentials` grant.
 
 | Request | Response |
 | --- | --- |
@@ -37,13 +35,11 @@ The MCP service runs from the backend image as a `SERVICE`. The reverse proxy ro
 | A token for another tenant or another organization's endpoint | 401: the audience must be this endpoint or the tenant's REST API |
 | `tools/call` outside the token's scopes | 403 with a challenge and a JSON-RPC error, both naming the scope to step up to |
 
-A client follows the challenge to the OAuth service and retries with a token bound to this organization's resource. A 403 step-up works the same way. Its challenge names only the scope the call lacks, never the scopes the token holds. A client asks for both when it consents again.
-
-Sessions and API keys are refused here on purpose. The MCP face takes only tokens. Every call traces to a consent or to a service account's `client_credentials` grant.
+A client follows the challenge to the OAuth service and retries with a token bound to this organization's resource. A 403 challenge names only the scope the call lacks, never the scopes the token holds. A client asks for both when it consents again.
 
 ## MCP tools are routes
 
-A route opts in by carrying `xTool` in its `xRoute` config:
+You opt a route in with `xTool` in its `xRoute` config:
 
 ```ts
 xTool: {
@@ -65,12 +61,11 @@ The OpenAPI spec shows it under `x-tool`. The rest of a tool is derived from the
 | `annotations` | Read-only, destructive and idempotent hints from the method |
 
 - **Every tool listed.** `tools/list` includes tools the token may not call. A client sees what to step up to.
-- **Route schemas.** `tools/call` validates the arguments against the route's own schemas, then runs the route.
 - **JSON result.** The route's JSON answer is the tool result.
 - **Errors as results.** A permission or domain error from the route is a tool result a model can act on.
 - **Invalid params.** Refused arguments or an unknown MCP tool answer a JSON-RPC invalid-params error.
 
-The template registers four attachment routes as MCP tools. An app adds `xTool` to any organization route that answers JSON. Not every operation is a tool, on purpose.
+The template registers the attachment routes as MCP tools. Your app can add `xTool` to any organization route that answers JSON. Not every operation is a tool, on purpose.
 
 ## Transport
 
@@ -86,7 +81,7 @@ JSON-RPC 2.0 over Streamable HTTP, with JSON responses:
 
 ## Operational constraints
 
-- **Needs the OAuth service.** Without `services.oauth` every call is a 401, since no token can exist.
+- **Needs the OAuth service.** Turn on `services.oauth`: without it every call is a 401, since no token can exist.
 - **Limits.** A tool call spends the route's limits, plus the endpoint's own limit per account.
 - **No internals.** A server error reaches the model without its message.
 - **Tool descriptions are model-facing English.** They are not translated.

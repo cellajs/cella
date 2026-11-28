@@ -1,7 +1,5 @@
-import type { MiddlewareHandler } from 'hono';
 import { appConfig } from 'shared';
 import { readBudget } from 'shared/sync-pace';
-import type { Env } from '#/core/context';
 import { rateLimiter } from '#/middlewares/rate-limiter/core';
 import { bulkBodyLength } from '#/middlewares/rate-limiter/helpers';
 import { isRecognizedBrowser } from '#/modules/auth/core';
@@ -17,8 +15,9 @@ const proofSuccessStatusCodes = [200, 201, 204, 302];
 /** Keyed per actor when authenticated, so invite flows behind a shared NAT IP get their own budget. */
 export const spamLimiter = rateLimiter('success', 'spam', [['actorId', 'ip']], {
   limits: { successStatusCodes: [200, 201, 204] },
-  name: 'Emails sent',
-  description: 'Mails sent for each user, or for each IP address when not signed in. A failed request does not count.',
+  name: 'Requests that send mail',
+  description:
+    'Requests that send mail for each user, or for each IP address when not signed in, however many addresses one mails. A failed request does not count.',
 });
 
 /**
@@ -43,13 +42,14 @@ export const demoLimiter = rateLimiter('limit', 'demo', ['ip'], {
 
 /** Share links that name nothing, per IP: what guessing channel codes runs into. A link that resolves costs nothing. */
 export const shareLinkLimiter = rateLimiter('fail', 'shareLink', ['ip'], {
-  limits: { points: 100, duration: 60 * 60, blockDuration: 60 * 60 },
+  // Under the 24-hour bucket's 100 failures: this budget's one-hour block is the one a client meets first
+  limits: { points: 50, duration: 60 * 60, blockDuration: 60 * 60 },
   name: 'Unknown share links',
   description: 'Share links that name nothing, for each IP address.',
 });
 
 /** Failed proofs per IP, one series per kind of proof (`tokenType`: a provider, a link type, `passkey`) under its own key prefix. */
-export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>
+export const tokenLimiter = (tokenType: string) =>
   rateLimiter('failseries', `token_${tokenType}`, ['ip'], {
     limits: { successStatusCodes: proofSuccessStatusCodes },
     functionName: 'tokenLimiter',
@@ -167,6 +167,7 @@ export const pointsLimiter = (cost = 1) =>
     name: 'API points',
     description: `Points for each user or service account in a tenant: 1 per request, 1 per item on a bulk route. A tenant starts at ${startBudgetText()} an hour, which a system admin can raise up to the ceiling shown.`,
     getConsumePoints: cost > 0 ? () => cost : bulkBodyLength,
+    countsInProcess: true,
     getPointsBudget: (ctx) => {
       const tenant = ctx.var.tenant;
       const budget = tenant?.restrictions?.rateLimits?.apiPointsPerHour ?? defaultRestrictions().rateLimits.apiPointsPerHour;

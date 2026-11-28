@@ -4,7 +4,23 @@ This document explains how product data and the facts around it stay current acr
 
 ### TL;DR
 
-The server announces each data change on a live stream: product rows as **changes**, anything else as **signals**. The client fetches the data through the normal API and patches only the affected cached entries. This 'notify-then-fetch' design keeps things simpler at the cost of seeming like a redundant round-trip (which it is not :D).
+The server announces each data change on a live stream: product rows as **changes**, anything else as **signals**. The client fetches the data through the normal API. This 'announce-then-fetch' design keeps things simpler at the cost of seeming like a redundant round-trip (which it is not :D).
+
+## Selective sync
+
+Only `product` rows sync. A `channel` is a containers for products, the synced content. The template ships organizations and attachments. Your app can add deeper hierarchies and options such as drafts and embeddings.
+
+| Concept | Meaning |
+| --- | --- |
+| **Sequence** | One monotonic counter per organization, shared by all product entity types |
+| **Summary** | Counts and timestamps per channel. One read answers for a channel and everything below it. The organization's row also holds the frontiers. |
+| **Frontier** | Newest sequence position of a product type in an organization. It only moves forward. |
+| **Books** | The sequences, counts and frontiers CDC keeps. A rebuild recounts them from the tables. |
+| **Cursor** | Newest sequence position the client has fetched, per product type and organization |
+| **View** | An organization and a product type a client tracks. Catchup authorizes and answers per view. |
+| **Range fetch** | Ordinary list request for the rows stamped between `afterSeq` and `untilSeq`, deleted rows included |
+| **Tombstone** | Soft-deleted row as a range fetch returns it for the deleted-items period: its id, position and place, never its content. Absent clients learn the deletion from it |
+| **`stx`** | Envelope on every product write: mutation ID, source ID and per-field HLC timestamps |
 
 ## One edit, end to end
 
@@ -16,7 +32,7 @@ tab A ──PATCH──▶ API ──UPDATE──▶ Postgres
   └── stored row ─┘                 ▼
                                CDC ...................... records an activity,
                                     │                     a sequence position, counters
-                                    │ socket ............ a message per audience
+                                    │ socket ............ a message per type and channel
                                     ▼
                                API activityBus .......... an event
                                     │ who may read the row?
@@ -29,7 +45,7 @@ tab B ◀────── SSE ─────────── change frame .
 1. Tab A patches its cached `a42` and sends the edit with its `stx`.
 2. The API stores the edit and answers with the stored row.
 3. CDC reads the commit from the WAL, records an activity and stamps a sequence position.
-4. CDC hands the API one message per audience.
+4. CDC hands the API one message per product type and channel.
 5. The API asks the permission engine which subscribers of `org1` may read the rows, as for a REST read.
 6. Each allowed subscriber gets a change frame of its readable rows, without row data.
 7. Tab A recognizes its own write and fetches nothing.
@@ -46,7 +62,7 @@ Reconnecting takes the same path. Cursor `3` and frontier `7` become `afterSeq=3
 
 ## Changes and signals
 
-The stream carries two kinds of frame. Both are announcements. The client reads what a frame points at through REST.
+The stream carries two kinds of frame ('announcements'): `change` or `signal`. 
 
 | | Change | Signal |
 | --- | --- | --- |
@@ -59,28 +75,13 @@ A signal is versioned when a client that was away must still hear it. A committe
 
 The rows below a deleted channel leave by cascade and get no change of their own. In their place, the delete sends one `channel.deleted` to the readers of the deleted channel. It covers the channels inside it too.
 
-## Selective sync
-
-Only product rows sync. Channels are containers, and products are the synced content. The template ships organizations and attachments. Your app can add deeper hierarchies and options such as drafts and embeddings.
-
-| Concept | Meaning |
-| --- | --- |
-| **Sequence** | One monotonic counter per organization, shared by all product entity types |
-| **Summary** | Counts and timestamps per channel. One read answers for a channel and everything below it. The organization's row also holds the frontiers. |
-| **Frontier** | Newest sequence position of a product type in an organization. It only moves forward. |
-| **Cursor** | Newest sequence position the client has fetched, per product type and organization |
-| **View** | An organization and a product type a client tracks. Catchup authorizes and answers per view. |
-| **Range fetch** | Ordinary list request for the rows stamped between `afterSeq` and `untilSeq`, deleted rows included |
-| **Tombstone** | Soft-deleted row as a range fetch returns it for the deleted-items period: its id, position and place, never its content. Absent clients learn the deletion from it |
-| **`stx`** | Envelope on every product write: mutation ID, source ID and per-field HLC timestamps |
-
 ## Server
 
 ### Ordering
 
 Changes of all product types share one sequence, numbered in commit order. A change delivered twice moves nothing.
 
-Changes go out per audience: the rows of one type in one channel. After a moment without changes, an audience's next few changes go out at once: a person's quick edits reach the other readers without a wait. When changes keep coming, the API bundles the rest into one frame per action and interval, each row once with its latest change.
+Changes go out per product type and channel. After a moment without changes there, the next few go out at once: a person's quick edits reach the other readers without a wait. When changes keep coming, the API bundles the rest into one frame per action and interval, each row once with its latest change.
 
 ### Drafts
 
@@ -104,11 +105,13 @@ When an update moves rows where a subscriber can no longer read them, that subsc
 
 ### Shared answers
 
-The readers of one change fetch the same range at the same moment, and under sustained change one frame per interval keeps their ranges in step. A change frame carries a **range key** for the receivers who read the same rows, and each sends it with its range fetch. The first fetch runs as any request does. Its answer is kept for a moment, and the fetches behind it take it without passing the guards or reading the database.
+Shared answers keep a `change` from costing one database read per reader. Say 50 members have an organization's attachments open when a colleague renames one. All 50 receive the change frame and fetch the same range at once. Without shared answers, the API runs its guards and reads the same rows 50 times.
 
-A key stands for a read scope, never for a user. Receivers whose scopes differ get different keys, and a receiver bound to its own rows gets none. A key answers only for the URL its answer was read under, and only for seconds: about as long as a session that ended elsewhere still passes.
+With shared answers, the frame carries a **range key** for the readers to fetch with. The first fetch runs as any request does. The other 49 take its answer without passing the guards or reading the database. Three rules keep that safe:
 
-A kept answer never outlives a write of its tenant: the writer's next fetch reads the database. You opt a product list route in with `xCache` when its range answer depends on the read scope and the URL alone.
+- A key is a read scope and lasts seconds. Readers whose scopes differ get different keys.
+- A kept answer serves only the URL it was read under and never outlives a write of its tenant: the writer's next fetch reads the database.
+- A product list route opts in with `xCache` only when its answer to a range fetch depends on the read scope and the URL alone.
 
 ## Client
 
@@ -121,11 +124,11 @@ A change frame names each changed row with its sequence position and the write t
 - **Move-out:** drop the row at once.
 - **Own echo:** fetch nothing, since the write's answer brought the stored row.
 
-A frame past a size bound names its rows by id alone, and past a larger bound names none. The client then fetches the range or refetches the lists.
+A frame for a write of many rows names them by id alone; for a very large write it fetches the range or refetches the lists.
 
 ### Catchup
 
-Catchup runs on every connection before the stream goes live, once the persisted cache is restored. A gap is fetched into the cached lists, and a tab killed meanwhile fetches it again at its next catchup. The client posts a view per product type of each of the user's organizations. The answer holds:
+Catchup fetches what the cached lists missed. It runs on every connection before the stream goes live, once the persisted cache is restored. A tab killed meanwhile fetches the gap again at its next catchup. The client posts a view per product type of each of the user's organizations. The answer holds:
 
 - each view's status
 - an `ok` view's frontier
@@ -135,48 +138,42 @@ A view behind its frontier hands the gap to the fetch prioritizer. A view withou
 
 ### SSE wire
 
-The stream also sends an `offset` once, a periodic `ping` and an `error` ([API reference](/docs/schemas)). The `ping` says whether CDC is reading. Every proxy on the way must keep an idle stream open longer than the ping interval.
+The stream also sends an `offset`, a periodic `ping` and an `error` ([API reference](/docs/schemas)). The `offset` comes once after connecting and is empty: it cues the client to post its catchup. The `ping` says whether CDC is reading. Every proxy on the way must keep an idle stream open longer than the ping interval.
 
 The `error` names why the server ends the stream. A stream ended for good still answers 200 and closes after its `error` frame.
 
-No frame carries an event id. A reconnecting client resumes through catchup from its cursors.
-
 ### Fetch prioritization
 
-An announced range is queued, not fetched at once. Its channel's tier decides when:
+The client queues each range fetch. The fetch's channel tier decides when they go out:
 
-- **Viewed:** at once, and on the background tier while the tab is hidden or the read budget is under the user's share.
+- **Viewed:** at once.
 - **Muted or hidden:** when it is opened.
-- **Any other:** in the background, spread over a window that grows with the online audience.
+- **Any other:** in the background.
 
-One range read per product type and organization runs at a time, and changes announced meanwhile join the next one.
-
-A new [sync generation](#what-happens-when) refetches through the same tiers: every synced list is marked, the viewed organization's lists read in the client's slot of that window once the tab is visible, and the rest when opened or by the background fill.
-
-Your app derives per-user state from `query/realtime/sync-events.ts`, never from queue logic. It announces each id a change frame names, before any tier decision. It then delivers the rows of each fetched range.
+One range fetch per product type and organization runs at a time. Changes announced meanwhile join the next one. After a [rebuild of the books](#what-happens-when), the client refetches through the same tiers.
 
 ### Freshness
 
-Synced product queries never go stale on their own while the stream is healthy. Catchup keeps them fresh, also when the app comes back online. A failed stream or a stopped CDC lets them go stale with time until the stream delivers again ([REST fallback](#rest-fallback)). Other queries keep the global stale time, infinite while offline.
+Synced product queries never go stale on their own while the stream is healthy. A failed stream or a stopped CDC lets them go stale with time until the stream delivers again ([REST fallback](#rest-fallback)).
 
-A list the sync engine cannot patch whole, such as an overflowed or a filtered list, carries a **refetch mark**. It refetches when it is opened or when the [background fill](./CLIENT.md#cold-start-to-live) reads it. The mark outlives later patches and a reload. Only that refetch clears it.
+A list the sync engine cannot patch whole, such as an overflowed or a filtered list, carries a **refetch mark**. It refetches when it is opened or when the [background fill](./CLIENT.md#cold-start-to-live) reads it. Only that refetch clears the mark.
 
 ### Unseen tracking
 
-Unseen badges count delivered rows with the server's own predicate. An exact server recount replaces them after catchup and when they go stale. A tab sends the rows it saw at intervals and when it hides. A tab killed while in view loses the marks since its last send, and the next recount counts those rows as unseen again. The client counts only types every channel member may read. The config refuses to track the others.
+Unseen tracks counts of rows that are recent, published and not yet seen. An exact server recount replaces them after catchup and when they go stale. A tab sends the rows it saw at intervals and when it hides. A tab killed while in view loses the marks since its last send, and the next recount counts those rows as unseen again.
 
 ## Embeddings
 
-A product can reference other products through an id array column. The **host** row holds the ids, and each referenced row is **embedded**. Declare the relationship in `appConfig.productEmbeddings` and the sync engine handles the rest.
+A product can reference other products through an id array column. The **host** row holds the ids and each referenced row is **embedded**. Declare the relationship in `appConfig.productEmbeddings` and the sync engine handles the rest.
 
 Host and embedded rows sync independently. An embedded row's change patches its copies inside cached host rows. A host write keeps only the ids of live rows in its organization.
 
 The embedding's `lifecycle` decides what a deletion does:
 
 - `shared`: embedded rows live on their own. CDC strips a deleted one's id from the hosts.
-- `owned`: an embedded row also needs a host. The nightly retention run soft-deletes one that no live host references, once it is past the unreferenced-items period from its creation. Until that run the row stays live. An undo of a removed reference still finds it.
+- `owned`: an embedded row is bound to a host. The nightly retention run soft-deletes one that no live host references.
 
-The sync engine keeps no usage counts. Derive one on the client from the synced host rows, such as the tasks with a label. Count on the server when the hosts are not synced. Count there too when a decision must not rest on what this viewer reads, such as deleting an unused label.
+The sync engine keeps no usage counts. Derive one on the client from the synced host rows, such as the tasks with a label. When a list holds only some of the hosts, such as a board that leaves out tasks accepted long ago, the server counts the rest.
 
 A side effect an embedding cannot express, such as seeding rows when a project is created, goes through the mutation bus of `defineBackendModule`.
 
@@ -193,8 +190,8 @@ The attachment module sends a tab's writes in order. Updates queued one behind a
 Synced tables store the latest `stx` and a hybrid logical clock (HLC) timestamp per scalar field. The merge is deterministic last-writer-wins, not a causal clock. Array fields merge `{ add, remove }` deltas.
 
 - **Online write:** a device clock that runs behind cannot lose an edit, since the server stamps a fresh HLC.
-- **Replayed write:** loses to an edit made elsewhere while it was queued, since it keeps its intent time. The client tells the person when a replay lost.
-- **No conflict response:** losing fields are skipped. A write that loses every field writes nothing, and the server returns the stored row.
+- **Replayed write:** loses to an edit made elsewhere while it was queued, since it keeps its intent time. 
+- **No conflict response:** losing fields are skipped. A write that loses every field writes nothing.
 - **Future stamp:** one too far ahead of the server's clock loses to the next write of its field.
 
 ### Paused writes
@@ -217,7 +214,7 @@ A replayed create is idempotent by its row ids, and a replayed delete by its mut
 
 ## Resilience
 
-The REST API and the database work whatever CDC does. CDC records each change once, reads again whatever failed, and rebuilds its books when the WAL cannot help ([CDC](../../cdc/README.md#failure-and-recovery)).
+Reads and writes never wait for CDC. When CDC is down or behind, the API still answers. CDC records each change once, reads again whatever failed and rebuilds its books when the WAL cannot help ([CDC](../../cdc/README.md#failure-and-recovery)).
 
 ### REST fallback
 
@@ -237,9 +234,9 @@ The client's own catchup repairs missed frames ([Failure modes](./sync-engine/FA
 | One change can never be processed | Live updates pause until a fix ships or the slot is dropped. After a drop every client refetches once | A fix lets CDC read on. A dropped slot is made anew and the books rebuilt | Nothing after a fix. After a drop, activities and notifications of the backlog |
 | A bulk transaction: a migration's writes, or one transaction past CDC's size limit | Every client refetches once, the lists on screen first | CDC discards it and rebuilds the books at its commit | Its activities and notifications |
 | A device was away longer than the activity window | It refetches what it holds of each organization once | Catchup starts over | Nothing |
-| A user's read budget is spent: a busy board, a large import or replay, several tabs | Live updates pause until the budget's wait ends. A page the user opens meanwhile answers with a warning and the wait | The held ranges read once the wait ends, and the refused lists on screen refetch | Nothing |
+| A user's read budget is spent: a busy board, a large import or replay, several tabs | Live updates pause until the budget's wait ends. A page the user opens meanwhile answers with a warning and the wait | The queued range fetches run once the wait ends, and the refused lists on screen refetch | Nothing |
 
-A rebuild starts a new sync generation. The API then ends every open stream. Each client refetches its synced cache once, at its own moment within a few seconds. What is on screen refetches then, the rest through its [refetch mark](#freshness).
+After a rebuild, the API ends every open stream. Each client refetches its synced cache once, at its own moment within a few seconds. What is on screen refetches then, the rest through its [refetch mark](#freshness).
 
 ### Multiple tabs
 

@@ -1,4 +1,4 @@
-import { type AnyColumn, and, eq, inArray, isNotNull, isNull, or, type SQL } from 'drizzle-orm';
+import { type AnyColumn, and, eq, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
 import {
   type Access,
   hierarchy as appHierarchy,
@@ -11,7 +11,6 @@ import {
 } from 'shared';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { ReadRules } from '#/permissions/collection-scope';
-import type { CollectionReadWhere } from '#/permissions/row-predicates';
 
 /** What the scope reads of a grant: a membership row and a service account's binding both carry it. */
 export type ChannelScopeGrant = Pick<MembershipBaseModel, 'organizationId' | 'channelType' | 'channelId' | 'role'>;
@@ -133,8 +132,7 @@ export interface ChannelListReadColumns {
 
 /**
  * Compile a resolved channel read scope into the list query's predicate: own-membership rows ∪
- * org-wide rows ∪ ancestor-scoped rows (published-only for read-only grants). 'none' cannot occur:
- * own membership rows are always in scope.
+ * org-wide rows ∪ ancestor-scoped rows (published-only for read-only grants).
  *
  * Consumer contract:
  * - LEFT JOIN the memberships on the caller's own key alone (channel, type, user). A filter on the membership, such
@@ -152,9 +150,9 @@ export const buildChannelListReadWhere = (
   scope: ChannelCollectionReadScope,
   columns: ChannelListReadColumns,
   { includeArchived = false }: { includeArchived?: boolean } = {},
-): CollectionReadWhere => {
+): SQL => {
   const live = columns.archived && !includeArchived ? eq(columns.archived, false) : undefined;
-  if (scope.orgWide === 'all') return live ? { kind: 'where', where: live } : { kind: 'all' };
+  if (scope.orgWide === 'all') return live ?? sql`true`;
 
   const branches: SQL[] = [isNotNull(columns.membershipUserId)];
   if (scope.orgWide === 'published') branches.push(isNotNull(columns.publishedAt));
@@ -169,8 +167,8 @@ export const buildChannelListReadWhere = (
     }
   }
 
-  const where = and(or(...branches), live);
-  return where ? { kind: 'where', where } : { kind: 'none' };
+  // The own-membership branch keeps it set; the fallback only completes drizzle's optional type.
+  return and(or(...branches), live) ?? sql`false`;
 };
 
 /** `excludeHidden` for the LEFT-join variant: a row the caller hid stays out, not shown as a discovery row. */

@@ -9,9 +9,11 @@ import {
   subjectSegment,
 } from '#/middlewares/rate-limiter/helpers';
 import { adoptDbCount, localCount, maxWindowMs, takeDebt, tryFastConsume, windowSecondsLeft } from '#/middlewares/rate-limiter/points-cache';
-import { reserveTiers, settleTiers, slowTier } from '#/middlewares/rate-limiter/tiers';
+import { blockSecondsOf, reserveTiers, settleTiers, slowTier } from '#/middlewares/rate-limiter/tiers';
 import type {
+  BudgetOpts,
   Outcome,
+  OutcomeOpts,
   RateLimiterHandler,
   RateLimiterOpts,
   RateLimitKeyPart,
@@ -26,7 +28,6 @@ const defaultOptions = {
   blockDuration: 60 * 30,
   successStatusCodes: [200, 201],
   failStatusCodes: [401, 403, 404],
-  ignoredStatusCodes: [429],
 };
 
 /**
@@ -39,14 +40,19 @@ const defaultOptions = {
  * @param mode - Result mode that controls point consumption.
  * @param key - Rate-limit namespace.
  * @param identifiers - Key parts or fallback chains composing the subject identifier.
- * @param opts - Limits and middleware metadata.
+ * @param opts - Limits and metadata: the budget options for a `limit`, the status lists and block for the other modes.
  */
-export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateLimitKeyPart[], opts?: RateLimiterOpts): RateLimiterHandler => {
-  const { limits, functionName, name, description, refusalType, exempt, getConsumePoints, getPointsBudget, countsInProcess, reportsBudget } =
-    opts ?? {};
+export const rateLimiter = <M extends RateLimitMode>(
+  mode: M,
+  key: string,
+  identifiers: RateLimitKeyPart[],
+  opts?: M extends 'limit' ? BudgetOpts : OutcomeOpts,
+): RateLimiterHandler => {
+  const options: RateLimiterOpts = opts ?? {};
+  const { limits, functionName, name, description, refusalType, exempt, getConsumePoints, getPointsBudget, countsInProcess, reportsBudget } = options;
   const config = { ...defaultOptions, ...limits };
   const keyPrefix = `${key}_${mode}`;
-  const fastPath = mode === 'limit' && (countsInProcess || getPointsBudget !== undefined);
+  const fastPath = mode === 'limit' && countsInProcess === true;
   /** The window the in-process counter keeps for a key: the limiter's own, up to the hour the counter keeps an idle key. */
   const windowMs = config.duration * 1000;
   if (fastPath && windowMs > maxWindowMs) throw new Error(`${keyPrefix}: counting in process needs a window of at most an hour`);
@@ -55,7 +61,7 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
   const isFailMode = mode === 'fail' || mode === 'failseries';
   const store = getRateLimiterInstance({ ...config, keyPrefix });
   const policy: RateLimitPolicy = { mode, points: config.points, duration: config.duration };
-  if (isFailMode) policy.blockDuration = config.blockDuration || config.duration;
+  if (isFailMode) policy.blockDuration = blockSecondsOf(config);
   /** The buckets a reserved attempt counts in: the route's own and, behind a failure budget, the 24-hour one. */
   const tiers: Tier[] =
     mode === 'limit' ? [] : [{ store, limits: config, counts: isFailMode ? 'fail' : 'success', resetsOnSuccess: mode === 'failseries' }];
@@ -130,13 +136,7 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
 
       // An error answered with a redirect (token links, OAuth callbacks) responds 302; its own status is the outcome.
       const status = ctx.var.errorStatus ?? ctx.res.status;
-      const outcome: Outcome = config.ignoredStatusCodes.includes(status)
-        ? 'other'
-        : config.failStatusCodes.includes(status)
-          ? 'fail'
-          : config.successStatusCodes.includes(status)
-            ? 'success'
-            : 'other';
+      const outcome: Outcome = config.failStatusCodes.includes(status) ? 'fail' : config.successStatusCodes.includes(status) ? 'success' : 'other';
       await settleTiers(reservation, outcome);
     },
   );

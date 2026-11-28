@@ -1,4 +1,4 @@
-import { eq, inArray, or, type SQL, sql } from 'drizzle-orm';
+import { inArray, or, type SQL, sql } from 'drizzle-orm';
 import { type Access, buildPeopleSubject, type ChannelEntityType, type ChannelIdColumns, checkAccess } from 'shared';
 import type { ActorBinding, DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -14,11 +14,9 @@ import { buildCollectionReadWhere } from '#/permissions/row-predicates';
  */
 export const readableMembershipsWhere = (access: Access<ActorBinding>, organizationIds?: string[]): SQL => {
   const bound = 'visitor' in access ? [] : access.memberships.map((membership) => membership.organizationId);
-  const clauses = [...new Set(organizationIds ?? bound)].map((organizationId) => {
-    const where = buildCollectionReadWhere(resolveCollectionReadFilter(access, 'user', organizationId), membershipsTable, access);
-    if (where.kind === 'all') return eq(membershipsTable.organizationId, organizationId);
-    return where.kind === 'where' ? where.where : undefined;
-  });
+  const clauses = [...new Set(organizationIds ?? bound)].map((organizationId) =>
+    buildCollectionReadWhere(resolveCollectionReadFilter(access, 'user', organizationId), membershipsTable, access, organizationId),
+  );
   return or(...clauses) ?? sql`false`;
 };
 

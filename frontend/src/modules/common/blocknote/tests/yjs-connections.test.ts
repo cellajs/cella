@@ -152,7 +152,9 @@ vi.mock('@tanstack/react-query', () => ({
     isOnline: () => online,
     subscribe: (listener: (online: boolean) => void) => {
       onlineListener = listener;
-      return () => {};
+      return () => {
+        if (onlineListener === listener) onlineListener = undefined;
+      };
     },
   },
 }));
@@ -293,13 +295,16 @@ describe('yjs connection: opening', () => {
     const { provider, entityId, state } = await mountConnection();
     expect(provider.connect).not.toHaveBeenCalled();
 
+    online = true;
     await act(async () => onlineListener?.(true));
     expect(provider.connect).toHaveBeenCalledOnce();
 
     // Withdrawn while offline, the token ends the connection there and then, and coming back online leaves it ended.
+    online = false;
     await act(async () => onlineListener?.(false));
     await act(async () => settleToken(entityId, { error: { status: 403 } }));
     expect(state()?.stopped).toBe(true);
+    online = true;
     await act(async () => onlineListener?.(true));
     expect(provider.connect).toHaveBeenCalledOnce();
   });

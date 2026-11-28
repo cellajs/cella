@@ -1,37 +1,41 @@
 # Testing
 
-What the test suite is for, how to run it and where new tests belong.
+This document explains what the [Vitest](https://vitest.dev) suite is for, how to run it and where new tests belong.
 
 ### TL;DR
 
-The suite's main job is to prove that attacks fail; a feature test is the exception. Every package runs on
-[Vitest](https://vitest.dev) with one root setup, and `pnpm test` starts the Docker test database and runs it all.
-Storybook UI tests run separately, in a browser.
+The suite's main job is to prove that attacks fail; a feature test is the exception. Every package runs on Vitest
+with one root setup, and `pnpm test` starts the Docker test database and runs it all. Storybook UI tests run
+separately, in a browser.
 
 ## Goals
 
-Verify every change with a Playwright run, a measurement or a hand check, and report it in the PR description. Committing a test is a separate choice. A test earns its place when it does one of four things:
+A committed test guards what must keep holding after its change ships. It earns its place when it does one of four things:
 
 - proves an attack fails
 - reproduces a bug that shipped
 - pins a contract another module or an app depends on
 - checks a table-driven rule too wide to eyeball
 
-Judge a test by what makes it fail. If only a change to the implementation does, drop it. The usual mirror is one `it` per method or branch. Branch tests that together guard one property, such as a cap, become one test of that property. A performance, UI or refactor PR adds no tests by default.
+You verify every change separately, with a Playwright run, a measurement or a hand check reported in the PR description.
 
-A security test acts as the attacker. It signs in as one user, tries something that user may not do, and passes only when the app refuses. It asserts the exact refusal: the status code or Postgres error, no leaked rows, and side effects such as a revoked grant.
+Judge a test by what makes it fail. If only a change to the implementation does, it mirrors the code: drop it. The usual mirror is one `it` per method or branch. Branch tests that together guard one property, such as a cap, become one test of that property. A performance, UI or refactor PR adds no tests by default.
 
-A second test shows the rightful user still gets through. An endpoint that refuses everyone then fails.
+### Security tests
 
-Name the test after the attack, such as `must not leak attachments via another tenant's id`. Route-level ones go in [backend/tests/security/](../../backend/tests/security/). Every security fix adds a test that reproduces the exploit.
+A security test acts as the attacker. It signs in as one user, tries something that user may not do, and passes only when the app refuses. Say user A lists another tenant's attachments with A's session: the test expects a 403. A second test lists A's own attachments and expects a 200. An endpoint that refuses everyone then fails. Three rules apply to each one:
 
-The attacks we test against:
+- It asserts the exact refusal: the status code or Postgres error, no leaked rows, and side effects such as a revoked grant.
+- Its name is the attack, such as `must not leak attachments via another tenant's id`.
+- Every security fix adds one that reproduces the exploit.
+
+The suite proves these attacks fail:
 
 - **Crossing a boundary:** another tenant's or organization's data, by API or in the database under RLS.
 - **Escalating a role:** a member doing what only an admin may, or setting a field the caller may not.
 - **Granting above yourself:** a role, invitation or membership an accept brings, above the granter's own.
 - **Reusing what should be dead:** a revoked session, deleted account, replayed OAuth code or expired token.
-- **Overreaching a scope:** a token used outside its scope.
+- **Overreaching a scope:** an API key or access token used outside its scope.
 - **Planting a sign-in address:** an attacker's address joins a victim's account through an accepted invitation.
 - **Acting through a stale tab:** one user's idle tab replays queued writes after another user signs in.
 - **Over-asking for scope:** an MCP client that starts with write scopes because the server named none.
@@ -44,11 +48,11 @@ The attacks we test against:
 - **Steering the server's requests:** a client metadata URL or push endpoint aimed at a private address.
 - **Leaking secrets:** hashes, token secrets or private keys in responses, logs or the CDC stream.
 - **Leaking through an error:** a provider's tokens or claims logged through an error's cause.
-- **Booting with published secrets:** a public tunnel signing cookies and relay tokens with `.env.example`.
+- **Booting with published secrets:** a public tunnel signing cookies and Yjs relay tokens with `.env.example`.
 - **Probing for accounts:** a callback, form or waitlist that answers a known address differently or slower.
-- **Passing as another tab:** a copied source id that makes another user's tab take a write as its echo and never fetch it.
-- **Reading what was deleted:** a range read or catch-up returning a deleted row its reader never saw live.
-- **Bending the shared clock:** a future or maximum stamp that makes other tenants' writes lose or fail.
+- **Passing as another tab:** a copied source id that makes another user's tab take a write for its own and never fetch it.
+- **Reading what was deleted:** a range fetch or catchup returning a deleted row its reader never saw live.
+- **Bending the shared clock:** a future or maximum timestamp that makes other tenants' writes lose or fail.
 - **Rendering what a user typed:** a name parsed as markup, an export formula, a co-editor's presence style.
 - **Guessing a second factor slowly:** TOTP codes tried just under the lockout, for as long as it takes.
 - **Serving a page from storage:** an uploaded HTML file opened from a presigned link.
@@ -64,7 +68,7 @@ The attacks we test against:
 - **Racing the sign-in plumbing:** concurrent code requests, or sign-in starts that grow the cookie header.
 - **Flooding the sign-in mail:** mail caps sidestepped by a known browser.
 
-Rules for every route live in [route-guards.test.ts](../../backend/tests/security/route-guards.test.ts). They cover an app's routes too, since the file reads its table from the generated OpenAPI document. `request-bodies.test.ts` beside it checks that every request body is required, bounded and names no server-only column. An app tests its own entities in `*-app.test.ts` files. The backend suite also runs as `runtime_role` to exercise database policies.
+Rules for every route live in [route-guards.test.ts](../../backend/tests/security/route-guards.test.ts). They cover an app's routes too. `request-bodies.test.ts` beside it checks that every request body is required, bounded and names no server-only column. The backend suite also runs as `runtime_role` to exercise database policies.
 
 ## Running tests
 
@@ -76,13 +80,12 @@ pnpm test
 
 | Command | What it does |
 | --- | --- |
-| `pnpm test` | Everything, with a coverage summary, through `test:full` |
-| `pnpm test:core` | Skips only the integration tests. Rarely needed. A direct vitest run without `--silent=passed-only` shows full output |
+| `pnpm test` | Everything, with a coverage summary |
+| `pnpm test:core` | Skips only the integration tests. Rarely needed |
 | `pnpm test:storybook` | Storybook component tests in headless Chromium. Not part of `pnpm test` ([see below](#storybook)) |
 | `pnpm app-shape:check` | The core suites again under a config shaped like an app's. Runs on the release PR and nightly |
-| `pnpm story` | Interactive Storybook dev server. Runs no tests. |
 
-The `TEST_MODE` env var selects `core` or `full`. A test can self-gate with `describe.skipIf(process.env.TEST_MODE !== 'full')`.
+The `TEST_MODE` env var selects `core` or `full`. You gate a test to `full` with `describe.skipIf(process.env.TEST_MODE !== 'full')`.
 
 ### Running a subset
 
@@ -94,7 +97,7 @@ pnpm vitest run backend/tests/health.test.ts # one file
 pnpm vitest run -t 'rate limiter'            # by test name
 ```
 
-On a fresh test database, run the backend suite first. It creates and migrates the databases the `yjs` and `cdc` suites use. Packages without database access, such as `shared` and `sdk`, run without Docker.
+On a fresh test database, run the backend suite first: it creates and migrates the databases the `yjs` and `cdc` suites use. Packages without database access, such as `shared` and `sdk`, run without Docker.
 
 ## Conventions
 
@@ -106,15 +109,15 @@ On a fresh test database, run the backend suite first. It creates and migrates t
 
 **Backend specifics.** Test env vars are preset in [backend/vitest.config.ts](../../backend/vitest.config.ts). Do not load `.env` in tests. Use the `#/` import alias as in source.
 
-Backend test files run in parallel, each worker on its own database. Parallel files never see each other's rows. Never assume a worker's database is empty: it keeps rows from earlier files. Clean up with `clearDatabase()`. A test with its own connection takes the URL from `shared/test-db`.
+Backend test files run in parallel, each worker on its own database. Never assume a worker's database is empty: it keeps rows from earlier files. Clean up with `clearDatabase()`. A test with its own connection takes the URL from `shared/test-db`.
 
-The shared test database belongs to every worktree. A branch that adds migrations tests on a throwaway database. It runs a fresh container from the same image, on its own port passed as `DATABASE_TEST_PORT`.
+The shared test database belongs to every worktree. On a branch that adds migrations, you test on a throwaway database on its own port, passed as `DATABASE_TEST_PORT`.
 
-**App config.** A template test also runs in every app, on that app's config such as its hierarchy and policies. A test that needs a particular value sets it with the helpers in `shared/testing/`, then restores the app's. A fixture row fills every ancestor column the app's hierarchy gives the product, not only the organization.
+**App config.** A template test also runs in every app, on that app's config such as its hierarchy and policies. When a test needs a particular value, set it with the helpers in `shared/testing/`, then restore the app's. A fixture row fills every ancestor column the app's hierarchy gives the product, not only the organization. Your app tests its own entities in `*-app.test.ts` files.
 
 **New packages.** Register a new workspace package with tests in the root [vitest.config.ts](../../vitest.config.ts): add it to `projects` and the `coverage.include` globs.
 
-**Mutation hooks.** Test a product module's mutation hooks with the kit in `frontend/src/query/tests/mutation-hooks-kit.ts`. It runs them under the app's query client, offline and back. `attachment-mutation-hooks.test.ts` is the example.
+**Mutation hooks.** Test a product module's mutation hooks with the kit in `frontend/src/query/tests/mutation-hooks-kit.ts`. `attachment-mutation-hooks.test.ts` is the example.
 
 ## Storybook
 
@@ -131,4 +134,4 @@ pnpm sdk
 pnpm test:storybook
 ```
 
-Every story is render-tested in headless Chromium. A story's `play` function runs too. CI runs this project on the release PR and nightly on `main`. Run it yourself before merging a frontend change.
+Each story's `play` function runs in its test. Run `pnpm test:storybook` before merging a frontend change. `pnpm story` starts the interactive Storybook dev server, which runs no tests.

@@ -2,7 +2,7 @@ import { type HTMLMotionProps, motion, useReducedMotion } from 'motion/react';
 import { memo } from 'react';
 import { RowSelectionContext, type RowSelectionContextValue } from './hooks';
 import type { RenderRowProps } from './types';
-import { cn, getColSpan } from './utils/grid-utils';
+import { cn } from './utils/grid-utils';
 
 // Rows are real subgrid boxes: column tracks still resolve at the root grid, and the row has a hit-test box for drag and drop and row-wide indicators.
 const rowClassname = 'rdg-row group/row col-span-full grid grid-cols-subgrid aria-selected:bg-accent aria-selected:hover:bg-accent';
@@ -15,14 +15,10 @@ function Row<R, SR>({
   selectedCellIdx,
   isRowSelectionDisabled,
   isRowSelected,
-  lastFrozenColumnIndex,
   row,
   viewportColumns,
   selectedCellEditor,
-  onCellMouseDown,
   onCellClick,
-  onCellDoubleClick,
-  onCellContextMenu,
   rowClass,
   onRowChange,
   selectCell,
@@ -37,13 +33,8 @@ function Row<R, SR>({
 
   const cells: React.ReactNode[] = [];
 
-  for (let index = 0; index < viewportColumns.length; index++) {
-    const column = viewportColumns[index];
-    const { idx } = column;
-    const colSpan = getColSpan(column, lastFrozenColumnIndex, { type: 'ROW', row });
-    if (colSpan !== undefined) index += colSpan - 1;
-
-    const isCellSelected = selectedCellIdx === idx;
+  for (const column of viewportColumns) {
+    const isCellSelected = selectedCellIdx === column.idx;
 
     if (isCellSelected && selectedCellEditor) {
       cells.push(selectedCellEditor);
@@ -51,15 +42,11 @@ function Row<R, SR>({
       cells.push(
         renderCell(column.key, {
           column,
-          colSpan,
           row,
           rowIdx,
           isDraggedOver: false,
           isCellSelected,
-          onCellMouseDown,
           onCellClick,
-          onCellDoubleClick,
-          onCellContextMenu,
           onRowChange,
           selectCell,
         }),

@@ -15,14 +15,9 @@
   );
 }
 
-/* Show the last frozen cell shadow only when the grid is scrolled horizontally. */
-[data-scrolled-left] > * > .rdg-cell-frozen:nth-last-child(1 of .rdg-cell-frozen) {
-  box-shadow: 2px 0 5px -2px rgba(136, 136, 136, 0.3);
-}
-
 /* DataTable overrides: drag-and-drop indicators */
 
-/* One attribute per row drives a pseudo-element spanning the row subgrid above its cells, frozen ones included. */
+/* One attribute per row drives a pseudo-element spanning the row subgrid above its cells. */
 .rdg-row[data-drop-edge]::after {
   content: "";
   grid-column: 1 / -1;

@@ -23,7 +23,6 @@ const catchupPropagationHintSchema = propagationHintSchema.extend({
   untilSeq: z
     .number()
     .int()
-    .optional()
     .describe(
       "Highest sequence position among the rows the hint read, which the caller may all read: a client whose view of the embedded product is opaque takes it as that view's cursor",
     ),
@@ -171,7 +170,6 @@ export const streamCatchupBodySchema = z.object({
 const catchupOrganizationSummarySchema = z.object({
   signals: z
     .record(z.string(), z.number().int())
-    .optional()
     .openapi({ description: 'Versions by signal type: bump-only counters a client compares with the ones it stored' }),
   /** Embedded-product changes that require patching the host's cache: one hint per embedded product. */
   propagation: z.array(catchupPropagationHintSchema).optional(),
@@ -198,7 +196,7 @@ const catchupViewAnswerSchema = z.object({
 export const streamCatchupResponseSchema = z.object({
   organizations: z.record(z.string(), catchupOrganizationSummarySchema).openapi({
     description:
-      'Per organization: signal versions, propagation hints and the spread window, { [organizationId]: { signals?, propagation?, spreadWindow? } }',
+      'Per organization: signal versions, propagation hints and the spread window, { [organizationId]: { signals, propagation?, spreadWindow? } }',
   }),
   views: z.array(catchupViewAnswerSchema).openapi({ description: 'Per-view answers for client-declared views (same order as the request)' }),
   generation: z.number().int().openapi({

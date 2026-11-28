@@ -45,9 +45,9 @@ export const isCtrlKeyHeldDown = (e: React.KeyboardEvent): boolean => (e.ctrlKey
 // event.keyCode stays stable across keyboard languages, and event.nativeEvent.code would break copy/paste on DVORAK.
 const vKey = 86;
 
-/** Checks whether a key event should start the default cell editor. */
-export function isDefaultCellInput(event: React.KeyboardEvent<HTMLDivElement>, isUserHandlingPaste: boolean): boolean {
-  if (isCtrlKeyHeldDown(event) && (event.keyCode !== vKey || isUserHandlingPaste)) return false;
+/** Checks whether a key event should start the default cell editor; Ctrl+V does, so the paste lands in the editor. */
+export function isDefaultCellInput(event: React.KeyboardEvent<HTMLDivElement>): boolean {
+  if (isCtrlKeyHeldDown(event) && event.keyCode !== vKey) return false;
   return !nonInputKeys.has(event.key);
 }
 

@@ -18,7 +18,7 @@ vi.mock('~/query/realtime/tab-coordinator', () => ({ isLeader: () => true, tabCo
 
 const { bindLocalUserDb, closeLocalUserDb, getLocalUserDb, LocalUserDatabase } = await import('~/query/local-user-db');
 const store = await import('~/modules/common/blocknote/yjs-store');
-const { createYDocWriter, evictYDocs, flushYjsStore, loadYDoc, trimYDoc, watchUnsavedYDocs } = store;
+const { createYDocWriter, evictYDocs, flushYjsStore, loadYDoc, parkStoredYDoc, trimYDoc, watchUnsavedYDocs } = store;
 
 type Db = InstanceType<typeof LocalUserDatabase>;
 type Writer = NonNullable<ReturnType<typeof createYDocWriter>>;
@@ -46,10 +46,9 @@ afterEach(async () => {
 });
 
 /** A writer that started storing `doc`, as a connection starts it once its document is stored. */
-function startWriter(doc: Y.Doc, opts: Parameters<typeof createYDocWriter>[1] = {}, unsynced = false): Writer {
-  const writer = createYDocWriter(docScope, opts);
+function startWriter(doc: Y.Doc, opts: Parameters<typeof createYDocWriter>[3] = {}): Writer {
+  const writer = createYDocWriter(docScope, doc, scope.generation, opts);
   if (!writer) throw new Error('no database bound');
-  writer.start(doc, scope.generation, unsynced);
   return writer;
 }
 
@@ -147,7 +146,7 @@ describe('yjs store: writing and loading', () => {
     // A first store of a document typed in before storing started.
     const typed = new Y.Doc();
     typed.getText('t').insert(0, 'typed before storing');
-    startWriter(typed, {}, true);
+    startWriter(typed, { unsynced: true });
     await flushYjsStore();
 
     const stored = await rows();
@@ -180,7 +179,7 @@ describe('yjs store: writing and loading', () => {
     // Another tab starts the reseeded document.
     const fresh = new Y.Doc();
     fresh.getText('t').insert(0, 'reseeded');
-    createYDocWriter(docScope)?.start(fresh, 'gen-2', false);
+    createYDocWriter(docScope, fresh, 'gen-2');
     await flushYjsStore();
 
     expect((await record())?.generation).toBe('gen-2');
@@ -368,7 +367,7 @@ describe('yjs store: parking', () => {
     doc.getText('t').insert(doc.getText('t').length, 'in memory');
 
     // Read as park is called: its caller destroys the document right after, so nothing later reaches the parked row.
-    const parking = writer.park('denied', doc);
+    const parking = writer.park('denied');
     doc.getText('t').insert(doc.getText('t').length, ' too late');
     doc.destroy();
     await parking;
@@ -387,23 +386,38 @@ describe('yjs store: parking', () => {
     await flushYjsStore();
     expect(await record()).toBeUndefined();
 
-    // Before start (boot resume, a load of another generation) the writer parks the stored record alone: the
-    // document given may hold another generation's history.
+    // With no writer (boot resume, a load of another generation) the stored state alone is parked: the document a
+    // connection holds may be another generation's history. The row it reports is the one it parked.
     const stored = new Y.Doc();
     const storedWriter = startWriter(stored);
     editLocally(stored, storedWriter, 'gen-1 edits');
     await flushYjsStore();
-    const other = new Y.Doc();
-    other.getText('t').insert(0, 'gen-2 text');
 
-    await createYDocWriter(docScope)?.park('replaced', other);
+    const reported = await parkStoredYDoc(key, 'gen-1', 'replaced');
 
-    const [, parkedBeforeStart] = await db.unsaveableYDocs.toArray();
+    const [, parkedWithoutWriter] = await db.unsaveableYDocs.toArray();
+    expect(reported).toEqual(parkedWithoutWriter);
     const storedCheck = new Y.Doc();
-    Y.applyUpdate(storedCheck, parkedBeforeStart.state);
+    Y.applyUpdate(storedCheck, parkedWithoutWriter.state);
     expect(storedCheck.getText('t').toString()).toBe('gen-1 edits');
-    expect(parkedBeforeStart.generation).toBe('gen-1');
+    expect(parkedWithoutWriter.generation).toBe('gen-1');
     expect(await record()).toBeUndefined();
+  });
+
+  it("must not park or delete another generation's stored document with no writer, and reports that it parked nothing", async () => {
+    const doc = new Y.Doc();
+    const writer = startWriter(doc);
+    editLocally(doc, writer, 'gen-1 edits');
+    await flushYjsStore();
+
+    expect(await parkStoredYDoc(key, 'gen-0', 'replaced')).toBeNull();
+    expect(await record()).toMatchObject({ generation: 'gen-1', unsynced: 1 });
+    expect(await db.unsaveableYDocs.count()).toBe(0);
+
+    // Clean, it is not deleted either.
+    await writer.prove({ kind: 'clean' });
+    expect(await parkStoredYDoc(key, 'gen-0', 'denied')).toBeNull();
+    expect(await record()).toMatchObject({ generation: 'gen-1', unsynced: 0 });
   });
 
   it('lists stored documents with unsynced edits and parked ones, live', async () => {

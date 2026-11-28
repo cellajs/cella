@@ -94,6 +94,22 @@ describe('points-cache', () => {
       tryFastConsume('tenant:user1', 3, 1000, hourMs);
       expect(takeDebt('tenant:user1')).toBe(3);
     });
+
+    it('should leave the unflushed points of an ended window out of the next one', () => {
+      vi.useFakeTimers();
+
+      // Budget 50: 39 points stay in process, under the threshold of 40; the last write keeps the entry cached past the hour
+      tryFastConsume('tenant:user1', 1, 50, hourMs);
+      vi.advanceTimersByTime(30 * 60 * 1000);
+      for (let i = 0; i < 38; i++) tryFastConsume('tenant:user1', 1, 50, hourMs);
+      vi.advanceTimersByTime(30 * 60 * 1000);
+
+      // The next hour opens with a request of the whole budget: it goes to the database carrying no points of the last hour
+      expect(tryFastConsume('tenant:user1', 50, 50, hourMs)).toBe('check-db');
+      expect(takeDebt('tenant:user1')).toBe(0);
+
+      vi.useRealTimers();
+    });
   });
 
   describe('adoptDbCount', () => {

@@ -49,7 +49,7 @@ pnpm seed                                                                  # mig
 
 - Every command runs with those exports: `pnpm seed` without them seeds the database you work in. An agent's shell keeps no exports between calls, so put them in a wrapper script that ends in `exec "$@"` and run each command through it.
 - The API and Vite serve pages and writes. Nothing here starts CDC or the relay, so pages get no live updates.
-- Both Vite servers share `frontend/node_modules/.vite`: the second re-bundles the dependencies there, and the first re-bundles once more at its next start.
+- The Vite server at an offset keeps its bundled dependencies in `frontend/node_modules/.vite-<offset>`, apart from the checkout's own.
 - Afterwards `DEV_PORT_OFFSET=50 pnpm killports` and `docker rm -fv scratch_db`.
 
 ## Drive (browser)

@@ -32,7 +32,7 @@ Below is a typical production stack. Yjs, OAuth and MCP are optional. For stagin
 
 | Principle | What it means |
 | --- | --- |
-| **PostgreSQL holds the truth** | Business data, relationships, audit history, and sync ordering start in one database. |
+| **PostgreSQL holds the truth** | Business data, relationships, audit history, and sync ordering start in one database  and its Write-Ahead Log (WAL). |
 | **OpenAPI defines the contract** | Hono routes with Zod schemas generate one OpenAPI 3.1 document, the source of the typed [SDK](../../sdk/README.md) and the API docs. Shared mocks serve docs, seeds, tests and load tests. |
 | **TanStack Query holds server state** | Reads, optimistic writes, realtime changes, and restored offline data converge in one cache. |
 | **One hierarchy configuration** | Configuration defines entities, their parents, roles, and the behavior derived from them. |

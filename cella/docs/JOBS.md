@@ -1,12 +1,14 @@
 # Jobs
 
-This document covers the jobs service: the app's job store on [pg-boss](https://github.com/timgit/pg-boss), with cron sweeps and queues.
+This document covers the jobs service on [pg-boss](https://github.com/timgit/pg-boss): declaring cron jobs and queues, the job store and operating it.
 
 ### TL;DR
 
-Modules declare cron jobs and queues the way they declare routes. One jobs service per deployment schedules the cron, supervises the store and works the template's queues; the API only enqueues. No process ever migrates the store, and each runtime process opens it as the runtime role. The store is a PostgreSQL schema the migrate companion installs.
+Modules declare cron jobs and queues the way they declare routes. One jobs service per deployment runs the schedule and the template's queues, and the API only enqueues. The job store is a schema in the app's PostgreSQL database: no broker to run.
 
 ## How it fits
+
+The jobs service runs the work no request waits for.
 
 ```text
 API process (producer)                 jobs service (maintainer)
@@ -19,11 +21,9 @@ PostgreSQL schema pgboss  ◀─────────────────
         └── a consumer process works its own queues (SERVICE of its own)
 ```
 
-The jobs service runs from the backend image. It cuts over stop-first, since cron and supervision belong to one process. Nothing routes to it. Under `singleVM` it runs inside the backend process, which cuts over start-first. A deploy then runs two jobs processes until the old machine is removed.
-
 ## Declaring jobs and queues
 
-A cron job is `{ name, cron, run }` on `defineBackendModule`, with five cron fields in UTC. A rule that only deletes old rows is no job of its own: the nightly `retention` job runs it ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
+You declare cron jobs and queues on `defineBackendModule`:
 
 ```ts
 defineBackendModule({
@@ -36,34 +36,43 @@ defineBackendModule({
 });
 ```
 
-A queue takes pg-boss's queue options plus a `handler` and its `work` options. The jobs service runs the handler of every queue that has one. A queue without one belongs to a consumer process. Policy and partitioning are fixed at creation. The other options converge on every start.
+A cron job is `{ name, cron, run }`, with five cron fields in UTC. A rule that only deletes old rows is no job of its own: the nightly `retention` job runs it ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)). A cron job's runs follow four rules:
 
-Producers call `send` on the process instance:
+- One run per period. A missed period sends one catch-up job.
+- A run that throws is logged, and the next period runs again.
+- Two runs never overlap while each ends within its expiry, the time a run may stay active.
+- Past its expiry, a second jobs process can start the next run beside the first.
+
+If your job's runs must not overlap, have each run stop taking work before its expiry.
+
+A queue takes pg-boss's queue options plus a `handler` and its `work` options. The jobs service runs the handler of every queue that has one. A queue without one belongs to a consumer process. Policy and partitioning are fixed at creation, and the jobs service updates the other options at every start.
+
+To enqueue, call `send` on the process instance:
 
 ```ts
 const boss = await getPgBoss('producer');
 await boss.send('webhook.deliver', { endpointId, activityId }, { singletonKey: `${endpointId}:${activityId}` });
 ```
 
-Payloads carry ids, never row bodies. The handler re-reads through the query the API uses.
-
-A cron job runs once per period. A missed period sends one catch-up job. A run that throws is logged, and the next period runs again.
-
-Two runs never overlap while each ends within its expiry. Past its expiry, a second jobs process can start the next run beside the first. A job whose runs must not overlap stops taking work before its expiry.
+Send ids, never row bodies: the handler re-reads the row through the query the API uses.
 
 ## Roles and the store
 
-- **Installer**: the migrate companion. It installs or upgrades the schema as owner and creates the queues.
+Only the installer migrates the job store: every other process connects as the database's runtime role.
+
+- **Installer**: the migrate companion. It installs or upgrades the schema over the admin connection.
 - **Producer**: the API. It only enqueues.
-- **Consumer**: a process that works the queues it owns.
+- **Consumer**: a process that works the queues declared without a handler.
 - **Maintainer**: the jobs service, one per deployment: supervision, cron, queue creation and the template's handlers.
 
 ## Operating
 
-`/health?depth=full` carries a `jobs` component on the API and on the jobs service: when the scheduler last ran and how each queue stands. It degrades when the scheduler stalls, a queue backs up or dead letters wait. It never fails, so a switch never blocks on it.
+The `jobs` component of `/health?depth=full` shows when the scheduler last ran and how each queue stands, on the API and on the jobs service.
 
-Index rebuilds are left to an operator, since the maintainer runs as the runtime role. For those and for recent failures, query the job store schema as the owner role. The health payload names the queues that degrade.
+The component degrades when the scheduler stalls, a queue backs up or dead letters wait, and names the queues that degrade. It never fails: jobs can wait minutes, and a deploy's switch must not wait on them.
+
+You run index rebuilds, since the maintainer runs as the runtime role. For those and for recent failures, query the job store schema over the admin connection.
 
 ### Connection budget
 
-Every pool of every process draws on the database's one `max_connections`, the job store's included. Pool maxima are ceilings, not footprints. The managed database's metrics show the real count. Shrink pools before raising the limit: raising it restarts an instance that has no standby. A deployed service's pool size is in its `env` in [description.yml](../infra/description.yml).
+Every pool of every process draws on the database's one `max_connections`, the job store's included. Pool maxima are ceilings, not footprints. The managed database's metrics show the real count. Shrink pools before raising the limit: raising it restarts an instance that has no standby. You set a deployed service's pool size in its `env` in [description.yml](../infra/description.yml).

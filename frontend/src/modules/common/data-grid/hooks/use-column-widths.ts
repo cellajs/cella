@@ -1,29 +1,27 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import type { CalculatedColumn, ColumnWidth, ColumnWidths, Maybe, ResizedWidth } from '../types';
-import { clampColumnWidth, max, min } from '../utils/grid-utils';
+import type { CalculatedColumn, ColumnWidths, ResizedWidth } from '../types';
+import { max, min } from '../utils/grid-utils';
 
 interface ResizeSnapshot<R, SR> {
   readonly resizingCol: CalculatedColumn<R, SR>;
   readonly initialWidth: number;
   readonly allWidths: ReadonlyMap<string, number>;
-  /** Non-frozen columns to the right of the handle */
+  /** Columns to the right of the handle */
   readonly rightCols: readonly CalculatedColumn<R, SR>[];
-  /** Non-frozen columns to the left of the handle, nearest-first */
+  /** Columns to the left of the handle, nearest-first */
   readonly leftCols: readonly CalculatedColumn<R, SR>[];
 }
 
 const getWidth = <R, SR>(widths: ReadonlyMap<string, number>, col: CalculatedColumn<R, SR>): number => widths.get(col.key) ?? col.minWidth;
 
-/** Auto columns stay flexible, every column pins to pixels during a drag, and only user widths survive it. */
+/** Auto columns stay flexible until a resize, which pins every column to its pixel width. */
 export function useColumnWidths<R, SR>(
   columns: readonly CalculatedColumn<R, SR>[],
   templateColumns: readonly string[],
   gridRef: React.RefObject<HTMLDivElement | null>,
   columnWidths: ColumnWidths,
   onColumnWidthsChange: (columnWidths: ColumnWidths) => void,
-  onColumnResize: Maybe<(column: CalculatedColumn<R, SR>, width: number) => void>,
-  setColumnResizing: (isColumnResizing: boolean) => void,
 ) {
   const [columnToAutoResize, setColumnToAutoResize] = useState<{ readonly key: string; readonly width: 'max-content' } | null>(null);
 
@@ -48,12 +46,12 @@ export function useColumnWidths<R, SR>(
     if (!needsMeasurement || columnToAutoResize === null) return;
 
     const resizingKey = columnToAutoResize.key;
-    const oldWidth = columnWidths.get(resizingKey)?.width;
+    const oldWidth = columnWidths.get(resizingKey);
     const newWidth = measureColumnWidth(gridRef, resizingKey);
 
     if (newWidth !== undefined && oldWidth !== newWidth) {
       const newColumnWidths = new Map(columnWidths);
-      newColumnWidths.set(resizingKey, { type: 'resized', width: newWidth });
+      newColumnWidths.set(resizingKey, newWidth);
       onColumnWidthsChange(newColumnWidths);
     }
 
@@ -63,15 +61,7 @@ export function useColumnWidths<R, SR>(
   function handleColumnResize(column: CalculatedColumn<R, SR>, nextWidth: ResizedWidth) {
     // Double-click auto-resize: use CSS measurement flow
     if (nextWidth === 'max-content') {
-      flushSync(() => {
-        setColumnToAutoResize({ key: column.key, width: nextWidth });
-        setColumnResizing(false);
-      });
-
-      if (onColumnResize) {
-        const newWidth = measureColumnWidth(gridRef, column.key);
-        if (newWidth !== undefined) onColumnResize(column, newWidth);
-      }
+      setColumnToAutoResize({ key: column.key, width: nextWidth });
       return;
     }
 
@@ -82,41 +72,24 @@ export function useColumnWidths<R, SR>(
         resizingCol: column,
         initialWidth: allWidths.get(column.key) ?? 0,
         allWidths,
-        rightCols: columns.slice(column.idx + 1).filter((c) => !c.frozen),
-        leftCols: columns
-          .slice(0, column.idx)
-          .filter((c) => !c.frozen)
-          .reverse(),
+        rightCols: columns.slice(column.idx + 1),
+        leftCols: columns.slice(0, column.idx).reverse(),
       };
     }
 
     const redistributed = redistributeWidths(resizeSnapshotRef.current, nextWidth);
-    const actualWidth = redistributed.get(column.key) ?? clampColumnWidth(nextWidth, column);
 
     const newColumnWidths = new Map(columnWidths);
     for (const col of columns) {
       const w = redistributed.get(col.key);
-      if (w !== undefined) newColumnWidths.set(col.key, { type: col.key === column.key ? 'resized' : 'measured', width: w });
+      if (w !== undefined) newColumnWidths.set(col.key, w);
     }
 
-    flushSync(() => {
-      onColumnWidthsChange(newColumnWidths);
-      setColumnResizing(true);
-    });
-
-    onColumnResize?.(column, actualWidth);
+    flushSync(() => onColumnWidthsChange(newColumnWidths));
   }
 
   function handleColumnResizeEnd() {
-    if (!resizeSnapshotRef.current) return;
     resizeSnapshotRef.current = null;
-
-    // Promote measured → resized to prevent jump on drop
-    const newColumnWidths = new Map<string, ColumnWidth>();
-    for (const [key, value] of columnWidths) {
-      newColumnWidths.set(key, value.type === 'measured' ? { type: 'resized', width: value.width } : value);
-    }
-    onColumnWidthsChange(newColumnWidths);
   }
 
   return { gridTemplateColumns, handleColumnResize, handleColumnResizeEnd } as const;

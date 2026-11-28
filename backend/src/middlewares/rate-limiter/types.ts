@@ -38,7 +38,7 @@ export interface Tier extends Bucket {
   resetsOnSuccess: boolean;
 }
 
-type LimiterStatusLists = { successStatusCodes?: number[]; failStatusCodes?: number[]; ignoredStatusCodes?: number[] };
+type LimiterStatusLists = { successStatusCodes?: number[]; failStatusCodes?: number[] };
 
 export type RateLimitOptions = Partial<BucketLimits> & LimiterStatusLists;
 
@@ -56,8 +56,8 @@ export interface RateLimitPolicy {
 /** A route limiter: `keyPrefix` (`<key>_<mode>`) starts the keys of its rows, `buckets` are what `checkRateLimitStatus` reads. */
 export type RateLimiterHandler = XMiddlewareHandler & { keyPrefix: string; buckets: Bucket[] };
 
-export interface RateLimiterOpts {
-  limits?: RateLimitOptions;
+/** The options every mode reads. */
+interface LimiterBaseOpts {
   /** Function name override for OpenAPI documentation (defaults to `${key}Limiter`) */
   functionName?: string;
   /** Short human-readable label for OpenAPI documentation */
@@ -68,14 +68,18 @@ export interface RateLimiterOpts {
   exempt?: (ctx: Context<Env>, identifiers: Identifiers) => boolean | Promise<boolean>;
   /** Description for OpenAPI documentation */
   description?: string;
+}
+
+/** A `limit`'s options. It counts every request and refuses until its window ends: it takes no status lists and no block. */
+export interface BudgetOpts extends LimiterBaseOpts {
+  limits?: Partial<Pick<BucketLimits, 'points' | 'duration'>>;
   /** Dynamic points to consume per request (for points-weighted limiters). Called at request time. */
   getConsumePoints?: (ctx: Context<Env>) => number | Promise<number>;
   /** Tenant budget clamped to the static `limits.points` ceiling; null means no tenant limit and uses that ceiling. */
   getPointsBudget?: (ctx: Context<Env>) => number | null;
   /**
    * For a `limit` of at most an hour on a route called too often to pay a database transaction per request: requests
-   * count in process while the key is under 80% of its budget and reach the database past that. A limiter with a
-   * tenant budget counts this way too.
+   * count in process while the key is under 80% of its budget and reach the database past that.
    */
   countsInProcess?: boolean;
   /**
@@ -85,3 +89,11 @@ export interface RateLimiterOpts {
    */
   reportsBudget?: boolean;
 }
+
+/** The options of a mode that counts by the handler's answer: `success`, `fail` and `failseries`. */
+export interface OutcomeOpts extends LimiterBaseOpts {
+  limits?: RateLimitOptions;
+}
+
+/** Every option a limiter takes, whatever its mode. */
+export type RateLimiterOpts = BudgetOpts & OutcomeOpts;

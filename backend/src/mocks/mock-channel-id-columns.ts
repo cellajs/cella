@@ -6,13 +6,12 @@ import {
   type EntityType,
   hierarchy,
   type ProductEntityType,
-  type RelatedChannelType,
 } from 'shared';
 import { mockUuid } from '#/mocks/mock-ids';
 
 type MockChannelIdColumns = EntityIdColumns<ChannelEntityType, string>;
 
-type MockEntityChannelIdColumns<E extends string> = EntityIdColumns<(AncestorChannelType<E> | RelatedChannelType<E>) & EntityType, string>;
+type MockEntityChannelIdColumns<E extends string> = EntityIdColumns<AncestorChannelType<E> & EntityType, string>;
 
 const mockIdColumns = (entityTypes: Iterable<ChannelEntityType>) => {
   const columns: Record<string, string> = {};
@@ -25,7 +24,7 @@ export const generateMockChannelIdColumns = (): MockChannelIdColumns => mockIdCo
 
 /** Generates the hierarchy-derived channel ID columns carried by one product entity. */
 export const generateMockEntityChannelIdColumns = <E extends ProductEntityType>(entityType: E): MockEntityChannelIdColumns<E> =>
-  mockIdColumns([...hierarchy.getOrderedAncestors(entityType), ...hierarchy.getRelatedChannels(entityType)]) as MockEntityChannelIdColumns<E>;
+  mockIdColumns(hierarchy.getOrderedAncestors(entityType)) as MockEntityChannelIdColumns<E>;
 
 type MockActivityChannelIdColumns = EntityIdColumns<AncestorChannelType<ProductEntityType> & EntityType, string>;
 

@@ -61,7 +61,7 @@ const clientCount = (entityId: string) => getCollab(docOf(entityId))?.clients.si
 function open(userId: string, entityId: string, tenantId = 'tenant-1') {
   usedDocs.add(entityId);
   const token = createSignedToken({ userId, entityType, entityId, tenantId });
-  return openSocket(`${relay.baseUrl}/${entityId}?token=${token}&entityType=${entityType}&tenantId=${tenantId}`);
+  return openSocket(`${relay.baseUrl}/${entityId}?token=${token}`);
 }
 
 describe('upgrade: a closing socket', () => {
@@ -141,6 +141,21 @@ describe('upgrade: Saved', () => {
   });
 });
 
+describe('upgrade: presence join', () => {
+  it("shows a joining socket the presence its session holds, before its peers' next change", async () => {
+    const doc = 'doc-presence-join';
+    const editor = await open('user-a', doc);
+    await until(() => clientCount(doc) === 1);
+    const presence = buildAwarenessMessage(awarenessUpdate({ clientId: 1 }));
+    editor.ws.send(presence);
+    await until(() => editor.received.length === 1);
+
+    const joiner = await open('user-b', doc);
+    await until(() => joiner.received.length === 1);
+    expect(joiner.received).toEqual([presence]);
+  });
+});
+
 describe('upgrade: presence leave', () => {
   it("must not leave a closed socket's cursor at its peers until y-protocols times it out after 30 s", async () => {
     const doc = 'doc-presence-leave';
@@ -148,7 +163,7 @@ describe('upgrade: presence leave', () => {
     // A y-websocket client, whose awareness applies what the relay sends as the app's does.
     const token = createSignedToken({ userId: 'user-p', entityType, entityId: doc, tenantId: 'tenant-1' });
     const peer = new WebsocketProvider(relay.baseUrl, doc, new Y.Doc(), {
-      params: { token, entityType, tenantId: 'tenant-1' },
+      params: { token },
       WebSocketPolyfill: WsWebSocket as never,
       disableBc: true,
     });

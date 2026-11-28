@@ -56,7 +56,6 @@ export function useOAuthAlternatives(authStep: AuthStep): AuthAlternative[] {
       params.set('kind', 'auth');
       params.set('redirectPath', invitationResumePath(tokenId));
     } else if (tokenId) {
-      params.set('tokenId', tokenId);
       params.set('kind', 'invite');
     } else {
       params.set('kind', 'auth');

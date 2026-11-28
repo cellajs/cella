@@ -53,11 +53,10 @@ function PricingPlanCard({ plan: { id, className, featureCount, popular, discoun
   const text = `about:pricing.text_${planIndex + 1}` as TKey;
   const price = `about:pricing.plan_${planIndex + 1}.title` as TKey;
 
-  const handleActionClick = () => {
-    if (action === 'contact_us') return contactFormHandler(buttonRef);
-
-    if (action === 'sign_in') navigate({ to: '/auth/authenticate', replace: true });
-    if (action === 'waitlist_request') {
+  const actionHandlers: Record<PricingPlan['action'], () => void> = {
+    contact_us: () => contactFormHandler(buttonRef),
+    sign_in: () => navigate({ to: '/auth/authenticate', replace: true }),
+    waitlist_request: () =>
       dialoger.getState().create(<WaitlistForm dialog />, {
         id: waitlistDialogId,
         triggerRef: buttonRef,
@@ -65,8 +64,7 @@ function PricingPlanCard({ plan: { id, className, featureCount, popular, discoun
         className: 'sm:max-w-2xl',
         title: t('c:waitlist_request'),
         description: t('c:waitlist_request.text'),
-      });
-    }
+      }),
   };
 
   return (
@@ -104,7 +102,7 @@ function PricingPlanCard({ plan: { id, className, featureCount, popular, discoun
         </ul>
       </div>
 
-      <Button ref={buttonRef} variant={popular ? 'default' : 'secondary'} className="mt-6 w-full" onClick={handleActionClick}>
+      <Button ref={buttonRef} variant={popular ? 'default' : 'secondary'} className="mt-6 w-full" onClick={actionHandlers[action]}>
         {t(`c:${action}`)}
       </Button>
     </div>

@@ -11,6 +11,7 @@ import {
   type LocalUserDatabase,
   subscribeLocalUserChange,
   type UnsaveableReason,
+  type UnsaveableYDocRecord,
   type YDocKey,
   type YDocRecord,
   type YDocUpdateRecord,
@@ -69,17 +70,15 @@ export type StoreProof = { kind: 'handshake'; applied: AppliedRows } | { kind: '
  * connects and stays editable offline. A `local` row holds an edit no server answer proved saved; only a proof clears it.
  */
 export interface YDocWriter {
-  /** Starts storing the history `generation`: a full snapshot, plus a local row when `unsynced`. Idempotent. */
-  start(doc: Y.Doc, generation: string, unsynced: boolean): void;
   /** Queues an applied update; flushed per task. `local` rows are broadcast to other tabs after the commit. */
   append(update: Uint8Array, local: boolean, fromTab?: { rowId: number | null }): void;
   /** Clears local rows: every row in `applied` (handshake), or this tab's own (clean). */
   prove(proof: StoreProof): Promise<void>;
   /**
-   * Moves the document to unsaveableYDocs: the stored state merged with `doc`'s, or the stored state alone before
-   * `start`. Writes nothing more. Rejects when the move failed, and the edits then live only in `doc`.
+   * Moves the document to unsaveableYDocs: the stored state merged with the document's. Writes nothing more. Resolves
+   * with the parked row; rejects when the move failed, and the edits then live only in the document.
    */
-  park(reason: UnsaveableReason, doc: Y.Doc): Promise<void>;
+  park(reason: UnsaveableReason): Promise<UnsaveableYDocRecord>;
   /** Deletes the stored document, and writes nothing more. */
   drop(): Promise<void>;
   /** True once storing failed for good (the quota, after eviction and one retry); edits still sync online. */
@@ -88,14 +87,16 @@ export interface YDocWriter {
   readonly pending: boolean;
 }
 
-/** How a writer reports to its connection. */
+/** How a writer starts, and reports to its connection. */
 interface YDocWriterOptions {
   /** The connection's rows; the writer adds each own row once committed. */
   applied?: AppliedRows;
-  /** Runs when `pending` or `failed` changed. */
+  /** Runs when `pending` or `failed` changed, never while the writer is built. */
   onChange?: () => void;
   /** The text of the offline seed the document started from, stored with its record. */
   seed?: YDocRecord['seed'];
+  /** The document holds edits no row has: the first write adds a local row of it whole. */
+  unsynced?: boolean;
 }
 
 type DocKeyPath = [ProductEntityType, string];
@@ -122,7 +123,7 @@ const writers = new Set<StoreWriter>();
 const tasks = new Set<Promise<void>>();
 
 /** Keeps `task` in `tasks` until it settles. */
-function track(task: Promise<void>): Promise<void> {
+function track<T>(task: Promise<T>): Promise<T> {
   const settled = task.then(noop, noop);
   tasks.add(settled);
   void settled.then(() => tasks.delete(settled));
@@ -155,8 +156,10 @@ async function parkStored(Yjs: typeof Y, db: LocalUserDatabase, record: YDocReco
   const { updates } = await readStored(db, record);
   const { entityType, entityId, tenantId, organizationId, generation } = record;
   const state = Yjs.mergeUpdates([...updates, ...extra]);
-  await db.unsaveableYDocs.add({ entityType, entityId, tenantId, organizationId, generation, reason, state, at: Date.now() });
+  const parked = { entityType, entityId, tenantId, organizationId, generation, reason, state, at: Date.now() };
+  const id = await db.unsaveableYDocs.add(parked);
   await deleteStored(db, record);
+  return { ...parked, id };
 }
 
 interface Batch {
@@ -164,7 +167,7 @@ interface Batch {
   local: Uint8Array[];
   /** Updates from the relay, the HTTP routes, or a tab whose own write failed: one row, not local. */
   remote: Uint8Array[];
-  /** The batch `start` queued: it stamps `lastOpenedAt`, and replaces a stored document of another generation. */
+  /** The batch the writer started with: it stamps `lastOpenedAt`, and replaces a stored document of another generation. */
   start: boolean;
   /** The document holds unsynced edits no row has: a local row of its whole state. */
   fullLocal: boolean;
@@ -188,9 +191,6 @@ interface Commit {
 
 class StoreWriter implements YDocWriter {
   failed = false;
-  private doc: Y.Doc | null = null;
-  /** The history the stored rows belong to, known from `start`. */
-  private generation: string | null = null;
   private batch: Batch = emptyBatch();
   private timer: ReturnType<typeof setTimeout> | undefined;
   /** Batches being written, and those of them holding local edits. */
@@ -209,9 +209,17 @@ class StoreWriter implements YDocWriter {
   constructor(
     private readonly scope: YjsDocScope,
     private readonly db: LocalUserDatabase,
+    private readonly doc: Y.Doc,
+    /** The history the stored rows belong to. */
+    private readonly generation: string,
     private readonly options: YDocWriterOptions,
   ) {
     this.key = { entityType: scope.entityType, entityId: scope.entityId };
+    writers.add(this);
+    doc.once('destroy', () => this.release());
+    this.batch.start = true;
+    this.batch.fullLocal = !!options.unsynced;
+    this.schedule();
   }
 
   get pending() {
@@ -223,20 +231,8 @@ class StoreWriter implements YDocWriter {
     return this.timer !== undefined || this.writing > 0;
   }
 
-  start(doc: Y.Doc, generation: string, unsynced: boolean) {
-    if (this.doc || this.closed) return;
-    this.doc = doc;
-    this.generation = generation;
-    writers.add(this);
-    doc.once('destroy', () => this.release());
-    this.batch.start = true;
-    if (unsynced) this.batch.fullLocal = true;
-    this.schedule();
-    if (unsynced) this.options.onChange?.();
-  }
-
   append(update: Uint8Array, local: boolean, fromTab?: { rowId: number | null }) {
-    if (this.closed || this.generation === null) return;
+    if (this.closed) return;
     // Another tab stored its edit under a row; only one whose write failed is stored here.
     if (fromTab && fromTab.rowId !== null) return;
     if (this.failed) {
@@ -279,13 +275,12 @@ class StoreWriter implements YDocWriter {
     if (own && own.length === 0) return Promise.resolve();
     const covers = (id: number) => (own ? own.includes(id) : proof.kind === 'handshake' && (id <= proof.applied.upTo || proof.applied.ids.has(id)));
     return this.enqueueTask(async () => {
-      const generation = this.generation;
-      if (this.closed || generation === null) return;
+      if (this.closed) return;
       await this.db
         .transaction('rw', this.db.yDocs, this.db.yDocUpdates, async () => {
           const record = await this.db.yDocs.get(keyPath(this.key));
           // Another generation's rows are another history, which this proof says nothing about.
-          if (!record || record.generation !== generation) return;
+          if (!record || record.generation !== this.generation) return;
           await rowsOf(this.db, this.key)
             .filter((row) => row.local === 1 && covers(row.id))
             .modify({ local: 0 });
@@ -300,32 +295,28 @@ class StoreWriter implements YDocWriter {
     });
   }
 
-  park(reason: UnsaveableReason, doc: Y.Doc): Promise<void> {
-    const generation = this.generation;
+  park(reason: UnsaveableReason): Promise<UnsaveableYDocRecord> {
     this.close();
-    // Before `start` the writer knows no generation, so `doc` may hold another history: the stored state alone. After
-    // it, `doc` is read now, since the caller destroys it next; the writer's first write loaded Yjs.
-    const state = generation !== null && yjsLoaded ? yjsLoaded.encodeStateAsUpdate(doc) : null;
+    // The document is read before this returns, since the caller destroys it next; the writer's first write loaded Yjs.
+    const state = yjsLoaded?.encodeStateAsUpdate(this.doc);
     return this.enqueueTask(async () => {
       const Yjs = await loadYjs();
-      await this.db.transaction('rw', [this.db.yDocs, this.db.yDocStates, this.db.yDocUpdates, this.db.unsaveableYDocs], async () => {
+      const extra = state ?? Yjs.encodeStateAsUpdate(this.doc);
+      return this.db.transaction('rw', [this.db.yDocs, this.db.yDocStates, this.db.yDocUpdates, this.db.unsaveableYDocs], async () => {
         const record = await this.db.yDocs.get(keyPath(this.key));
-        const own = record && (generation === null || record.generation === generation) ? record : undefined;
-        const extra = generation !== null ? [state ?? Yjs.encodeStateAsUpdate(doc)] : [];
-        if (own) return parkStored(Yjs, this.db, own, reason, extra);
-        if (generation === null) return;
-        await this.db.unsaveableYDocs.add({ ...this.scope, generation, reason, state: extra[0], at: Date.now() });
+        if (record?.generation === this.generation) return parkStored(Yjs, this.db, record, reason, [extra]);
+        const parked = { ...this.scope, generation: this.generation, reason, state: extra, at: Date.now() };
+        return { ...parked, id: await this.db.unsaveableYDocs.add(parked) };
       });
     });
   }
 
   drop(): Promise<void> {
-    const generation = this.generation;
     this.close();
     return this.enqueueTask(async () => {
       await this.db.transaction('rw', this.db.yDocs, this.db.yDocStates, this.db.yDocUpdates, async () => {
         const record = await this.db.yDocs.get(keyPath(this.key));
-        if (record && (generation === null || record.generation === generation)) await deleteStored(this.db, this.key);
+        if (record?.generation === this.generation) await deleteStored(this.db, this.key);
       });
     });
   }
@@ -346,14 +337,14 @@ class StoreWriter implements YDocWriter {
   }
 
   /** Runs `task` after every earlier write and proof of this writer; the chain itself never rejects. */
-  private enqueue(task: () => Promise<void>): Promise<void> {
+  private enqueue<T>(task: () => Promise<T>): Promise<T> {
     const run = this.chain.then(task);
     this.chain = run.then(noop, noop);
     return run;
   }
 
   /** As `enqueue`, for a proof, park or drop: `flushYjsStore` waits for it too. */
-  private enqueueTask(task: () => Promise<void>): Promise<void> {
+  private enqueueTask<T>(task: () => Promise<T>): Promise<T> {
     return track(this.enqueue(task));
   }
 
@@ -366,13 +357,11 @@ class StoreWriter implements YDocWriter {
   }
 
   private broadcast(update: Uint8Array, rowId: number | null) {
-    if (this.generation === null) return;
     postTabMessage({ kind: 'update', key: yDocKeyString(this.key), generation: this.generation, update, rowId });
   }
 
   private async write(batch: Batch) {
-    const { doc, generation } = this;
-    if (this.closed || !doc || generation === null) return;
+    if (this.closed) return;
     const Yjs = await loadYjs();
     const local = batch.local.length ? Yjs.mergeUpdates(batch.local) : null;
     const remote = batch.remote.length ? Yjs.mergeUpdates(batch.remote) : null;
@@ -380,7 +369,7 @@ class StoreWriter implements YDocWriter {
     let commit: Commit | null = null;
     for (let attempt = 0; attempt < 2 && !commit; attempt++) {
       try {
-        commit = await this.commit(Yjs, doc, generation, { batch, local, remote, unproven: this.ownRows.size > 0 });
+        commit = await this.commit(Yjs, { batch, local, remote, unproven: this.ownRows.size > 0 });
       } catch (error) {
         // Signed out, or deleted in another tab: the database is gone, and the write with it.
         if (getLocalUserDb() !== this.db) {
@@ -412,11 +401,9 @@ class StoreWriter implements YDocWriter {
   /** One `rw` transaction: the batch's rows, or the whole document when none is stored, and the metadata. */
   private commit(
     Yjs: typeof Y,
-    doc: Y.Doc,
-    generation: string,
     { batch, local, remote, unproven }: { batch: Batch; local: Uint8Array | null; remote: Uint8Array | null; unproven: boolean },
   ): Promise<Commit> {
-    const { db, key, scope } = this;
+    const { db, key, scope, doc, generation } = this;
     return db.transaction('rw', [db.yDocs, db.yDocStates, db.yDocUpdates, db.unsaveableYDocs], async () => {
       const now = Date.now();
       const result: Commit = { ownRowId: null, broadcastRowId: null, created: false, trim: false, superseded: false };
@@ -503,13 +490,37 @@ export async function loadYDoc(key: YDocKey): Promise<LoadedYDoc | null> {
   });
 }
 
-/** A writer for one document's rows, on the bound user's database; null while none is bound. */
-export function createYDocWriter(scope: YjsDocScope, options: YDocWriterOptions = {}): YDocWriter | null {
+/**
+ * A writer that starts storing `doc`, the history `generation`, on the bound user's database: a full snapshot, plus a
+ * local row of it whole when `options.unsynced`. Null while no database is bound.
+ */
+export function createYDocWriter(scope: YjsDocScope, doc: Y.Doc, generation: string, options: YDocWriterOptions = {}): YDocWriter | null {
   const db = getLocalUserDb();
   if (!db) return null;
   void loadYjs();
   const { entityType, entityId, tenantId, organizationId } = scope;
-  return new StoreWriter({ entityType, entityId, tenantId, organizationId }, db, options);
+  return new StoreWriter({ entityType, entityId, tenantId, organizationId }, db, doc, generation, options);
+}
+
+/**
+ * Parks the stored document of `generation` from its stored state alone, with no writer: the document a connection
+ * holds may be another history. A clean one is deleted, and another generation's is left alone.
+ * @returns The parked row; null when nothing was parked.
+ */
+export function parkStoredYDoc(key: YDocKey, generation: string, reason: UnsaveableReason): Promise<UnsaveableYDocRecord | null> {
+  const db = getLocalUserDb();
+  if (!db) return Promise.resolve(null);
+  return track(
+    loadYjs().then((Yjs) =>
+      db.transaction('rw', [db.yDocs, db.yDocStates, db.yDocUpdates, db.unsaveableYDocs], async () => {
+        const record = await db.yDocs.get(keyPath(key));
+        if (record?.generation !== generation) return null;
+        if (record.unsynced) return parkStored(Yjs, db, record, reason, []);
+        await deleteStored(db, key);
+        return null;
+      }),
+    ),
+  );
 }
 
 /** Resolves once every queued update is committed. */

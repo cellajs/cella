@@ -44,22 +44,14 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
   // The unique index drops a repeat of a waitlist or info request, concurrent ones included.
   if (!(await insertRequest(ctx, { email: normalizedEmail, kind, message }))) return;
 
-  let title: string;
-
-  switch (kind) {
-    case 'waitlist':
-      title = 'Join waitlist request';
-      break;
-    case 'info':
-      title = 'Info request';
-      break;
-    case 'contact':
-      title = `Request for contact with message: "${message}"`;
-      break;
-  }
+  const titles: Record<CreateRequestInput['kind'], string> = {
+    waitlist: 'Join waitlist request',
+    info: 'Info request',
+    contact: `Request for contact with message: "${message}"`,
+  };
 
   // Replies go to the requester, who typed this address: answering means writing back.
-  sendToSystemRoom(requestReceivedEmail, { kind, message, email: normalizedEmail, subject: title }, normalizedEmail).catch((err) =>
+  sendToSystemRoom(requestReceivedEmail, { kind, message, email: normalizedEmail, subject: titles[kind] }, normalizedEmail).catch((err) =>
     log.error('Failed to notify the team of a request', { err }),
   );
 

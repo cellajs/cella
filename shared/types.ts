@@ -112,10 +112,9 @@ export type EntityIdColumnKey<T extends EntityType> = EntityIdColumnKeys[T];
  */
 export type EntityIdColumns<TS extends EntityType, V> = { [T in TS as EntityIdColumnKey<T>]: V };
 
-// Channel relation types read from the hierarchy's phantom parent/related maps. They generate
+// Channel relation types read from the hierarchy's phantom parent map. They generate
 // channel-entity id columns on product and channel tables without naming any specific config.
 type HierarchyParentMap = typeof hierarchy._parentMap;
-type HierarchyRelatedMap = typeof hierarchy._relatedMap;
 
 /** Strict ancestor chain: `AncestorChannelType<'task'>` gives `'project' | 'organization'`. */
 export type AncestorChannelType<E extends string> = E extends keyof HierarchyParentMap
@@ -128,9 +127,6 @@ export type AncestorChannelType<E extends string> = E extends keyof HierarchyPar
 
 /** The channels below the organization a product row may be homed at: `HomeChannelType<'task'>` gives `'project'`. */
 export type HomeChannelType<T extends ProductEntityType> = Exclude<AncestorChannelType<T>, 'organization'>;
-
-/** Non-ancestor channels declared via `relatedChannels`. */
-export type RelatedChannelType<E extends string> = E extends keyof HierarchyRelatedMap ? HierarchyRelatedMap[E] : never;
 
 type HierarchyNullableMap = typeof hierarchy._nullableMap;
 
