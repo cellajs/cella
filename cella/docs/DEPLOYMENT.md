@@ -4,7 +4,7 @@ This document explains how a cella app deploys to [Scaleway](https://www.scalewa
 
 ### TL;DR
 
-Publishing a release starts an automatic deployment: new machines for that exact version replace the old ones once the load balancer sees them healthy. GitHub holds no key: a schedule inside the Scaleway organization starts each deploy. Setup and deploys each use their own [API keys](./deployment/KEYS.md#api-keys), which no machine holds.
+Publishing a release starts an automatic deployment: new machines for that exact version replace the old ones once the load balancer sees them healthy. GitHub holds no key: a schedule inside the Scaleway organization starts each deploy. The install and the deploys each use their own [API keys](./deployment/KEYS.md#api-keys), which no machine holds.
 
 ## Overview
 
@@ -108,7 +108,7 @@ Each environment has a Serverless Jobs definition, `<slug>-main`. Every run of i
 - the **engine image** its runs start from, by digest
 - the [schedule](#the-schedule) that starts them
 
-**Deploy now** (`pnpm cella infra deploy-now`) starts a run on your operator key and follows it step by step to its end. It reads the target from this checkout's `cella/infra/environments`, not the default branch's.
+`pnpm cella infra deploy-now` starts a run on your operator key and follows it step by step to its end. It reads the target from this checkout's `cella/infra/environments`, not the default branch's.
 
 A run ends in one of five outcomes:
 
@@ -120,7 +120,7 @@ A run ends in one of five outcomes:
 
 **Releases only.** In production, the engine refuses a target that no release tag names, and a release that the default branch does not contain. It reads that rule from the environment its image was built for. No value a start sets turns the check off or moves the run elsewhere.
 
-The check catches a start by hand that names the wrong commit. A key that may start runs can still start one with a command of its own, past that check. Deploy logs flags such a run.
+The check catches a start by hand that names the wrong commit. A key that may start runs can still start one with a command of its own, past that check. **logs** flags such a run.
 
 A tag alone deploys nothing. A `99.0.0` pushed on a commit outside the default branch is refused, and its run ends failed with that reason. Delete the tag, or merge the commit and raise the retry counter.
 
@@ -134,7 +134,7 @@ The target's code never runs beside the deploy key. The builder evaluates the ta
 
 Scaleway starts a run of the main job at the cadence each environment sets as `general.schedule.everyMinutes` in [description.yml](../infra/description.yml). A release waits at most that long for its deploy.
 
-An apply writes the schedule, and nothing else needs setting up: it is part of the definition. A scheduled run that starts nothing leaves no record. **Full status** names a schedule that stopped, went missing or whose runs fail. Deploy logs says when the last scheduled run started.
+An apply writes the schedule, and nothing else needs setting up: it is part of the definition. A scheduled run that starts nothing leaves no record. **status** names a schedule that stopped, went missing or whose runs fail. **logs** says when the last scheduled run started.
 
 Each target deploys once: the records are the schedule's memory. A failed target waits for a change in git, and a blocked one for an operator to clear the block.
 
@@ -151,15 +151,15 @@ Every deploy writes one record to the environment's boot-diag bucket and updates
 
 Every new machine also uploads a **boot account** at the end of its first boot: its boot log and a crashed container's output. Both are scrubbed of secrets before upload. A failed switch's record names each new machine's account.
 
-**Deploy logs**, `pnpm cella infra logs` on the observer key, lists the last ten deploys and shows one in full. `--machines` shows each service's newest boot account. `--sha <sha>` shows every account of one release with the builder's report.
+`pnpm cella infra logs`, on the observer key, lists the last ten deploys and shows one in full. `--machines` shows each service's newest boot account. `--sha <sha>` shows every account of one release with the builder's report.
 
-Records, boot accounts and archives are kept for 60 days. The deploy key cannot erase a record, since the bucket keeps versions. Deploy logs flags three anomalies:
+Records, boot accounts and archives are kept for 60 days. The deploy key cannot erase a record, since the bucket keeps versions. **logs** flags three anomalies:
 
 - **Rewrite:** a version that does not grow the one before, written by the deploy key or a stolen copy.
 - **Interrupted:** a record that still says running while no deploy holds its lease.
 - **Foreign start:** a job run started with values or a command the engine never sets.
 
-Deploy logs shows a rewritten run as it stood before the rewrite, and `status` reports a rewrite of the newest record.
+**logs** shows a rewritten run as it stood before the rewrite, and `status` reports a rewrite of the newest record.
 
 ### The builder
 
@@ -235,14 +235,14 @@ The new machine fetches the file once through a link in its user data and keeps 
 
 - **No secret in Pulumi state:** after each apply, operator tasks write generated secrets into Secret Manager.
 - **Kept until rotation:** a value that exists stays until a [rotation](./deployment/KEYS.md#rotation).
-- **No secret from a deploy:** an apply makes every value, through **Review & apply changes**.
-- **Uploads key:** written by Update identities.
+- **No secret from a deploy:** an apply makes every value.
+- **Uploads key:** written by an identity update.
 - **Values fixed at boot:** a changed value reaches only the next deploy's machines, since a reboot fetches nothing.
 - **One line per value:** base64-encode a multi-line value and decode it in the service, as `DATABASE_SSL_CA` does.
 
 ## Load balancer and DNS
 
-The setup's first apply makes the load balancer, before any machine. Its pools, their reserved addresses, its DNS records and its certificates come with it. They change only in an apply. The deploy key only reads the load balancer. Every apply also replaces a certificate that failed for good.
+The install's first apply makes the load balancer, before any machine. Its pools, their reserved addresses, its DNS records and its certificates come with it. They change only in an apply. The deploy key only reads the load balancer. Every apply also replaces a certificate that failed for good.
 
 ## Configuration
 
@@ -250,6 +250,6 @@ What only a deployment knows lives in [description.yml](../infra/description.yml
 
 | Key | Owns | Applied by |
 | --- | --- | --- |
-| `services` | Per service: ports and path prefix, which must match `appConfig.services`, machine size, replacement strategy, drain, load balancer route, env. `appConfig.services.<name>.enabled` decides which exist | **Review & apply changes**, then the deploys make machines as it says |
-| `general` | Database node and volume, asset retention, the schedule's cadence | **Review & apply changes** (privileged) |
-| `runtimeSecrets` | Who makes each runtime secret, its stored name and which services receive it | **Review & apply changes** (privileged) |
+| `services` | Per service: ports and path prefix, which must match `appConfig.services`, machine size, replacement strategy, drain, load balancer route, env. `appConfig.services.<name>.enabled` decides which exist | **apply**, then the deploys make machines as it says |
+| `general` | Database node and volume, asset retention, the schedule's cadence | **apply** (privileged) |
+| `runtimeSecrets` | Who makes each runtime secret, its stored name and which services receive it | **apply** (privileged) |

@@ -4,7 +4,7 @@ This document describes the Infra CLI, built on [Pulumi](https://www.pulumi.com/
 
 ### TL;DR
 
-The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in one guided sitting. Then it opens on a home screen that says whether the app serves and what to do next, above a menu by task. A schedule in the same Scaleway account deploys every release onto fresh machines. Every change to the foundation is an apply you review first, each key does one kind of work, and no machine a deploy makes holds the deploy key.
+The Infra CLI installs a cella app on [Scaleway](https://www.scaleway.com/) in one guided sitting. Then it opens on a home screen that says whether the app serves and what to do next, above a menu by task. A schedule in the same Scaleway account deploys every release onto fresh machines. Every change to the foundation is an apply you review first, each key does one kind of work, and no machine a deploy makes holds the deploy key.
 
 ## What it does
 
@@ -19,7 +19,7 @@ The engine names no app. This folder is the app's part: its [description](#the-d
 
 ## How a release flows
 
-**Setup** (`pnpm cella infra`) is a wizard that takes an empty Scaleway account to a provisioned environment in one sitting, along the launch checklist ([fresh installation](../docs/deployment/FRESH_INSTALLATION.md)).
+**Install** (`pnpm cella infra`) is a wizard that takes an empty Scaleway account to a provisioned environment in one sitting, along the launch checklist ([fresh installation](../docs/deployment/FRESH_INSTALLATION.md)).
 
 **Apply** (`pnpm cella infra apply`) changes the foundation and publishes the **engine image**. That image holds the engine built from your checkout, with the **applied description** of the app. Every run of the main job starts from it.
 
@@ -33,7 +33,7 @@ It builds a release not built yet, switches every role to a machine of the relea
 
 ## Commands
 
-`pnpm cella infra` opens the setup wizard on a fresh stack, at its launch checklist. On an existing stack it opens the home screen, which shows what serves and since when, then only what needs a person:
+`pnpm cella infra` opens the install wizard on a fresh stack, at its launch checklist. On an existing stack it opens the home screen, which shows what serves and since when, then only what needs a person:
 
 - a deploy that failed, waits or runs
 - the database while it is open
@@ -42,28 +42,19 @@ It builds a release not built yet, switches every role to a machine of the relea
 
 When nothing needs a person, the line on what serves says all checks pass. The step the checks recommend leads the menu below.
 
-The menu lists the daily rows, most used first. Each row's command is a word of its name:
+Each row of the menu is the command of its action, with a line on what it does. The daily rows come first, most used first: `status`, `apply`, `env`, `releases`, `logs`, and `db-open` or `db-close`, whichever applies.
 
-| Row | Command |
+**more** opens the pick of the rare actions, each with the key it needs:
+
+| Group | Actions |
 | --- | --- |
-| Full status | `status` |
-| Review & apply changes | `apply` |
-| Env vars & secrets | `env` |
-| Releases & roll back | `releases` |
-| Deploy logs | `logs` |
-| Open DB access or Close DB access, whichever applies | `db-open`, `db-close` |
+| Deploy | `deploy-now`, `preview` |
+| Keys and identities | `rotate-keys`, `rotate-secrets`, `operators`, `identities`, `repository-key` |
+| Repairs | `unlock`, `resume`, `state-remove` |
+| Database | `db-seed`, `db-reset` |
+| Environment | `env-import`, `teardown` |
 
-**More** opens the pick of the rare actions, each with the key it needs:
-
-| Heading | Actions |
-| --- | --- |
-| Deploys & changes | Deploy now, Preview changes |
-| Keys & access | Rotate keys, Rotate secrets, Set up operators, Update identities, Set repository read key |
-| Repair | Unlock, Resume setup, Remove from state |
-| Database | Seed database, Reset database |
-| Environment | Import a .env file, Tear down |
-
-Reset database and Tear down open on what they delete and what they keep, before any key or typed confirmation.
+`db-reset` and `teardown` open on what they delete and what they keep, before any key or typed confirmation.
 
 Esc steps back one prompt, and from an action's first prompt or its list straight to the menu. An action that ends by itself keeps its output on screen under one **← Back to menu** row until you go back.
 
@@ -71,7 +62,7 @@ Every action also runs alone as `pnpm cella infra <action> [--mode <production|s
 
 ## Status
 
-`infra status` is a read-only health check of the whole lifecycle. The home screen is its compact report. Menu: `pnpm cella infra` → **Full status**: each finding with what it names and what fixes it, the checks that could not be read, and the passing checks as one line per area. Standalone:
+`infra status` is a read-only health check of the whole lifecycle. The home screen is its compact report. Menu: `pnpm cella infra` → **status**: each finding with what it names and what fixes it, the checks that could not be read, and the passing checks as one line per area. Standalone:
 
 ```
 pnpm cella infra status [--mode <production|staging>] [--json]
@@ -89,8 +80,8 @@ They find only what an intruder did not disguise: they read the live machines fr
 
 To clear what they flag:
 
-- **Rotate keys** replaces the environment's keys and deletes the others.
-- **Update identities** deletes a policy or key beside the declared one.
+- **rotate-keys** replaces the environment's keys and deletes the others.
+- **identities** deletes a policy or key beside the declared one.
 - **In the console,** delete a key of the operator application that outlives a day.
 - **Anything else** goes in the console once you know who made it.
 
@@ -111,7 +102,7 @@ Stable check `id`s:
 
 The override keeps a staging run from inheriting production values. The CLI keeps the env file at `0600`.
 
-The CLI drops `SCW_OWNER_*` from its environment with a notice. A one-day operator key comes from the prompt, or at a setup from its Owner moment.
+The CLI drops `SCW_OWNER_*` from its environment with a notice. A one-day operator key comes from the prompt, or at an install from its Owner moment.
 
 ## The description
 
@@ -167,8 +158,8 @@ One name per concept across code and docs:
 | **release** | One git SHA baked into images and machines. |
 | **release name** | How the CLI names a commit on screen: the release tag that points at it (`0.34.0`), else `<branch>@<short id>` for a branch head (`main@c19588d`), else the short id. |
 | **deploy** | One run of the deploy command. |
-| **blocked** | How a run ends when a required runtime value is missing, which an operator stores. The screen names the value it waits for and says **Env vars & secrets** stores it. |
-| **apply needed** | How a run ends when its target describes the app otherwise than the applied description. The screen says the release changes the infrastructure and waits for your go, and Deploy logs names the fields. The apply from its checkout starts it again. |
+| **blocked** | How a run ends when a required runtime value is missing, which an operator stores. The screen names the value it waits for and says **env** stores it. |
+| **apply needed** | How a run ends when its target describes the app otherwise than the applied description. The screen says the release changes the infrastructure and waits for your go, and **logs** names the fields. The apply from its checkout starts it again. |
 | **unchanged** | How a run ends when every role served its target already, under the same retry counter and rotation. |
 | **main job** | An environment's Serverless Jobs definition, with its schedule. Each of its runs deploys at most one target, on the engine image. |
 | **scheduled run** | A run of the main job its schedule starts. Under the lease, it deploys the target when no run record names that target and retry counter. |
@@ -187,10 +178,10 @@ One name per concept across code and docs:
 | **agent** | `infra-agent`, the Compose service every machine runs ([agent/](https://github.com/cellajs/cella-cli/tree/main/src/infra/agent)): boots the release, answers the load balancer's check per service, drains. It replaces every secret value it handled, and any URL userinfo, in its output and its boot account. |
 | **live record** | `control/<mode>/live.json` in the boot-diag bucket: per role the slot that serves, its machine, its commit, and the retry counter and rotation it was booted under. |
 | **lease** | `control/<mode>/lock.json` beside it: one deploy or operator action at a time. |
-| **setup / bootstrap** | The first-ever `pnpm cella infra` run for a stack: state storage, identities, base infrastructure. Not a machine's boot. |
-| **launch checklist** | The steps of a setup: Tools, Repository, Domain, Sign in, Create, Connect, First release, First admin. Each is ticked from what exists and the first open one is marked. A stack not set up yet opens on it. |
+| **install** | The first-ever `pnpm cella infra` run for a stack: state storage, identities, base infrastructure. Not a machine's boot. |
+| **launch checklist** | The steps of an install: Tools, Repository, Domain, Sign in, Create, Connect, First release, First admin. Each is ticked from what exists and the first open one is marked. A stack not installed yet opens on it. |
 | **Owner moment** | A run that writes IAM, with your own Owner API key made for the occasion. |
-| **operator key** | A one-day key of the `<app>-operator` application, or of a member of the `<app>-operators` group, for privileged work: no IAM write. A setup's Owner moment makes the first. Later ones are made in the console at each sitting. |
+| **operator key** | A one-day key of the `<app>-operator` application, or of a member of the `<app>-operators` group, for privileged work: no IAM write. An install's Owner moment makes the first. Later ones are made in the console at each sitting. |
 | **observer key** | The read-only `<app>-observer` key, from any address. Kept in `~/.config/<app>/observer.env`. |
 | **deploy key** | An environment's `<slug>-<mode>-ci-deploy` key, which its main job deploys with. |
 | **uploads key** | An environment's `<slug>-<mode>-uploads` key, which signs the backend's uploads and presigned URLs, kept in the runtime folder. |
