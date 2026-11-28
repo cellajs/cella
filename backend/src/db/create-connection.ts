@@ -11,6 +11,7 @@ import { PgDialect } from 'drizzle-orm/pg-core';
 import type { Pool } from 'pg';
 import { appConfig } from 'shared';
 import { verifiedPostgresConnection } from 'shared/utils/postgres-tls';
+import { DriverClient, type DriverClientConfig } from '#/db/driver-client';
 
 // No `#/env` import and no pool opened at module load, so the cdc and yjs workers can import this.
 
@@ -41,6 +42,8 @@ interface CreatePgConnectionOptions {
   connectionTimeoutMillis?: number;
   /** Absent = the server defaults (no limit). */
   sessionTimeouts?: SessionTimeouts;
+  /** The client's own deadline (`DriverClient`), for a pool that serves requests: a frozen server answers no `statement_timeout`. */
+  clientDeadlineMs?: DriverClientConfig['clientDeadlineMs'];
   /** Names the pool in the warning an idle connection's error logs. */
   name?: string;
 }
@@ -62,12 +65,15 @@ const queryLoggers = new WeakMap<DB, Logger>();
  */
 export const createPgConnection = (
   url: string,
-  { max, sslCa, debug = false, connectionTimeoutMillis = 10_000, sessionTimeouts, name = 'database' }: CreatePgConnectionOptions,
+  { max, sslCa, debug = false, connectionTimeoutMillis = 10_000, sessionTimeouts, clientDeadlineMs, name = 'database' }: CreatePgConnectionOptions,
 ): DB => {
   const logger = debug && appConfig.mode === 'development' ? new DefaultLogger() : undefined;
   const db = pgDrizzle({
     connection: {
       ...verifiedPostgresConnection(url, sslCa),
+      Client: DriverClient,
+      // Spread: drizzle's option type names no key of `DriverClient`'s own.
+      ...({ clientDeadlineMs } satisfies DriverClientConfig),
       connectionTimeoutMillis,
       max,
       // Long-lived pooled connections (the job lock) sit idle for minutes.

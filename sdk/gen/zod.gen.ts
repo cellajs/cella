@@ -101,6 +101,15 @@ export const zTooManyRequestsError = zApiError.and(
 );
 
 /**
+ * Any operation answers it while the database cannot be reached or does not answer in time, and none lists it. The `Retry-After` header and the `retryAfter` member say when to try again.
+ */
+export const zServiceUnavailableError = zApiError.and(
+  z.object({
+    status: z.literal(503).optional(),
+  }),
+);
+
+/**
  * The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.
  */
 export const zStxBase = z.object({

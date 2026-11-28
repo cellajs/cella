@@ -1,9 +1,10 @@
 import process from 'node:process';
-import { sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { createHealthApp, type FullHealth } from 'shared/health-app';
 import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
+import { isPool } from '#/db/create-connection';
 import { baseDb } from '#/db/db';
+import { databaseAnswers } from '#/db/driver-client';
 import { env } from '#/env';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import {
@@ -21,17 +22,18 @@ import { getBackendJobs } from '#/lib/module';
 import { TTLCache } from '#/lib/ttl-cache';
 import { log } from '#/utils/logger';
 
-/** Check database connectivity with a timed `SELECT 1`. */
-async function checkDatabase(): Promise<{ connected: boolean; latencyMs: number | null }> {
-  if (env.NODB) return { connected: false, latencyMs: null };
+/** The database check for 5 s, concurrent requests sharing one: each opens a connection, and the answer is public. */
+const databaseCache = new TTLCache<{ connected: boolean; latencyMs: number | null }>({ maxSize: 1, defaultTtl: 5_000 });
 
-  const startedAt = Date.now();
-  try {
-    await baseDb.execute(sql`SELECT 1`);
-    return { connected: true, latencyMs: Date.now() - startedAt };
-  } catch {
-    return { connected: false, latencyMs: null };
-  }
+/** Checks that the database answers, on a connection of its own: a frozen server is unreachable within the ask's deadline. */
+function checkDatabase(): Promise<{ connected: boolean; latencyMs: number | null }> {
+  const pool: unknown = baseDb.$client;
+  if (env.NODB || !isPool(pool)) return Promise.resolve({ connected: false, latencyMs: null });
+  return databaseCache.load('database', async () => {
+    const startedAt = Date.now();
+    const connected = await databaseAnswers(pool.options);
+    return { connected, latencyMs: connected ? Date.now() - startedAt : null };
+  });
 }
 
 /** The CDC component: the worker socket as this process holds it, and the grade the worker pushed over it. */
@@ -49,6 +51,8 @@ export const clearJobsHealthCache = () => jobsCache.clear();
 
 const buildJobsComponent = () => jobsCache.load('jobs', readJobsComponent);
 
+const jobsUnreadable: HealthComponent = { status: 'degraded', checkedVia: 'local', reason: 'jobs_unreadable' };
+
 /** The api process and the jobs worker report the same component. */
 async function readJobsComponent(): Promise<HealthComponent> {
   try {
@@ -56,7 +60,7 @@ async function readJobsComponent(): Promise<HealthComponent> {
   } catch (err) {
     // The diagnostics are public, and a failed query's message can carry its SQL: the log keeps it, redacted.
     log.error('Reading the job store for health failed', { err });
-    return { status: 'degraded', checkedVia: 'local', reason: 'jobs_unreadable' };
+    return jobsUnreadable;
   }
 }
 
@@ -71,9 +75,11 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
   const dbCheck = await checkDatabase();
   components.api = mapApiComponent(getEventLoopLagMs(), process.memoryUsage());
   components.database = mapDatabaseComponent(dbCheck.connected, dbCheck.latencyMs);
+  // The job store lives in the database: unread while it does not answer, where its read would wait out the pool.
+  const readJobs = () => (dbCheck.connected ? buildJobsComponent() : jobsUnreadable);
 
   if (env.SERVICE === 'jobs') {
-    components.jobs = await buildJobsComponent();
+    components.jobs = await readJobs();
   } else if (env.SERVICE !== 'mcp') {
     if (appConfig.services.cdc.enabled) components.cdc = buildCdcComponent();
 
@@ -84,7 +90,7 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
     );
     for (const [name, component] of workerChecks) components[name] = component;
 
-    if (appConfig.services.jobs.enabled) components.jobs = await buildJobsComponent();
+    if (appConfig.services.jobs.enabled) components.jobs = await readJobs();
   }
 
   const status = rollupStatus(components);

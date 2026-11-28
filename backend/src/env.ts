@@ -74,6 +74,9 @@ const envSchema = z
     // The runtime pool's ceiling. A deployed service sets its own in cella/infra/description.yml, sized with every
     // other pool against the database's max_connections.
     DATABASE_POOL_MAX: z.coerce.number().default(20),
+    // Milliseconds a runtime statement may go unanswered before the client asks after its backend, set per service in
+    // cella/infra/description.yml; unset, the client waits as long as the server.
+    DATABASE_CLIENT_DEADLINE_MS: z.coerce.number().int().positive().optional(),
     // PEM CA cert for the managed PostgreSQL TLS connection: required in production, where the DB client fails fast without it.
     DATABASE_SSL_CA: z.string().optional(),
 

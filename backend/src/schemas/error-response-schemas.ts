@@ -93,10 +93,20 @@ const errorResponseOptions = [
   },
 ] as const;
 
-type ErrorOption = (typeof errorResponseOptions)[number];
+/** The 503 any operation answers while the database cannot be reached: documented once here, and no route declares it. */
+const serviceUnavailableOption = {
+  code: 503,
+  name: 'ServiceUnavailableError',
+  description: 'Service unavailable',
+  schemaDescription:
+    'Any operation answers it while the database cannot be reached or does not answer in time, and none lists it. The `Retry-After` header and the `retryAfter` member say when to try again.',
+  headers: retryAfterHeader,
+} as const;
 
-/** The error statuses with a documented response; an `AppError` carries one of these, 410 or a server error. */
-export type ErrorCode = ErrorOption['code'];
+type ErrorOption = (typeof errorResponseOptions)[number] | typeof serviceUnavailableOption;
+
+/** The error statuses a route declares; an `AppError` carries one of these, 410 or a server error. */
+export type ErrorCode = (typeof errorResponseOptions)[number]['code'];
 
 const errorBodySchema = ({ code, name, schemaDescription }: ErrorOption) =>
   apiErrorSchema
@@ -122,8 +132,8 @@ export const errorResponseComponents: ReadonlyMap<string, string> = new Map(erro
 
 /** Registers each error body under `components/schemas` and its response, headers included, under `components/responses`. */
 export const registerAllErrorResponses = (registry: OpenAPIRegistry) => {
-  for (const option of errorResponseOptions) {
-    registry.register(option.name, sharedErrorResponses[option.code].content[problemJsonType].schema);
+  for (const option of [...errorResponseOptions, serviceUnavailableOption]) {
+    registry.register(option.name, option.code === 503 ? errorBodySchema(option) : sharedErrorResponses[option.code].content[problemJsonType].schema);
     registry.registerComponent('responses', option.name, {
       description: option.description,
       headers: { ...requestIdHeader, ...('headers' in option ? option.headers : {}) },

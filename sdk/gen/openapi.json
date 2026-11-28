@@ -747,6 +747,31 @@
             }
           }
         }
+      },
+      "ServiceUnavailableError": {
+        "description": "Service unavailable",
+        "headers": {
+          "X-Request-Id": {
+            "description": "The request id, also `instance` in the body; quote it when reporting a failure.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "Retry-After": {
+            "description": "Seconds to wait before trying again, at least 1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ServiceUnavailableError"
+            }
+          }
+        }
       }
     },
     "schemas": {
@@ -1269,6 +1294,56 @@
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z",
           "retryAfter": 30
+        },
+        "x-tags": ["errors", "cella"]
+      },
+      "ServiceUnavailableError": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiError"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "number",
+                "enum": [503]
+              }
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        ],
+        "description": "Any operation answers it while the database cannot be reached or does not answer in time, and none lists it. The `Retry-After` header and the `retryAfter` member say when to try again.",
+        "example": {
+          "type": "service_unavailable",
+          "title": "Service unavailable",
+          "status": 503,
+          "detail": "Service temporarily unavailable, please retry",
+          "instance": "f3a1c2d4-5b6e-4f70-8a9b-0c1d2e3f4a5b",
+          "severity": "error",
+          "timestamp": "2025-01-01T12:00:00.000Z",
+          "retryAfter": 1
         },
         "x-tags": ["errors", "cella"]
       },

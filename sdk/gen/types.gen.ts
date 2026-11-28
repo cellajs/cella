@@ -124,6 +124,14 @@ export type TooManyRequestsError = ApiError & {
 };
 
 /**
+ * Any operation answers it while the database cannot be reached or does not answer in time, and none lists it. The `Retry-After` header and the `retryAfter` member say when to try again.
+ */
+export type ServiceUnavailableError = ApiError & {
+  status?: 503;
+  [key: string]: number | string | Array<string> | boolean | null | 503 | undefined;
+};
+
+/**
  * A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.
  */
 export type Attachment = {

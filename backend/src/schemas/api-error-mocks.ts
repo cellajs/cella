@@ -13,9 +13,19 @@ const errorTexts = {
   413: { type: 'body_too_large', title: 'Too large to save', detail: 'Shorten it or split it up.' },
   415: { type: 'invalid_request', title: "Something's missing or wrong", detail: 'Unsupported Media Type' },
   429: { type: 'too_many_requests', title: 'Too many attempts', detail: 'Wait a moment, then try again.', retryAfter: 30 },
+  503: {
+    type: 'service_unavailable',
+    title: 'Service unavailable',
+    detail: 'Service temporarily unavailable, please retry',
+    severity: 'error' as const,
+    retryAfter: 1,
+  },
 };
 
-/** The body `AppError(status, <its type>, 'warn')` answers: the example of `ApiError` and of each error schema. */
+/**
+ * The body `AppError(status, <its type>, 'warn')` answers, at the severity an entry names: the example of `ApiError`
+ * and of each error schema.
+ */
 export const mockApiError = (status: keyof typeof errorTexts = 400) => {
   const { type, title, detail, ...members } = errorTexts[status];
   return {
