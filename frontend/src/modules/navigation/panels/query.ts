@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'shared';
 import type { HealthResponse } from 'shared/health-status';
+import { isRecord } from 'shared/utils/as-record';
 
 const healthUrl = `${appConfig.backendUrl}/health?depth=full`;
 const healthPollMs = 30_000;
@@ -15,7 +16,9 @@ async function fetchHealth(): Promise<HealthResponse | null> {
     const response = await fetch(healthUrl, { cache: 'no-store', signal: AbortSignal.timeout(healthTimeoutMs) });
     // A 503 still carries the diagnostics: it names which component is down.
     if (!response.ok && response.status !== 503) return null;
-    return (await response.json()) as HealthResponse;
+    const health = (await response.json()) as HealthResponse;
+    // A gateway's 503 carries a body of its own, without the components.
+    return isRecord(health) && isRecord(health.components) ? health : null;
   } catch {
     return null;
   }

@@ -190,7 +190,7 @@ export const Multiple: Story = {
     const [value2, setValue2] = useState('');
 
     return (
-      <div className="w-80 space-y-4">
+      <div className="flex w-80 flex-col gap-4">
         <ComboboxSelect {...args} options={args.options} value={value1} onChange={setValue1} />
         <ComboboxSelect {...args} options={avatarOptions} value={value2} onChange={setValue2} />
       </div>

@@ -148,7 +148,7 @@ export const PasswordToggle: Story = {
 /** Input group with error state. */
 export const WithError: Story = {
   render: () => (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       <InputGroup>
         <InputGroupInput placeholder="Enter email" aria-invalid="true" />
         <InputGroupAddon align="inline-end">
@@ -165,7 +165,7 @@ export const WithError: Story = {
 /** Input group with different button sizes. */
 export const ButtonSizes: Story = {
   render: () => (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <InputGroup>
         <InputGroupInput placeholder="Extra small button" />
         <InputGroupAddon align="inline-end">
@@ -199,7 +199,7 @@ export const ButtonSizes: Story = {
 /** Search input with filters. */
 export const SearchWithFilters: Story = {
   render: () => (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <InputGroup>
         <InputGroupAddon>
           <InputGroupButton variant="outline">
@@ -230,7 +230,7 @@ export const SearchWithFilters: Story = {
 /** URL input group. */
 export const UrlInput: Story = {
   render: () => (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <InputGroup>
         <InputGroupAddon>
           <InputGroupText>https://</InputGroupText>
@@ -293,8 +293,8 @@ export const DateInput: Story = {
 /** Complex form with multiple input groups. */
 export const ComplexForm: Story = {
   render: () => (
-    <div className="w-full max-w-md space-y-4">
-      <div className="space-y-2">
+    <div className="flex w-full max-w-md flex-col gap-4">
+      <div className="flex flex-col items-start gap-2">
         <label className="text-sm font-medium">Personal Information</label>
         <InputGroup>
           <InputGroupAddon>
@@ -313,7 +313,7 @@ export const ComplexForm: Story = {
         </InputGroup>
       </div>
 
-      <div className="space-y-2">
+      <div className="flex flex-col items-start gap-2">
         <label className="text-sm font-medium">Account Details</label>
         <InputGroup>
           <InputGroupAddon align="block-start">
@@ -335,7 +335,7 @@ export const ComplexForm: Story = {
         </InputGroup>
       </div>
 
-      <div className="space-y-2">
+      <div className="flex flex-col items-start gap-2">
         <label className="text-sm font-medium">Bio</label>
         <InputGroup>
           <InputGroupAddon align="block-start">

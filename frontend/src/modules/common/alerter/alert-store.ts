@@ -44,7 +44,12 @@ export const useAlertStore = create<AlertStoreState>()(
         {
           // Version 2 stores no down alert, so a reload never shows a stale one; the dismissed banners carry over.
           version: 2,
-          migrate: (persisted) => ({ alertsSeen: isRecord(persisted) && Array.isArray(persisted.alertsSeen) ? persisted.alertsSeen : [] }),
+          migrate: (persisted) => ({
+            alertsSeen:
+              isRecord(persisted) && Array.isArray(persisted.alertsSeen)
+                ? persisted.alertsSeen.filter((id): id is string => typeof id === 'string')
+                : [],
+          }),
           name: 'alerts',
           skipHydration: true,
           partialize: (state) => ({ alertsSeen: state.alertsSeen }),

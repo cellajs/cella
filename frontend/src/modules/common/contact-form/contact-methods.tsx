@@ -62,7 +62,7 @@ function ContactMethodRow({ method }: { method: ContactMethod }) {
   };
 
   return (
-    <li className="relative flex items-center gap-3 py-2.5 pr-1.5 pl-3">
+    <li className="relative flex items-center gap-3 border-b py-2.5 pr-1.5 pl-3 last:border-b-0">
       <div className="bg-accent/50 text-primary flex size-10 shrink-0 items-center justify-center rounded-full">
         <method.icon className="size-5 stroke-[1.5]" />
       </div>
@@ -102,7 +102,7 @@ function ContactMethodRow({ method }: { method: ContactMethod }) {
 /** The contact methods as framed rows, where each link covers its row and a copy button sits above it. */
 export function ContactMethodRows({ className }: { className?: string }) {
   return (
-    <ul className={cn('divide-y rounded-lg border', className)}>
+    <ul className={cn('rounded-lg border', className)}>
       {contactMethods.map((method) => (
         <ContactMethodRow key={method.title} method={method} />
       ))}

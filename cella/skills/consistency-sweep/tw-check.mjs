@@ -45,7 +45,8 @@ const layerBlock = (name) => {
 const body = [layerBlock('components'), layerBlock('utilities')].filter(Boolean).join('\n');
 
 for (const c of candidates) {
-  const escaped = `.${c.replace(/[^a-zA-Z0-9-]/g, (ch) => `\\${ch}`)}`;
+  // CSS escapes a leading digit as its hex code point and a space: `2xl:hidden` compiles to `.\32 xl\:hidden`.
+  const escaped = `.${c.replace(/[^a-zA-Z0-9-]/g, (ch) => `\\${ch}`).replace(/^[0-9]/, (d) => `\\${d.charCodeAt(0).toString(16)} `)}`;
   console.log(`${body.includes(escaped) ? 'ok  ' : 'NONE'} ${c}`);
 }
 console.log('\n--- compiled CSS (cascade order) ---\n');

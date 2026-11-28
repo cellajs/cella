@@ -4,7 +4,7 @@
   "description": "The app's side of the cella CLI: its config, the infra description and the checks against the engine",
   "type": "module",
   "scripts": {
-    "test": "cd .. && vitest run --root cella",
+    "test": "vitest run",
     "ts": "cd .. && tsgo -p cella/tsconfig.json --pretty"
   },
   "dependencies": {

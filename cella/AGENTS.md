@@ -43,7 +43,7 @@ The client's global handler (`frontend/src/query/on-error.ts`) toasts every `Api
 Sign-in and sessions: [Authentication](./docs/AUTHENTICATION.md). An account without an identity, a demo's: [Anonymous sessions](./docs/ANONYMOUS_SESSIONS.md). Machine access: [Interoperability](./docs/INTEROPERABILITY.md). Decisions: [Permissions](./docs/PERMISSIONS.md). Database backstop: [Multi-tenancy](./docs/MULTI_TENANCY.md).
 
 - A backend check takes its `Access` from `accessFrom(ctx)` and a frontend check goes through `useCan`; never assemble one by hand. The frontend asks the engine only to shape the interface; the backend decides.
-- Tokens are issued, redeemed and spent through `auth/tokens/`, the only importer of `tokens-db`.
+- Tokens are issued, redeemed and spent through `auth/core/tokens/`, the only importer of `tokens-db`.
 - Name the proof: session, API key or access token. `credential` is the WebAuthn word (passkeys) and nothing else. Machine-access terms: API key, access scope, binding, OAuth client.
 
 ## State & API
@@ -124,7 +124,7 @@ Derive usage counts on the client from synced host rows, and let a host write ke
 
 Verify every change (a run, a measurement or a hand check the PR description reports); committing a test is a separate decision. A committed test earns its place by one of four reasons: it proves an attack fails, reproduces a bug that shipped, pins a contract another module or an app depends on, or checks a table-driven rule too wide to eyeball.
 
-Never add a test that mirrors its implementation, and a perf, UI or refactor PR adds none by default. In review, missing coverage outside those reasons is not a finding; a mirror test is. How to judge a test, and the test modes: [Testing](./docs/TESTING.md#goals).
+Never add a test that mirrors its implementation, and a perf, UI or refactor PR adds none by default. In review, missing coverage outside those reasons is not a finding; a mirror test is. How to judge a test: [Testing](./docs/TESTING.md#goals), and the test modes: [Variants](./docs/TESTING.md#variants).
 
 ## Deploy debugging
 

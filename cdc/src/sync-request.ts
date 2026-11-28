@@ -11,6 +11,7 @@ async function main(): Promise<void> {
   const request = process.argv[2];
   if (request !== 'verify' && request !== 'rebuild') throw new Error('Usage: sync-request <verify|rebuild>');
   const waitSeconds = Number(process.argv[3] ?? 120);
+  if (!Number.isFinite(waitSeconds) || waitSeconds <= 0) throw new Error('Usage: sync-request <verify|rebuild> [wait seconds, a positive number]');
 
   const since = await requestBooks(cdcDb, request);
   const { answered, differences, generation } = await awaitBooksAnswer(cdcDb, request, since, waitSeconds);

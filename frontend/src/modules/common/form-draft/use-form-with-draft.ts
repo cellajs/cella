@@ -29,8 +29,8 @@ const changedKeys = (values: FieldValues, defaults: FieldValues = {}) =>
 
 /**
  * Form state that keeps a draft: restores it on mount and when one is written from outside while the form is clean, saves
- * edits debounced and at once when the form turns dirty, and flushes on unmount and tab-hide. A create form submits
- * through `handleSubmit`; an update form through `handleChanges`, which hands it the changed fields.
+ * edits 300 ms after the first unsaved one and at once when the form turns dirty, and flushes on unmount and tab-hide.
+ * A create form submits through `handleSubmit`; an update form through `handleChanges`, which hands it the changed fields.
  */
 // biome-ignore lint/suspicious/noExplicitAny: Can be any form context
 export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues, TContext = any>(
@@ -79,7 +79,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     flushKvWrites();
   });
 
-  // Subscribe directly to form changes so debounced persistence does not rerender the form tree.
+  // Subscribe directly to form changes so the delayed save does not rerender the form tree.
   useEffect(() => {
     const unsubscribe = form.subscribe({
       formState: { values: true },
@@ -95,7 +95,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
       },
     });
 
-    // Saves the edits a pending debounce holds; with no timer armed the store is already current.
+    // Saves the edits the armed timer holds; with none armed the store is already current.
     const flushPendingDraft = () => {
       if (draftTimeoutRef.current === undefined) return;
       clearTimeout(draftTimeoutRef.current);
@@ -116,7 +116,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
 
   useEffect(() => {
     toggleUnsavedBadge(isDirty);
-    // At once, so the first edit survives a reload inside the debounce. Only when dirty: a clean mount must not clear the
+    // At once, so the first edit survives a reload inside the 300 ms wait. Only when dirty: a clean mount must not clear the
     // stored draft before the restore below reads it.
     if (isDirty) saveDraft();
   }, [isDirty]);

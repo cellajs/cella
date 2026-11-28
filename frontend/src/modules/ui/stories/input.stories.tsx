@@ -60,7 +60,7 @@ export const WithHelperText: Story = {
  */
 export const WithButton: Story = {
   render: (args) => (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center gap-2">
       <Input {...args} />
       <Button type="submit">Subscribe</Button>
     </div>

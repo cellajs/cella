@@ -11,7 +11,7 @@ const meta: Meta<typeof Switch> = {
   argTypes: {},
   parameters: { layout: 'centered' },
   render: (args) => (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center gap-2">
       <Switch {...args} />
       <Label htmlFor={args.id}>Airplane Mode</Label>
     </div>

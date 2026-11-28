@@ -152,7 +152,7 @@ const TestPanel = () => {
   };
 
   return (
-    <div className="bg-muted/30 space-y-2 rounded-lg border p-3 text-xs">
+    <div className="bg-muted/30 flex flex-col gap-2 rounded-lg border p-3 text-xs">
       <div className="text-sm font-semibold">Test controls</div>
 
       <div className="flex flex-wrap gap-1">
@@ -183,7 +183,7 @@ const TestPanel = () => {
         </button>
       </div>
 
-      <div ref={logRef} className="bg-background/50 max-h-32 space-y-0.5 overflow-y-auto rounded p-2 font-mono">
+      <div ref={logRef} className="bg-background/50 flex max-h-32 flex-col gap-0.5 overflow-y-auto rounded p-2 font-mono">
         {log.length === 0 && <div className="text-muted-foreground">Click a button or scroll manually…</div>}
         {log.map((entry, i) => (
           <div key={i} className={entry.startsWith('✗') ? 'text-destructive' : entry.startsWith('✓') ? 'text-success' : ''}>
@@ -214,7 +214,7 @@ const ScrollSpyPage = ({ withRouter = true, label, showTests }: { withRouter?: b
         )}
       </div>
 
-      <div className="relative max-w-3xl flex-1 space-y-6 p-6 md:p-8">
+      <div className="relative flex max-w-3xl flex-1 flex-col gap-6 p-6 md:p-8">
         <SectionCard id="general" title="General Settings" lines={10} />
         <SectionCard id="details" title="Details" lines={12} />
         <SectionCard id="permissions" title="Permissions" lines={8} />

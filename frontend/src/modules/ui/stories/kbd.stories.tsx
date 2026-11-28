@@ -105,7 +105,7 @@ export const ActionKeys: Story = {
 /** Keyboard shortcut combinations. */
 export const Shortcuts: Story = {
   render: () => (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
         <KbdGroup>
           <Kbd>
@@ -143,7 +143,7 @@ export const Shortcuts: Story = {
 /** Complex keyboard shortcuts. */
 export const ComplexShortcuts: Story = {
   render: () => (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
         <KbdGroup>
           <Kbd>Ctrl</Kbd>
@@ -198,8 +198,8 @@ export const FunctionKeys: Story = {
 /** Navigation shortcuts. */
 export const NavigationShortcuts: Story = {
   render: () => (
-    <div className="space-y-4">
-      <div className="space-y-2">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         <div className="text-sm font-medium">Text Navigation</div>
         <div className="flex items-center gap-2">
           <KbdGroup>
@@ -221,7 +221,7 @@ export const NavigationShortcuts: Story = {
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2">
         <div className="text-sm font-medium">Tab Navigation</div>
         <div className="flex items-center gap-2">
           <KbdGroup>
@@ -244,8 +244,8 @@ export const NavigationShortcuts: Story = {
 /** Editor shortcuts. */
 export const EditorShortcuts: Story = {
   render: () => (
-    <div className="space-y-4">
-      <div className="space-y-2">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         <div className="text-sm font-medium">Text Editing</div>
         <div className="flex items-center gap-2">
           <KbdGroup>
@@ -276,7 +276,7 @@ export const EditorShortcuts: Story = {
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2">
         <div className="text-sm font-medium">Selection</div>
         <div className="flex items-center gap-2">
           <KbdGroup>
@@ -302,8 +302,8 @@ export const EditorShortcuts: Story = {
 /** System shortcuts. */
 export const SystemShortcuts: Story = {
   render: () => (
-    <div className="space-y-4">
-      <div className="space-y-2">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         <div className="text-sm font-medium">Window Management</div>
         <div className="flex items-center gap-2">
           <KbdGroup>
@@ -334,7 +334,7 @@ export const SystemShortcuts: Story = {
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2">
         <div className="text-sm font-medium">Screenshot</div>
         <div className="flex items-center gap-2">
           <KbdGroup>
@@ -354,7 +354,7 @@ export const SystemShortcuts: Story = {
 /** Custom styled keyboard keys. */
 export const CustomStyled: Story = {
   render: () => (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <div className="flex gap-2">
         <Kbd className="border-destructive/30 bg-destructive/10 text-destructive">Esc</Kbd>
         <Kbd className="border-success/30 bg-success/10 text-success">Enter</Kbd>
@@ -377,15 +377,15 @@ export const CustomStyled: Story = {
 /** Interactive keyboard shortcut guide. */
 export const ShortcutGuide: Story = {
   render: () => (
-    <div className="w-full max-w-2xl space-y-6">
+    <div className="flex w-full max-w-2xl flex-col gap-6">
       <div>
         <h3 className="mb-4 text-lg font-semibold">Keyboard Shortcuts</h3>
 
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               <div className="text-muted-foreground text-sm font-medium">File Operations</div>
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <KbdGroup>
                     <Kbd>
@@ -416,9 +416,9 @@ export const ShortcutGuide: Story = {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               <div className="text-muted-foreground text-sm font-medium">Edit Operations</div>
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <KbdGroup>
                     <Kbd>
@@ -450,7 +450,7 @@ export const ShortcutGuide: Story = {
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             <div className="text-muted-foreground text-sm font-medium">Quick Actions</div>
             <div className="grid grid-cols-3 gap-4">
               <div className="flex items-center gap-2">

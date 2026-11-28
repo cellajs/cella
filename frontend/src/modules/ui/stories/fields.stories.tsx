@@ -225,19 +225,19 @@ export const CheckboxGroup: Story = {
     <FieldGroup data-slot="checkbox-group">
       <FieldTitle>Preferences</FieldTitle>
       <FieldLayout>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <Checkbox id="newsletter" />
           <Label htmlFor="newsletter">Subscribe to newsletter</Label>
         </div>
       </FieldLayout>
       <FieldLayout>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <Checkbox id="notifications" />
           <Label htmlFor="notifications">Enable notifications</Label>
         </div>
       </FieldLayout>
       <FieldLayout>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <Checkbox id="marketing" />
           <Label htmlFor="marketing">Receive marketing emails</Label>
         </div>
@@ -253,15 +253,15 @@ export const RadioGroupExample: Story = {
       <FieldTitle>Account Type</FieldTitle>
       <FieldLayout>
         <RadioGroup defaultValue="personal">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <RadioGroupItem value="personal" id="personal" />
             <Label htmlFor="personal">Personal Account</Label>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <RadioGroupItem value="business" id="business" />
             <Label htmlFor="business">Business Account</Label>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <RadioGroupItem value="enterprise" id="enterprise" />
             <Label htmlFor="enterprise">Enterprise Account</Label>
           </div>
@@ -298,7 +298,7 @@ export const ComplexForm: Story = {
     const [selectedPlan, setSelectedPlan] = useState('basic');
 
     return (
-      <div className="w-full max-w-md space-y-6">
+      <div className="flex w-full max-w-md flex-col gap-6">
         <FieldSet>
           <FieldLegend>Create Account</FieldLegend>
           <FieldGroup>
@@ -334,13 +334,13 @@ export const ComplexForm: Story = {
             <FieldSeparator>Additional Options</FieldSeparator>
             <FieldGroup data-slot="checkbox-group">
               <FieldLayout>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <Checkbox id="terms" />
                   <Label htmlFor="terms">I agree to the terms and conditions</Label>
                 </div>
               </FieldLayout>
               <FieldLayout>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <Checkbox id="privacy" />
                   <Label htmlFor="privacy">I agree to the privacy policy</Label>
                 </div>

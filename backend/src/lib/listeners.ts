@@ -43,7 +43,7 @@ function internalSourceRefusal(remoteAddress: string | undefined): string | unde
 }
 
 /**
- * The internal listener's routes: the health path the internal load balancer pool probes, and the Yjs relay's routes.
+ * The internal listener's routes: the health path, for a private peer such as a co-hosted worker, and the Yjs relay's routes.
  * Every request passes {@link internalSourceRefusal} first; the CDC worker's socket is accepted by the upgrade handler
  * {@link serveInternal} attaches, under the same policy.
  */

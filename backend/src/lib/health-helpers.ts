@@ -91,6 +91,8 @@ export type ProbeResult = { ok: true; latencyMs: number; body: Record<string, un
 export function mapProbeComponent(result: ProbeResult, extractDetails: (body: Record<string, unknown>) => Record<string, unknown>): HealthComponent {
   if (!result.ok) return { status: 'unhealthy', checkedVia: 'probe', latencyMs: result.latencyMs, reason: result.reason };
   const reported = result.body.status;
-  const status: HealthStatus = reported === 'unhealthy' ? 'unhealthy' : reported === 'degraded' ? 'degraded' : 'healthy';
-  return { status, checkedVia: 'probe', latencyMs: result.latencyMs, details: extractDetails(result.body) };
+  const details = extractDetails(result.body);
+  if (reported === 'healthy' || reported === 'degraded') return { status: reported, checkedVia: 'probe', latencyMs: result.latencyMs, details };
+  const reason = reported === 'unhealthy' ? undefined : 'status_unknown';
+  return { status: 'unhealthy', checkedVia: 'probe', latencyMs: result.latencyMs, reason, details };
 }

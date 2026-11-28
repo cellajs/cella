@@ -2,8 +2,8 @@ import type { ChannelEntityType, ProductEntityType } from '../../types.ts';
 
 /**
  * Product entities get the full artifact set (ops/stx normalization, mirror writes). Channel
- * entities get body widening, normalization and cache migration only, because their writes are
- * full-body PUTs with no per-field merge.
+ * entities get body widening, normalization and cache migration only, because their updates are
+ * patches of the sent fields with no ops or stx to normalize.
  */
 export type LensEntityType = ProductEntityType | ChannelEntityType;
 

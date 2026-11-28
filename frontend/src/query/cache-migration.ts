@@ -1,7 +1,7 @@
 import type { DehydratedState } from '@tanstack/react-query';
 import { isChannel, isProduct, type ProductEntityType } from 'shared';
 import { type LensEntityType, migrateCachedEntity, migrateQueuedMutation } from 'shared/schema-evolution';
-import { asRecord, isRecord } from 'shared/utils/as-record';
+import { isRecord } from 'shared/utils/as-record';
 
 /** The first item of a query or mutation key, which names the entity type of an entity key. */
 const keyHead = (key: unknown): string | undefined => (Array.isArray(key) && typeof key[0] === 'string' ? key[0] : undefined);
@@ -52,8 +52,8 @@ export function migrateMutations(mutations: DehydratedState['mutations'], fromVe
   return mutations.map((mutation) => {
     const entityType = entityTypeOf(mutation.mutationKey);
     const variables = mutation.state?.variables;
-    if (!entityType || variables == null || typeof variables !== 'object') return mutation;
-    const migrated = migrateQueuedMutation(entityType, asRecord(variables), fromVersion);
+    if (!entityType || !isRecord(variables)) return mutation;
+    const migrated = migrateQueuedMutation(entityType, variables, fromVersion);
     return { ...mutation, state: { ...mutation.state, variables: migrated } };
   });
 }
