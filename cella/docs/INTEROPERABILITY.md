@@ -1,12 +1,12 @@
 # Interoperability
 
-This document covers how systems outside the browser act on your app: who they are, how they prove it, what they may do and where they call.
+This document covers how systems outside the browser act on your app and the open standards they speak: who they are, how they prove it, what they may do and where they call.
 
 ### TL;DR
 
-Systems outside the browser act on your app through the REST API and an MCP endpoint per organization, with tokens from the app's own OAuth server. Every caller is an actor with role bindings the permission engine understands. Access scopes may narrow what those bindings allow.
+Other systems reach your app through standards they already speak: a client generated from OpenAPI, an AI assistant over MCP, a learning platform over LTI. Every caller is an actor with role bindings the permission engine understands, and access scopes may narrow what those bindings allow. Most standards are followed in full. A row that stops short says where, and a draft standard is marked as one.
 
-## Actors
+## Identity
 
 Every actor is a row in `actors`, a user or a service account. A person without an account signs in as an [anonymous user](./ANONYMOUS_SESSIONS.md), never as a third kind, since every writer reference on the wire embeds an `ActorRef`.
 
@@ -14,13 +14,25 @@ A service account is tenant-scoped and holds role bindings like a member does. "
 
 A service account is disabled, never deleted. The rows it wrote keep pointing at it. A row's provenance is its writer actor, and no table carries a provenance column.
 
-An LTI tool installed in the tenant is a service account too. It takes no API key, and it waits for an admin's approval before it acts ([LTI](./LTI.md)). Then it acts on its own, within the scopes the admin granted: a tab that is on gives it the least privileged role of the tab's own channel, which a launch names as its context.
+A person's sign-in rests on three standards:
 
-The other way round, each LTI platform the app is connected to as an LTI tool has a service account in the app. The import of a course's members writes as it. It shows in no list and takes no API key.
+| Standard | Where it applies | How far |
+| --- | --- | --- |
+| [OpenID Connect](https://openid.net/developers/how-connect-works/) | Institution sign-in through a federation | In full |
+| [WebAuthn](https://www.w3.org/TR/webauthn/) | Passkeys, as the first or the second factor | In full |
+| [RFC 6238](https://www.rfc-editor.org/rfc/rfc6238) | Authenticator apps (TOTP) | In full |
 
-## Proving who you are
+## Authorization
 
-Every caller gets the same OpenAPI contract and SDK. Routes open to machines take an API key or an access token. A request without valid proof is refused with a challenge that names the tenant's metadata. That metadata names a prefix of the request URL, not the request URL itself, since the REST API's resource identifier is the tenant URL.
+Routes open to machines take an API key or an access token. A key or token acts with its actor's role bindings, narrowed by its scopes and bounded by the tenant's quotas. A request without valid proof is refused with a challenge that names the tenant's metadata. That metadata names a prefix of the request URL, not the request URL itself, since the REST API's resource identifier is the tenant URL.
+
+| Standard | Where it applies | How far |
+| --- | --- | --- |
+| [OAuth 2.1](https://oauth.net/2.1/) | The app's own authorization server | In full |
+| [RFC 7636](https://www.rfc-editor.org/rfc/rfc7636) | PKCE on every authorization code | In full |
+| [RFC 8414](https://www.rfc-editor.org/rfc/rfc8414) and [RFC 9728](https://www.rfc-editor.org/rfc/rfc9728) | The server and resource metadata a client discovers | In full |
+| [RFC 8707](https://www.rfc-editor.org/rfc/rfc8707) | A token names one tenant's API or one organization's MCP endpoint | In full |
+| [Client ID Metadata Document](https://datatracker.ietf.org/doc/draft-ietf-oauth-client-id-metadata-document/), IETF draft | An MCP client names itself by the URL of its metadata | In full; registration by RFC 7591 is not served |
 
 ### API keys
 
@@ -40,10 +52,6 @@ A token for an organization's MCP endpoint also works on that organization's RES
 
 A guard verifies a token locally, without a call to the authorization server. It reads what the token rests on at every request. The next request sees a revoked grant or key and any membership change.
 
-## What a caller may do
-
-A key or token acts with its actor's role bindings, narrowed by its scopes and bounded by the tenant's quotas.
-
 ### Access scopes
 
 Every entity type with a policy has `<type>:read` and `<type>:write`, and `write` implies `read`. People have `user:read` alone, which only an installed LTI tool can be granted, and a key or token whose scopes leave it out reads no one. A scope masks the actor's bindings in every permission check:
@@ -59,7 +67,21 @@ Every entity type with a policy has `<type>:read` and `<type>:write`, and `write
 
 Tenant restrictions cap the active service accounts and live API keys a tenant holds. Machine calls pass a per-second burst limit. Routes that carry it also spend the tenant's hourly points budget. An app acting on a person's consent spends that person's budget, since both count per actor.
 
-## The REST API
+## API
+
+Machine calls reach the app at two places: the REST API and an MCP endpoint per organization.
+
+| Standard | Where it applies | How far |
+| --- | --- | --- |
+| [OpenAPI 3.1](https://spec.openapis.org/oas/v3.1.0) | One document describes every route and generates the SDK and the API docs | In full |
+| [aep.dev](https://aep.dev) | Resource names, standard methods, custom methods and page tokens | As far as an offline-first app allows |
+| [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110) | `ETag`, `If-Match` and `If-None-Match` on a single channel or product | In full |
+| [RFC 7396](https://www.rfc-editor.org/rfc/rfc7396) | A `PATCH` is a merge patch | Channels; a product update sends field operations |
+| [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) | Every error body | In full |
+| [RateLimit header fields](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/), IETF draft | What a rate-limit budget has left | Reads |
+| [MCP](https://modelcontextprotocol.io) | One endpoint per organization | In full |
+
+### The REST API
 
 The REST API is the API the app's own frontend uses, described in one OpenAPI document that also generates the SDK. Resource routes follow the resource-oriented conventions of [aep.dev](https://aep.dev) as far as an offline-first app allows, and the API docs show every route's shape, status codes and limits. A machine caller reaches the routes open to machines, narrowed by its scopes.
 
@@ -72,12 +94,64 @@ Four behaviors hold across the API, and a client codes against them:
 
 No key or token reaches an account-security route. It takes only a session that recently proved its user.
 
-## The MCP endpoint
+### The MCP endpoint
 
 Each organization has an MCP endpoint that accepts only access tokens ([MCP](./MCP.md)). A client with no token is told where the metadata lives and to start with the read scopes. It consents through the OAuth server and comes back.
 
 MCP tools are routes that opted in. A call the token's scopes do not cover answers with the scope to step up to, and the client re-consents.
 
-## Changes to the API
+### Changes to the API
 
 A breaking change to a field ships with a lens ([Schema evolution](./SCHEMA_EVOLUTION.md)). For an expand window the API accepts the old and the new name, and the OpenAPI document shows the current shape. The old name retires once `X-Client-Version` shows every client past it. A client that sends its schema version in that header is accounted for when a name retires.
+
+## Embedding
+
+Your app plays both LTI roles: it opens other apps as tabs of a channel, and another app or a learning platform opens it inside its pages ([LTI](./LTI.md)).
+
+An LTI tool installed in the tenant is a service account too. It takes no API key, and it waits for an admin's approval before it acts. Then it acts on its own, within the scopes the admin granted: a tab that is on gives it the least privileged role of the tab's own channel, which a launch names as its context.
+
+The other way round, each LTI platform the app is connected to as an LTI tool has a service account in the app. The import of a course's members writes as it. It shows in no list and takes no API key.
+
+| Standard | Where it applies | How far |
+| --- | --- | --- |
+| [LTI 1.3](https://www.1edtech.org/standards/lti) | Both roles: the platform and the LTI tool | Without the grade and deep linking services |
+| [LTI Dynamic Registration](https://www.imsglobal.org/spec/lti-dr/v1p0) | Connecting two apps by one pasted address | In full |
+| [NRPS](https://www.imsglobal.org/spec/lti-nrps/v2p0) | The members of a context | Without a resource link's members |
+
+## Realtime and files
+
+Live changes, collaborative editing and uploads travel over standard transports.
+
+| Standard | Where it applies | How far |
+| --- | --- | --- |
+| [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) | The live change stream | In full |
+| [RFC 6455](https://www.rfc-editor.org/rfc/rfc6455) | The Yjs relay's connection | In full |
+| [tus](https://tus.io) | Resumable uploads through Transloadit | In full |
+
+## Messaging
+
+Notifications leave the app through standard push and email.
+
+| Standard | Where it applies | How far |
+| --- | --- | --- |
+| [RFC 8030](https://www.rfc-editor.org/rfc/rfc8030), [RFC 8291](https://www.rfc-editor.org/rfc/rfc8291) and [RFC 8292](https://www.rfc-editor.org/rfc/rfc8292) | Web Push to each device a user turns it on for | In full |
+| [RFC 8058](https://www.rfc-editor.org/rfc/rfc8058) | One-click unsubscribe in an email with an unsubscribe link | In full |
+
+## Data and operations
+
+Ids and telemetry use formats that other tools already read.
+
+| Standard | Where it applies | How far |
+| --- | --- | --- |
+| [RFC 9562](https://www.rfc-editor.org/rfc/rfc9562) | UUID v7 entity and change ids, minted where the edit is made, the device included | In full |
+| [OpenTelemetry](https://opentelemetry.io/) | Traces, metrics and logs over OTLP | In full |
+| [W3C Trace Context](https://www.w3.org/TR/trace-context/) | `traceparent` from the browser to the backend | In full |
+
+## Accessibility and agents
+
+The interface follows an accessibility standard, and the repository gives coding agents their instructions in the file they look for.
+
+| Standard | Where it applies | How far |
+| --- | --- | --- |
+| [WCAG 2.2](https://www.w3.org/TR/WCAG22/) | Level AA: the audit and the accessibility statement | The conformance report is a draft |
+| [AGENTS.md](https://agents.md) | Instructions for coding agents in the repository | In full |
