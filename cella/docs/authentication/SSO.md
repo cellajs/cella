@@ -12,26 +12,26 @@ the people it knows through that connection to sign in this way.
 
 | Concept | Meaning |
 | --- | --- |
-| **Federation** | Declared in `appConfig.federations` as public metadata. This deployment's client there comes from `SSO_<KEY>_CLIENT_ID` and `SSO_<KEY>_CLIENT_SECRET`. |
-| **Connection** | A tenant's trust in one institution: its federation, domains, IdPs, status and `jitProvisioning`, off until an admin turns it on. It stays `pending` until the institution activates the app at the federation. A domain belongs to one connection. |
-| **Entry** | `/auth/sso/:connectionId`, the link an institution shares, pinned to its IdPs. A start from the federation has no pin. The federation's own picker then lists the connected institutions. |
-| **Callback** | One redirect URI, registered at every federation. |
+| **Federation** | What institutions sign in through. You declare it in `appConfig.federations` as public metadata, and set this deployment's client there in `SSO_<KEY>_CLIENT_ID` and `SSO_<KEY>_CLIENT_SECRET`. |
+| **Connection** | A tenant's trust in one institution: its federation, domains, identity providers (IdPs), status and `jitProvisioning`, off until an admin turns it on. It stays `pending` until the institution activates the app at the federation. A domain belongs to one connection. |
+| **Entry** | The link an institution shares, `/auth/sso/:connectionId`, pinned to its IdPs. A start from the federation has no pin. The federation's own picker then lists the connected institutions. |
+| **Callback** | One redirect URI, which you register at every federation. |
 
 ## Signing in
 
-At the callback, an active connection must accept the institution the claims assert. The identity is the federation and its subject. A first sign-in creates the account only with the connection's `jitProvisioning` or an invitation.
+At the callback, the institution's assertion becomes a session of the app's own:
 
-The institution proves an address only on the connection's domains or their subdomains. It does so only where the federation vouches for its institutions' mailboxes, since the federation passes any address an identity provider releases.
+- **Connection.** An active connection must accept the institution the claims assert.
+- **Identity.** The identity is the federation and its subject.
+- **New account.** A first sign-in creates the account only with the connection's `jitProvisioning` or an invitation.
 
-A first sign-in with any other address is refused with the offer below. A magic link then proves the inbox before an account holds it. An eduID account, whose address can have any domain, proves none this way.
+The institution proves an address only on the connection's domains or their subdomains. It does so only where the federation vouches for its institutions' mailboxes, since the federation passes any address an identity provider releases. An eduID account, whose address can have any domain, proves none this way.
 
-With `jitProvisioning` the account becomes a member of the tenant's organization. When an invitation there already names the role, the membership waits until the invitation is accepted. The session records the federation and the connection. The tenant's sign-in policy counts it only through the tenant's own connection.
-
-A connect links the institution account to a signed-in user, as a provider connect does. With `jitProvisioning` it grants that membership too. A changed address the institution proves joins the account's addresses, on a connect or a later sign-in.
+With `jitProvisioning` the account becomes a member of the tenant's organization. A connect links the institution account to a signed-in user, as a provider connect does. With `jitProvisioning` it grants that membership too. A changed address the institution proves joins the account's addresses, on a connect or a later sign-in.
 
 ## The membership role
 
-The role of that membership comes from `backend/src/modules/auth/flows/sso/role-from-claims.ts`. An app fills this pinned file to map institution claims, such as `eduperson_affiliation`, to its own organization roles. The default is the organization's default role: its `defaultRole`, else its least privileged role. It is asked once, when the membership is created. Later sign-ins never change a role.
+You decide the role of a membership an institution sign-in grants, in `backend/src/modules/auth/flows/sso/role-from-claims.ts`. This pinned file maps institution claims, such as `eduperson_affiliation`, to your app's organization roles. As shipped, it gives the organization's default role: its `defaultRole`, else its least privileged role. It is asked once, when the membership is created. Later sign-ins never change a role.
 
 ## An existing account
 
@@ -41,31 +41,34 @@ The institution's sign-in is refused for:
 - a person whose identifier at the institution changed
 - a first sign-in with an address the institution does not prove
 
-The error page offers to mail a magic link to the asserted address. The link lands on the account page, which offers to connect the institution account. The address never travels in a URL. No one can ask for the link without first signing in at the institution.
+The error page then offers a recovery link: a magic link mailed to the asserted address. The link lands on the account page, which offers to connect the institution account. The address never travels in a URL. No one can ask for the link without first signing in at the institution.
 
 ## Where SSO shows
 
-- On the entry page an institution shares.
-- On the authenticate page: a "sign in with your institution" button per federation with a connection.
-- There too, "sign in with <institution>" for an invitation to a tenant with an active connection.
-- On the account page: a connect button per institution of the user's organizations.
-- In the tenant sheet, where system admins manage connections and the tenant's allowed sign-in methods.
+SSO shows on the entry page, the authenticate page and the account page. System admins manage connections and the tenant's allowed sign-in methods in the tenant sheet.
 
 ## Tenant sign-in policy
 
-`tenantGuard` enforces `tenants.authStrategies`, where an empty list allows every enabled method.
+`tenantGuard` enforces a tenant's allowed sign-in methods, `tenants.authStrategies`, where an empty list allows every enabled method. For a person with an identity through the tenant's connection:
 
-A person with an identity through the tenant's connection must act with an allowed method. A federation counts only through that connection. An access token carries the method and connection of the session that consented. Otherwise the request is refused with `sso_required`.
+- **Allowed method.** The person must act with an allowed method.
+- **Own connection.** The session records the federation and the connection. A federation counts only through the tenant's own connection.
+- **Access tokens.** An access token carries the method and connection of the session that consented.
 
-Externals without such an identity are untouched. System admins are exempt.
+Any other request is refused with `sso_required`. Externals without such an identity are untouched. System admins are exempt.
 
-On a user-level route the tenant's memberships lend a refused session nothing: `userGuard` leaves them out of its bindings. Under a refused method the person still reads:
+Say a tenant allows only its federation and such a person signs in with a passkey. Every request into the tenant answers `sso_required`, while the menu still offers the way in.
+
+On a user-level route the tenant's memberships lend a refused session nothing. Under a refused method the person still reads:
 
 - `GET /organizations` and `/me/memberships`: their organizations and memberships, so the menu offers the way in
 - `GET /notifications`: their own inbox, where a row from the tenant names no actor, channel or item
 
 They see none of the tenant's people.
 
-An address proven through a federation inherits the policy for magic links. While the tenant excludes `magic`, no magic link is sent for that address. The request answers 204 as for any address. The account gets a mail pointing to its institution's sign-in.
+An address proven through a federation inherits the policy for magic links. While the tenant excludes `magic`:
 
-Only a browser that signed in to that account before gets `sso_required`. The user keeps every other method and address. The recovery link above is the one exception, since it takes the institution account and the mailbox together.
+- No magic link is sent for that address. The account gets a mail pointing to its institution's sign-in.
+- The request answers 204 as for any address. Only a browser that signed in to that account before gets `sso_required`.
+- The user keeps every other method and address.
+- The recovery link above is the one exception.

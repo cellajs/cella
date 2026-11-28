@@ -1,5 +1,3 @@
-import { Link } from '@tanstack/react-router';
-import { ArrowRightIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { standardsItems } from '~/modules/marketing/marketing-config';
@@ -28,14 +26,6 @@ export function Standards() {
           </dl>
         ))}
       </div>
-      <Link
-        to="/docs/page/$"
-        params={{ _splat: 'interoperability/standards' }}
-        className="link-inline hover:text-primary inline-flex items-center gap-1.5 font-medium"
-      >
-        {t('about:standards.link')}
-        <ArrowRightIcon className="size-4" />
-      </Link>
     </div>
   );
 }

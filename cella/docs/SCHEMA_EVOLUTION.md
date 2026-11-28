@@ -4,35 +4,40 @@ This document explains how breaking changes to entity wire shapes ship without s
 
 ### TL;DR
 
-When the fields returned by the API change incompatibly, add one permanent conversion module, a **lens**, that describes the old and new forms. From it, Cella accepts both forms during rollout, converts writes to the current form, and updates data already cached in browsers. Until the first lens ships, use the interim [cache reset](#cache-bust-interim).
+When the API's fields change incompatibly, you add one permanent conversion module, a **lens**, that describes the old and new forms. From it, Cella accepts both forms during rollout, converts writes to the current form, and updates data already cached in browsers. Until the first lens ships, use the interim [cache reset](#cache-bust-interim).
 
 ## The lens model
 
-A breaking schema change, such as renaming `attachment.name` to `attachment.title`, ships as an **append-only lens module**. The lens declares the change once. Everything else derives from it: widened request schemas, key maps for writes, and migrations for cached rows.
+A lens keeps older bundles working while fields change shape. You ship a breaking schema change, such as renaming `attachment.name` to `attachment.title`, as an **append-only lens module**. The lens declares the change once. Everything else derives from it: widened request schemas, key maps for writes, and migrations for cached rows.
 
-- **Canonical inside, dual-emit at the edge.** Writes store the newest shape, and the twin column during expand.
+An **expand** lens widens the wire: during its **expand window**, a renamed field has twin columns and the API accepts and returns both. A **contract** lens later removes the old shape.
+
+Say a user edits an attachment's name in a tab on the old bundle. The tab sends `name`, the API accepts it, and the write fills both columns. A new-bundle tab reads it in `title`.
+
+- **Canonical rows.** Writes store the newest shape, and the twin column during expand.
 - **Frozen envelope.** `stx` and `ops`, counter keys and the auth and session contract change only additively.
 - **Messages change with a release.** Stream frames, catchup answers and CDC messages are never stored.
 - **Old tabs read new messages.** A tab open across a deploy meets the new shapes until it reloads.
-- **No version negotiation.** The server tells old from new by which fields a request carries.
-- **A cache pointer.** The client cache reads its version from a persisted `schemaVersion`, not its rows.
-- **One global version.** `currentSchemaVersion` is the lens count, baked into both bundles from `shared`.
 
 ## Cache-bust (interim)
 
-Until the first lens ships, a breaking schema change resets client caches:
+Until the first lens ships, a breaking schema change resets client caches. In the PR that breaks a cached wire shape:
 
-1. **Raise `appConfig.clientCacheVersion` by one** in [config.default.ts](../../shared/config/config.default.ts) in the PR that breaks a cached wire shape.
+1. **Raise `appConfig.clientCacheVersion` by one** in [config.default.ts](../../shared/config/config.default.ts).
 2. **Title the PR `feat!`**, as for any breaking change.
-3. **Clients wipe, mutations stay.** A cache an older bundle wrote loses its queries at boot, and queued mutations replay on the fresh cache.
-4. **Newer cache, stale bundle.** A cache a newer bundle wrote is left alone, as a lens pointer ahead of the bundle is.
-5. **CI gate.** The breaking-change gate of the lint job in [ci.yml](../../.github/workflows/ci.yml) fails a breaking OpenAPI diff without a higher version.
 
-**Teardown**: once lenses are stable, delete `clientCacheVersion`, the persister's wipe and the breaking-change gate in ci.yml.
+The breaking-change gate of the lint job in [ci.yml](../../.github/workflows/ci.yml) fails a breaking OpenAPI diff without a higher version.
 
-## Transformation points
+What a client does at boot depends on its cache:
 
-A lens acts at two runtime points, marked ▣. The rest is derived at build time.
+- **Older cache:** the client wipes its queries, and queued mutations replay on the fresh cache.
+- **Newer cache:** the bundle marks itself stale and leaves the cache alone, as for a [newer lens pointer](#client-cache-migration).
+
+**Teardown**: once lenses are stable, delete `clientCacheVersion`, the cache wipe and the breaking-change gate in ci.yml.
+
+## Where a lens acts
+
+A lens acts at two moments, marked ▣: a server write and a cache restore.
 
 ```text
 lens module ─▶ widened schemas, key maps, cache-row migrations
@@ -59,21 +64,25 @@ export default defineLens({
 });
 ```
 
-A `delta` renames, adds, drops or retypes a field ([define.ts](../../shared/src/schema-evolution/define.ts)). `custom` converters cover what a delta cannot express. A lens has no restructuring operation. Model a rare restructure as a drop plus an add with a computed default. Keep splits and cross-entity moves as one-off scripts.
+What a change needs depends on its kind:
+
+- **A rename, an add, a drop or a retype:** a `delta` ([define.ts](../../shared/src/schema-evolution/define.ts)).
+- **What a delta cannot express:** `custom` converters.
+- **A rare restructure:** a drop plus an add with a computed default. A lens has no restructuring operation.
+- **A split or a cross-entity move:** a one-off script.
 
 ## Entity coverage
 
-| Entities | Lens coverage |
+| Data | What a lens covers |
 | --- | --- |
 | **Product** (`attachment`) | Full: schema widening, key maps for `ops` and field timestamps, cache and mutation migration |
-| **Channel** (`organization`) | Reduced: body widening and normalization, cache and mutation migration. No key maps, since a channel update sends no `ops`. |
+| **Channel** (`organization`) | Reduced: body widening and normalization, cache and mutation migration |
 | **Frozen envelope** | None: changes only through `apiVersion` |
-
-Membership fields, enrichment output and Yjs-edited descriptions sit outside the lens system.
+| **Membership fields, enrichment output and Yjs-edited descriptions** | None: outside the lens system |
 
 ## Evolution contract
 
-Every entity module registers its wire bodies once through one of the two [evolutionContract](../../backend/src/core/schema-evolution/evolution-contract.ts) factories. It routes its bodies through what the factory returns: lens-widened create and update schemas, and the functions that normalize a body to canonical keys.
+You register each entity module's wire bodies once through one of the two [evolutionContract](../../backend/src/core/schema-evolution/evolution-contract.ts) factories. The module routes its bodies through what the factory returns: lens-widened create and update schemas, and the functions that normalize a body to canonical keys.
 
 ```ts
 export const attachmentContract = evolutionContract.product('attachment', {
@@ -89,25 +98,22 @@ export const organizationContract = evolutionContract.channel('organization', { 
 
 ### Server write path
 
-No middleware and no body re-parsing. During a lens's expand window, old-shape requests pass validation unchanged: the derived schemas accept both field names.
+During a lens's expand window, old-shape requests pass validation unchanged: the derived schemas accept both field names. The contract's normalize step maps `ops` and `stx.fieldTimestamps` to canonical keys. The contract also **mirror-writes** the twin column: a write to `title` or `name` writes both.
 
-The contract's normalize step maps `ops` and `stx.fieldTimestamps` to canonical keys. The contract also **mirror-writes** the twin column: a write to `title` or `name` writes both. Reads need no transform, since the row carries both columns during expand.
-
-A later contract PR, made by hand for now, drops the old column. It waits until `X-Client-Version` shows every client past the expand lens for the whole expand window.
+You drop the old column in a later contract PR, made by hand for now. It waits until the `X-Client-Version` header shows every client past the expand lens for the whole expand window.
 
 ### Client cache migration
 
-The meta record's `schemaVersion` pointer is the global lens ordinal.
+At boot, the client compares its cache's `schemaVersion` pointer, the lens count of the bundle that wrote it, with its own:
 
-- Pointer behind the bundle: one tab at a time migrates the persisted queries and queued mutations.
-- A pass cut short runs again.
-- Pointer ahead of the bundle: the bundle marks itself stale, restores nothing, never writes and looks for its update, which raises the reload prompt.
+- **Behind the bundle:** the client migrates the persisted queries and queued mutations. A pass cut short runs again.
+- **Ahead of the bundle:** the bundle marks itself stale, restores nothing and never writes. It looks for its update, and an update it finds raises the reload prompt.
 
-### CI guards
+## CI guards
 
-1. **`lens:check`** runs in `pnpm check` and the CI lint job. It fails on:
-   - a shipped lens module that changed, awaits or imports dynamically
-   - a lens on the frozen envelope or another reserved field
-   - a contract lens with no earlier expand lens on the same field
-   - a configured entity type without an evolution contract
-2. **Breaking-change gate**, in the same job: the [cache-bust](#cache-bust-interim) gate.
+`lens:check` runs in `pnpm check` and the CI lint job, beside the [cache-bust](#cache-bust-interim) gate, and fails on:
+
+- a shipped lens module that changed, awaits or imports dynamically
+- a lens on the frozen envelope or another reserved field
+- a contract lens with no earlier expand lens on the same field
+- a configured entity type without an evolution contract

@@ -2,7 +2,6 @@ import {
   Building2Icon,
   CheckCheckIcon,
   CloudIcon,
-  CodeXmlIcon,
   DatabaseIcon,
   GaugeIcon,
   HeartPulseIcon,
@@ -12,7 +11,6 @@ import {
   RocketIcon,
   ScaleIcon,
   ShieldCheckIcon,
-  SparklesIcon,
   UsersIcon,
   WifiOffIcon,
 } from 'lucide-react';
@@ -104,15 +102,13 @@ export const standardsItems: { id: string; name: string; version?: string }[] = 
 
 // Features page (/features): each item reads `about:features.<id>` and `about:features.<id>.text`.
 
-export type FeatureCategory = 'security' | 'auth' | 'compliance' | 'ux' | 'dx' | 'deploy' | 'performance' | 'data' | 'interop';
+export type FeatureCategory = 'security' | 'auth' | 'compliance' | 'deploy' | 'performance' | 'data' | 'interop';
 
 export const featureCategoryIcons = {
   interop: PlugIcon,
   security: ShieldCheckIcon,
   auth: KeyRoundIcon,
   compliance: ScaleIcon,
-  ux: SparklesIcon,
-  dx: CodeXmlIcon,
   deploy: RocketIcon,
   performance: GaugeIcon,
   data: DatabaseIcon,
@@ -120,21 +116,20 @@ export const featureCategoryIcons = {
 
 export const featuresPageItems: InfoGridItem<FeatureCategory>[] = [
   // Data modelling
-  { id: 'explicit_routes', category: 'data' },
   { id: 'entity_hierarchy', category: 'data' },
   { id: 'schema_evolution', category: 'data' },
-  { id: 'user', category: 'data' },
-  { id: 'organization', category: 'data' },
   // Optional built-in product entities (can be removed in apps)
   { id: 'attachment', category: 'data' },
 
   // Interoperability
-  { id: 'rest_api', category: 'interop', specs: ['aep.dev', 'RFC 9110', 'RFC 7396'] },
+  { id: 'rest_api', category: 'interop', specs: ['aep.dev', 'RFC 9110', 'RFC 7396', 'RFC 9457'] },
+  { id: 'explicit_routes', category: 'interop' },
   { id: 'openapi_sdk_docs', category: 'interop', specs: ['OpenAPI 3.1'] },
   { id: 'oauth_server', category: 'interop', specs: ['OAuth 2.1', 'PKCE', 'RFC 9728'] },
   { id: 'mcp', category: 'interop', specs: ['MCP'] },
   { id: 'lti', category: 'interop', specs: ['LTI 1.3', 'Dynamic Registration', 'NRPS'] },
   { id: 'service_accounts', category: 'interop' },
+  { id: 'notifications', category: 'interop', specs: ['Web Push', 'RFC 8058'] },
 
   // Security & multi-tenancy
   { id: 'tenant_isolation', category: 'security' },
@@ -145,9 +140,7 @@ export const featuresPageItems: InfoGridItem<FeatureCategory>[] = [
   { id: 'security_tests', category: 'security' },
 
   // Authentication
-  { id: 'magic_link', category: 'auth' },
-  { id: 'passkey', category: 'auth', specs: ['WebAuthn'] },
-  { id: 'oauth', category: 'auth' },
+  { id: 'passwordless', category: 'auth', specs: ['WebAuthn'] },
   { id: 'sso_federation', category: 'auth', specs: ['OpenID Connect'] },
   { id: 'mfa', category: 'auth', specs: ['RFC 6238'] },
   { id: 'session_management', category: 'auth' },
@@ -158,27 +151,12 @@ export const featuresPageItems: InfoGridItem<FeatureCategory>[] = [
   { id: 'accessibility', category: 'compliance' },
   { id: 'audit_trail', category: 'compliance' },
 
-  // UI & UX
-  { id: 'responsive', category: 'ux' },
-  { id: 'pwa', category: 'ux' },
-  { id: 'i18n', category: 'ux' },
-  { id: 'data_grid', category: 'ux' },
-  { id: 'blocknote_editor', category: 'ux' },
-  { id: 'notifications', category: 'ux', specs: ['Web Push', 'RFC 8058'] },
-
-  // Developer experience
-  { id: 'cella_cli', category: 'dx' },
-  { id: 'typed_errors', category: 'dx', specs: ['RFC 9457'] },
-  { id: 'mock_generators', category: 'dx' },
-  { id: 'email_templates', category: 'dx' },
-  { id: 'storybook', category: 'dx' },
-  { id: 'agent_skills', category: 'dx', specs: ['AGENTS.md'] },
-
-  // Deployment & infrastructure
+  // Upgrades & deployment
+  { id: 'cella_cli', category: 'deploy' },
   { id: 'pulumi_iac', category: 'deploy' },
-  { id: 'docker', category: 'deploy' },
   { id: 'eu_cloud', category: 'deploy' },
   { id: 'zero_downtime', category: 'deploy' },
+  { id: 'pwa', category: 'deploy' },
 
   // Performance & observability
   { id: 'otel', category: 'performance', specs: ['OTLP', 'W3C Trace Context'] },

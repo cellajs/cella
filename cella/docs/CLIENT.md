@@ -1,16 +1,16 @@
 # Client (React)
 
-This document explains the [TanStack Query](https://tanstack.com/query/latest) client that holds server data in the browser, and the services around it.
+This document explains how each tab holds server data in a [TanStack Query](https://tanstack.com/query/latest) client, keeps it offline in a per-user [Dexie](https://dexie.org/) database, boots from it and ends its session.
 
 ### TL;DR
 
-Every tab runs one query client. API requests fill it, live updates patch it, background services subscribe to it, and a persister writes selected parts to a per-user database. Even file downloads start from what appears in it. **The query client is where all server data comes together**.
+Every tab runs one query client. API requests fill it, live updates patch it, subscribers react to it, and a persister writes selected parts to a per-user database. Even file downloads start from what appears in it. **The query client is where all server data comes together**.
 
 ## Bigger picture
 
-Five state owners. `localUserDb` is the per-user database described [below](#the-per-user-database).
+The browser holds five kinds of state. When you add state, it goes where its kind lives. `localUserDb` is the per-user database described [below](#the-per-user-database).
 
-| State kind | Runtime owner | Persistence |
+| State kind | Held by | Persisted in |
 | --- | --- | --- |
 | Shareable navigation and view state | TanStack Router | URL and browser history |
 | **Server entities and resources** | TanStack Query | Selected queries in `localUserDb` |
@@ -40,57 +40,65 @@ Five state owners. `localUserDb` is the per-user database described [below](#the
 
 ## Inside the cache
 
+Every screen reads its server data from the query cache, which holds four kinds:
+
 - **Channel entity lists and details**: plain queries, refetched on membership signals.
-- **Canonical product lists**: one complete list per [home channel](./SYNC_ENGINE.md#selective-sync), patched live, narrowed with `select()`.
+- **Canonical product lists**: one complete list per home channel, the channel its rows sit directly in, patched live, narrowed with `select()`.
 - **Filtered product lists**: server-side search and sort results. A new row marks them for a refetch.
 - **Session queries**: `me`, memberships, invites, unseen counts.
 
-Generic cache and realtime code never import entity modules: each one registers its query keys and range fetch once in its `query.ts`. Staleness follows the stream. Sync deliveries are plain cache writes: upserts, or a [refetch mark](./SYNC_ENGINE.md#freshness) on a list they cannot patch.
+A cached row carries no membership or permission. To decide what the interface shows, ask the permission engine through `useCan`, which reads `meKeys.memberships` ([Permissions](./PERMISSIONS.md#in-the-interface)).
+
+You register an entity's query keys and range fetch once, in its module's `query.ts`. Generic cache and realtime code never import entity modules.
+
+Synced queries stay fresh while the stream is healthy. What the sync engine delivers is a plain cache write: an upsert, or a [refetch mark](./SYNC_ENGINE.md#freshness) on a list it cannot patch.
 
 A synced list read belongs to the cache, not to the screen that started it. A screen that leaves never aborts it.
 
 ### Imperative reads
 
-Imperative reads use only `queryClient.query()` and `queryClient.infiniteQuery()`, in two modes:
+A read outside a hook uses only `queryClient.query()` and `queryClient.infiniteQuery()`, in two modes:
 
-- **Cache-first**: `query({ ...options, staleTime: 'static' })` fetches only a cold entry.
-- **Own freshness**: `query(options)`, awaited or fired as `void query(options).catch(() => {})`.
+- **Cache-first**: `query({ ...options, staleTime: 'static' })` fetches only an entry that holds no data.
+- **Own freshness**: `query(options)` fetches an entry its `staleTime` counts as stale, awaited or fired as `void query(options).catch(() => {})`.
 
 Route guards and the seeds of channel and session queries read cache-first.
 
 ## Subscribers
 
-Cache subscribers, not extra stores:
+A feature that follows server data keeps no store of its own. It reacts to what reaches the cache:
 
-- **Signal handlers** invalidate the queries a signal names, such as memberships or the inbox.
 - **Enrichment** adds `ancestorSlugs` for URLs to every cached channel row.
 - **Unseen counts**: sync-delivered rows bump badge counts.
+- **Blob cleanup** clears a locally stored upload once the cache holds its uploaded row.
 
-A cached row carries no membership or permission. A reader asks the engine through `useCan`, which reads `meKeys.memberships` ([Permissions](./PERMISSIONS.md#in-the-interface)).
+Signal handlers work the other way: they invalidate the queries a signal names, such as memberships or the inbox.
 
 ## Mutations
 
-A mutation lives in its entity's query module. It patches every cached query that holds the row, then sends the request. It takes the row the server stored, or rolls back on error. Queries and mutations run in `offlineFirst` network mode.
+A mutation shows an edit before the server answers. You define it in its entity module's `query.ts`. It patches every cached query that holds the row, then sends the request. It takes the row the server stored, or rolls back on error.
 
-A write with an `stx` retries a network failure until the server answers. The server applies it once by its ids, and an answer lost on the way back must not report an applied write as failed. Other writes retry a network failure three times.
+A write with an `stx` ([Sync engine](./SYNC_ENGINE.md#selective-sync)) retries a network failure until the server answers. Say a new attachment's create reaches the server and the connection drops before the answer returns. Giving up would roll back a row the server stored. The server finds that row by its id and answers the retry with it. Other writes retry a network failure three times.
 
 ## Files and blobs
 
 An attachment row is an ordinary product in the query cache. Its bytes live in the per-user database's `blobs` table and never enter the query cache. The [Attachment module](../../frontend/src/modules/attachment/README.md) works from that table:
 
 - **Uploads** are stored locally first.
-- **Downloads** follow the cached rows, within the device's offline files tier.
+- **Downloads** follow the cached rows, as far as the device's offline files setting allows.
 - **Display URLs** resolve from the local blob first.
 
 ## The persister
 
-Every user works offline. All tabs share one cache that survives tab and browser restarts. Two version stamps guard every restore. Read [Schema evolution](./SCHEMA_EVOLUTION.md) before changing a cached wire shape.
+The persister lets every user work offline. It snapshots the query cache into the per-user database and restores it when the database binds. All tabs share that stored cache, and it survives tab and browser restarts.
 
-The persister snapshots the cache into the per-user database and restores it when the database binds. A refetch that gets no response or a server error keeps the last data on disk, restored marked.
+A refetch that gets no response or a server error keeps the last data on disk, and the restore marks it for a refetch.
+
+Two version stamps guard every restore. Before you change a cached wire shape, read [Schema evolution](./SCHEMA_EVOLUTION.md).
 
 Paused mutations are persisted too. A running write is persisted only when it carries an `stx`. One cut off by a closed tab or a reload is then sent again as a replay.
 
-A query opts out with `meta: { persist: false }`.
+You opt a query out with `meta: { persist: false }`.
 
 ## The per-user database
 
@@ -112,13 +120,13 @@ The database follows authentication, not routes:
 - **A lost session** only closes it, so offline work survives signing back in.
 - **A load** deletes the database of every user but the signed-in one and the last one.
 
-Only the server's answer decides a sign-out. A step on the device that does not answer in time is skipped, and a database another tab still holds open is deleted at the next load.
-
 Signing out in one tab signs out every tab of that user. A tab whose signed-in user changes in another tab reloads before it resumes queued writes. Those writes stay on disk for their user's next session, until another user signs in on this browser.
+
+Every persisted store says where it lives, or a session end misses it and the store outlives its user. A `localStorage` store's name starts with `${appConfig.slug}-`. A per-user store is listed in `localUserStores`, or in `extraLocalUserStores` for your app's own.
 
 ## Ending a session
 
-Every way a tab stops being its user goes through one function, `endSession(reason)` in `frontend/src/modules/auth/end-session.ts`. Five rules hold for all of them:
+A session ends on a device in the five ways of the table below. Each goes through one function, `endSession(reason)` in `frontend/src/modules/auth/end-session.ts`, and five rules hold for all of them:
 
 1. A stored user is live until a lost session's 401 says otherwise, on any page.
 2. The server ends the session before the browser forgets anything.
@@ -126,7 +134,7 @@ Every way a tab stops being its user goes through one function, `endSession(reas
 4. Ending a session loads a page. Only signing in happens in place.
 5. The only databases on this device are the stored user's and the last user's.
 
-The user hint is the stored `user` and `lastUser` in `localStorage`. A tab writes it only while it still names that tab's user. When another tab has stored someone else, or no one, its write stands.
+The **user hint** tells a tab who is signed in before any request answers: the stored `user` and `lastUser` in `localStorage`.
 
 | Reason | When | Server | Database | Hint | Then |
 | --- | --- | --- | --- | --- | --- |
@@ -136,21 +144,15 @@ The user hint is the stored `user` and `lastUser` in `localStorage`. A tab write
 | `expired` | At load, an anonymous session past its expiry | None | Deleted | Both forgotten | Stays: nothing has rendered yet |
 | `replaced` | `/me` names another user than the live one | None | Kept | `user` forgotten | Loads the page again |
 
-`frontend/src/modules/auth/end-session.test.ts` runs this table row by row. Without a stored user, only `sign-out` does anything. A second call while one runs joins it.
-
-A stored anonymous user who opens the sign-in page goes through the sign-out page first. Its sign-out deletes the account ([Anonymous sessions](./ANONYMOUS_SESSIONS.md#lifecycle-and-limits)). The about page offers a demo only when no user is stored.
-
-Every persisted store says where it lives. The name of a `localStorage` store starts with `${appConfig.slug}-`. A per-user store is listed in `localUserStores`, or in `extraLocalUserStores` for an app's own. `frontend/src/query/tests/store-lifetime.test.ts` checks both. In development, `reset-local` in the 🐞 menu clears every `localStorage` key with that prefix except the hint, then signs out.
-
 ## Cold start to live
 
-Boot order, cached data first:
+A tab boots from cached data first, then goes live, in eight steps:
 
-1. Bootstrap stores hydrate from `localStorage`, identifying a returning user before any request. An anonymous session past its expiry ends here, before its database binds.
+1. Bootstrap stores hydrate from `localStorage`, identifying a returning user before any request.
 2. The app route waits until the per-user database is bound, its stores hydrated and the cache restored from it. A database that does not answer in time is closed: the tab runs online without it until its next load.
-3. The app reads the memberships, so the first catchup declares every organization.
-4. One tab is elected leader. It performs catchup and owns the live connection.
+3. The app reads the memberships, so the first catchup covers every organization of the user.
+4. One tab is elected the leader tab. It runs catchup and holds the stream.
 5. Paused mutations resume after catchup and whenever the app comes back online or regains focus.
 6. Route loaders fill the current view.
-7. A background fill loads every uncached list and every marked synced list, current organization first.
-9. From then on catchup keeps the synced lists fresh.
+7. A **background fill** loads every uncached list and every synced list with a refetch mark, current organization first.
+8. From then on the stream keeps the synced lists fresh, and a catchup on each reconnect fetches what it missed.

@@ -1,30 +1,35 @@
 # CDC
 
-This document covers CDC, the service that reads committed Postgres changes through [logical replication](https://www.postgresql.org/docs/current/logical-replication.html) and turns them into what the sync engine serves.
+This document covers the pipeline, failures and rebuilds of CDC, the service that reads committed Postgres changes through [logical replication](https://www.postgresql.org/docs/current/logical-replication.html) and turns them into what the sync engine serves.
 
 ### TL;DR
 
 **Change Data Capture** (CDC) turns committed database changes into audit history, counts
-and the changes the live stream announces. It keeps changes in commit order and groups nearby changes
-when the same clients should receive them. Product changes get an order number and counts are updated.
+and the changes the live stream announces. It keeps changes in commit order, gives each product change its order
+number and sends nearby changes together when the same clients may read them. When CDC stops, the REST API and the
+database work on.
 
 ## Vocabulary
 
 | Term | Meaning |
 | --- | --- |
-| **Change** | One insert, update or delete of a row, read from the WAL. |
+| **Change** | One insert, update or delete of a row, read from the write-ahead log (WAL). |
 | **Source transaction** | The transaction that made the changes, delivered whole at its commit. |
-| **Position** | A place in the WAL, an LSN. |
+| **Position** | A place in the WAL, its log sequence number (LSN). |
+| **Slot** | The replication slot CDC reads through. Postgres keeps the WAL that CDC has not acknowledged yet. |
 | **Flush** | CDC's unit of work: the changes of one or more whole source transactions, recorded together, handed to the API, then acknowledged. |
 | **Record** | Write what a change leaves in the database: its activity as the audit row, its sequence value, the counters and the stamp on its row. |
 | **Acknowledge** | Tell the slot that everything up to a position is recorded. |
-| **Read again** | Stop reading without acknowledging and start anew. What is recorded already is not recorded twice. |
-| **Audience** | Who may receive a change: the readers of the rows of one type under one path. The API gets one message per audience and action. |
+| **Read again** | Stop reading without acknowledging and start again from the last acknowledged position. What is recorded already is not recorded twice. |
+| **Audience** | The rows of one product type in one channel: the same clients may read them. CDC sends the API one message per audience and action. |
 | **Books** | The numbers CDC keeps in `channel_counters`: the counts, the sequence counter and the frontiers. |
+| **WAL bound** | How much WAL the slot may keep behind CDC. Past it CDC reports unhealthy, and drops the slot when it is also stuck on a failure. |
 | **Lost case** | A state the WAL cannot repair: no slot, empty counters, a rebuild that was interrupted. It ends in a rebuild. |
-| **Sync generation** | A number that moves on whenever the books were rebuilt. A client that holds another one refetches. Each rebuild leaves an **incident**, a row in `sync_incidents`. |
+| **Sync generation** | A number that tells clients the books were rebuilt. It moves on with every rebuild, and a client that holds another one refetches. Each rebuild leaves an **incident**, a row in `sync_incidents`. |
 
 ## How it fits
+
+A committed change of a tracked table takes this path from the WAL to the API:
 
 ```text
 Postgres WAL (`cdc_pub` / `cdc_slot`)
@@ -43,7 +48,7 @@ record the flush in one transaction: activities, sequence values, counters, row 
 hand to the API → acknowledge the commit of the last source transaction of the flush
 ```
 
-The API receives the messages on its internal listener and fans them out to clients ([Sync engine](../cella/docs/SYNC_ENGINE.md)). Clients order by `seq`, not arrival.
+The API receives the messages on its internal listener and fans them out to clients ([Sync engine](../cella/docs/SYNC_ENGINE.md)).
 
 - `cdc/src/`: the service
 - `cdc/src/pipeline/`: the steps above
@@ -54,57 +59,47 @@ The API receives the messages on its internal listener and fans them out to clie
 
 ### Read
 
-CDC reads one publication through one replication slot. It tracks the tables in the backend's entity and resource table maps and ignores every other table. Drafts never reach it.
+CDC tracks the tables in the backend's entity and resource table maps and ignores every other table. It reads their changes through one publication and one replication slot.
 
 ### Collect
 
-CDC holds a source transaction until its commit. That lets it drop the noise a cascade makes: the child deletes that follow a deleted channel. What remains joins a flush. A flush takes whole source transactions in commit order. One flush runs at a time.
-
-A backlog waits in Postgres and not in CDC. When CDC falls behind, it stops reading until its pending changes are flushed.
+Collecting lets CDC record many small commits in one database transaction. CDC holds a source transaction until its commit. That lets it drop the noise a cascade makes: the child deletes that follow a deleted channel. What remains joins a flush.
 
 ### Record
 
-A flush is recorded in one transaction. Sequence values are reserved per organization, one contiguous range per flush. They go to product creates, updates and soft deletes in commit order across entity types. A soft delete is recorded as a `delete` carrying the tombstone, and a restore counts as a create. Removing a tombstone after the deleted-items period records nothing.
-
-Recording happens once per change, however often the change arrives.
+Recording gives each change its audit row and each product change its place in its organization's sequence. A flush is recorded in one transaction, once per change, however often the change arrives.
 
 ### Hand over
 
-After the commit CDC hands the changes to the API. A row that is no product, such as a membership, goes alone and in commit order.
-
-Product rows go as one message per audience. Each row carries the activity it was recorded as, and so its own writer. The API turns those into change frames. Then CDC acknowledges the flush.
-
-For an app with product embeddings, CDC also takes a deleted row's id out of the hosts that referenced it. That write is its own and records no activity.
+After the commit CDC hands the changes to the API. Product rows go as one message per audience. Say one request creates 30 attachments in an organization: CDC sends the API one message for all 30. The API turns the messages into change frames. When your app declares product embeddings, CDC also takes a deleted row's id out of the hosts that referenced it. Then CDC acknowledges the flush.
 
 ## Internal API socket
 
-One WebSocket from CDC to the API carries every change, with entity row data. It must never be reachable from a browser or an external network. The API guards it three ways:
+One WebSocket from CDC to the API carries every change, with entity row data. Never make it reachable from a browser or an external network. The API guards it three ways:
 
 - it serves the socket only on its internal listener
 - it checks a shared secret
 - it accepts one CDC process at a time
 
-The API sends nothing back. A message the socket took counts as handed over. When the API dies before it dispatched one, a client learns of that change at its next catchup.
+When the API dies before it dispatched a message, a client learns of that change at its next catchup.
 
 ## Failure and recovery
 
-Nothing here stops a write. The REST API and the database work whatever CDC does.
+Failure handling gets the books and every client's data right again when a step fails. Nothing here stops a write: the REST API and the database work whatever CDC does.
 
-Failure handling has three levels:
+It answers each failure at three levels, as the sync engine does on the whole way from a commit to a client's cache ([Failure modes](../cella/docs/sync-engine/FAILURE_MODES.md)):
 
-- **Core:** records a change once.
+- **Core:** records a change once. Delivery is **at least once**, recording is **once**.
 - **Mid:** whatever fails is read again from the slot after a growing delay, never retried in place.
 - **Lost case:** the books are rebuilt from the tables when the WAL cannot help or they turn out wrong.
 
-The slot is the only durable buffer. It advances only after a flush committed. Delivery is **at least once**, recording is **once**. A change delivered again changes no activity, counter or sequence value. Its message goes out again with the sequence value its row already holds.
+A failure reports degraded at first. Degraded means it can pass by itself, as when the API comes back or a deploy hands the slot over. A degraded CDC only warns in a deploy's smoke step: a deploy that brings a change CDC can never process stays deployed.
 
-A deploy that brings a change CDC can never process warns in its smoke step and stays deployed. A failure reports degraded at first.
+When CDC is stuck on a failure for a while, it reports unhealthy. Its log names the position and the error. Live updates pause meanwhile, and the REST API goes on.
 
-When CDC is stuck on a failure for a while, it reports unhealthy. Its log names the position and the error. Live sync pauses meanwhile, and the REST API goes on.
+You end a failure with a fix or by dropping the slot. CDC drops the slot itself at the WAL bound. Only the WAL lag in its health answer shows a CDC process that crash-loops.
 
-A fix or a dropped slot ends the failure. An operator drops the slot, or CDC does once the WAL behind it reaches its bound. A CDC process that crash-loops never drops its slot: each restart starts the failure over. Only the WAL lag in its health answer shows it.
-
-Each row names its answers per level ([Sync engine](../cella/docs/sync-engine/FAILURE_MODES.md)).
+Each row names its answers per level.
 
 | What fails | Core | Mid | Lost case |
 | --- | --- | --- | --- |
@@ -138,28 +133,28 @@ Each row names its answers per level ([Sync engine](../cella/docs/sync-engine/FA
 
 ## Verify and rebuild
 
-There is one repair, the rebuild. A verify only detects. Both start with a recount of every counter from the tables at one snapshot. Both run while writes go on.
+Verify and rebuild keep the books equal to the tables. There is one repair, the rebuild. A verify only detects. Both run while writes go on.
 
-- **Verify** compares the books with the recount and rebuilds wrong ones, daily and on `pnpm sync:verify`.
-- **Rebuild** replaces the books between two flushes, on a failed verify, a lost case or `pnpm sync:rebuild`.
+- **Verify** compares the books with a recount from the tables and ends in a rebuild when they differ. It runs daily, and you start one with `pnpm sync:verify`.
+- **Rebuild** replaces the books between two flushes: on a failed verify, on a lost case, or when you start one with `pnpm sync:rebuild`.
 
-CDC settles the lost cases by itself before it reads the stream. It makes a new slot for one that is missing, invalidated or dropped at the WAL bound. The incident of that rebuild records the failure it could not get past.
+CDC settles the lost cases by itself before it reads the stream. It makes a new slot for one that is missing, invalidated or dropped at the WAL bound.
 
-Every rebuild starts a new sync generation. No client holds it already, even after a restore from a backup. The API then ends every stream, and clients refetch ([Sync engine](../cella/docs/SYNC_ENGINE.md#what-happens-when)).
+Every rebuild starts a new sync generation. No client holds it already, even after a restore from a backup.
 
 In a lost case, rows changed between the old slot's last acknowledged position and the new slot get no activity and no change frame. They keep the `seq` they had. Counts, sequence values and every client's data are right again afterwards.
 
+Say a colleague renames an attachment while CDC is stuck on a failure, and CDC then drops the slot at the WAL bound. The rename gets no activity. Every client shows the new name after the refetch the rebuild starts.
+
 ## Operational constraints
+
+These rules apply when you change a tracked table, migrate or run the database:
 
 - **New tracked table:** add it to the backend's entity or resource table map, then rerun the CDC migration.
 - **Drafts on a product table:** add its `publishedAt` column, then rerun the CDC migration.
-- **Mismatch:** until the migration reruns, CDC reads nothing and reports unhealthy with the cause.
 - **`REPLICA IDENTITY FULL` is mandatory:** changed fields and a deleted row come from the old row.
-- **Large columns:** a consumer must tolerate their absence, since CDC strips them from the row data.
-- **Only one CDC process may read the slot.**
-- **Transaction size:** a migration's writes are bulk by the companion's declaration, whatever their number; a backfill run by hand opens its transaction with the same marker statement (`SELECT pg_logical_emit_message(true, 'sync-bulk', '<label>')`), or stays under the limit.
-- **WAL retention is the recovery margin:** a CDC process that is down, waits for the API or is stuck on setup keeps WAL.
-- **Unbounded WAL** grows until the disk is full ([Deployment](../cella/docs/DEPLOYMENT.md#overview)).
-- **Database role:** needs `REPLICATION` and an RLS bypass ([Database roles](../cella/docs/MULTI_TENANCY.md#database-roles)).
-- **Missing grant:** while the role lacks either, CDC reads nothing and reports unhealthy.
+- **Large columns:** CDC strips them from the row data. API code that reads a CDC message must tolerate their absence.
+- **Transaction size:** a migration's writes count as bulk whatever their number: every migration opens with the bulk marker. A backfill you run by hand opens its transaction with the same marker statement (`SELECT pg_logical_emit_message(true, 'sync-bulk', '<label>')`) or stays under CDC's size limit.
+- **WAL retention is the recovery margin:** the slot keeps WAL while CDC is down, waits for the API or is stuck on setup. Unbounded, that WAL grows until the disk is full ([Deployment](../cella/docs/DEPLOYMENT.md#overview)).
+- **Database role:** needs `REPLICATION` and a row-level security (RLS) bypass ([Database roles](../cella/docs/MULTI_TENANCY.md#database-roles)).
 - **A hung CDC process cannot hold API writes for long:** server-side timeouts take back its flush's row locks.
