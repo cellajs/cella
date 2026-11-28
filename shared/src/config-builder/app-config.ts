@@ -108,8 +108,8 @@ const shiftLocalOrigins = (by: number) => {
   merged.ltiFrameAncestors = merged.ltiFrameAncestors.map((ancestor) => shiftLocalPort(ancestor, by));
 };
 
-// A second app runs its stack beside the first. A person switches apps by the frontend port's last digit, and the
-// services keep ten ports each, so the seven of one app never reach the next.
+// A second app runs its stack beside the first. A person switches apps by the frontend port's last digit. Each app's
+// services keep a block of ten ports and never reach the next app's.
 if (isLocal) {
   const index = merged.devAppIndex;
   if (!Number.isInteger(index) || index < 0 || index > 9)

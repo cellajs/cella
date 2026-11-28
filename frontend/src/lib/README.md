@@ -6,7 +6,7 @@ With a DSN, `monitoring.ts` sends errors and one session per page load to it thr
 
 The mode's config names the DSN (`monitoring.dsn`), and on this machine a portless `localhost` one takes the app's origin. In development and tunnel `VITE_MONITORING_DSN` from `frontend/.env` wins; without either the page sends nothing.
 
-The SDK sends the trace headers of every API request, and `monitoring.ts` adds the session's id to the `baggage` of each request the generated client makes. `otel.ts` keeps a local tracer in every mode for the span helpers and the sync devtools; it sends the trace headers itself only when no DSN is set.
+The SDK sends the trace headers of every request to the API and to the authorization server, and `monitoring.ts` adds the session's id to each one's `baggage`. `otel.ts` keeps a local tracer in every mode for the span helpers and the sync devtools; it sends the trace headers itself only when no DSN is set.
 
 ## History wrappers
 

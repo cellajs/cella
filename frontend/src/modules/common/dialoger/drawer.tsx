@@ -1,9 +1,10 @@
 import { dialoger, type InternalDialog } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { OverlayCloseContext } from '~/modules/common/overlay-close';
-import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
+import { finalFocusFor, useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 import { cn } from '~/utils/cn';
+import { isTouchInteraction } from '~/utils/input-modality';
 
 export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
   const { id, content, open, description, title, titleContent = title, className, headerClassName } = dialog;
@@ -17,7 +18,13 @@ export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
 
   return (
     <Drawer open={open} disablePointerDismissal={isDropdownOpen} onOpenChange={closeDialog} onOpenChangeComplete={onOpenChangeComplete}>
-      <DrawerContent id={String(id)} data-overlay="dialog" className={className}>
+      {/* Touch keeps Base UI's default, as the sheeter's drawer does */}
+      <DrawerContent
+        id={String(id)}
+        data-overlay="dialog"
+        className={className}
+        finalFocus={() => isTouchInteraction() || finalFocusFor(dialog.triggerRef, String(id))}
+      >
         {/* Above a confirmation's rows the question alone heads the sheet, as in a menu's confirmation; the title it repeats stays for screen readers */}
         {title && (
           <DrawerHeader sticky className={cn(description && 'group-has-data-[slot=drawer-row-group]/drawer-content:sr-only', headerClassName)}>

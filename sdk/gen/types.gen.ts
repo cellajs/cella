@@ -1194,7 +1194,7 @@ export type ListAttachmentsData = {
      */
     skip?: number;
     /**
-     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     * Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.
      */
     q?: string;
     /**
@@ -6792,7 +6792,7 @@ export type ListMembersData = {
      */
     skip?: number;
     /**
-     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     * Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.
      */
     q?: string;
     channelId: string;
@@ -7464,7 +7464,7 @@ export type ListOrganizationsData = {
      */
     skip?: number;
     /**
-     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     * Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.
      */
     q?: string;
     /**
@@ -8095,7 +8095,7 @@ export type ListRequestsData = {
      */
     skip?: number;
     /**
-     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     * Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.
      */
     q?: string;
     /**
@@ -8387,7 +8387,7 @@ export type ListServiceAccountsData = {
      */
     skip?: number;
     /**
-     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     * Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.
      */
     q?: string;
   };
@@ -9098,7 +9098,7 @@ export type ListTenantsData = {
      */
     skip?: number;
     /**
-     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     * Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.
      */
     q?: string;
     /**
@@ -9771,7 +9771,7 @@ export type ListUsersData = {
      */
     skip?: number;
     /**
-     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     * Search, case- and accent-insensitive. Spaces and commas separate the words, and every word must appear in a searched field; a quote or a minus is part of its word.
      */
     q?: string;
     /**

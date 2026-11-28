@@ -101,9 +101,10 @@ describe('Deleted rows in range reads', async () => {
     // buildInsertableProduct returns a config-derived Record, so the insert type needs a cast.
     await adminDb.insert(table).values([row(liveId, 1, null), row(deletedId, 2, now)] as (typeof table.$inferInsert)[]);
 
-    // The most privileged role, so the read scope holds both rows under any app policy.
+    // The most privileged role in the organization and in each channel below it: the read scope then holds both rows
+    // under any app policy, and the reader needs no role that creates the product.
     const reader = await createOrgUser(call, organization.tenantId, organization.id, `${label}-late`, adminRole);
-    await joinAttachmentHome(organization, plan, reader.id);
+    await joinAttachmentHome(organization, plan, reader.id, (channelType) => hierarchy.getMostPrivilegedRole(channelType));
 
     const listPath = read.path.replace('{tenantId}', organization.tenantId).replace('{organizationId}', organization.id);
     const request = (url: string, cookie: string) => baseApp.request(url, { headers: { ...defaultHeaders, Cookie: cookie } });

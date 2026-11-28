@@ -15,6 +15,8 @@ import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
+// The upload token's route answers while uploads are on, which an app may turn off.
+overrideConfig(appConfig.has, { uploads: true });
 
 /** A signed assembly step: `exported` stores the files (`acl`, `credentials`, `path`), the others process them. */
 interface AssemblyStep {

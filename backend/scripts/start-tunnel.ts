@@ -9,8 +9,8 @@ const startTimeoutMs = 20_000;
 
 /**
  * Starts a tunnel that exposes the local app origin to the internet. The tunnel fronts
- * the Vite dev server, which proxies /api, /yjs and /mcp to the service ports, so the
- * whole stack shares one public origin: cookies stay first-party and OAuth provider
+ * the Vite dev server, which proxies each service's path to its port. The whole stack
+ * shares one public origin: cookies stay first-party and OAuth provider
  * callbacks (`<tunnel>/api/auth/...`) reach the backend through the proxy.
  * Runs the ngrok CLI (`brew install ngrok`) on the origin of the tunnel config, and only when `TUNNEL_AUTH_TOKEN` is set.
  *

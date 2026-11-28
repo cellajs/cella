@@ -9,8 +9,8 @@ import { AppError } from '#/core/error';
 export const assertSwitchOn = (on: ConfigSwitch): void => {
   if (isSwitchOn(on)) return;
   if (!('strategy' in on)) throw new AppError(404, 'route_not_found', 'warn');
-  if (on.provider) throw new AppError(400, 'unsupported_oauth', 'error', { meta: { strategy: on.provider } });
-  throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy: on.strategy } });
+  if (on.provider) throw new AppError(400, 'unsupported_oauth', 'warn', { meta: { strategy: on.provider } });
+  throw new AppError(400, 'forbidden_strategy', 'warn', { meta: { strategy: on.strategy } });
 };
 
 /** The gate `createXRoute` runs for a route's `xEnabledBy`, before its guards. */

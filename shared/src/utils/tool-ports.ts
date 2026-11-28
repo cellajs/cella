@@ -6,5 +6,5 @@ export const frontendDevPort = (): number => Number(new URL(appConfig.frontendUr
 /** Storybook follows the frontend port, far enough above the service block of any app number. */
 export const storybookPort = (): number => frontendDevPort() + 3006;
 
-/** Drizzle Studio follows the frontend port, below the service block of the next app number. */
-export const drizzleStudioPort = (): number => frontendDevPort() + 983;
+/** Drizzle Studio follows the frontend port, a thousand above Storybook: no app number or port offset brings either into a service block. */
+export const drizzleStudioPort = (): number => frontendDevPort() + 4006;

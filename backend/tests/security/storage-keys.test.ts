@@ -5,7 +5,7 @@ import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { adminRole, defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders, overrideConfig } from '../fixtures';
 import { adminDb, expectRefusal } from '../helpers';
 import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { bearerHeaders, serviceAccountWithKey } from '../oauth-helpers';
@@ -14,6 +14,8 @@ import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createFactorOrgUser, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
+// An upload token needs uploads on, and an app's config may turn them off.
+overrideConfig(appConfig.has, { uploads: true });
 
 /** The storage key an upload for `tenant`'s user lands on: the upload token's `<organizationId>/<userId>` prefix. */
 const keyOf = (tenant: TestTenant, name: string) => `${tenant.organization.id}/${tenant.user.id}/${name}`;
