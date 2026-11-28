@@ -120,6 +120,9 @@ const metadataProxy = (name: 'oauth-authorization-server' | 'oauth-protected-res
 
 const viteConfig = {
   logLevel: isDev ? 'info' : 'warn',
+  // Vite refuses to start a dev server beside a live one on the same cache folder. A stack at a `DEV_PORT_OFFSET` runs
+  // beside the checkout's own with a folder per offset.
+  ...(appConfig.devPortOffset ? { cacheDir: path.resolve(import.meta.dirname, `node_modules/.vite-${appConfig.devPortOffset}`) } : {}),
   server: {
     // Loopback unless DEV_HOST names an address: `DEV_HOST=0.0.0.0` opens the dev server to other devices.
     host: process.env.DEV_HOST || '127.0.0.1',
@@ -151,8 +154,11 @@ const viteConfig = {
       ...metadataProxy('oauth-protected-resource', servicePaths.mcp, appConfig.services.mcp.port),
     },
     // Tunnel mode: ngrok terminates TLS and forwards plain HTTP. Accept the public
-    // Host header and point HMR websockets back at the public origin.
-    ...(isTunneled ? { allowedHosts: [frontendUrl.hostname], hmr: { protocol: 'wss', host: frontendUrl.hostname, clientPort: 443 } } : {}),
+    // Host header and point HMR websockets back at the public origin. Vite forwards browser errors to the terminal
+    // when it runs under a coding agent. Behind a tunnel they come from any visitor, so forwarding is off.
+    ...(isTunneled
+      ? { allowedHosts: [frontendUrl.hostname], hmr: { protocol: 'wss', host: frontendUrl.hostname, clientPort: 443 }, forwardConsole: false }
+      : {}),
     // sdk/src stays unwatched (the generator churns temp folders and lock files there); a finished write to sdk/gen reloads.
     // This checkout's .claude holds agent worktrees: whole checkouts, whose files the watcher would index and stall on.
     watch: { ignored: ['**/backend/**', '**/sdk/src/**', `${repoRoot}/.claude/**`] },
