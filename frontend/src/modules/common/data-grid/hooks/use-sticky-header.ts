@@ -7,12 +7,11 @@ import { getScrollParent } from '~/utils/scroll-parent';
  * horizontal offsets in animation frames. Only a grid the window scrolls is pinned: fixed cells measure from the
  * viewport, which is not the pin line of a sheet, drawer or dialog that scrolls its own content.
  */
-export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, headerRowsCount: number, headerRowHeight: number, enabled: boolean) {
+export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, headerRowHeight: number, enabled: boolean) {
   useLayoutEffect(() => {
     const grid = gridRef.current;
-    if (!enabled || !grid || headerRowsCount === 0 || getScrollParent(grid) !== window) return;
+    if (!enabled || !grid || getScrollParent(grid) !== window) return;
 
-    const headerRowsHeight = headerRowsCount * headerRowHeight;
     // Separate rAF IDs so different concerns don't cancel each other
     let scrollRafId = 0;
     let hScrollRafId = 0;
@@ -94,7 +93,7 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
       const rect = grid!.getBoundingClientRect();
       // Read per frame: a bar above can change height, or leave in focus view, without the grid rendering.
       const pinTop = stackOffset(grid!);
-      const shouldStick = rect.top < pinTop && rect.bottom > pinTop + headerRowsHeight;
+      const shouldStick = rect.top < pinTop && rect.bottom > pinTop + headerRowHeight;
 
       if (shouldStick && !isSticky) {
         applyFixed();
@@ -150,5 +149,5 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
       grid.removeEventListener('scroll', onScrollHorizontal);
       if (isSticky) removeFixed();
     };
-  }, [gridRef, headerRowsCount, headerRowHeight, enabled]);
+  }, [gridRef, headerRowHeight, enabled]);
 }

@@ -27,18 +27,16 @@ export async function markSeenOp(ctx: UserContext, entityIds: string[], productT
 
   const access = accessFrom(ctx);
   const readFilter = resolveCollectionReadFilter(access, productType, organization.id);
-  const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, access);
-  if (scopeWhere.kind === 'none') return { newCount: 0 };
 
   const filters: SQL[] = [
     inArray(orgTable.id, entityIds),
     eq(orgTable.organizationId, organization.id),
     gt(seenRecencySql(orgTable), seenWindowStart()),
+    buildCollectionReadWhere(readFilter, entityTable, access, organization.id),
   ];
   if (hasDeletedAt(entityTable)) filters.push(isNull(entityTable.deletedAt));
   const draftVisible = draftVisibleRowsPredicate(entityTable, user.id);
   if (draftVisible) filters.push(draftVisible);
-  if (scopeWhere.kind === 'where') filters.push(scopeWhere.where);
 
   // Use tenantContext to set RLS session vars; entity tables have row-level security.
   const newCount = await tenantContext(ctx, async (txCtx) => {

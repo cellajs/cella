@@ -4,7 +4,10 @@ import { documentResources } from '#/core/openapi-resources';
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
 import { errorResponseComponents, problemJsonType } from '#/schemas/error-response-schemas';
 
-/** Rules for whoever writes routes are checked where routes are written and tested; a deployed backend never fails on one. */
+/**
+ * Whether a request's answer is checked against the rules for whoever writes routes (a documented status, an entity
+ * tag): where routes are written and tested. A rule a route module breaks at load is refused in every mode.
+ */
 export const checksAuthoringRules = appConfig.mode === 'development' || appConfig.mode === 'test';
 
 /** The parts of a generated OpenAPI document these checks read. */
@@ -143,15 +146,15 @@ const undeclaredExampleFields = (schema: SchemaNode, schemas: Record<string, Sch
 };
 
 /**
- * The boot check of the generated document: every `x-tags` entry must name a registered tag, and where authoring rules
- * are checked the example of a named schema holds only fields the schema declares. Throws on the first violation.
+ * The boot check of the generated document: every `x-tags` entry must name a registered tag, and the example of a
+ * named schema holds only fields the schema declares. Throws on the first violation.
  */
 export const validateOpenApiDocument = (doc: OpenApiDocument) => {
   const known = new Set(getRegisteredTags().map((t) => t.tag));
   const schemas = (doc.components?.schemas ?? {}) as Record<string, SchemaNode>;
 
   for (const [name, schema] of Object.entries(schemas)) {
-    const undeclared = checksAuthoringRules ? undeclaredExampleFields(schema, schemas) : [];
+    const undeclared = undeclaredExampleFields(schema, schemas);
     if (undeclared.length) {
       throw new Error(
         `Schema "${name}" has an example with ${undeclared.join(', ')}, which the schema does not declare. Keep the field off the answer and the mock, or declare it; a writer id is declared as a reference (auditShape), never as a raw id.`,

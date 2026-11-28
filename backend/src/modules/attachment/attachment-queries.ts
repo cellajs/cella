@@ -15,7 +15,7 @@ import { servedColumns } from '#/db/utils/served-columns';
 import { updateStamps } from '#/db/utils/stamps';
 import { attachmentsTable, type InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
-import { getOrganizationEntityCount, productViewCountJoin, productViewCountSelect } from '#/modules/entities/entities-queries';
+import { getOrganizationPublishedCount, productViewCountJoin, productViewCountSelect } from '#/modules/entities/entities-queries';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { publiclyServedTenant } from '#/modules/tenants/tenants-queries';
 import { usersTable } from '#/modules/user/user-db';
@@ -118,7 +118,7 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
   const totalSource: ListTotalSource = range
     ? { kind: 'pageLength' }
     : orgWide && !search
-      ? { kind: 'counter', getTotal: () => getOrganizationEntityCount(ctx, { organizationId, entityType: 'attachment' }) }
+      ? { kind: 'counter', getTotal: () => getOrganizationPublishedCount(ctx, { organizationId, entityType: 'attachment' }) }
       : exactTotal(db.select({ total: count() }).from(attachmentsTable).where(whereClause));
 
   return resolveListTotal(itemsQuery, totalSource);

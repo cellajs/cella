@@ -104,7 +104,7 @@ export function AuthenticatePage() {
     navigate({ to: appConfig.defaultRedirectPath, replace: true });
   }, [nothingToConfirm]);
 
-  if (isTokenLoading || isHealthLoading || signedIn) {
+  if (isTokenLoading || isHealthLoading || signedIn || nothingToConfirm) {
     return (
       <>
         <Spinner size="lg" />

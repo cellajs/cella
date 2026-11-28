@@ -7,7 +7,6 @@ import { registerOpenApiDocs, writeOpenApiCache } from '#/core/openapi-registrat
 import { baseDb } from '#/db/db';
 import '#/lib/i18n';
 import process from 'node:process';
-import { env } from '#/env';
 import { startGeoipRefresh } from '#/lib/geoip';
 import { serveApi, serveInternal } from '#/lib/listeners';
 import { stopPgBoss } from '#/lib/pg-boss';
@@ -39,10 +38,10 @@ if (appConfig.isLocal) await writeOpenApiCache(openApiDoc);
 
 const main = async () => {
   const { port, internalPort } = appConfig.services.backend;
-  console.info(`${timestamp()} [startup] mode=${appConfig.mode} nodb=${env.NODB} port=${port}`);
+  console.info(`${timestamp()} [startup] mode=${appConfig.mode} port=${port}`);
 
   try {
-    if (!env.NODB) await baseDb.execute(sql`SELECT 1`);
+    await baseDb.execute(sql`SELECT 1`);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     throw new Error(`Could not connect to PostgreSQL. Is Docker running? Try: pnpm docker\n  Original error: ${msg}`);

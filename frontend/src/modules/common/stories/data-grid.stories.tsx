@@ -151,7 +151,7 @@ const basicColumns: Column<Person>[] = [
 ];
 
 const fullColumns: Column<Person>[] = [
-  { key: 'id', name: 'ID', width: 60, frozen: true },
+  { key: 'id', name: 'ID', width: 60 },
   { key: 'firstName', name: 'First Name', width: 120 },
   { key: 'lastName', name: 'Last Name', width: 120 },
   { key: 'email', name: 'Email', width: 200 },
@@ -180,7 +180,7 @@ const sortableColumns: Column<Person>[] = [
 ];
 
 const responsiveColumns: Column<Person>[] = [
-  { key: 'id', name: 'ID', width: 60, frozen: true },
+  { key: 'id', name: 'ID', width: 60 },
   { key: 'firstName', name: 'First Name', width: 120 },
   { key: 'lastName', name: 'Last Name', width: 120, minBreakpoint: 'sm' },
   { key: 'email', name: 'Email', width: 200, minBreakpoint: 'md' },
@@ -199,11 +199,10 @@ const meta: Meta<DataGridProps<Person>> = {
   parameters: { layout: 'padded' },
   argTypes: {
     rowHeight: { control: { type: 'number', min: 25, max: 80 } },
-    headerRowHeight: { control: { type: 'number', min: 25, max: 80 } },
     enableVirtualization: { control: 'boolean' },
     isCompact: { control: 'boolean' },
   },
-  args: { rows: sampleData, columns: basicColumns, rowHeight: 35, headerRowHeight: 35, enableVirtualization: true },
+  args: { rows: sampleData, columns: basicColumns, rowKeyGetter: (row) => row.id, rowHeight: 35, enableVirtualization: true },
   decorators: [
     (Story) => (
       <div style={{ height: 400, width: '100%' }}>
@@ -222,7 +221,7 @@ type Story = StoryObj<DataGridProps<Person>>;
 /** Default data grid with basic columns. */
 export const Default: Story = {};
 
-/** All columns including frozen ID, custom renderers, and many fields. */
+/** All columns, with custom renderers. */
 export const FullColumns: Story = { args: { columns: fullColumns } };
 
 /** Drag column borders to resize. Widths are persisted in state. */
@@ -291,31 +290,6 @@ export const LargeDataset: Story = { args: { columns: fullColumns, rows: largeDa
 
 /** Click a cell and press Cmd+C to copy its value. */
 export const CopyCell: Story = {
-  render: function Render(args) {
-    const [copied, setCopied] = useState<string | null>(null);
-
-    return (
-      <div className="space-y-4">
-        <div className="text-muted-foreground text-sm">
-          Click a cell, then press <kbd className="bg-muted rounded border px-1.5 py-0.5">Cmd+C</kbd> to copy.
-        </div>
-        <div style={{ height: 300 }}>
-          <DataGrid
-            {...args}
-            onCellCopy={({ value }) => {
-              setCopied(value != null ? String(value) : '');
-            }}
-          />
-        </div>
-        <div className="flex items-center gap-2 text-sm" data-testid="copy-output">
-          <span className="font-medium">Last copied:</span>
-          <code className="bg-muted rounded px-2 py-1" data-testid="copied-value">
-            {copied ?? '(nothing yet)'}
-          </code>
-        </div>
-      </div>
-    );
-  },
   args: { columns: basicColumns },
   play: async ({ canvas, step }) => {
     await step('Click a cell to select it', async () => {
@@ -328,15 +302,10 @@ export const CopyCell: Story = {
       });
     });
 
-    await step('Trigger copy event', async () => {
-      const grid = canvas.getByRole('grid');
-      const copyEvent = new ClipboardEvent('copy', { bubbles: true, clipboardData: new DataTransfer() });
-      grid.dispatchEvent(copyEvent);
-
-      await waitFor(() => {
-        const output = canvas.getByTestId('copied-value');
-        expect(output.textContent).toBe('Alice');
-      });
+    await step('Copy should put the cell value on the clipboard', async () => {
+      const clipboardData = new DataTransfer();
+      canvas.getByRole('grid').dispatchEvent(new ClipboardEvent('copy', { bubbles: true, clipboardData }));
+      expect(clipboardData.getData('text/plain')).toBe('Alice');
     });
   },
 };
@@ -512,28 +481,6 @@ export const ShouldResizeColumn: Story = {
   },
 };
 
-export const ShouldFreezeFrozenColumns: Story = {
-  name: 'when a column is frozen, its cells carry the sticky pinning contract',
-  tags: ['!dev', '!autodocs'],
-  args: { columns: fullColumns },
-  play: async ({ canvas, step }) => {
-    await step('Frozen cells are marked sticky and pinned via a frozen-left offset', async () => {
-      const grid = canvas.getByRole('grid');
-      await waitFor(() => {
-        const frozenCells = grid.querySelectorAll<HTMLElement>('.rdg-cell-frozen');
-        expect(frozenCells.length).toBeGreaterThan(0);
-        // The headless runner doesn't apply the grid's full CSS layout, so computed position/geometry are
-        // unreliable. Assert Cella's deterministic contract (getCellStyle/getCellClassname): every
-        // frozen cell gets the `sticky` class and an inline inset var pinning it left as the grid scrolls.
-        for (const cell of frozenCells) {
-          expect(cell.classList.contains('sticky')).toBe(true);
-          expect(cell.style.insetInlineStart).toContain('--rdg-frozen-left');
-        }
-      });
-    });
-  },
-};
-
 export const ShouldPinHeaderBelowStickyStack: Story = {
   name: 'when the window scrolls past the grid top, the header pins below the sticky stack',
   tags: ['!dev', '!autodocs'],
@@ -595,123 +542,6 @@ export const ShouldKeepHeaderInPlaceInScrollContainer: Story = {
   },
 };
 
-// Column drag-and-drop stories
-
-const draggableHeaderColumns: Column<Person>[] = [
-  { key: 'firstName', name: 'First Name', width: 120, draggable: true },
-  { key: 'lastName', name: 'Last Name', width: 120, draggable: true },
-  { key: 'email', name: 'Email', width: 200, draggable: true },
-  { key: 'department', name: 'Department', width: 120, draggable: true },
-  { key: 'role', name: 'Role', width: 150, draggable: true },
-];
-
-/** Drag column headers to reorder them. Uses @atlaskit/pragmatic-drag-and-drop with left/right drop indicators. */
-export const ColumnDragDrop: Story = {
-  render: function Render() {
-    const [columns, setColumns] = useState(draggableHeaderColumns);
-
-    function onColumnsReorder(sourceKey: string, targetKey: string) {
-      setColumns((prev) => {
-        const sourceIdx = prev.findIndex((c) => c.key === sourceKey);
-        const targetIdx = prev.findIndex((c) => c.key === targetKey);
-        if (sourceIdx === -1 || targetIdx === -1) return prev;
-        const next = [...prev];
-        const [moved] = next.splice(sourceIdx, 1);
-        next.splice(targetIdx, 0, moved);
-        return next;
-      });
-    }
-
-    return (
-      <div className="space-y-4">
-        <div className="text-muted-foreground text-sm">Drag column headers to reorder them. A blue drop indicator shows the target position.</div>
-        <div style={{ height: 400 }}>
-          <DataGrid
-            rows={sampleData}
-            columns={columns}
-            rowKeyGetter={(row) => row.id}
-            rowHeight={35}
-            headerRowHeight={35}
-            enableVirtualization={false}
-            onColumnsReorder={onColumnsReorder}
-          />
-        </div>
-        <div className="text-muted-foreground text-xs" data-testid="column-order">
-          Column order: {columns.map((c) => c.name).join(', ')}
-        </div>
-      </div>
-    );
-  },
-};
-
-export const ShouldReorderColumnOnDragDrop: Story = {
-  name: 'when column header is dragged, should show drag state and drop indicator',
-  tags: ['!dev', '!autodocs'],
-  render: function Render() {
-    const [columns, setColumns] = useState(draggableHeaderColumns);
-
-    function onColumnsReorder(sourceKey: string, targetKey: string) {
-      setColumns((prev) => {
-        const sourceIdx = prev.findIndex((c) => c.key === sourceKey);
-        const targetIdx = prev.findIndex((c) => c.key === targetKey);
-        if (sourceIdx === -1 || targetIdx === -1) return prev;
-        const next = [...prev];
-        const [moved] = next.splice(sourceIdx, 1);
-        next.splice(targetIdx, 0, moved);
-        return next;
-      });
-    }
-
-    return (
-      <div style={{ height: 400 }}>
-        <DataGrid
-          rows={sampleData}
-          columns={columns}
-          rowKeyGetter={(row) => row.id}
-          rowHeight={35}
-          headerRowHeight={35}
-          enableVirtualization={false}
-          onColumnsReorder={onColumnsReorder}
-        />
-        <div data-testid="column-order">{columns.map((c) => c.name).join(',')}</div>
-      </div>
-    );
-  },
-  play: async ({ canvas, step }) => {
-    await step('Grid should render all column headers', async () => {
-      const grid = canvas.getByRole('grid');
-      await waitFor(() => {
-        const headers = grid.querySelectorAll('[role="columnheader"]');
-        expect(headers.length).toBe(5);
-      });
-    });
-
-    await step('Column order text should reflect initial order', async () => {
-      const orderEl = canvas.getByTestId('column-order');
-      expect(orderEl.textContent).toBe('First Name,Last Name,Email,Department,Role');
-    });
-
-    await step('All column headers should be present in the grid', async () => {
-      expect(canvas.getByText('First Name')).toBeTruthy();
-      expect(canvas.getByText('Last Name')).toBeTruthy();
-      expect(canvas.getByText('Email')).toBeTruthy();
-      expect(canvas.getByText('Department')).toBeTruthy();
-      expect(canvas.getByText('Role')).toBeTruthy();
-    });
-
-    await step('Ctrl+Shift+Arrow should move a column the drag has no key for', async () => {
-      const header = canvas.getAllByRole('columnheader')[0];
-      header.focus();
-      await userEvent.keyboard('{Control>}{Shift>}{ArrowRight}{/Shift}{/Control}');
-      await waitFor(() => {
-        expect(canvas.getByTestId('column-order').textContent).toBe('Last Name,First Name,Email,Department,Role');
-      });
-      // The header keeps focus through the move, so a second press carries the same column on
-      expect(canvas.getAllByRole('columnheader')[1]).toHaveFocus();
-    });
-  },
-};
-
 // Row drag-and-drop stories
 
 interface DraggablePerson extends Person {
@@ -768,7 +598,6 @@ export const RowDragDrop: Story = {
             columns={draggableColumns(rows, setRows)}
             rowKeyGetter={(row) => row.id}
             rowHeight={35}
-            headerRowHeight={35}
             enableVirtualization={false}
             onRowReorder={onRowReorder}
           />
@@ -798,7 +627,6 @@ export const ShouldReorderRowOnDragDrop: Story = {
           columns={draggableColumns(rows, setRows)}
           rowKeyGetter={(row) => row.id}
           rowHeight={35}
-          headerRowHeight={35}
           enableVirtualization={false}
           onRowReorder={onRowReorder}
         />
@@ -856,7 +684,6 @@ export const RowDragDropAutoScroll: Story = {
             columns={draggableColumns(rows, setRows)}
             rowKeyGetter={(row) => row.id}
             rowHeight={35}
-            headerRowHeight={35}
             enableVirtualization={true}
             enableDragAutoScroll={true}
             onRowReorder={onRowReorder}

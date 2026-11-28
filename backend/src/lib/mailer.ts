@@ -11,7 +11,7 @@ import { htmlToText } from '../../emails/renderer/html-to-text';
 import { render } from '../../emails/renderer/render';
 import { brevoPlaceholder, type EmailRecipient, type EmailTemplateDef } from '../../emails/types';
 
-if (!env.BREVO_API_KEY && appConfig.mode !== 'test') log.info('Email sending disabled: BREVO_API_KEY missing');
+if (!env.BREVO_API_KEY) log.info('Email sending disabled: BREVO_API_KEY missing');
 
 const maxVersionsPerCall = 99;
 // One-recipient sends (a one-click unsubscribe header each) go out this many at a time.

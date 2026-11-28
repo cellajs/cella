@@ -168,7 +168,7 @@ function relayAwareness(
   const relayed: AwarenessEntry[] = [];
   for (const entry of entries) {
     if (!isRelayablePresence(entry.state)) continue;
-    const verdict = claimAwarenessClient(collab, ws, ctx.userId, { clientId: entry.clientId, clock: entry.clock, removes: entry.state === 'null' });
+    const verdict = claimAwarenessClient(collab, ws, ctx.userId, entry);
     if (verdict === 'refuse') {
       refuseFrame(collab.scope, ctx.userId, ws, 'Too many awareness clients');
       return;
@@ -212,20 +212,22 @@ function holdAwareness(
   }, waitMs);
 }
 
+/** Sends a joining socket the presence its session holds, as one frame: peers' cursors show before their next change. */
+export function sendPresence(collab: CollabSession, ws: WebSocket): void {
+  const entries = [...collab.awarenessOwners].map(([clientId, { clock, state }]) => ({ clientId, clock, state }));
+  if (entries.length > 0) ws.send(encodeAwarenessMessage(entries));
+}
+
 /**
- * Applies one frame. Sync frames reach this only through the socket's serial queue, after entity
- * authorization, so they run in arrival order; awareness is ephemeral, relayed only from an
- * authorized open socket, at most yjsAwarenessRateLimit frames a second per socket. Both act in
- * the socket's authorized scope.
+ * Applies one frame of an open socket joined to `scope`, the scope its authorization read, whose message type the
+ * caller read. Sync frames run in arrival order: they reach this only through the socket's serial queue, after entity
+ * authorization. Awareness is ephemeral, at most yjsAwarenessRateLimit frames a second per socket.
  */
-export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uint8Array): Promise<void> {
+export async function handleMessage(ctx: SocketContext, scope: YjsDocScope, ws: WebSocket, data: Uint8Array): Promise<void> {
   if (data.length < 2) return;
-  const { scope } = ctx;
 
   const decoder = decoding.createDecoder(data);
   const messageType = readMessageType(decoder);
-  if (messageType === null) return refuseFrame(scope ?? ctx.requested, ctx.userId, ws, 'Malformed frame');
-  if (!scope) return;
   const collab = getCollab(scope);
   // The session ended under the socket while this frame waited in its queue: its document was retired, the socket is
   // closing with 1013, and what it sent belongs to a generation its next handshake drops, so none of it reaches the
@@ -256,7 +258,6 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
       if (ctx.awaitingReply || (await handleSyncUpdate(collab, ctx.userId, ws, payload, data))) sendSaved(ws);
     }
   } else if (messageType === yjsMessageTypes.Awareness) {
-    if (ws.readyState !== ws.OPEN) return;
     let entries: AwarenessEntry[] | null;
     try {
       entries = decodeAwarenessEntries(decoding.readVarUint8Array(decoder));
@@ -386,6 +387,12 @@ async function loadDocumentState(collab: CollabSession, ws?: WebSocket): Promise
 async function handleSyncStep1(ctx: SocketContext, collab: CollabSession, ws: WebSocket, clientStateVector: Uint8Array): Promise<void> {
   // A socket that closed while this frame waited has no one to answer.
   if (ws.readyState !== ws.OPEN) return;
+  try {
+    Y.decodeStateVector(clientStateVector);
+  } catch {
+    refuseFrame(collab.scope, ctx.userId, ws, 'Malformed state vector');
+    return;
+  }
   const held: Uint8Array[] = [];
   collab.handshakes.set(ws, held);
   try {
@@ -401,8 +408,9 @@ async function handleSyncStep1(ctx: SocketContext, collab: CollabSession, ws: We
       try {
         ws.send(encodeSync(yjsSyncSubtypes.Step2, Y.diffUpdate(doc.state, clientStateVector)));
         ws.send(encodeSync(yjsSyncSubtypes.Step1, Y.encodeStateVectorFromUpdate(doc.state)));
-      } catch {
+      } catch (err) {
         // Corrupted state: fall back to the full state and skip the pull.
+        log.error(`The stored state of ${docKey(collab.scope)} does not encode: answering with all of it`, { err });
         ws.send(encodeSync(yjsSyncSubtypes.Step2, doc.state));
         ctx.awaitingReply = false;
       }

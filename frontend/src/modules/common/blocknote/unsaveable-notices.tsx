@@ -54,22 +54,14 @@ export function parkUnsaveable(
     state: Y.encodeStateAsUpdate(yDoc),
     at: Date.now(),
   };
-  const parked = parkedRecord(record, writer ? writer.park(reason, yDoc) : null);
+  const parked = writer
+    ? writer.park(reason).catch((error) => {
+        console.error('[yjs] Parking unsaveable edits failed, so the notice holds them:', error);
+        return record;
+      })
+    : Promise.resolve(record);
   if (notice) parked.then(showUnsaveableNotice).catch((error) => console.error('[yjs] Showing the notice for unsaveable edits failed:', error));
   return parked;
-}
-
-async function parkedRecord(record: UnsaveableYDocRecord, parked: Promise<void> | null): Promise<UnsaveableYDocRecord> {
-  if (!parked) return record;
-  try {
-    await parked;
-    // The writer just added the document's newest parked row; Discard deletes that one.
-    const db = getLocalUserDb();
-    return (await db?.unsaveableYDocs.where('[entityType+entityId]').equals([record.entityType, record.entityId]).last()) ?? record;
-  } catch (error) {
-    console.error('[yjs] Parking unsaveable edits failed, so the notice holds them:', error);
-    return record;
-  }
 }
 
 /** Deletes parked edits that reached the server after all, with no notice. */

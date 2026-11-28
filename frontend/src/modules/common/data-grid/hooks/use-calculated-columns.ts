@@ -2,34 +2,10 @@ import { useMemo } from 'react';
 import { renderValue } from '../cell-renderers';
 import { selectColumnKey } from '../columns';
 import { renderHeaderCell } from '../render-header-cell';
-import type {
-  ActiveModes,
-  BreakpointKey,
-  CalculatedColumn,
-  CalculatedColumnParent,
-  Column,
-  ColumnMergeRule,
-  ColumnOrColumnGroup,
-  DefaultColumnOptions,
-  MergedSlot,
-  Omit,
-  TileSide,
-} from '../types';
+import type { ActiveModes, BreakpointKey, CalculatedColumn, Column, ColumnMergeRule, DefaultColumnOptions, MergedSlot, TileSide } from '../types';
 import { breakpointOrder, clampColumnWidth, resolveMergeRule, resolveModeOverrides, warnInvalidMergeRule } from '../utils/grid-utils';
 
-type Mutable<T> = { -readonly [P in keyof T]: T[P] extends ReadonlyArray<infer V> ? Mutable<V>[] : T[P] };
-
-interface WithParent<R, SR> {
-  readonly parent: MutableCalculatedColumnParent<R, SR> | undefined;
-}
-
-type MutableCalculatedColumnParent<R, SR> = Omit<Mutable<CalculatedColumnParent<R, SR>>, 'parent'> & WithParent<R, SR>;
-type MutableCalculatedColumn<R, SR> = Omit<Mutable<CalculatedColumn<R, SR>>, 'parent'> & WithParent<R, SR>;
-
-interface ColumnMetric {
-  width: number;
-  left: number;
-}
+type MutableCalculatedColumn<R, SR> = { -readonly [P in keyof CalculatedColumn<R, SR>]: CalculatedColumn<R, SR>[P] };
 
 const defaultColumnWidth = 'auto';
 const defaultColumnMinWidth = 50;
@@ -38,7 +14,7 @@ const sortableIconMinWidth = 56;
 const defaultActiveModes: ActiveModes = { compact: false, mobile: false };
 
 interface CalculatedColumnsArgs<R, SR> {
-  rawColumns: readonly ColumnOrColumnGroup<R, SR>[];
+  rawColumns: readonly Column<R, SR>[];
   defaultColumnOptions: DefaultColumnOptions<R, SR> | undefined | null;
   getColumnWidth: (column: CalculatedColumn<R, SR>) => string | number;
   currentBreakpoint?: BreakpointKey;
@@ -59,14 +35,11 @@ export function useCalculatedColumns<R, SR>({
   const defaultRenderHeaderCell = defaultColumnOptions?.renderHeaderCell ?? renderHeaderCell;
   const defaultSortable = defaultColumnOptions?.sortable ?? false;
   const defaultResizable = defaultColumnOptions?.resizable ?? false;
-  const defaultDraggable = defaultColumnOptions?.draggable ?? false;
 
   // Disable resizing on mobile breakpoints (xs, sm) since it's not useful on touch devices
   const isMobile = currentBreakpoint === 'xs' || currentBreakpoint === 'sm';
 
-  const { columns, colSpanColumns, lastFrozenColumnIndex, headerRowsCount } = useMemo(() => {
-    let lastFrozenColumnIndex = -1;
-    let headerRowsCount = 1;
+  const columns = useMemo(() => {
     const columns: MutableCalculatedColumn<R, SR>[] = [];
     const slotColumns: { column: MutableCalculatedColumn<R, SR>; rule: ColumnMergeRule }[] = [];
 
@@ -82,102 +55,55 @@ export function useCalculatedColumns<R, SR>({
     {
       const gridKeys = new Set<string>();
       const candidates = new Map<string, ColumnMergeRule>();
-      const visitLeaves = (cols: readonly ColumnOrColumnGroup<R, SR>[]) => {
-        for (const col of cols) {
-          if (col.hidden) continue;
-          if ('children' in col) {
-            visitLeaves(col.children);
-            continue;
-          }
-          const rule = resolveMergeRule(col, activeModes);
-          if (rule != null) candidates.set(col.key, rule);
-          else if (isVisibleAtBreakpoint(col)) gridKeys.add(col.key);
-        }
-      };
-      visitLeaves(rawColumns);
+      for (const col of rawColumns) {
+        if (col.hidden) continue;
+        const rule = resolveMergeRule(col, activeModes);
+        if (rule != null) candidates.set(col.key, rule);
+        else if (isVisibleAtBreakpoint(col)) gridKeys.add(col.key);
+      }
       for (const [key, rule] of candidates) {
         if (gridKeys.has(rule.into)) validMerges.set(key, rule);
         else warnInvalidMergeRule(key, rule.into);
       }
     }
 
-    collectColumns(rawColumns, 1);
+    for (const rawColumn of rawColumns) {
+      // Reactive hide flag, such as a column-visibility toggle: excluded like a failing breakpoint.
+      if (rawColumn.hidden) continue;
 
-    function collectColumns(rawColumns: readonly ColumnOrColumnGroup<R, SR>[], level: number, parent?: MutableCalculatedColumnParent<R, SR>) {
-      for (const rawColumn of rawColumns) {
-        // Reactive hide flag, such as a column-visibility toggle: excluded like a failing breakpoint.
-        if (rawColumn.hidden) continue;
+      // Merged columns move into their host cell, so they skip the breakpoint visibility check.
+      const mergeRule = validMerges.get(rawColumn.key);
+      if (mergeRule == null && !isVisibleAtBreakpoint(rawColumn)) continue;
 
-        if ('children' in rawColumn) {
-          const calculatedColumnParent: MutableCalculatedColumnParent<R, SR> = {
-            name: rawColumn.name,
-            parent,
-            idx: -1,
-            colSpan: 0,
-            level: 0,
-            headerCellClass: rawColumn.headerCellClass,
-          };
+      const overrides = resolveModeOverrides(rawColumn, activeModes);
+      const sortable = rawColumn.sortable ?? defaultSortable;
+      const minWidth = overrides.minWidth ?? rawColumn.minWidth ?? defaultMinWidth;
 
-          collectColumns(rawColumn.children, level + 1, calculatedColumnParent);
-          continue;
-        }
+      const column: MutableCalculatedColumn<R, SR> = {
+        ...rawColumn,
+        idx: 0,
+        focusable: rawColumn.focusable ?? true,
+        width: overrides.width ?? rawColumn.width ?? defaultWidth,
+        minWidth: rawColumn.icon && sortable ? Math.max(minWidth, sortableIconMinWidth) : minWidth,
+        maxWidth: overrides.maxWidth ?? rawColumn.maxWidth ?? defaultMaxWidth,
+        sortable,
+        resizable: isMobile ? false : (rawColumn.resizable ?? defaultResizable),
+        renderCell: rawColumn.renderCell ?? defaultRenderCell,
+        renderHeaderCell: rawColumn.renderHeaderCell ?? defaultRenderHeaderCell,
+      };
 
-        // Merged columns move into their host cell, so they skip the breakpoint visibility check.
-        const mergeRule = validMerges.get(rawColumn.key);
-        if (mergeRule == null && !isVisibleAtBreakpoint(rawColumn)) continue;
-
-        const frozen = mergeRule == null && (rawColumn.frozen ?? false);
-
-        const overrides = resolveModeOverrides(rawColumn, activeModes);
-        const sortable = rawColumn.sortable ?? defaultSortable;
-        const minWidth = overrides.minWidth ?? rawColumn.minWidth ?? defaultMinWidth;
-
-        const column: MutableCalculatedColumn<R, SR> = {
-          ...rawColumn,
-          parent: mergeRule == null ? parent : undefined,
-          idx: 0,
-          level: 0,
-          frozen,
-          focusable: rawColumn.focusable ?? true,
-          width: overrides.width ?? rawColumn.width ?? defaultWidth,
-          minWidth: rawColumn.icon && sortable ? Math.max(minWidth, sortableIconMinWidth) : minWidth,
-          maxWidth: overrides.maxWidth ?? rawColumn.maxWidth ?? defaultMaxWidth,
-          sortable,
-          resizable: isMobile ? false : (rawColumn.resizable ?? defaultResizable),
-          draggable: rawColumn.draggable ?? defaultDraggable,
-          renderCell: rawColumn.renderCell ?? defaultRenderCell,
-          renderHeaderCell: rawColumn.renderHeaderCell ?? defaultRenderHeaderCell,
-        };
-
-        if (mergeRule != null) {
-          slotColumns.push({ column, rule: mergeRule });
-          continue;
-        }
-
-        columns.push(column);
-
-        if (frozen) lastFrozenColumnIndex += 1;
-
-        if (level > headerRowsCount) headerRowsCount = level;
-      }
+      if (mergeRule != null) slotColumns.push({ column, rule: mergeRule });
+      else columns.push(column);
     }
 
-    columns.sort(({ key: aKey, frozen: frozenA }, { key: bKey, frozen: frozenB }) => {
+    columns.sort(({ key: aKey }, { key: bKey }) => {
       if (aKey === selectColumnKey) return -1;
       if (bKey === selectColumnKey) return 1;
-
-      if (frozenA) return frozenB ? 0 : -1;
-      if (frozenB) return 1;
-
       return 0;
     });
 
-    const colSpanColumns: CalculatedColumn<R, SR>[] = [];
     columns.forEach((column, idx) => {
       column.idx = idx;
-      updateColumnParent(column, idx, 0);
-
-      if (column.colSpan != null) colSpanColumns.push(column);
     });
 
     // Grouped by side and sorted by `order`, ties keeping column order; hosts always resolve because invalid rules were dropped above.
@@ -199,13 +125,13 @@ export function useCalculatedColumns<R, SR>({
         for (const { column, rule } of hostSlots) {
           // Slot columns share the host's idx so renderCell gets a usable CalculatedColumn and row-change metadata stays in bounds.
           column.idx = host.idx;
-          mergedSlots[rule.side].push({ column: column as CalculatedColumn<R, SR>, className: rule.className, width: rule.width });
+          mergedSlots[rule.side].push({ column, className: rule.className, width: rule.width });
         }
         host.mergedSlots = mergedSlots;
       }
     }
 
-    return { columns, colSpanColumns, lastFrozenColumnIndex, headerRowsCount };
+    return columns;
   }, [
     rawColumns,
     defaultWidth,
@@ -215,20 +141,12 @@ export function useCalculatedColumns<R, SR>({
     defaultRenderHeaderCell,
     defaultResizable,
     defaultSortable,
-    defaultDraggable,
     currentBreakpoint,
     isMobile,
     activeModes,
   ]);
 
-  const { templateColumns, layoutCssVars, totalFrozenColumnWidth } = useMemo((): {
-    templateColumns: readonly string[];
-    layoutCssVars: Readonly<Record<string, string>>;
-    totalFrozenColumnWidth: number;
-  } => {
-    const columnMetrics = new Map<CalculatedColumn<R, SR>, ColumnMetric>();
-    let left = 0;
-    let totalFrozenColumnWidth = 0;
+  const templateColumns = useMemo((): readonly string[] => {
     const templateColumns: string[] = [];
 
     let hasFlexColumn = false;
@@ -239,17 +157,12 @@ export function useCalculatedColumns<R, SR>({
       const width = getColumnWidth(column);
 
       if (typeof width === 'number') {
-        const clampedWidth = clampColumnWidth(width, column);
-        templateColumns.push(`${clampedWidth}px`);
-        columnMetrics.set(column, { width: clampedWidth, left });
-        left += clampedWidth;
+        templateColumns.push(`${clampColumnWidth(width, column)}px`);
       } else {
         // CSS grid minmax distributes remaining space without JS measurement; maxWidth applies only during resize.
         lastAutoColumnIndex = i;
         hasFlexColumn = true;
         templateColumns.push(`minmax(${column.minWidth}px, ${column.minWidth}fr)`);
-        columnMetrics.set(column, { width: column.minWidth, left });
-        left += column.minWidth;
       }
     }
 
@@ -260,30 +173,8 @@ export function useCalculatedColumns<R, SR>({
       templateColumns[idx] = `minmax(${col.minWidth}px, ${col.minWidth}fr)`;
     }
 
-    if (lastFrozenColumnIndex !== -1) {
-      const columnMetric = columnMetrics.get(columns[lastFrozenColumnIndex])!;
-      totalFrozenColumnWidth = columnMetric.left + columnMetric.width;
-    }
+    return templateColumns;
+  }, [getColumnWidth, columns]);
 
-    const layoutCssVars: Record<string, string> = {};
-
-    for (let i = 0; i <= lastFrozenColumnIndex; i++) {
-      const column = columns[i];
-      layoutCssVars[`--rdg-frozen-left-${column.idx}`] = `${columnMetrics.get(column)?.left}px`;
-    }
-
-    return { templateColumns, layoutCssVars, totalFrozenColumnWidth };
-  }, [getColumnWidth, columns, lastFrozenColumnIndex]);
-
-  return { columns, colSpanColumns, templateColumns, layoutCssVars, headerRowsCount, lastFrozenColumnIndex, totalFrozenColumnWidth };
-}
-
-function updateColumnParent<R, SR>(column: MutableCalculatedColumn<R, SR> | MutableCalculatedColumnParent<R, SR>, index: number, level: number) {
-  if (level < column.level) column.level = level;
-
-  const { parent } = column;
-  if (parent === undefined) return;
-  if (parent.idx === -1) parent.idx = index;
-  parent.colSpan += 1;
-  updateColumnParent(parent, index, level - 1);
+  return { columns, templateColumns };
 }

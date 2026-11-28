@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ActorContext } from '#/core/context';
 import { baseDb, getSeedDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
@@ -11,12 +11,6 @@ import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
-
-// The template's one product keeps no drafts. Here it counts as a product that does, so the count reads its table.
-vi.mock('#/db/utils/published-predicate', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('#/db/utils/published-predicate')>()),
-  hasPublishedAt: () => true,
-}));
 
 /**
  * A product that keeps drafts is counted on its table, drafts included: the counter row follows published rows only.

@@ -112,7 +112,8 @@ const takeAttempt = async (
 /**
  * Counts an attempt before the work it bounds runs, so a parallel burst takes the budget one point at a time and at
  * most `points` attempts go through. A spent budget refuses without counting the attempt or blocking.
- * @param cost - Points the attempt takes at once: a batch of mails counts each one.
+ * @param cost - Points the attempt takes at once: one per item on a bulk route. An outcome tier takes 1 a request, however
+ *   many mails it sends.
  * @param debt - Points the in-process fast path let through since its last count here: counted, refused or not.
  * @returns The store holding the attempt (process memory while the database is unreachable) and the bucket with it,
  *   or the spent bucket that refused it.

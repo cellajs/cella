@@ -453,6 +453,8 @@ const rlsSuiteReady = await (async () => {
         userId: TEST_USER_A,
         channels: [{ id: trackedFixture?.homeChannelId ?? TEST_ORG_A, cutoff: cutoff() }],
         productTypes: appConfig.seenTrackedProductTypes,
+        // The application's scope is open here: the tenant policy alone decides what counts.
+        scopeWhereByType: Object.fromEntries(appConfig.seenTrackedProductTypes.map((type) => [type, sql`true`])),
       });
 
     it('counts in-window unseen entities under tenant context', async () => {

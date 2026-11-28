@@ -20,33 +20,39 @@ export const maxWindowMs = 60 * 60 * 1000;
 
 const pointsCache = new TTLCache<PointsEntry>({ maxSize: maxEntries, defaultTtl: maxWindowMs });
 
+/** The key's entry while its window runs. The cache keeps an entry past its window, up to an hour after its last write. */
+const liveEntry = (key: string): PointsEntry | undefined => {
+  const entry = pointsCache.get(key);
+  return entry && Date.now() < entry.windowEnd ? entry : undefined;
+};
+
 /**
  * Local consumption accrues as debt settled by `takeDebt`, so each process reaches the threshold before its first flush.
  * @param windowMs - The limiter's counting window, which a key's first consume starts.
  * @returns Whether to allow locally or check the database.
  */
 export function tryFastConsume(key: string, cost: number, budget: number, windowMs: number): 'allow' | 'check-db' {
-  const now = Date.now();
-  const entry = pointsCache.get(key);
-
-  const isFresh = !entry || now >= entry.windowEnd;
-  const priorConsumed = isFresh ? 0 : entry.consumed;
+  const entry = liveEntry(key);
+  const priorConsumed = entry?.consumed ?? 0;
 
   // At or above the threshold goes to the DB, including a first request whose own cost already exceeds it
   if (priorConsumed + cost >= budget * fastPathThreshold) return 'check-db';
 
-  if (isFresh) {
-    pointsCache.set(key, { consumed: cost, flushed: 0, windowEnd: now + windowMs });
-  } else {
+  if (entry) {
     entry.consumed = priorConsumed + cost;
     pointsCache.set(key, entry);
+  } else {
+    pointsCache.set(key, { consumed: cost, flushed: 0, windowEnd: Date.now() + windowMs });
   }
   return 'allow';
 }
 
-/** Claims the unflushed consumes and marks them flushed: the caller counts them in the database with its own request. */
+/**
+ * Claims the unflushed consumes and marks them flushed: the caller counts them in the database with its own request.
+ * @returns The unflushed points, 0 once the key's window ended: points of an ended window never reach the next row.
+ */
 export function takeDebt(key: string): number {
-  const entry = pointsCache.get(key);
+  const entry = liveEntry(key);
   if (!entry) return 0;
   const debt = Math.max(0, entry.consumed - entry.flushed);
   entry.flushed = entry.consumed;
@@ -60,9 +66,8 @@ export function takeDebt(key: string): number {
  * own would still hold the spent budget when the in-process count restarts, or lose it while that count goes on.
  */
 export function windowSecondsLeft(key: string, windowMs: number): number {
-  const now = Date.now();
-  const entry = pointsCache.get(key);
-  return Math.ceil((entry && now < entry.windowEnd ? entry.windowEnd - now : windowMs) / 1000);
+  const entry = liveEntry(key);
+  return Math.ceil((entry ? entry.windowEnd - Date.now() : windowMs) / 1000);
 }
 
 /**
@@ -71,18 +76,16 @@ export function windowSecondsLeft(key: string, windowMs: number): number {
  */
 export function adoptDbCount(key: string, consumedPoints: number, msBeforeNext: number, windowMs: number): void {
   const now = Date.now();
-  const entry = pointsCache.get(key);
   // A store that reports no time left leaves the entry its own window
-  const ownEnd = entry && now < entry.windowEnd ? entry.windowEnd : now + windowMs;
+  const ownEnd = liveEntry(key)?.windowEnd ?? now + windowMs;
   const windowEnd = msBeforeNext > 0 ? now + msBeforeNext : ownEnd;
   pointsCache.set(key, { consumed: consumedPoints, flushed: consumedPoints, windowEnd });
 }
 
 /** The key's count in process and the milliseconds left in its window; none for a key with no live count. */
 export function localCount(key: string): { consumed: number; msLeft: number } | null {
-  const entry = pointsCache.get(key);
-  const msLeft = entry ? entry.windowEnd - Date.now() : 0;
-  return entry && msLeft > 0 ? { consumed: entry.consumed, msLeft } : null;
+  const entry = liveEntry(key);
+  return entry ? { consumed: entry.consumed, msLeft: entry.windowEnd - Date.now() } : null;
 }
 
 /** Drops every in-process count: what a test does to start from an empty window. */

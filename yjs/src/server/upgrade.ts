@@ -8,7 +8,7 @@ import { docKey, yjsPendingQueueCap, yjsPingIntervalMs } from '../constants';
 import { authorizeDocument } from '../data/permissions';
 import { log } from '../lib/pino';
 import { createSerialQueue } from '../lib/serial-queue';
-import { handleLeave, handleMessage, peekMessageType, refuseFrame } from '../sync/relay';
+import { handleLeave, handleMessage, peekMessageType, refuseFrame, sendPresence } from '../sync/relay';
 import { joinCollab } from '../sync/session-manager';
 import { verifyToken } from './auth';
 import { stripYjsPrefix } from './path-prefix';
@@ -48,9 +48,9 @@ const appOrigin = new URL(appConfig.frontendUrl).origin;
  * of a failed upgrade and sees close 1006, so anything the client must react to (an expired token) closes after the
  * handshake.
  */
-function rejectUpgrade(socket: Duplex, status: keyof typeof statusText, code: number, reason: string): void {
+function rejectUpgrade(socket: Duplex, status: keyof typeof statusText, reason: string): void {
   if (socket.destroyed) return;
-  const body = JSON.stringify({ code, reason });
+  const body = JSON.stringify({ reason });
   socket.once('finish', () => socket.destroy());
   socket.end(
     `HTTP/1.1 ${status} ${statusText[status]}\r\nContent-Type: application/json\r\nContent-Length: ${Buffer.byteLength(body)}\r\nConnection: close\r\n\r\n${body}`,
@@ -101,7 +101,7 @@ function parseTarget(req: IncomingMessage): URL | null {
 }
 
 /**
- * Validates params and token, then accepts the connection until the token expires; entity-level access is verified
+ * Validates the token, then accepts the connection until the token expires; entity-level access is verified
  * asynchronously while sync frames wait in the socket's queue and the socket stays outside the document.
  * Until `ws` takes the socket over, nothing else listens for its errors: a peer resetting the connection mid-handshake
  * would raise an uncaught 'error', which ends the process, under singleVM the whole API. So the handler's own
@@ -123,7 +123,7 @@ export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMess
     admitUpgrade(server, req, socket, handOver).catch((err) => {
       log.error('WS upgrade failed', { err });
       if (handedOver) socket.destroy();
-      else rejectUpgrade(socket, 500, yjsCloseCodes.InternalError, 'Upgrade failed');
+      else rejectUpgrade(socket, 500, 'Upgrade failed');
     });
   };
 }
@@ -139,23 +139,20 @@ async function admitUpgrade(
   const { origin } = req.headers;
   if (origin !== undefined && origin !== appOrigin) {
     log.warn('WS upgrade from another origin', { origin: origin.slice(0, 200) });
-    rejectUpgrade(socket, 403, yjsCloseCodes.AccessDenied, 'Origin not allowed');
+    rejectUpgrade(socket, 403, 'Origin not allowed');
     return;
   }
 
   const url = parseTarget(req);
   if (!url) {
     log.warn('WS upgrade with a malformed request target');
-    rejectUpgrade(socket, 400, yjsCloseCodes.BadRequest, 'Malformed request');
+    rejectUpgrade(socket, 400, 'Malformed request');
     return;
   }
   const token = url.searchParams.get('token');
-  const rawEntityType = url.searchParams.get('entityType');
-  const tenantId = url.searchParams.get('tenantId');
-
-  if (!token || !rawEntityType || !tenantId) {
-    log.warn('WS upgrade missing params', { hasToken: !!token, entityType: rawEntityType, hasTenantId: !!tenantId });
-    rejectUpgrade(socket, 400, yjsCloseCodes.BadRequest, 'Missing params');
+  if (!token) {
+    log.warn('WS upgrade without a token');
+    rejectUpgrade(socket, 400, 'Missing token');
     return;
   }
 
@@ -164,9 +161,9 @@ async function admitUpgrade(
     // Expiry is routine on a long-lived editor socket, so it logs at debug; a bad signature points at a mismatched key
     // pair or tampering and warns.
     if (result.reason === 'expired') {
-      log.debug('WS token expired', { entityType: rawEntityType });
+      log.debug('WS token expired');
     } else {
-      log.warn('WS token verification failed', { entityType: rawEntityType, reason: result.reason });
+      log.warn('WS token verification failed', { reason: result.reason });
     }
     // Closed after the handshake so the browser sees 4001, refreshes its token and reconnects; y-websocket 3 counts
     // every closed connection towards its backoff, so no tight loop.
@@ -178,35 +175,23 @@ async function admitUpgrade(
   }
   const payload = result.payload;
 
-  if (payload.entityType !== rawEntityType) {
-    log.warn('Token entityType mismatch', { tokenType: payload.entityType, requestedType: rawEntityType });
-    rejectUpgrade(socket, 403, yjsCloseCodes.AccessDenied, 'Token not valid for this entity type');
-    return;
-  }
-
-  if (payload.tenantId !== tenantId) {
-    log.warn('Token tenantId mismatch', { tokenTenant: payload.tenantId, requestedTenant: tenantId });
-    rejectUpgrade(socket, 403, yjsCloseCodes.AccessDenied, 'Token not valid for this tenant');
-    return;
-  }
-
   const entityId = url.pathname.replace(/^\/+/, '');
 
   if (!entityId) {
-    rejectUpgrade(socket, 400, yjsCloseCodes.BadRequest, 'Missing entityId');
+    rejectUpgrade(socket, 400, 'Missing entityId');
     return;
   }
 
   // A token names one document: it opens no other.
   if (payload.entityId !== entityId) {
     log.warn('Token entityId mismatch', { tokenEntity: payload.entityId, requestedEntity: entityId });
-    rejectUpgrade(socket, 403, yjsCloseCodes.AccessDenied, 'Token not valid for this entity');
+    rejectUpgrade(socket, 403, 'Token not valid for this entity');
     return;
   }
 
   const allowed = await checkConnectionRate(payload.userId);
   if (!allowed) {
-    rejectUpgrade(socket, 429, yjsCloseCodes.TooManyConnections, 'Too many connections');
+    rejectUpgrade(socket, 429, 'Too many connections');
     return;
   }
 
@@ -257,8 +242,9 @@ async function admitUpgrade(
  * Sync frames from one socket run one at a time in arrival order through a serial queue whose
  * first task awaits the socket's entity verification and then joins the document: nothing is
  * applied, and no peer frame is received, before access is known, and a burst of keystrokes can
- * never interleave. Awareness bypasses the queue and is relayed only for a joined socket; the
- * latest frame sent before the join waits for it, so a new editor's presence shows at once.
+ * never interleave. Awareness bypasses the queue and is relayed only for a joined socket. A new
+ * editor sees its peers' cursors and they see its own at once: the join sends the socket the
+ * presence its session holds and relays the latest frame it sent before.
  * Closing an unjoined socket drops whatever has not started. A joined socket's queue drains first,
  * so updates it sent just before closing still reach the log, and then it leaves the session,
  * whose other sockets drop the presence it held.
@@ -267,8 +253,8 @@ export function setupConnectionHandler(server: WebSocketServer): void {
   server.on('connection', (ws: WebSocket, ctx: SocketContext, verification: Promise<void>) => {
     let joined: SocketContext['scope'] = null;
     let heldAwareness: Uint8Array | null = null;
-    const relayAwareness = (data: Uint8Array) => {
-      handleMessage(ctx, ws, data).catch((err) => {
+    const relayAwareness = (scope: YjsDocScope, data: Uint8Array) => {
+      handleMessage(ctx, scope, ws, data).catch((err) => {
         log.error(`Error handling awareness for ${docKey(ctx.requested)}`, { err });
       });
     };
@@ -288,9 +274,9 @@ export function setupConnectionHandler(server: WebSocketServer): void {
         queue.close();
         return;
       }
-      joinCollab(ctx.scope, ws);
+      sendPresence(joinCollab(ctx.scope, ws), ws);
       joined = ctx.scope;
-      if (held) relayAwareness(held);
+      if (held) relayAwareness(joined, held);
     });
 
     let cleanedUp = false;
@@ -315,7 +301,7 @@ export function setupConnectionHandler(server: WebSocketServer): void {
       const messageType = peekMessageType(data);
       if (messageType === null) return refuseFrame(ctx.requested, ctx.userId, ws, 'Malformed frame');
       if (messageType === yjsMessageTypes.Awareness) {
-        if (joined) relayAwareness(data);
+        if (joined) relayAwareness(joined, data);
         else if (!queue.closed) heldAwareness = data;
         return;
       }
@@ -325,7 +311,8 @@ export function setupConnectionHandler(server: WebSocketServer): void {
         if (ws.readyState === ws.OPEN) ws.close(1011, 'Too many frames before verification');
         return;
       }
-      void queue.enqueue(() => handleMessage(ctx, ws, data));
+      // The join is the queue's first task, and a refused socket's queue closes before any frame runs.
+      void queue.enqueue(() => (joined ? handleMessage(ctx, joined, ws, data) : undefined));
     };
 
     // An exception out of a socket listener is uncaught and ends the process, under singleVM the whole API.

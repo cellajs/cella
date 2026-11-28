@@ -97,7 +97,6 @@ export type {
   OrganizationRole,
   OrganizationSetupConfig,
   ProductEntityType,
-  RelatedChannelType,
   ResourceType,
   SeenTrackedProductType,
   SeqRange,

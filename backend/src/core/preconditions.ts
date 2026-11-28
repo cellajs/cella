@@ -19,7 +19,7 @@ type TagList = '*' | { opaque: string; weak: boolean }[];
 /** A write's `If-Match` and `If-None-Match`, set by the precondition middleware for the read of the row its path names. */
 export type WritePreconditions = {
   entityType: SingleEntityType;
-  /** The path's id param, before validation. */
+  /** The path's id param before validation, lowercased as stored ids are. */
   id: string;
   ifMatch?: TagList;
   ifNoneMatch?: TagList;
@@ -76,7 +76,7 @@ const preconditionFailed = (entityType: SingleEntityType) => new AppError(412, '
  */
 export const checkPreconditions = (ctx: PreconditionContext, entityType: string, row: { id: string; updatedAt: string | null }) => {
   const conditions = ctx.var.preconditions;
-  if (!conditions || conditions.evaluated || conditions.entityType !== entityType || conditions.id.toLowerCase() !== row.id) return;
+  if (!conditions || conditions.evaluated || conditions.entityType !== entityType || conditions.id !== row.id) return;
   conditions.evaluated = true;
   const tag = entityTag(entityType, row.id, row.updatedAt);
   const { ifMatch, ifNoneMatch } = conditions;
@@ -113,7 +113,7 @@ export const preconditionWhere = (ctx: PreconditionContext, table: { id: PgColum
 export const assertNoWriteBetween = (ctx: PreconditionContext, entityType: SingleEntityType, id: string) => {
   const conditions = ctx.var.preconditions;
   if (!conditions || conditions.entityType !== entityType) return;
-  const target = conditions.pinned?.id ?? conditions.id.toLowerCase();
+  const target = conditions.pinned?.id ?? conditions.id;
   if (target === id.toLowerCase() && (conditions.pinned || leftUnchecked(conditions))) throw preconditionFailed(entityType);
 };
 
@@ -235,7 +235,9 @@ export const preconditionsMiddleware =
     const ifMatch = readTagList(ctx, 'If-Match');
     const ifNoneMatch = readTagList(ctx, 'If-None-Match');
     const conditions: WritePreconditions | undefined =
-      write && (ifMatch || ifNoneMatch) ? { entityType, id: ctx.req.param(param) ?? '', ifMatch, ifNoneMatch, evaluated: false } : undefined;
+      write && (ifMatch || ifNoneMatch)
+        ? { entityType, id: (ctx.req.param(param) ?? '').toLowerCase(), ifMatch, ifNoneMatch, evaluated: false }
+        : undefined;
     if (conditions) ctx.set('preconditions', conditions);
 
     await next();

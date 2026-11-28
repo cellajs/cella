@@ -64,24 +64,13 @@ export const handleOAuthCallback = async (
   // The provider's subject is the identity; the asserted address is a snapshot that may have changed since linking.
   const identity = await findIdentityBySubject(dbCtx, { provider, subject: providerUser.id });
 
-  const baseCallbackProps = { providerUser, provider, identity };
-
-  let result: OAuthFlowResult;
-
-  switch (kind) {
-    case 'connect':
-      result = await connectCallbackFlow({ ctx, ...baseCallbackProps });
-      break;
-    case 'invite':
-      result = await inviteCallbackFlow({ ctx, ...baseCallbackProps });
-      break;
-    case 'verify':
-      result = await verifyCallbackFlow({ ctx, ...baseCallbackProps });
-      break;
-    case 'auth':
-      result = await authCallbackFlow(baseCallbackProps);
-      break;
-  }
+  const flows: Record<OAuthCookiePayload['kind'], (props: { ctx: Context<Env> } & BaseCallbackProps) => Promise<OAuthFlowResult>> = {
+    auth: authCallbackFlow,
+    connect: connectCallbackFlow,
+    invite: inviteCallbackFlow,
+    verify: verifyCallbackFlow,
+  };
+  const result = await flows[kind]({ ctx, providerUser, provider, identity });
 
   return processCallbackResult({ ctx, redirectPath, provider, ...result });
 };

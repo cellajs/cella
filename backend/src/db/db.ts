@@ -10,8 +10,8 @@ export type { DB, DbOrTx, Tx } from '#/db/create-connection';
 /** The folder of the migration files, and the schema of the table where drizzle records the applied ones. */
 export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' };
 
-// A deployed mode requires a verified TLS connection to the managed PostgreSQL.
-const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, appConfig.isDeployed && !env.NODB);
+/** The CA every connection to PostgreSQL verifies: a deployed mode requires a verified TLS connection to the managed one. */
+export const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, appConfig.isDeployed && !env.NODB);
 
 const connect = (connectionString: string, max: number, limits: { sessionTimeouts?: SessionTimeouts; clientDeadlineMs?: number } = {}): DB =>
   createPgConnection(connectionString, { max, sslCa, debug: env.DEBUG, ...limits });

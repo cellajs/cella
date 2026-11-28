@@ -19,7 +19,7 @@ Ask the user what the request leaves open. These are costly to change once rows 
 | --- | --- | --- |
 | Is | Content in a channel: syncs live, works offline, inherits access from its channel | A place with members and roles: plain CRUD, no offline queue |
 | Name | Singular camelCase (`task`, `courseSection`): becomes the `<name>Id` column, the `<name>s` table and path, the locale keys | Same |
-| Parent | Its home channel. `nullableAncestors` lets a row live higher up the chain, `relatedChannels` links a channel outside it | The organization or a channel below it |
+| Parent | Its home channel. `nullableAncestors` lets a row live higher up the chain | The organization or a channel below it |
 | Roles | None of its own: the policy matrix grants per channel role | `roles` from the registry, most privileged first, plus `organizationRoles`; optional `elevated`, `drafts` and `defaultRole` |
 | Reference | `attachment` | `organization` (step 5 lists what a channel below it adds) |
 
@@ -109,7 +109,7 @@ and the renderers.
     `seqRangeOf(input)` tells a range read, which reads through `tenantRead` with `includeDeleted`, AND-s
     the `where` of `seqRangeRead(<name>sTable, range)` and orders by its `orderBy`; a normal read
     uses `tenantRead` and hides deleted rows. `resolveCollectionReadFilter` and
-    `buildCollectionReadWhere(readFilter, <name>sTable, '<name>', actor)` give the read scope, and a
+    `buildCollectionReadWhere(readFilter, <name>sTable, access, organizationId)` give the read scope, always a predicate to AND in, and a
     `channelId` param narrows it with `buildSubtreeCoverWhere`. The product's own filters stay out of
     a range read: a row that leaves the filter would never reach the caches. The rows go out through
     `projectTombstones('<name>', …)` after `withActorRefs`, so a deleted row carries no content, and

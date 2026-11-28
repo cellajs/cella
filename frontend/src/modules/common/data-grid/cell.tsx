@@ -1,25 +1,20 @@
 import { PencilIcon } from 'lucide-react';
 import { type MouseEvent, memo } from 'react';
 import { useRovingTabIndex } from './hooks';
-import type { CalculatedColumn, CellMouseEventHandler, CellRendererProps, MergedSlots, TileSide } from './types';
+import type { CalculatedColumn, CellRendererProps, MergedSlots, TileSide } from './types';
 import { bodyCellFocusRing, cn, createCellEvent, getCellClassname, getCellStyle, isCellEditableUtil } from './utils/grid-utils';
 
 function Cell<R, SR>({
   column,
-  colSpan,
   isCellSelected,
   isDraggedOver,
   row,
   rowIdx,
   className,
   onMouseDown,
-  onCellMouseDown,
   onClick,
   onCellClick,
   onDoubleClick,
-  onCellDoubleClick,
-  onContextMenu,
-  onCellContextMenu,
   onRowChange,
   selectCell,
   style,
@@ -41,36 +36,21 @@ function Cell<R, SR>({
     selectCell({ rowIdx, idx: column.idx }, { enableEditor });
   }
 
-  function handleMouseEvent(event: React.MouseEvent<HTMLDivElement>, eventHandler?: CellMouseEventHandler<R, SR>) {
-    let eventHandled = false;
-    if (eventHandler) {
-      const cellEvent = createCellEvent(event);
-      eventHandler({ rowIdx, row, column, selectCell: selectCellWrapper }, cellEvent);
-      eventHandled = cellEvent.isGridDefaultPrevented();
-    }
-    return eventHandled;
-  }
-
   function handleMouseDown(event: MouseEvent<HTMLDivElement>) {
     // Focus without scrolling so the cell's scroll margin cannot jump the page; the mousedown default must stay for row drag.
     event.currentTarget.focus({ preventScroll: true });
     onMouseDown?.(event);
-    if (!handleMouseEvent(event, onCellMouseDown)) selectCell({ rowIdx, idx: column.idx });
+    selectCell({ rowIdx, idx: column.idx });
   }
 
   function handleClick(event: MouseEvent<HTMLDivElement>) {
     onClick?.(event);
-    handleMouseEvent(event, onCellClick);
+    onCellClick?.({ rowIdx, row, column, selectCell: selectCellWrapper }, createCellEvent(event));
   }
 
   function handleDoubleClick(event: MouseEvent<HTMLDivElement>) {
     onDoubleClick?.(event);
-    if (!handleMouseEvent(event, onCellDoubleClick)) selectCellWrapper(true);
-  }
-
-  function handleContextMenu(event: MouseEvent<HTMLDivElement>) {
-    onContextMenu?.(event);
-    handleMouseEvent(event, onCellContextMenu);
+    selectCellWrapper(true);
   }
 
   function handleRowChange(newRow: R) {
@@ -81,16 +61,14 @@ function Cell<R, SR>({
     <div
       role="gridcell"
       aria-colindex={column.idx + 1} // aria-colindex is 1-based
-      aria-colspan={colSpan}
       aria-selected={isCellSelected}
       aria-readonly={!isEditable || undefined}
       tabIndex={effectiveTabIndex}
       className={className}
-      style={{ ...getCellStyle(column, colSpan), ...style }}
+      style={{ ...getCellStyle(column), ...style }}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
-      onContextMenu={handleContextMenu}
       onFocus={onFocus}
       {...props}
     >

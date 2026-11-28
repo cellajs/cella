@@ -4,8 +4,7 @@
 
 Each product entity declares one `parent` channel, which becomes a non-null `<channel>Id` column (see `channelRelationColumns`). `parent` is required: without it there is no channel to derive access from. A row's home is the channel it lives in ([below](#row-to-channel-attribution)); what a grant reaches from there: [Permissions](../../../cella/docs/PERMISSIONS.md#the-policy-consulted).
 
-- `relatedChannels` declares non-ancestor channel references (nullable id columns): cross-links, not homes.
-- `nullableAncestors` declares ancestors whose id columns are nullable, so rows may attach above the declared parent (variable-depth rows, e.g. a course-stream item with `projectId = null`). The chain root stays non-null, so a row always belongs to the root channel.
+`nullableAncestors` declares ancestors whose id columns are nullable: rows may attach above the declared parent (variable-depth rows, e.g. a course-stream item with `projectId = null`). The chain root stays non-null, and a row always belongs to the root channel.
 
 Public readability is a permission concern, declared per subject with `publicRead()` in `shared/config/permissions-config.ts`, not in the hierarchy.
 

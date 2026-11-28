@@ -1,24 +1,21 @@
 import { useEffectEvent, useLayoutEffect, useRef } from 'react';
-import type { CellKeyboardEvent, CellRendererProps, EditCellKeyDownArgs, Maybe, Omit, RenderEditCellProps } from './types';
-import { bodyCellFocusRing, createCellEvent, getCellClassname, getCellStyle, onEditorNavigation } from './utils/grid-utils';
+import type { Omit, RenderEditCellProps } from './types';
+import { bodyCellFocusRing, getCellClassname, getCellStyle, onEditorNavigation } from './utils/grid-utils';
 
 const canUsePostTask = typeof scheduler !== 'undefined' && typeof scheduler.postTask === 'function';
 
-type SharedCellRendererProps<R, SR> = Pick<CellRendererProps<R, SR>, 'colSpan'>;
-
-interface EditCellProps<R, SR> extends Omit<RenderEditCellProps<R, SR>, 'onRowChange' | 'onClose'>, SharedCellRendererProps<R, SR> {
+interface EditCellProps<R, SR> extends Omit<RenderEditCellProps<R, SR>, 'onRowChange' | 'onClose'> {
   rowIdx: number;
   onRowChange: (row: R, commitChanges: boolean, shouldFocusCell: boolean) => void;
   closeEditor: (shouldFocusCell: boolean) => void;
   navigate: (event: React.KeyboardEvent<HTMLDivElement>) => void;
-  onKeyDown: Maybe<(args: EditCellKeyDownArgs<R, SR>, event: CellKeyboardEvent) => void>;
 }
 
 /**
  * Commits outside mousedown events after capture reaches portals and before blur unmounts the editor.
  * A scheduled fallback handles events whose propagation stops before returning to window.
  */
-export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, closeEditor, onKeyDown, navigate }: EditCellProps<R, SR>) {
+export function EditCell<R, SR>({ column, row, rowIdx, onRowChange, closeEditor, navigate }: EditCellProps<R, SR>) {
   const captureEventRef = useRef<MouseEvent | undefined>(undefined);
   const abortControllerRef = useRef<AbortController>(undefined);
   const frameRequestRef = useRef<number>(undefined);
@@ -76,24 +73,6 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
   }, [commitOnOutsideClick]);
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (onKeyDown) {
-      const cellEvent = createCellEvent(event);
-      onKeyDown(
-        {
-          mode: 'EDIT',
-          row,
-          column,
-          rowIdx,
-          navigate() {
-            navigate(event);
-          },
-          onClose,
-        },
-        cellEvent,
-      );
-      if (cellEvent.isGridDefaultPrevented()) return;
-    }
-
     if (event.key === 'Escape') onClose();
     else if (event.key === 'Enter') onClose(true);
     else if (onEditorNavigation(event)) navigate(event);
@@ -116,10 +95,9 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
     <div
       role="gridcell"
       aria-colindex={column.idx + 1} // aria-colindex is 1-based
-      aria-colspan={colSpan}
       aria-selected
       className={className}
-      style={getCellStyle(column, colSpan)}
+      style={getCellStyle(column)}
       onKeyDown={handleKeyDown}
       onMouseDownCapture={cancelTask}
     >

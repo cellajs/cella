@@ -5,9 +5,8 @@ export const roles = createRoleRegistry(['admin', 'member'] as const);
 
 /**
  * Entity relationships, single-parent inheritance. The organization is the spine (`organization()`,
- * the only parentless entity); parents before children, and order sets the ancestor chain. Products
- * may add `relatedChannels` (non-ancestor channel refs, nullable id columns). Public readability is
- * a permission concern, not declared here. Channels may add `elevated` (roles whose product grants
+ * the only parentless entity); parents before children, and order sets the ancestor chain. Public
+ * readability is a permission concern, not declared here. Channels may add `elevated` (roles whose product grants
  * cover the whole subtree, compiled into `hierarchy.elevatedGrants`), `drafts` (the channel can
  * start unpublished; `prepareRoles` are invited at once, the rest when it is published) and
  * `defaultRole` (the role people start at when nobody picks one, the least privileged without it);

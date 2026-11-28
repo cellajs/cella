@@ -101,8 +101,8 @@
         "kind": "middleware",
         "values": {
           "spamLimiter": {
-            "name": "Emails sent",
-            "description": "Mails sent for each user, or for each IP address when not signed in. A failed request does not count.",
+            "name": "Requests that send mail",
+            "description": "Requests that send mail for each user, or for each IP address when not signed in, however many addresses one mails. A failed request does not count.",
             "policy": {
               "mode": "success",
               "points": 10,
@@ -132,7 +132,7 @@
             "description": "Share links that name nothing, for each IP address.",
             "policy": {
               "mode": "fail",
-              "points": 100,
+              "points": 50,
               "duration": 3600,
               "blockDuration": 3600
             }
@@ -10964,16 +10964,17 @@
                                   "description": "Highest sequence position among the rows the hint read, which the caller may all read: a client whose view of the embedded product is opaque takes it as that view's cursor"
                                 }
                               },
-                              "required": ["embeddedProductType", "update", "remove"]
+                              "required": ["embeddedProductType", "update", "remove", "untilSeq"]
                             }
                           },
                           "spreadWindow": {
                             "type": "integer",
                             "description": "The window, in ms, over which this organization's online audience spreads the reads a catchup gap or a new generation owes; the same a change frame carries. Absent or 0: read at once"
                           }
-                        }
+                        },
+                        "required": ["signals"]
                       },
-                      "description": "Per organization: signal versions, propagation hints and the spread window, { [organizationId]: { signals?, propagation?, spreadWindow? } }"
+                      "description": "Per organization: signal versions, propagation hints and the spread window, { [organizationId]: { signals, propagation?, spreadWindow? } }"
                     },
                     "views": {
                       "type": "array",

@@ -3,6 +3,7 @@ import { yjsCloseCodes } from 'shared/utils/yjs-protocol';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import { yjsAwarenessMaxStateBytes } from '../constants';
+import type { SocketContext } from '../server/upgrade';
 import {
   awarenessClientIds,
   awarenessEntries,
@@ -34,7 +35,10 @@ vi.mock('../data/storage', () => storage);
 
 vi.mock('../sync/materialize', () => ({ postMaterialize: vi.fn().mockResolvedValue('ok'), stateToBlocksJsonOrNull: vi.fn(() => '[]') }));
 
-const { handleLeave, handleMessage, onLogNotice, peekMessageType, relayUnseen, relayUnseenEverywhere, runCompaction } = await import('../sync/relay');
+const relay = await import('../sync/relay');
+const { handleLeave, onLogNotice, peekMessageType, relayUnseen, relayUnseenEverywhere, runCompaction } = relay;
+/** A frame of a socket in the scope its context was authorized in, as the connection handler passes it once joined. */
+const handleMessage = (c: SocketContext, ws: unknown, data: Uint8Array) => relay.handleMessage(c, c.scope!, ws as never, data);
 const { postMaterialize } = await import('../sync/materialize');
 const { stateToBlocksJson } = await import('#/modules/yjs/helpers/description-update');
 const { endCollab, getCollab, joinCollab, leaveCollab } = await import('../sync/session-manager');
@@ -79,53 +83,12 @@ afterEach(() => {
 });
 
 describe('handleMessage: gating and validation', () => {
-  it('must not answer, log or relay sync frames from a socket pending verification, even into a live session of its document', async () => {
-    // The document is open with a peer in it: the pending socket's frames reach neither the log nor the peer.
-    const { ctx: editor, scope, key, ws: editorWs, collab } = session();
-    const peer = mockWebSocket();
-    joinCollab(scope, peer as never);
-    const pending = mockSocketContext({ requested: scope, scope: null });
-    const ws = mockWebSocket();
-
-    await handleMessage(pending, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
-    await handleMessage(pending, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
-
-    expect(ws.sent).toHaveLength(0);
-    expect(storage.logs.get(key)).toBeUndefined();
-    expect(peer.sent).toHaveLength(0);
-    // Positive control: the same update from a verified socket of the session is logged and reaches the peer.
-    await handleMessage(editor, editorWs as never, buildSyncUpdate(mapUpdate('k', 1)));
-    expect(storage.logs.get(key)).toHaveLength(1);
-    expect(peer.sent).toHaveLength(1);
-    leaveCollab(collab.scope, peer as never);
-  });
-
   it('messages < 2 bytes and unknown message types are silently dropped', async () => {
     const ws = mockWebSocket();
     await handleMessage(ctx, ws as never, new Uint8Array([0]));
     await handleMessage(ctx, ws as never, new Uint8Array([9, 0, 0]));
     expect(ws.sent).toHaveLength(0);
     expect(storage.appendUpdate).not.toHaveBeenCalled();
-  });
-
-  it('must not throw on a frame whose message type is cut short, and closes its sender with 4400', async () => {
-    const { ctx: c, scope, key, ws, collab } = session();
-    const peer = mockWebSocket();
-    joinCollab(scope, peer as never);
-    // Two continuation bytes: a varint that never ends.
-    const frame = new Uint8Array([0x80, 0x80]);
-
-    expect(peekMessageType(frame)).toBeNull();
-    await expect(handleMessage(c, ws as never, frame)).resolves.toBeUndefined();
-    expect(ws.closed).toEqual({ code: 4400, reason: 'Malformed frame' });
-    expect(peer.sent).toHaveLength(0);
-
-    // Positive control: a well-formed frame reads its type and applies.
-    const update = buildSyncUpdate(mapUpdate('k', 1));
-    expect(peekMessageType(update)).toBe(0);
-    await handleMessage(c, peer as never, update);
-    expect(storage.logs.get(key)).toHaveLength(1);
-    leaveCollab(collab.scope, peer as never);
   });
 });
 
@@ -511,12 +474,12 @@ describe('handleMessage: Saved', () => {
   });
 
   it('must not answer a frame it refuses: the socket closes with 4400 and is told nothing', async () => {
-    // An update and a reply Yjs cannot decode, a sync payload cut short, a message type cut short.
+    // An update and a reply Yjs cannot decode, a sync payload cut short, a state vector cut short.
     const refused = [
       buildSyncUpdate(undecodableUpdate),
       buildSyncStep2(undecodableUpdate),
       new Uint8Array([0, 2, 0x85]),
-      new Uint8Array([0x80, 0x80]),
+      buildSyncStep1(new Uint8Array([0x80])),
     ];
     for (const frame of refused) {
       const { ctx: c, ws } = session();
@@ -693,16 +656,11 @@ describe('handleMessage: awareness', () => {
     leaveCollab(collab.scope, peer as never);
   });
 
-  it('must not relay presence from an unverified, closing or unjoined socket', async () => {
+  it('must not relay presence from a socket outside the session', async () => {
     const { ctx: c, scope, ws, collab } = session();
     const peer = mockWebSocket();
     joinCollab(scope, peer as never);
 
-    const pending = mockSocketContext({ requested: scope, scope: null });
-    await handleMessage(pending, mockWebSocket() as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1 })));
-    const closing = mockWebSocket({ readyState: 2 });
-    joinCollab(scope, closing as never);
-    await handleMessage(c, closing as never, buildAwarenessMessage(awarenessUpdate({ clientId: 2 })));
     // Verified, but of a session that ended: it holds no client in this one.
     await handleMessage(c, mockWebSocket() as never, buildAwarenessMessage(awarenessUpdate({ clientId: 4 })));
     expect(peer.sent).toHaveLength(0);
@@ -711,7 +669,6 @@ describe('handleMessage: awareness', () => {
     await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 3 })));
     expect(peer.sent).toHaveLength(1);
     leaveCollab(collab.scope, peer as never);
-    leaveCollab(collab.scope, closing as never);
   });
 
   it('must not relay a presence entry whose colour is not a hex colour', async () => {
@@ -815,13 +772,30 @@ describe('handleMessage: awareness ownership', () => {
     for (const ws of [victim.ws, attacker.ws]) leaveCollab(collab.scope, ws as never);
   });
 
-  it("lets a user's new socket take over its client, and frees a client whose socket left", async () => {
+  it("must not move a client to its user's other tab via the entry that tab echoes: the tab's leave keeps the cursor", async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const first = joined(scope, 'user-a');
+    const second = joined(scope, 'user-a');
+    await handleMessage(first.ctx, first.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 50 })));
+
+    // y-websocket re-sends the entry it applied, at the clock it received.
+    await handleMessage(second.ctx, second.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 50 })));
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[50]]);
+    expect(collab.awarenessOwners.get(50)?.ws).toBe(first.ws);
+
+    handleLeave(scope, second.ws as never);
+    expect(peer.ws.sent).toHaveLength(1);
+    for (const ws of [peer.ws, first.ws]) leaveCollab(collab.scope, ws as never);
+  });
+
+  it("lets a user's new socket take over its client at a higher clock, and frees a client whose socket left", async () => {
     const { scope, collab } = session();
     const peer = joined(scope, 'user-peer');
     const first = joined(scope, 'user-a');
     await handleMessage(first.ctx, first.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 50 })));
 
-    // A reconnect of the same user announces the same client before the old socket's close is processed.
+    // A reconnect of the same user renews the client at a later clock before the old socket's close is processed.
     const reconnect = joined(scope, 'user-a');
     await handleMessage(reconnect.ctx, reconnect.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 50, clock: 2 })));
     expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[50], [50]]);

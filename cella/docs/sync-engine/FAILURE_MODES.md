@@ -26,7 +26,7 @@ A second answer at one level is marked as an open finding to remove. A failure n
 | A change commits while catchup reads | The stream opens before catchup and buffers its frames until catchup ends. A full buffer runs catchup once more (`runCatchupCycle`) | | |
 | Frames are missed: the stream was down, or the API restarted or closed a client that stopped reading | | Catchup fetches each view's sequence gap (`processStreamCatchup`) | |
 | A frame is lost while the stream stays open: a held change dropped, a dispatch that failed or was denied for all, a frame a tab could not handle | | | None, an open finding: the scope reads the gap at its next frame, from its cursor, or at the next catchup |
-| The API stops or dies while it holds an audience's changes for an interval | A stop sends them before the process exits (`closeChangeBundles`) | A process that dies loses them with its streams, and catchup fetches each view's gap (`processStreamCatchup`) | |
+| The API stops or dies while it holds bundled changes for an interval | A stop sends them before the process exits (`closeChangeBundles`) | A process that dies loses them with its streams, and catchup fetches each view's gap (`processStreamCatchup`) | |
 | The read budget refuses a range fetch or a list read | The range keeps its place and its cursor until the budget has reads left, and changes announced meanwhile join it (`flushGroup`). The product queries on screen it refused read again then (`refetchRefusedAfterHold`) | | |
 | A range fetch fails for another reason | Retried with a growing delay (`flushGroup`) | The cursor moves past the range and its lists get a refetch mark (`invalidateUndelivered`) | |
 | A range returns fewer rows than announced: a row changed again, became unreadable or left with its channel | | Refetch mark (`invalidateUndelivered`) | |
@@ -63,7 +63,7 @@ A second answer at one level is marked as an open finding to remove. A failure n
 | Rows are readable but the summary is unproven (`opaque`) | | Each catchup marks the view's cached lists and refetches those on screen (`processStreamCatchup`). Its hint names the embedded rows changed since the last one, whose hosts refetch (`settleOpaqueHint`) | |
 | The leader tab closes | Web Locks hand the stream to another tab, which reconnects (`initTabCoordinator`) | | |
 | Web Locks are missing or the election throws | The tab takes the leader role (`initTabCoordinator`) | | |
-| A tab comes back from a public page while another tab leads | | It runs one catchup of its own when it connects (`connect`) | None, an open finding: a change the leader forwards while that catchup runs, above its frontier and on a background scope, is dropped with the pending ranges (`resetFetchPrioritizer`) and arrives with the scope's next frame |
+| A tab comes back from a public page while another tab leads | | It runs one catchup of its own when it connects (`connect`). The ranges the leader forwarded meanwhile stay pending: only a catchup that reset the cursors drops them (`resetFetchPrioritizer`) | None, an open finding: a pending range of a view that became forbidden spends its retries on refusals before its lists are marked (`flushGroup`) |
 | Two tabs of one user write the persisted sync store | | | None, an open finding: the last write of the one record per user wins (`syncStore`). One tab's cursors or cleared refetch can overwrite those of a tab that closed before its refetch ran |
 | A tab is killed after a range fetch, before its cache write | The cursors and signal versions wait for the cache write that holds their rows (`whenCacheWritten`) | Catchup fetches the range again from the stored cursor (`processStreamCatchup`) | |
 
@@ -71,7 +71,7 @@ A second answer at one level is marked as an open finding to remove. A failure n
 
 | What fails | Core | Mid | Lost case |
 | --- | --- | --- | --- |
-| The books get a new generation | | | The API ends every stream with `resync`. Each client resets its cursors and signal versions, runs each versioned signal's handler once and refetches once at its share of a spread (`adoptGeneration`) |
+| The books are rebuilt | | | The API ends every stream with `resync`. Each client resets its cursors and signal versions, runs each versioned signal's handler once and refetches once at its share of a spread (`adoptGeneration`) |
 | A device was away longer than the activity window | | | It resets its cursors and refetches at once (`startOverIfAway`) |
 | A create or update reaches the API after its row left the table | The API sends no frame for it (`dispatchChange`) | | |
 | A frame or signal of a type the bundle does not know | Skipped (`readFrame`, `handleStreamSignal`) | | |

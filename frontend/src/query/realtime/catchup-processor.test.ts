@@ -221,7 +221,7 @@ describe('catchup processor (view-driven)', () => {
     queryClient.setQueryData(labelKeys.detail.byId('label-1'), { id: 'label-1', name: 'old' });
 
     await processStreamCatchup({
-      organizations: { 'org-1': { propagation: [{ embeddedProductType: label, update: ['label-1'], remove: [], untilSeq: 9 }] } },
+      organizations: { 'org-1': { signals: {}, propagation: [{ embeddedProductType: label, update: ['label-1'], remove: [], untilSeq: 9 }] } },
       views: [{ organizationId: 'org-1', productType: label, status: 'opaque' }],
       generation: 1,
     });
@@ -260,7 +260,7 @@ describe('catchup after the server rebuilt its sync books', () => {
   it('must not fetch a range from a cursor of the old books: it refetches what is cached once, at its share of the spread, and takes the frontier as its baseline', async () => {
     const { keys, rangeFetch, listFetch, unsubscribe } = startOnOldBooks();
 
-    await processStreamCatchup({ ...okViewResponse(12), organizations: { 'org-1': { spreadWindow: 10_000 } }, generation: 2 });
+    await processStreamCatchup({ ...okViewResponse(12), organizations: { 'org-1': { signals: {}, spreadWindow: 10_000 } }, generation: 2 });
     // Every client hears of the rebuild at once: none refetches before its share of the spread.
     await vi.advanceTimersByTimeAsync(4_999);
     expect(listFetch).not.toHaveBeenCalled();
@@ -277,14 +277,14 @@ describe('catchup after the server rebuilt its sync books', () => {
   it('must not lose the refetch to a reload before its share of the spread: the next catchup arms it again, the one after does not repeat it', async () => {
     const { listFetch, unsubscribe } = startOnOldBooks();
 
-    await processStreamCatchup({ ...okViewResponse(12), organizations: { 'org-1': { spreadWindow: 10_000 } }, generation: 2 });
+    await processStreamCatchup({ ...okViewResponse(12), organizations: { 'org-1': { signals: {}, spreadWindow: 10_000 } }, generation: 2 });
     // The tab reloads: its timer is gone, the store it persisted with the cursor reset is not.
     vi.clearAllTimers();
-    await processStreamCatchup({ ...okViewResponse(12), organizations: { 'org-1': { spreadWindow: 10_000 } }, generation: 2 });
+    await processStreamCatchup({ ...okViewResponse(12), organizations: { 'org-1': { signals: {}, spreadWindow: 10_000 } }, generation: 2 });
     await vi.advanceTimersByTimeAsync(10_000);
     expect(listFetch).toHaveBeenCalledOnce();
 
-    await processStreamCatchup({ ...okViewResponse(12), organizations: { 'org-1': { spreadWindow: 10_000 } }, generation: 2 });
+    await processStreamCatchup({ ...okViewResponse(12), organizations: { 'org-1': { signals: {}, spreadWindow: 10_000 } }, generation: 2 });
     await vi.advanceTimersByTimeAsync(10_000);
     expect(listFetch).toHaveBeenCalledOnce();
     unsubscribe();
@@ -342,8 +342,8 @@ describe('catchup → fetch prioritizer fold', () => {
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { results: [], totalSize: 0 });
 
-    const hint = { embeddedProductType: 'attachment', update: ['host-1'], remove: [] };
-    const response = { ...okViewResponse(9), organizations: { 'org-1': { propagation: [hint] } } } as CatchUpMyStreamResponse;
+    const hint = { embeddedProductType: 'attachment', update: ['host-1'], remove: [], untilSeq: 9 };
+    const response = { ...okViewResponse(9), organizations: { 'org-1': { signals: {}, propagation: [hint] } } } as CatchUpMyStreamResponse;
     await processStreamCatchup(response);
 
     // The hint waits for the range that carries the fresh embedded rows, and the cursor for their ingestion.
@@ -368,8 +368,8 @@ describe('catchup → fetch prioritizer fold', () => {
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { results: [], totalSize: 0 });
 
-    const hint = { embeddedProductType: 'attachment', update: ['host-1'], remove: [] };
-    const response = { ...okViewResponse(9), organizations: { 'org-1': { propagation: [hint] } } } as CatchUpMyStreamResponse;
+    const hint = { embeddedProductType: 'attachment', update: ['host-1'], remove: [], untilSeq: 9 };
+    const response = { ...okViewResponse(9), organizations: { 'org-1': { signals: {}, propagation: [hint] } } } as CatchUpMyStreamResponse;
     await processStreamCatchup(response);
 
     expect(rangeFetch).toHaveBeenCalledTimes(1);
@@ -475,7 +475,7 @@ describe('catchup processor: a new generation', () => {
 
   /** A catchup answer that names another generation than the client holds, with the window the API sized. */
   const generationAnswer = (generation: number, spreadWindow: number): CatchUpMyStreamResponse => ({
-    organizations: { 'org-1': { spreadWindow }, 'org-2': { spreadWindow } },
+    organizations: { 'org-1': { signals: {}, spreadWindow }, 'org-2': { signals: {}, spreadWindow } },
     views: [],
     generation,
   });

@@ -19,6 +19,7 @@ function buildApp(key: string, tenantId: string, ceiling: number, budget: () => 
     limits: { points: ceiling, duration: 60 * 60 },
     getPointsBudget: budget,
     getConsumePoints: (ctx) => Number(ctx.req.header('x-cost') ?? 1),
+    countsInProcess: true,
   });
   const app = new Hono<Env>();
   app.onError((err, c) => {
@@ -139,7 +140,6 @@ describe('points budget enforcement (end to end)', () => {
     it('refuses in-process counting for a window longer than an hour, which the counter would drop an idle key inside', () => {
       const daily = { points: 10, duration: 60 * 60 * 24 };
       expect(() => rateLimiter('limit', 'daily', ['tenantId'], { limits: daily, countsInProcess: true })).toThrow('at most an hour');
-      expect(() => rateLimiter('limit', 'dailyBudget', ['tenantId'], { limits: daily, getPointsBudget: () => 5 })).toThrow('at most an hour');
     });
   });
 

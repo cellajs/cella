@@ -94,7 +94,7 @@ describe('EntityHierarchyBuilder', () => {
           .organization({ roles: roles.all })
           // @ts-expect-error - Testing runtime validation (parent is required at the type level)
           .product('page', { parent: null });
-      }).toThrow('has no parent');
+      }).toThrow('references unknown parent "null"');
     });
   });
 
@@ -174,13 +174,6 @@ describe('EntityHierarchyBuilder', () => {
       expect(hierarchy.productTypes).toContain('task');
       expect(hierarchy.productTypes).toContain('label');
       expect(hierarchy.productTypes).toContain('attachment');
-    });
-
-    it('relatableChannelTypes contains only channel parents of products', () => {
-      expect(hierarchy.relatableChannelTypes).toContain('project');
-      expect(hierarchy.relatableChannelTypes).not.toContain('organization');
-      expect(hierarchy.relatableChannelTypes).not.toContain('workspace');
-      expect(hierarchy.relatableChannelTypes).toHaveLength(1);
     });
 
     it('allTypes includes all entities', () => {

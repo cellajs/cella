@@ -127,8 +127,7 @@ describe('the home column of a collection read', () => {
   /** A list narrowed to one home channel, as a placement-filtered read asks for it. */
   const compiled = (entityType: ProductEntityType, from: typeof table | typeof attachmentsTable, homeHierarchy?: EntityHierarchy) => {
     const filter = resolveCollectionReadFilter(sysadmin, entityType, 'org1', { homeChannelId: 'p1' }, { hierarchy: homeHierarchy });
-    const where = buildCollectionReadWhere(filter, from, sysadmin);
-    return where.kind === 'where' ? new PgDialect().sqlToQuery(where.where).sql : where.kind;
+    return new PgDialect().sqlToQuery(buildCollectionReadWhere(filter, from, sysadmin, 'org1')).sql;
   };
 
   it('is the declared parent column, whether or not that ancestor is nullable', () => {

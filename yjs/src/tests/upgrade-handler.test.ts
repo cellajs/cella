@@ -34,11 +34,12 @@ vi.mock('../sync/relay', () => ({
     return data.length === 0 ? null : data[0];
   },
   refuseFrame: (_scope: unknown, _userId: string, ws: { close: (code: number, reason: string) => void }) => ws.close(4400, 'Malformed frame'),
-  handleMessage: vi.fn(async (ctx: { scope: unknown }, _ws: unknown, data: Uint8Array) => {
+  handleMessage: vi.fn(async (ctx: { scope: unknown }, _scope: unknown, _ws: unknown, data: Uint8Array) => {
     // A slow first frame: later frames must still apply after it, in order.
     if (data[2] === 1) await new Promise((resolve) => setTimeout(resolve, 30));
     applied.push({ type: data[0], verified: ctx.scope !== null, body: data[2] });
   }),
+  sendPresence: vi.fn(),
 }));
 vi.mock('../sync/session-manager', () => ({ joinCollab: vi.fn(), leaveCollab: vi.fn() }));
 vi.mock('../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
@@ -80,7 +81,7 @@ function connect(path: string, origin?: string): Promise<{ ws: WsWebSocket; clos
 describe('setupUpgradeHandler', () => {
   it('closes an expired token after the handshake with 4001, so a browser client sees the code', async () => {
     const token = createExpiredToken('user-1');
-    const { closeCode, closeReason, error } = await connect(`/entity-1?token=${token}&entityType=attachment&tenantId=tenant-1`);
+    const { closeCode, closeReason, error } = await connect(`/entity-1?token=${token}`);
 
     expect(error).toBeUndefined();
     expect(closeCode).toBe(4001);
@@ -90,29 +91,22 @@ describe('setupUpgradeHandler', () => {
   it('must not open a connection via a token another key signed: it closes with 4001 after the handshake', async () => {
     // Every signature verifyToken refuses (a relay-secret MAC included, auth.test.ts) takes this one path.
     const token = createSignedToken({ userId: 'user-1', keyMaterial: 'another-key-material-of-32-characters' });
-    const { closeCode, closeReason } = await connect(`/entity-1?token=${token}&entityType=attachment&tenantId=tenant-1`);
+    const { closeCode, closeReason } = await connect(`/entity-1?token=${token}`);
 
     expect(closeCode).toBe(4001);
     expect(closeReason).toBe('Invalid or expired token');
   });
 
-  it('still rejects missing params at the HTTP level', async () => {
-    const { error, closeCode } = await connect('/entity-1?entityType=attachment&tenantId=tenant-1');
+  it('still rejects a missing token at the HTTP level', async () => {
+    const { error, closeCode } = await connect('/entity-1');
 
     expect(closeCode).toBeUndefined();
     expect(error?.message).toContain('400');
   });
 
-  it('must not open a document with a token for another tenant', async () => {
-    const token = createSignedToken({ userId: 'user-1', tenantId: 'tenant-2' });
-    const { error } = await connect(`/entity-1?token=${token}&entityType=attachment&tenantId=tenant-1`);
-
-    expect(error?.message).toContain('403');
-  });
-
   it('must not open a document with a token for another entity', async () => {
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-2' });
-    const { error, closeCode } = await connect(`/entity-1?token=${token}&entityType=attachment&tenantId=tenant-1`);
+    const { error, closeCode } = await connect(`/entity-1?token=${token}`);
 
     expect(closeCode).toBeUndefined();
     expect(error?.message).toContain('403');
@@ -121,9 +115,7 @@ describe('setupUpgradeHandler', () => {
   it('must not keep a socket open past its token expiry', async () => {
     const expiring = createSignedToken({ userId: 'user-1', exp: Date.now() + 400 });
     const lasting = createSignedToken({ userId: 'user-1' });
-    const [short, long] = await Promise.all(
-      [expiring, lasting].map((token) => openSocket(`${baseUrl}/entity-1?token=${token}&entityType=attachment&tenantId=tenant-1`)),
-    );
+    const [short, long] = await Promise.all([expiring, lasting].map((token) => openSocket(`${baseUrl}/entity-1?token=${token}`)));
 
     // The client refetches its token on 4001 and reconnects; revoked access gets no new token.
     expect(await short.closed).toEqual({ code: 4001, reason: 'Token expired' });
@@ -133,7 +125,7 @@ describe('setupUpgradeHandler', () => {
   });
 
   it('must not open a socket from a page of another site, whatever token it carries', async () => {
-    const path = `/entity-1?token=${createSignedToken({ userId: 'user-1' })}&entityType=attachment&tenantId=tenant-1`;
+    const path = `/entity-1?token=${createSignedToken({ userId: 'user-1' })}`;
 
     for (const origin of ['https://evil.example', 'null']) {
       const { error, closeCode } = await connect(path, origin);
@@ -150,7 +142,7 @@ describe('setupUpgradeHandler', () => {
 
   it('accepts a valid token', async () => {
     const token = createSignedToken({ userId: 'user-1' });
-    const { ws, closeCode, error } = await connect(`/entity-1?token=${token}&entityType=attachment&tenantId=tenant-1`);
+    const { ws, closeCode, error } = await connect(`/entity-1?token=${token}`);
 
     expect(error).toBeUndefined();
     expect(closeCode).toBeUndefined();
@@ -195,7 +187,7 @@ describe('setupUpgradeHandler: a peer that resets or garbles the handshake', () 
   /** Positive control for each case: the server still accepts a valid connection. */
   async function expectStillServing() {
     const token = createSignedToken({ userId: 'user-1' });
-    const { ws, closeCode, error } = await connect(`/entity-1?token=${token}&entityType=attachment&tenantId=tenant-1`);
+    const { ws, closeCode, error } = await connect(`/entity-1?token=${token}`);
     expect(error).toBeUndefined();
     expect(closeCode).toBeUndefined();
     ws.close();
@@ -210,7 +202,7 @@ describe('setupUpgradeHandler: a peer that resets or garbles the handshake', () 
     });
     const seen = upgradeSockets.length;
     const token = createSignedToken({ userId: 'user-1' });
-    const { client } = rawUpgrade(`/entity-1?token=${token}&entityType=attachment&tenantId=tenant-1`);
+    const { client } = rawUpgrade(`/entity-1?token=${token}`);
     await until(() => vi.mocked(checkConnectionRate).mock.calls.length > calls && upgradeSockets.length > seen);
     const serverSide = upgradeSockets[seen];
 
@@ -227,7 +219,7 @@ describe('setupUpgradeHandler: a peer that resets or garbles the handshake', () 
   it('must not crash the process via a connection reset after a refused upgrade', async () => {
     const seen = upgradeSockets.length;
     // No token: refused at the HTTP level, to a peer that never closes its side of the connection.
-    const { client, response } = rawUpgrade('/entity-1?entityType=attachment&tenantId=tenant-1', { halfOpen: true });
+    const { client, response } = rawUpgrade('/entity-1', { halfOpen: true });
     expect((await response).split('\r\n')[0]).toBe('HTTP/1.1 400 Bad Request');
     const serverSide = upgradeSockets[seen];
     // The refusal ends the connection itself: a peer that never closes cannot hold the socket open.
@@ -242,7 +234,7 @@ describe('setupUpgradeHandler: a peer that resets or garbles the handshake', () 
 
   it('must not crash the process via a malformed frame on a socket refused for its token', async () => {
     const token = createExpiredToken('user-1');
-    const { client, response } = rawUpgrade(`/entity-1?token=${token}&entityType=attachment&tenantId=tenant-1`);
+    const { client, response } = rawUpgrade(`/entity-1?token=${token}`);
     expect((await response).split('\r\n')[0]).toBe('HTTP/1.1 101 Switching Protocols');
 
     // An unmasked frame: `ws` refuses every client frame without a mask and emits 'error' on the socket.
@@ -256,7 +248,7 @@ describe('setupUpgradeHandler: a peer that resets or garbles the handshake', () 
 
   it('must not crash the process via a frame the relay throws on: only its socket closes, with 1011', async () => {
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-throw' });
-    const { ws, closed } = await openSocket(`${baseUrl}/entity-throw?token=${token}&entityType=attachment&tenantId=tenant-1`);
+    const { ws, closed } = await openSocket(`${baseUrl}/entity-throw?token=${token}`);
 
     ws.send(new Uint8Array([0xff, 0]));
     const outcome = await Promise.race([closed, sleep(1000, 'still open')]);
@@ -269,7 +261,7 @@ describe('setupUpgradeHandler: a peer that resets or garbles the handshake', () 
   it('must not leave a socket open or reject the handler via a request target no URL can hold', async () => {
     const seen = upgradeSockets.length;
     const token = createSignedToken({ userId: 'user-1' });
-    const { response } = rawUpgrade(`//[/entity-1?token=${token}&entityType=attachment&tenantId=tenant-1`);
+    const { response } = rawUpgrade(`//[/entity-1?token=${token}`);
 
     expect((await response).split('\r\n')[0]).toBe('HTTP/1.1 400 Bad Request');
     await until(() => upgradeSockets[seen]?.destroyed === true);
@@ -301,7 +293,7 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     verifyGate.hold = verification.promise;
     const before = framesReceived;
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-order' });
-    const { ws } = await openSocket(`${baseUrl}/entity-order?token=${token}&entityType=attachment&tenantId=tenant-1`);
+    const { ws } = await openSocket(`${baseUrl}/entity-order?token=${token}`);
 
     // Three sync frames in one burst (the first is slow to apply) and one awareness frame, all before verification settles.
     ws.send(new Uint8Array([0, 2, 1]));
@@ -334,7 +326,7 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     verifyGate.hold = verification.promise;
     const before = framesReceived;
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-cap' });
-    const { ws, closed } = await openSocket(`${baseUrl}/entity-cap?token=${token}&entityType=attachment&tenantId=tenant-1`);
+    const { ws, closed } = await openSocket(`${baseUrl}/entity-cap?token=${token}`);
 
     // One frame more than the queue holds while verification is pending: the dropped one would never get its `Saved`.
     for (let i = 0; i <= yjsPendingQueueCap; i++) ws.send(new Uint8Array([0, 2, i % 250]));
@@ -352,7 +344,7 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     verifyGate.allowed = false;
     const before = framesReceived;
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-denied' });
-    const { ws, closed } = await openSocket(`${baseUrl}/entity-denied?token=${token}&entityType=attachment&tenantId=tenant-1`);
+    const { ws, closed } = await openSocket(`${baseUrl}/entity-denied?token=${token}`);
     ws.send(new Uint8Array([0, 2, 5]));
     await until(() => framesReceived === before + 1);
 
@@ -369,7 +361,7 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     const before = framesReceived;
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-deleted' });
     // The upgrade succeeds: a refused upgrade reaches a browser as 1006, which it treats as transient.
-    const { ws, closed } = await openSocket(`${baseUrl}/entity-deleted?token=${token}&entityType=attachment&tenantId=tenant-1`);
+    const { ws, closed } = await openSocket(`${baseUrl}/entity-deleted?token=${token}`);
     ws.send(new Uint8Array([0, 2, 7]));
     await until(() => framesReceived === before + 1);
 
@@ -385,7 +377,7 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     verifyGate.error = new Error('ECONNREFUSED');
     const before = framesReceived;
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-unavailable' });
-    const { ws, closed } = await openSocket(`${baseUrl}/entity-unavailable?token=${token}&entityType=attachment&tenantId=tenant-1`);
+    const { ws, closed } = await openSocket(`${baseUrl}/entity-unavailable?token=${token}`);
     ws.send(new Uint8Array([0, 2, 6]));
     await until(() => framesReceived === before + 1);
 

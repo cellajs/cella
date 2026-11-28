@@ -1,6 +1,7 @@
 import { type ConstructorOptions, PgBoss } from 'pg-boss';
 import { appConfig } from 'shared';
-import { resolvePostgresSslCa, verifiedPostgresConnection } from 'shared/utils/postgres-tls';
+import { verifiedPostgresConnection } from 'shared/utils/postgres-tls';
+import { sslCa } from '#/db/db';
 import { env } from '#/env';
 import { baseLog } from '#/lib/pino';
 
@@ -16,8 +17,6 @@ export const jobsSchema = appConfig.mode === 'test' ? 'pgboss_test' : 'pgboss';
 
 /** Per-process listener connection on top of this pool: the budget in DB-DEV-S terms is 5 + 1 per worker. */
 const poolMax: Record<JobsRole, number> = { producer: 2, consumer: 5, maintainer: 5 };
-
-const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, appConfig.isDeployed && !env.NODB);
 
 /**
  * pg-boss options for a role on the runtime DSN. Every role runs with `migrate: false`: the migrate

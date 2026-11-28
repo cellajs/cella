@@ -9,7 +9,6 @@ import {
   hierarchy,
   type NullableAncestorType,
   type ProductEntityType,
-  type RelatedChannelType,
 } from 'shared';
 import { channelTables } from '#/db/channel-tables';
 
@@ -39,17 +38,13 @@ const channelForeignKeys = (table: Record<string, PgColumn>, channelTypes: reado
       return foreignKey({ columns, foreignColumns: [channel.tenantId, channel.id] }).onDelete('cascade');
     });
 
-/** Strict ancestors are non-null columns, except declared `nullableAncestors`; `relatedChannels` are nullable. */
+/** Strict ancestors are non-null columns, except declared `nullableAncestors`. */
 type ChannelRelationColumns<E extends string> = EntityIdColumns<Exclude<AncestorChannelType<E>, NullableAncestorType<E>> & EntityType, NotNullUuid> &
-  EntityIdColumns<Extract<AncestorChannelType<E>, NullableAncestorType<E>> & EntityType, NullableUuid> &
-  EntityIdColumns<RelatedChannelType<E> & EntityType, NullableUuid>;
+  EntityIdColumns<Extract<AncestorChannelType<E>, NullableAncestorType<E>> & EntityType, NullableUuid>;
 
 type ActivityChannelColumns = EntityIdColumns<AncestorChannelType<ProductEntityType> & EntityType, NullableUuid>;
 
-/**
- * From hierarchy config. Ancestor columns take their keys from {@link channelRelationConstraints}; related-channel
- * columns reference their channel by id alone and null out with it.
- */
+/** From hierarchy config. Ancestor columns take their keys from {@link channelRelationConstraints}. */
 export const channelRelationColumns = <E extends ProductEntityType>(entityType: E): ChannelRelationColumns<E> => {
   const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(entityType));
   const columns: Record<string, NotNullUuid | NullableUuid> = {};
@@ -57,17 +52,14 @@ export const channelRelationColumns = <E extends ProductEntityType>(entityType: 
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
     columns[appConfig.entityIdColumnKeys[ancestor]] = nullableAncestors.has(ancestor) ? uuid() : uuid().notNull();
   }
-  for (const related of hierarchy.getRelatedChannels(entityType)) {
-    columns[appConfig.entityIdColumnKeys[related]] = uuid().references(() => channelTable(related).id, { onDelete: 'set null' });
-  }
 
   return columns as ChannelRelationColumns<E>;
 };
 
 /**
- * For a product or a channel below the organization: one index per sub-organization ancestor and related-channel
- * column, named `<table>_<column>_index`, and the composite tenant key of each ancestor column. Empty for an
- * organization-homed product, so cella's own tables are unchanged.
+ * For a product or a channel below the organization: one index per sub-organization ancestor column, named
+ * `<table>_<column>_index`, and the composite tenant key of each. Empty for an organization-homed product, so cella's
+ * own tables are unchanged.
  */
 export const channelRelationConstraints = (
   tableName: string,
@@ -75,7 +67,7 @@ export const channelRelationConstraints = (
   entityType: ProductEntityType | Exclude<ChannelEntityType, 'organization'>,
 ) => {
   const ancestors = hierarchy.getOrderedAncestors(entityType);
-  const indexes = [...ancestors, ...hierarchy.getRelatedChannels(entityType)]
+  const indexes = ancestors
     .filter((type) => type !== 'organization')
     .map((type) => index(`${tableName}_${entityIdColumnName(type)}_index`).on(table[appConfig.entityIdColumnKeys[type]]));
   return [...indexes, ...channelForeignKeys(table, ancestors)];

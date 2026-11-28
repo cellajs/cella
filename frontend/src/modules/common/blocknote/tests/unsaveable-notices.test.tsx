@@ -58,14 +58,14 @@ const recordOf = (doc: Y.Doc, extra: Partial<UnsaveableYDocRecord> = {}): Unsave
   ...extra,
 });
 
-/** A writer as the store builds it, parking into the real table: the row carries the document's state. */
+/** A writer as the store builds it, parking into the real table and resolving with the row it parked. */
 function fakeWriter(overrides: Partial<YDocWriter> = {}): YDocWriter {
   return {
-    start: vi.fn(),
     append: vi.fn(),
     prove: vi.fn(async () => {}),
-    park: vi.fn(async (reason, doc) => {
-      await db.unsaveableYDocs.add({ ...scope, generation: 'gen-1', reason, state: Y.encodeStateAsUpdate(doc), at: 2_000 });
+    park: vi.fn(async (reason) => {
+      const parked = recordOf(new Y.Doc(), { reason, at: 2_000 });
+      return { ...parked, id: await db.unsaveableYDocs.add(parked) };
     }),
     drop: vi.fn(async () => {}),
     failed: false,

@@ -22,8 +22,6 @@ export const yjsCloseCodes = {
   AccessDenied: 4003,
   BadRequest: 4400,
   EntityDeleted: 4410,
-  TooManyConnections: 4429,
-  InternalError: 4500,
   Unavailable: 4503,
 } as const;
 

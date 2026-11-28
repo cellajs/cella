@@ -1,66 +1,37 @@
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { dropTargetForElements, draggable as makeDraggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
-import { attachClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge/attach-closest-edge';
-import { extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge/extract-closest-edge';
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
-import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { DropIndicator } from '~/modules/common/drop-indicator';
+import { useRef } from 'react';
 import { useRovingTabIndex } from './hooks';
-import type { CalculatedColumn, Maybe, Position, ResizedWidth, SortColumn } from './types';
+import type { CalculatedColumn, Maybe, ResizedWidth, SortColumn } from './types';
 import {
   clampColumnWidth,
   getCellClassname,
   getCellStyle,
-  getHeaderCellRowSpan,
-  getHeaderCellStyle,
   getMergedHeaderPadding,
   headerCellFocusRing,
   isCtrlKeyHeldDown,
   stopPropagation,
 } from './utils/grid-utils';
 
-const draggableColumnType = 'grid-column';
-type ColumnDragData = { type: typeof draggableColumnType; columnKey: string };
-
-const isColumnDragData = (data: Record<string, unknown>): data is ColumnDragData => data.type === draggableColumnType;
-
 interface HeaderCellProps<R, SR> {
   sortColumns?: Maybe<readonly SortColumn[]>;
   onSortColumnsChange?: Maybe<(sortColumns: SortColumn[]) => void>;
-  selectCell: (position: Position) => void;
+  selectCell: (idx: number) => void;
   onColumnResize: (column: CalculatedColumn<R, SR>, width: ResizedWidth) => void;
   onColumnResizeEnd: () => void;
   shouldFocusGrid: boolean;
-  onColumnsReorder?: Maybe<(sourceColumnKey: string, targetColumnKey: string) => void>;
-  /** Steps this column one place by keyboard, and reports whether a column stood there to swap with. */
-  moveColumn?: Maybe<(column: CalculatedColumn<R, SR>, step: -1 | 1) => boolean>;
   column: CalculatedColumn<R, SR>;
-  colSpan: number | undefined;
-  rowIdx: number;
   isCellSelected: boolean;
 }
 
 export function HeaderCell<R, SR>({
   column,
-  colSpan,
-  rowIdx,
   isCellSelected,
   onColumnResize,
   onColumnResizeEnd,
-  onColumnsReorder,
-  moveColumn,
   sortColumns,
   onSortColumnsChange,
   selectCell,
   shouldFocusGrid,
 }: HeaderCellProps<R, SR>) {
-  const cellRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
-  const [preview, setPreview] = useState<{ container: HTMLElement } | null>(null);
-  const rowSpan = getHeaderCellRowSpan(column, rowIdx);
   // set the tabIndex to 0 when there is no selected cell so grid can receive focus
   const { tabIndex, childTabIndex, onFocus } = useRovingTabIndex(shouldFocusGrid || isCellSelected);
   const sortIndex = sortColumns?.findIndex((sort) => sort.columnKey === column.key);
@@ -68,53 +39,12 @@ export function HeaderCell<R, SR>({
   const sortDirection = sortColumn?.direction;
   const priority = sortColumn !== undefined && sortColumns!.length > 1 ? sortIndex! + 1 : undefined;
   const ariaSort = sortDirection && !priority ? (sortDirection === 'ASC' ? 'ascending' : 'descending') : undefined;
-  const { sortable, resizable, draggable } = column;
+  const { sortable, resizable } = column;
 
   const className = getCellClassname(column, headerCellFocusRing, 'border-t-0', column.headerCellClass, {
     'cursor-pointer': sortable,
     'touch-none': resizable,
-    'opacity-40': isDragging,
-    'z-3': column.frozen,
   });
-
-  useEffect(() => {
-    const el = cellRef.current;
-    if (!el || !draggable || !onColumnsReorder) return;
-
-    return combine(
-      makeDraggable({
-        element: el,
-        getInitialData: (): ColumnDragData => ({ type: draggableColumnType, columnKey: column.key }),
-        onGenerateDragPreview: ({ nativeSetDragImage }) =>
-          setCustomNativeDragPreview({
-            nativeSetDragImage,
-            getOffset: () => ({ x: 16, y: 16 }),
-            render: ({ container }) => setPreview({ container }),
-          }),
-        onDragStart: () => setIsDragging(true),
-        onDrop: () => {
-          setIsDragging(false);
-          setPreview(null);
-        },
-      }),
-      dropTargetForElements({
-        element: el,
-        canDrop: ({ source }) => isColumnDragData(source.data) && source.data.columnKey !== column.key,
-        getData: ({ input }) =>
-          attachClosestEdge({ type: draggableColumnType, columnKey: column.key } satisfies ColumnDragData, {
-            element: el,
-            input,
-            allowedEdges: ['left', 'right'],
-          }),
-        onDrag: ({ self }) => setClosestEdge(extractClosestEdge(self.data)),
-        onDragLeave: () => setClosestEdge(null),
-        onDrop: ({ source }) => {
-          setClosestEdge(null);
-          if (isColumnDragData(source.data)) onColumnsReorder(source.data.columnKey, column.key);
-        },
-      }),
-    );
-  }, [column.key, draggable, onColumnsReorder]);
 
   function onSort(ctrlClick: boolean) {
     if (onSortColumnsChange == null) return;
@@ -140,11 +70,11 @@ export function HeaderCell<R, SR>({
 
   function handleFocus(event: React.FocusEvent<HTMLDivElement>) {
     onFocus?.(event);
-    if (shouldFocusGrid) selectCell({ idx: 0, rowIdx });
+    if (shouldFocusGrid) selectCell(0);
   }
 
   function onMouseDown() {
-    selectCell({ idx: column.idx, rowIdx });
+    selectCell(column.idx);
   }
 
   function onClick(event: React.MouseEvent<HTMLSpanElement>) {
@@ -157,53 +87,39 @@ export function HeaderCell<R, SR>({
       // prevent scrolling
       event.preventDefault();
       onSort(event.ctrlKey || event.metaKey);
-    } else if (draggable && moveColumn && isCtrlKeyHeldDown(event) && event.shiftKey && (key === 'ArrowLeft' || key === 'ArrowRight')) {
-      // stopPropagation keeps the grid from navigating to the cell the move passes over
-      event.stopPropagation();
-      event.preventDefault();
-      const step = key === 'ArrowLeft' ? -1 : 1;
-      // The header element is keyed by column, so focus travels with it; the selected cell follows so arrows resume there
-      if (moveColumn(column, step)) selectCell({ idx: column.idx + step, rowIdx });
     } else if (resizable && !event.shiftKey && isCtrlKeyHeldDown(event) && (key === 'ArrowLeft' || key === 'ArrowRight')) {
       // stopPropagation prevents grid navigation during column resize
       event.stopPropagation();
       const { width } = event.currentTarget.getBoundingClientRect();
       const offset = key === 'ArrowLeft' ? -10 : 10;
       const newWidth = clampColumnWidth(width + offset, column);
-      if (newWidth !== width) onColumnResize(column, newWidth);
+      if (newWidth === width) return;
+      // Each key press is a whole resize: the next one, on any column, measures the widths anew
+      onColumnResize(column, newWidth);
+      onColumnResizeEnd();
     }
   }
 
-  const style: React.CSSProperties = {
-    ...getHeaderCellStyle(column, rowIdx, rowSpan),
-    ...getCellStyle(column, colSpan),
-    paddingInlineStart: getMergedHeaderPadding(column),
-  };
+  // Row 1 explicitly: the measuring cells hold row 1 of every column track, and an auto-placed header would drop below them
+  const style: React.CSSProperties = { ...getCellStyle(column), gridRowStart: 1, paddingInlineStart: getMergedHeaderPadding(column) };
 
   const content = column.renderHeaderCell({ column, sortDirection, priority, tabIndex: childTabIndex });
 
   return (
-    <>
-      <div
-        ref={cellRef}
-        role="columnheader"
-        aria-colindex={column.idx + 1}
-        aria-colspan={colSpan}
-        aria-rowspan={rowSpan}
-        aria-selected={isCellSelected}
-        aria-sort={ariaSort}
-        // On the cell itself: a keyboard focus lands here, and the tooltip looks up from its target
-        {...(column.icon && typeof column.name === 'string' && { 'data-tooltip': 'slim', 'data-tooltip-content': column.name })}
-        {...{ tabIndex, className, style, onMouseDown, onClick, onKeyDown }}
-        onFocus={handleFocus}
-      >
-        {content}
+    <div
+      role="columnheader"
+      aria-colindex={column.idx + 1}
+      aria-selected={isCellSelected}
+      aria-sort={ariaSort}
+      // On the cell itself: a keyboard focus lands here, and the tooltip looks up from its target
+      {...(column.icon && typeof column.name === 'string' && { 'data-tooltip': 'slim', 'data-tooltip-content': column.name })}
+      {...{ tabIndex, className, style, onMouseDown, onClick, onKeyDown }}
+      onFocus={handleFocus}
+    >
+      {content}
 
-        {resizable && <ResizeHandle column={column} onColumnResize={onColumnResize} onColumnResizeEnd={onColumnResizeEnd} />}
-      </div>
-      {closestEdge && <DropIndicator edge={closestEdge} />}
-      {preview && createPortal(<div className="bg-background rounded border px-3 py-1.5 text-sm shadow-lg">{column.name}</div>, preview.container)}
-    </>
+      {resizable && <ResizeHandle column={column} onColumnResize={onColumnResize} onColumnResizeEnd={onColumnResizeEnd} />}
+    </div>
   );
 }
 
@@ -216,7 +132,7 @@ function ResizeHandle<R, SR>({ column, onColumnResize, onColumnResizeEnd }: Resi
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
-    // Fix column resizing on a draggable column in FF
+    // Grabbing the handle does not select its header cell: a cancelled pointerdown sends no compatibility mousedown
     event.preventDefault();
 
     const { currentTarget, pointerId } = event;

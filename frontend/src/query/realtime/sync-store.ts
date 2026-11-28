@@ -33,8 +33,9 @@ interface SyncStoreState {
    * refetch is due at this client's random share of `spreadWindowMs`, the window the server sized for the audience that
    * hears of the generation at the same moment. The signal versions go too: books rebuilt from lost counters count them
    * again from 0, and a stored version the new count reaches would hide its runs, so each runs once now.
+   * @returns true when the cursors were reset: never for the first generation a client takes.
    */
-  adoptGeneration: (generation: number, spreadWindowMs: number) => void;
+  adoptGeneration: (generation: number, spreadWindowMs: number) => boolean;
   /**
    * Starts over when this device last caught up longer than `awayMs` ago: the server may have removed tombstones it
    * never read, so every cursor goes back to 0, as for a new generation, and the refetch is due at once.
@@ -105,13 +106,14 @@ export const syncStore = createStore<SyncStoreState>()(
 
         adoptGeneration: (generation, spreadWindowMs) => {
           const held = get().generation;
-          if (generation === held) return;
+          if (generation === held) return false;
           set((state) => {
             state.generation = generation;
             if (held === null) return;
             resetCursors(state, Date.now() + Math.random() * spreadWindowMs);
             for (const org of Object.values(state.orgs)) org.signals = {};
           });
+          return held !== null;
         },
         startOverIfAway: (awayMs) => {
           const { caughtUpAt } = get();

@@ -21,6 +21,7 @@ import {
   createYDocWriter,
   type LoadedYDoc,
   loadYDoc,
+  parkStoredYDoc,
   type StoreProof,
   storageOrigin,
   storeLoadTimeoutMs,
@@ -140,8 +141,9 @@ export interface YjsConnection {
   unsynced: boolean;
   graceTimer?: ReturnType<typeof setTimeout>;
   unsubscribeOnline?: () => void;
-  /** Stops the watches of the token query and of the signed-in user. */
   unsubscribeToken?: () => void;
+  /** Ends the watch of the signed-in user, which a stop leaves: a sign-out destroys a stopped connection that kept edits. */
+  unsubscribeUser?: () => void;
 }
 
 /** The edits of a seeded document a rebuild replaced, parked with no notice until the rebase answers. */
@@ -322,12 +324,15 @@ export function applyRemoteUpdate(conn: YjsConnection, update: Uint8Array, sourc
 }
 
 /**
- * Ends a connection for good: no transport reconnects, and the editor turns read-only (`stopped`), so nothing typed
- * after this is lost. `reason` shows in a toast unless `toast` is false, when a parked notice names it.
+ * Ends a connection for good: no transport reconnects, the watches of the network and the token end, and the editor
+ * turns read-only (`stopped`). Nothing typed after this is lost. `reason` shows in a toast unless `toast` is false,
+ * when a parked notice names it.
  */
 function stopConnection(conn: YjsConnection, reason: YjsStopReason | null, toast = true) {
   if (conn.stopped) return;
   conn.stopped = true;
+  conn.unsubscribeOnline?.();
+  conn.unsubscribeToken?.();
   conn.provider.disconnect();
   pauseTransports(conn);
   patchSession(conn, { stopped: true, stopReason: reason });
@@ -369,7 +374,7 @@ const heldToken = ({ entityType, entityId }: YDocKey) => tokenOf(queryClient.get
  * A fresh document, its Awareness and its provider, with the entity's token if one is held. The provider connects only
  * through startConnection, and without a token waits for one: a stored document is editable meanwhile.
  */
-function openDoc({ entityType, entityId, tenantId }: YjsDocScope): DocParts {
+function openDoc({ entityType, entityId }: YjsDocScope): DocParts {
   const serverUrl = toWsUrl(appConfig.yjsUrl!);
   const token = heldToken({ entityType, entityId }) ?? '';
 
@@ -377,7 +382,7 @@ function openDoc({ entityType, entityId, tenantId }: YjsDocScope): DocParts {
   const awareness = new Awareness(yDoc);
   const ledger: SocketLedger = { ...freshLedger, onChange: () => {}, onHandshakeSent: () => {} };
   const provider = new WebsocketProvider(serverUrl, entityId, yDoc, {
-    params: { token, entityType, tenantId },
+    params: { token },
     awareness,
     // y-websocket's tab channel carries no generation, so tabs on two generations would merge two histories; the app's own carries it.
     disableBc: true,
@@ -401,9 +406,16 @@ function openDoc({ entityType, entityId, tenantId }: YjsDocScope): DocParts {
   };
 }
 
+/** Connects a loaded connection that is not stopped, while online with a token held; returns whether it connected. */
+function connectIfReady(conn: YjsConnection) {
+  if (!conn.loaded || conn.stopped || !onlineManager.isOnline() || !conn.provider.params.token) return false;
+  conn.provider.connect();
+  return true;
+}
+
 function startConnection(conn: YjsConnection) {
   conn.loaded = true;
-  if (onlineManager.isOnline() && conn.provider.params.token) conn.provider.connect();
+  connectIfReady(conn);
 }
 
 /**
@@ -479,11 +491,11 @@ function seedOffline(conn: YjsConnection) {
   postTabMessage({ kind: 'hello', key: yDocKeyString(conn.scope), generation: seed.generation, vector: Y.encodeStateVector(conn.yDoc) });
 }
 
-/** Parks or drops a stored document by its record alone, with no writer started; the empty document is the notice's fallback only. */
-function parkStoredRecord(scope: YjsDocScope, record: YDocRecord, reason: UnsaveableReason) {
-  const yDoc = new Y.Doc();
-  parkUnsaveable({ yDoc, writer: createYDocWriter(scope), unsynced: record.unsynced === 1, generation: record.generation }, scope, reason);
-  yDoc.destroy();
+/** Parks or drops the stored document of the record's generation with no writer started; a notice offers what it parked. */
+function parkStoredRecord(record: YDocRecord, reason: UnsaveableReason) {
+  void parkStoredYDoc(record, record.generation, reason)
+    .then((parked) => parked && showUnsaveableNotice(parked))
+    .catch((error) => console.error('[yjs] Parking stored edits failed:', error));
 }
 
 /**
@@ -493,7 +505,7 @@ function parkStoredRecord(scope: YjsDocScope, record: YDocRecord, reason: Unsave
  */
 function applyStored(conn: YjsConnection, stored: LoadedYDoc) {
   const { record } = stored;
-  if (conn.generation !== null && conn.generation !== record.generation) return parkStoredRecord(conn.scope, record, 'replaced');
+  if (conn.generation !== null && conn.generation !== record.generation) return parkStoredRecord(record, 'replaced');
   Y.transact(
     conn.yDoc,
     () => {
@@ -529,10 +541,9 @@ function markStored(conn: YjsConnection) {
 function startStoring(conn: YjsConnection, unsynced: boolean) {
   if (!conn.stored || conn.writer || conn.generation === null || conn.stopped) return;
   if (!conn.ready && !conn.provider.synced) return;
-  const writer = createYDocWriter(conn.scope, { applied: conn.applied, onChange: () => handleWriterChange(conn, writer), seed: conn.seedBase });
-  if (!writer) return;
+  const onChange = () => handleWriterChange(conn, writer);
+  const writer = createYDocWriter(conn.scope, conn.yDoc, conn.generation, { applied: conn.applied, onChange, seed: conn.seedBase, unsynced });
   conn.writer = writer;
-  writer.start(conn.yDoc, conn.generation, unsynced);
 }
 
 /**
@@ -602,9 +613,7 @@ function bindProvider(conn: YjsConnection) {
       provider.disconnect();
       pauseTransports(conn);
       seedOffline(conn);
-    } else if (conn.loaded && !conn.stopped && token) {
-      provider.connect();
-    } else if (conn.ready && !conn.stopped && !createPending(scope.entityId)) {
+    } else if (!connectIfReady(conn) && conn.ready && !createPending(scope.entityId)) {
       // Opened offline, from a seed or storage, it never held a token, and its editor may be gone: it fetches its own, which the token watch takes.
       queryClient.query(yjsTokenQueryOptions(scope)).catch(() => {});
     }
@@ -612,36 +621,32 @@ function bindProvider(conn: YjsConnection) {
 
   // Keep provider params on the latest token so a reconnect (after sleep, or the relay's close at expiry) uses a fresh one.
   // The cache's removals are its clear at sign-out, which the user watch below handles.
-  const stopTokenWatch = queryClient.getQueryCache().subscribe((event) => {
+  conn.unsubscribeToken = queryClient.getQueryCache().subscribe((event) => {
     if (event.type !== 'updated' || event.query.queryHash !== tokenQueryHash) return;
     const state: QueryState<string> = event.query.state;
     const next = tokenOf(state);
     if (next) {
       // A document opened without a token, from storage, connects once one arrives.
-      const connect = !token && conn.loaded && !conn.stopped && onlineManager.isOnline();
+      const held = token;
       token = next;
       provider.params.token = next;
-      if (connect) provider.connect();
+      if (!held) connectIfReady(conn);
       return;
     }
     // Withdrawn, also while offline: the token route refused it, 404 for a deleted entity as the relay's 4410 says, 403
     // for lost edit rights. The token cannot come back, and a connection that never held one, opened offline, ends too.
     const refusal = yjsTokenRefusal(state.error);
-    if (!refusal || conn.stopped) return;
+    if (!refusal) return;
     token = null;
     endUnsaveable(conn, refusal);
   });
   // Signed out: storage stays; a hard sign-out lists these edits before it deletes the database, and a lost session keeps them.
-  const stopUserWatch = userStore.subscribe((state, prev) => {
+  conn.unsubscribeUser = userStore.subscribe((state, prev) => {
     if (state.user || !prev.user) return;
     setUnsynced(conn, false);
     stopConnection(conn, null);
     reapConnection(conn);
   });
-  conn.unsubscribeToken = () => {
-    stopTokenWatch();
-    stopUserWatch();
-  };
 
   // The token each attempt carries: y-websocket reads the params as it opens a socket, then reports 'connecting'.
   let attemptToken = provider.params.token;
@@ -761,6 +766,7 @@ function bindProvider(conn: YjsConnection) {
 function unbindProvider(conn: YjsConnection) {
   conn.unsubscribeOnline?.();
   conn.unsubscribeToken?.();
+  conn.unsubscribeUser?.();
   clearTimeout(conn.wsDeadline);
   conn.http?.leave();
   conn.provider.destroy();
@@ -845,11 +851,6 @@ function acquireConnection(scope: YjsDocScope, offlineSeed?: YjsConnection['offl
       existing.graceTimer = undefined;
     }
     existing.refCount++;
-    // A background connection, opened to upload, holds no description: an editor that brings one may seed it offline.
-    if (!existing.offlineSeed && offlineSeed && !existing.ready && existing.generation === null) {
-      existing.offlineSeed = offlineSeed;
-      seedOffline(existing);
-    }
     return existing;
   }
 
@@ -923,7 +924,7 @@ export async function resumeConnection(record: YDocRecord): Promise<void> {
       // Deleted, or edit rights lost while the edits waited: they are parked; a network failure retries once back online.
       const refusal = yjsTokenRefusal(error);
       if (!refusal) return console.warn(`[yjs] No token to resume ${entityType}:${entityId}`, error);
-      return parkStoredRecord(scope, record, refusal);
+      return parkStoredRecord(record, refusal);
     }
   }
   if (connections.has(entityId)) return;

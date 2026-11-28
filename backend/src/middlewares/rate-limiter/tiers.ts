@@ -4,7 +4,7 @@ import type { BucketLimits, LimiterStore, Outcome, Tier } from '#/middlewares/ra
 import { log } from '#/utils/logger';
 
 /** A zero block duration would block forever in the store; fall back to the counting window. */
-const blockSecondsOf = ({ duration, blockDuration }: BucketLimits) => (blockDuration > 0 ? blockDuration : duration);
+export const blockSecondsOf = ({ duration, blockDuration }: BucketLimits) => (blockDuration > 0 ? blockDuration : duration);
 
 const slowLimits: BucketLimits = { points: 100, duration: 60 * 60 * 24, blockDuration: 60 * 60 * 3 };
 

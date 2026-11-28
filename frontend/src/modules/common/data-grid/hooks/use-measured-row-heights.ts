@@ -3,15 +3,17 @@ import { type RefObject, useEffectEvent, useLayoutEffect, useRef, useState } fro
 /** A measured height within this of the height already assumed is subpixel noise (zoom, rounding), not a resize. */
 const heightTolerance = 0.5;
 
+/** aria-rowindex of the first row: 1-based, after the header row. */
+const firstRowAriaIndex = 2;
+
 interface MeasuredRowHeightsArgs<R> {
   gridRef: RefObject<HTMLDivElement | null>;
   rows: readonly R[];
   /** Estimated height per row; a measured height that equals it is not stored. */
   rowHeight: number | ((row: R) => number);
   enabled: boolean;
-  headerRowsCount: number;
-  /** Keys the cache; a row index when the grid has no row keys, so the cache stays as large as the rows. */
-  getRowKey: (row: R, rowIdx: number) => unknown;
+  /** Keys the cache: a height stays with its row when rows sort, filter or arrive. */
+  getRowKey: (row: R) => unknown;
   /** The cache starts over when any of these change: the heights were measured for other columns or widths. */
   resetKeys: readonly unknown[];
 }
@@ -27,7 +29,7 @@ const sameKeys = (a: readonly unknown[], b: readonly unknown[]) => a.length === 
  * Measures rendered rows, so a row that grew past its estimate keeps that height once it leaves the render window.
  * Otherwise its track falls back to the estimate and every row below it jumps while scrolling.
  */
-export function useMeasuredRowHeights<R>({ gridRef, rows, rowHeight, enabled, headerRowsCount, getRowKey, resetKeys }: MeasuredRowHeightsArgs<R>) {
+export function useMeasuredRowHeights<R>({ gridRef, rows, rowHeight, enabled, getRowKey, resetKeys }: MeasuredRowHeightsArgs<R>) {
   const [cache, setCache] = useState<HeightCache>(() => ({ resetKeys, heights: new Map() }));
   const heights = sameKeys(cache.resetKeys, resetKeys) ? cache.heights : null;
 
@@ -46,11 +48,11 @@ export function useMeasuredRowHeights<R>({ gridRef, rows, rowHeight, enabled, he
       let next: Map<unknown, number> | null = null;
 
       for (const entry of entries) {
-        const rowIdx = Number(entry.target.getAttribute('aria-rowindex')) - headerRowsCount - 1;
+        const rowIdx = Number(entry.target.getAttribute('aria-rowindex')) - firstRowAriaIndex;
         if (rowIdx < start || rowIdx > end || rowIdx >= rows.length) continue;
 
         const row = rows[rowIdx];
-        const key = getRowKey(row, rowIdx);
+        const key = getRowKey(row);
         const height = entry.borderBoxSize?.[0]?.blockSize ?? entry.target.getBoundingClientRect().height;
         const estimate = typeof rowHeight === 'number' ? rowHeight : rowHeight(row);
         const assumed = (next ?? base).get(key) ?? estimate;
@@ -96,7 +98,7 @@ export function useMeasuredRowHeights<R>({ gridRef, rows, rowHeight, enabled, he
     }
     const current = new Set<Element>();
     for (const row of grid.querySelectorAll(':scope > [role="row"]')) {
-      if (Number(row.getAttribute('aria-rowindex')) > headerRowsCount) current.add(row);
+      if (Number(row.getAttribute('aria-rowindex')) >= firstRowAriaIndex) current.add(row);
     }
     for (const row of observed) {
       if (current.has(row)) continue;
@@ -110,7 +112,7 @@ export function useMeasuredRowHeights<R>({ gridRef, rows, rowHeight, enabled, he
     }
   });
 
-  const getMeasuredHeight = (row: R, rowIdx: number) => heights?.get(getRowKey(row, rowIdx));
+  const getMeasuredHeight = (row: R) => heights?.get(getRowKey(row));
 
   return { getMeasuredHeight: enabled ? getMeasuredHeight : undefined, renderWindowRef };
 }

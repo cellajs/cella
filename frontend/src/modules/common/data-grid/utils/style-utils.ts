@@ -1,30 +1,13 @@
 import { cn } from '~/utils/cn';
-import type { CalculatedColumn, CalculatedColumnOrColumnGroup } from '../types';
+import type { CalculatedColumn } from '../types';
 import { resolveWrapTextLines } from './wrap-text-utils';
 
 export { cn } from '~/utils/cn';
 
-export function getHeaderCellStyle<R, SR>(column: CalculatedColumnOrColumnGroup<R, SR>, rowIdx: number, rowSpan: number): React.CSSProperties {
-  const gridRowEnd = rowIdx + 1;
-  const paddingBlockStart = `calc(${rowSpan - 1} * var(--rdg-header-row-height))`;
-
-  if (column.parent === undefined) return { insetBlockStart: 0, gridRowStart: 1, gridRowEnd, paddingBlockStart };
-
-  return {
-    insetBlockStart: `calc(${rowIdx - rowSpan} * var(--rdg-header-row-height))`,
-    gridRowStart: gridRowEnd - rowSpan,
-    gridRowEnd,
-    paddingBlockStart,
-  };
-}
-
-export function getCellStyle<R, SR>(column: CalculatedColumn<R, SR>, colSpan = 1): React.CSSProperties {
-  const index = column.idx + 1;
+export function getCellStyle<R, SR>(column: CalculatedColumn<R, SR>): React.CSSProperties {
   const wrapLines = resolveWrapTextLines(column.wrapText);
   return {
-    gridColumnStart: index,
-    gridColumnEnd: index + colSpan,
-    insetInlineStart: column.frozen ? `var(--rdg-frozen-left-${column.idx})` : undefined,
+    gridColumnStart: column.idx + 1,
     ...(wrapLines > 0 ? { '--rdg-wrap-text-lines': String(wrapLines) } : undefined),
   };
 }
@@ -53,7 +36,6 @@ export function getCellClassname<R, SR>(column: CalculatedColumn<R, SR>, ...extr
     `rdg-cell group/cell border-border relative flex items-center border-t-[0.05rem] bg-inherit px-2 py-0 outline-hidden ${textOverflow}`,
     'sm:group-hover/row:bg-hover',
     'outline-ring -outline-offset-2',
-    { 'rdg-cell-frozen sticky z-1': column.frozen },
     ...extraClasses,
   );
 }

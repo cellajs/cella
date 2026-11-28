@@ -70,89 +70,86 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
 
   // The widest window of the organizations the answer names: the one audience this client's refetch joins.
   const spreadWindowMs = Math.max(0, ...Object.values(organizations).map((summary) => summary.spreadWindow ?? 0));
-  syncState.adoptGeneration(response.generation, spreadWindowMs);
+  const generationReset = syncState.adoptGeneration(response.generation, spreadWindowMs);
   // Away longer than the activity window, this device may hold rows whose tombstones the server has since removed.
-  if (syncState.startOverIfAway(appConfig.retention.activityDays * dayMs)) {
-    console.debug('[CatchupProcessor] Away longer than the activity window → cursors reset, synced data refetched');
-  }
+  const awayReset = syncState.startOverIfAway(appConfig.retention.activityDays * dayMs);
+  if (awayReset) console.debug('[CatchupProcessor] Away longer than the activity window → cursors reset, synced data refetched');
+  // Only a start over drops the pending ranges: after a rebuild their positions name other rows, and a flush would move a new cursor past unread changes.
+  if (generationReset || awayReset) resetFetchPrioritizer();
   const refetchPending = armPendingRefetch();
   syncState.markCaughtUp();
   opaqueScopes.clear();
 
-  if (views.length) {
-    if (!baselineOnly) resetFetchPrioritizer();
+  for (const answer of views) {
+    const { organizationId, productType } = answer;
+    if (!hasEntityQueryKeys(productType)) continue;
+    const viewKey = `${organizationId}:${productType}`;
 
-    for (const answer of views) {
-      const { organizationId, productType } = answer;
-      if (!hasEntityQueryKeys(productType)) continue;
-      const viewKey = `${organizationId}:${productType}`;
-
-      if (answer.status === 'forbidden') {
-        console.debug(`[CatchupProcessor] View ${viewKey}: forbidden → dropped`);
-        continue;
-      }
-
-      const keys = getEntityQueryKeys(productType);
-
-      if (answer.status === 'opaque') {
-        opaqueScopes.add(viewKey);
-        // Before the lists refetch, so a list read in flight finds no cursor move to read again.
-        const hint = organizations[organizationId]?.propagation?.find(({ embeddedProductType }) => embeddedProductType === productType);
-        if (!baselineOnly && hint) settleOpaqueHint(organizationId, hint, keys);
-        // Readable but not provably complete, so no numbers to compare: an actively viewed list refetches, the others stay marked until opened.
-        if (!baselineOnly && !refetchPending && hasAnyCachedList(keys, organizationId)) {
-          cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
-        }
-        console.debug(`[CatchupProcessor] View ${viewKey}: opaque → staleness fallback`);
-        continue;
-      }
-
-      const frontier = answer.frontier ?? 0;
-      const clientCursor = syncState.getOrgSeq(organizationId, productType);
-
-      // First session for this view: the frontier is the baseline, and a list cached already was read before the stream was live, so it
-      // refetches, unless the frontier is 0: no change exists that the read could have missed. A pending start over's refetch covers it.
-      if (baselineOnly || clientCursor === 0) {
-        if (!refetchPending && frontier > 0 && hasAnyCachedList(keys, organizationId)) {
-          cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
-          console.debug(`[CatchupProcessor] View ${viewKey}: first session → full refetch`);
-        }
-        syncState.setOrgSeq(organizationId, productType, frontier);
-        continue;
-      }
-
-      if (frontier <= clientCursor) continue;
-
-      const tenantId = getTenantIdForOrg(organizationId);
-
-      // A connection waits for the bound database's restore, so no list of this scope is on disk either: the next read fetches it whole.
-      if (!hasAnyCachedList(keys, organizationId)) {
-        syncState.setOrgSeq(organizationId, productType, frontier);
-        console.debug(`[CatchupProcessor] View ${viewKey}: no cached list → skip range fetch`);
-        continue;
-      }
-
-      // Every gap goes through the fetch prioritizer; the viewing org flushes now and is awaited, so waitForActiveCatchup resolves against a reconciled cache.
-      enqueueCatchupRange({
-        productType,
-        organizationId,
-        tenantId,
-        channelId: null,
-        path: organizationId,
-        afterSeq: clientCursor,
-        untilSeq: frontier,
-        hasCreates: false,
-        spreadWindow: organizations[organizationId]?.spreadWindow,
-      });
-
-      if (getSyncTier(organizationId, null).min > 0) {
-        console.debug(`[CatchupProcessor] View ${viewKey}: gap=${frontier - clientCursor} → enqueued`);
-        continue;
-      }
-
-      const outcome = await flushChannelViewNow(productType, organizationId, null);
-      console.debug(`[CatchupProcessor] View ${viewKey}: gap=${frontier - clientCursor} → ${outcome}`);
+    if (answer.status === 'forbidden') {
+      console.debug(`[CatchupProcessor] View ${viewKey}: forbidden → dropped`);
+      continue;
     }
+
+    const keys = getEntityQueryKeys(productType);
+
+    if (answer.status === 'opaque') {
+      opaqueScopes.add(viewKey);
+      // Before the lists refetch: a list read in flight then finds no cursor move to read again.
+      const hint = organizations[organizationId]?.propagation?.find(({ embeddedProductType }) => embeddedProductType === productType);
+      if (!baselineOnly && hint) settleOpaqueHint(organizationId, hint, keys);
+      // Readable but not provably complete, with no numbers to compare: an actively viewed list refetches, the others stay marked until opened.
+      if (!baselineOnly && !refetchPending && hasAnyCachedList(keys, organizationId)) {
+        cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
+      }
+      console.debug(`[CatchupProcessor] View ${viewKey}: opaque → staleness fallback`);
+      continue;
+    }
+
+    const frontier = answer.frontier ?? 0;
+    const clientCursor = syncState.getOrgSeq(organizationId, productType);
+
+    // First session for this view: the frontier is the baseline. A list cached already was read before the stream was live and
+    // refetches, unless the frontier is 0: no change exists that the read could have missed. A pending start over's refetch covers it.
+    if (baselineOnly || clientCursor === 0) {
+      if (!refetchPending && frontier > 0 && hasAnyCachedList(keys, organizationId)) {
+        cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
+        console.debug(`[CatchupProcessor] View ${viewKey}: first session → full refetch`);
+      }
+      syncState.setOrgSeq(organizationId, productType, frontier);
+      continue;
+    }
+
+    if (frontier <= clientCursor) continue;
+
+    const tenantId = getTenantIdForOrg(organizationId);
+
+    // A connection waits for the bound database's restore: no list of this scope is on disk either, and the next read fetches it whole.
+    if (!hasAnyCachedList(keys, organizationId)) {
+      syncState.setOrgSeq(organizationId, productType, frontier);
+      console.debug(`[CatchupProcessor] View ${viewKey}: no cached list → skip range fetch`);
+      continue;
+    }
+
+    // Every gap goes through the fetch prioritizer; the viewing org flushes now and is awaited, so waitForActiveCatchup resolves against a reconciled cache.
+    enqueueCatchupRange({
+      productType,
+      organizationId,
+      tenantId,
+      channelId: null,
+      path: organizationId,
+      afterSeq: clientCursor,
+      untilSeq: frontier,
+      hasCreates: false,
+      spreadWindow: organizations[organizationId]?.spreadWindow,
+    });
+
+    if (getSyncTier(organizationId, null).min > 0) {
+      console.debug(`[CatchupProcessor] View ${viewKey}: gap=${frontier - clientCursor} → enqueued`);
+      continue;
+    }
+
+    const outcome = await flushChannelViewNow(productType, organizationId, null);
+    console.debug(`[CatchupProcessor] View ${viewKey}: gap=${frontier - clientCursor} → ${outcome}`);
   }
 
   const organizationIds = Object.keys(organizations);
@@ -160,7 +157,7 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
     const { signals, propagation } = organizations[organizationId];
 
     // A version this client has not stored means it missed a live signal: its handler runs once, without a frame.
-    for (const [type, version] of Object.entries(signals ?? {})) {
+    for (const [type, version] of Object.entries(signals)) {
       if (version === syncState.getSignalVersion(organizationId, type)) continue;
       syncState.setSignalVersion(organizationId, type, version);
       if (!baselineOnly) handleStreamSignal({ type, organizationId, subjectId: null }, true);
@@ -174,8 +171,7 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
           invalidateEmbeddingHosts(hint.embeddedProductType, organizationId);
           continue;
         }
-        const pending = hasEntityQueryKeys(hint.embeddedProductType) && attachPendingPropagation(hint.embeddedProductType, organizationId, hint);
-        if (!pending) propagateEmbeddings(hint);
+        if (!attachPendingPropagation(hint.embeddedProductType, organizationId, hint)) propagateEmbeddings(hint);
       }
     }
   }
@@ -195,10 +191,8 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
     [...membershipChannelsBefore].filter((key) => !membershipChannelsAfter.has(key)).map((key) => key.split(':')[0]),
   );
   for (const organizationId of orgsWithLostChannel) {
-    for (const entityType of appConfig.productEntityTypes) {
-      if (hasEntityQueryKeys(entityType)) {
-        queryClient.removeQueries({ queryKey: getEntityQueryKeys(entityType).list.org(organizationId) });
-      }
+    for (const entityType of getRegisteredProductEntityTypes()) {
+      queryClient.removeQueries({ queryKey: getEntityQueryKeys(entityType).list.org(organizationId) });
     }
   }
 
@@ -212,7 +206,6 @@ export async function processStreamCatchup(response: CatchUpMyStreamResponse): P
  * rows' own cached details are marked; the hint's removals still propagate.
  */
 function settleOpaqueHint(organizationId: string, { embeddedProductType, update, untilSeq }: PropagationHint, keys: EntityQueryKeys): void {
-  if (untilSeq === undefined) return;
   const syncState = syncStore.getState();
   syncState.setOrgSeq(organizationId, embeddedProductType, Math.max(syncState.getOrgSeq(organizationId, embeddedProductType), untilSeq));
   if (update.length === 0) return;

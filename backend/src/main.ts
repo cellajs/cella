@@ -1,21 +1,18 @@
 import process from 'node:process';
 import { env } from '#/env';
+import type { ProcessService } from '#/env-service-secrets';
 
-/** Writes why a worker could not start to stderr, then exits once the line had time to flush. */
-const exitOnStartFailure = (name: string) => (error: unknown) => {
-  process.stderr.write(`[${name}] Failed to start: ${error instanceof Error ? error.stack : error}\n`);
-  setTimeout(() => process.exit(1), 500);
+// One entry per service. MCP, OAuth and jobs skip API initialization and wait for the migrate companion's migrations.
+const entries: Record<ProcessService, () => Promise<unknown>> = {
+  api: () => import('#/main.api'),
+  migrate: () => import('#/main.migrate'),
+  mcp: () => import('#/modules/mcp/worker/mcp-worker-entry').then((m) => m.startMcpWorker()),
+  oauth: () => import('#/modules/oauth-server/worker/oauth-worker-entry').then((m) => m.startOauthWorker()),
+  jobs: () => import('#/lib/jobs-worker').then((m) => m.startJobsWorker()),
 };
 
-// Load exactly one runtime entry. The other services skip API initialization and wait for the migrate companion's migrations.
-if (env.SERVICE === 'migrate') {
-  await import('#/main.migrate');
-} else if (env.SERVICE === 'mcp') {
-  (await import('#/modules/mcp/worker/mcp-worker-entry')).startMcpWorker().catch(exitOnStartFailure('mcp-worker'));
-} else if (env.SERVICE === 'oauth') {
-  (await import('#/modules/oauth-server/worker/oauth-worker-entry')).startOauthWorker().catch(exitOnStartFailure('oauth-worker'));
-} else if (env.SERVICE === 'jobs') {
-  (await import('#/lib/jobs-worker')).startJobsWorker().catch(exitOnStartFailure('jobs'));
-} else {
-  await import('#/main.api');
-}
+await entries[env.SERVICE]().catch((error: unknown) => {
+  // Exit only once the line had time to flush.
+  process.stderr.write(`[${env.SERVICE}] Failed to start: ${error instanceof Error ? error.stack : error}\n`);
+  setTimeout(() => process.exit(1), 500);
+});

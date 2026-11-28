@@ -55,7 +55,7 @@ function open(ttlMs: number) {
     organizationId,
     exp: Date.now() + ttlMs,
   });
-  return openSocket(`${relay.baseUrl}/${attachmentId}?token=${token}&entityType=attachment&tenantId=${tenantId}`);
+  return openSocket(`${relay.baseUrl}/${attachmentId}?token=${token}`);
 }
 
 /** Every write the relay kept for the attachment, as one map. */

@@ -5,7 +5,6 @@ import { useCurrentBreakpoint } from '~/hooks/use-breakpoints';
 import { useLatestCallback } from '~/hooks/use-latest-ref';
 import { defaultRenderCell } from './cell';
 import { EditCell } from './edit-cell';
-import { GroupedColumnHeaderRow } from './grouped-column-header-row';
 import { HeaderRow } from './header-row';
 import {
   HeaderRowSelectionChangeContext,
@@ -27,15 +26,9 @@ import { RowDragCell, type RowDragConfig, RowDropTarget } from './row-drag';
 import type {
   ActiveModes,
   CalculatedColumn,
-  CellClipboardEvent,
-  CellCopyArgs,
-  CellKeyboardEvent,
-  CellKeyDownArgs,
   CellMouseEventHandler,
   CellNavigationMode,
-  CellPasteArgs,
   CellRendererProps,
-  CellSelectArgs,
   ColumnOrColumnGroup,
   ColumnWidths,
   DefaultColumnOptions,
@@ -51,14 +44,11 @@ import type {
   TreeRowAttributes,
 } from './types';
 import {
-  assertIsValidKeyGetter,
   canExitGrid,
   cellValueToText,
   cn,
   computeMergedSlotExtraHeight,
   computeWrapTextRowHeight,
-  createCellEvent,
-  getColSpan,
   getNextSelectedCellPosition,
   hasWrapTextColumns,
   isCellEditableUtil,
@@ -88,14 +78,12 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   // Grid and data
   columns: readonly ColumnOrColumnGroup<NoInfer<R>, NoInfer<SR>>[];
   rows: readonly R[];
-  rowKeyGetter?: Maybe<(row: NoInfer<R>) => K>;
+  rowKeyGetter: (row: NoInfer<R>) => K;
   onRowsChange?: Maybe<(rows: NoInfer<R>[], data: RowsChangeData<NoInfer<R>, NoInfer<SR>>) => void>;
 
   // Dimensions
   /** In px */
   rowHeight?: Maybe<number | ((row: NoInfer<R>) => number)>;
-  /** In px */
-  headerRowHeight?: Maybe<number>;
   columnWidths?: Maybe<ColumnWidths>;
   onColumnWidthsChange?: Maybe<(columnWidths: ColumnWidths) => void>;
 
@@ -108,17 +96,8 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   defaultColumnOptions?: Maybe<DefaultColumnOptions<NoInfer<R>, NoInfer<SR>>>;
 
   // Event props
-  onCellMouseDown?: CellMouseEventHandler<R, SR>;
   onCellClick?: CellMouseEventHandler<R, SR>;
-  onCellDoubleClick?: CellMouseEventHandler<R, SR>;
-  onCellContextMenu?: CellMouseEventHandler<R, SR>;
-  onCellKeyDown?: Maybe<(args: CellKeyDownArgs<NoInfer<R>, NoInfer<SR>>, event: CellKeyboardEvent) => void>;
-  onCellCopy?: Maybe<(args: CellCopyArgs<NoInfer<R>, NoInfer<SR>>, event: CellClipboardEvent) => void>;
-  onCellPaste?: Maybe<(args: CellPasteArgs<NoInfer<R>, NoInfer<SR>>, event: CellClipboardEvent) => NoInfer<R>>;
-  onSelectedCellChange?: Maybe<(args: CellSelectArgs<NoInfer<R>, NoInfer<SR>>) => void>;
   onScroll?: Maybe<(event: React.UIEvent<HTMLDivElement>) => void>;
-  onColumnResize?: Maybe<(column: CalculatedColumn<R, SR>, width: number) => void>;
-  onColumnsReorder?: Maybe<(sourceColumnKey: string, targetColumnKey: string) => void>;
   /** Enable handle-column row reordering with per-row drop targets and indicators. */
   onRowReorder?: Maybe<(fromIdx: number, toIdx: number, edge: 'top' | 'bottom') => void>;
   /** When provided, the middle 50% of each row becomes a "reparent" drop zone for tree-structured data. */
@@ -130,8 +109,6 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
 
   // Toggles and modes
   enableVirtualization?: Maybe<boolean>;
-  /** Overrides enableVirtualization for rows when set. */
-  enableRowVirtualization?: Maybe<boolean>;
   /** Pins header rows below the sticky stack while a window-scrolled grid passes the viewport top; never below `sm` */
   enableStickyHeader?: Maybe<boolean>;
   /** Vertical auto-scroll of the viewport during a row drag */
@@ -148,7 +125,6 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   rowClass?: Maybe<(row: NoInfer<R>, rowIdx: number) => Maybe<string>>;
   /** Rows that form a tree: the grid is a treegrid, and each row takes the attributes this returns for its index. */
   treeRow?: Maybe<(rowIdx: number) => TreeRowAttributes>;
-  headerRowClass?: Maybe<string>;
   /** Enable compact column overrides and the root data-is-compact attribute. */
   isCompact?: Maybe<boolean>;
   hideHeader?: Maybe<boolean>;
@@ -157,6 +133,9 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
 }
 
 const emptyColumnWidths: ReadonlyMap<string, number> = new Map();
+
+/** The header row's index in a selected position; rows count from 0. */
+const headerRowIdx = -1;
 
 const navigationKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown']);
 
@@ -178,7 +157,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     rowKeyGetter,
     onRowsChange,
     rowHeight: rawRowHeight,
-    headerRowHeight: rawHeaderRowHeight,
     columnWidths: columnWidthsRaw,
     onColumnWidthsChange: onColumnWidthsChangeRaw,
     selectedRows,
@@ -187,23 +165,13 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     sortColumns,
     onSortColumnsChange,
     defaultColumnOptions,
-    onCellMouseDown,
     onCellClick,
-    onCellDoubleClick,
-    onCellContextMenu,
-    onCellKeyDown,
-    onSelectedCellChange,
     onScroll,
-    onColumnResize,
-    onColumnsReorder,
     onRowReorder,
     onRowReparent,
     canDropRow,
     renderRowDragPreview,
-    onCellCopy,
-    onCellPaste,
     enableVirtualization: rawEnableVirtualization,
-    enableRowVirtualization: rawEnableRowVirtualization,
     enableStickyHeader: rawEnableStickyHeader,
     enableDragAutoScroll: rawEnableDragAutoScroll,
     onNearEndChange,
@@ -212,7 +180,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     className,
     rowClass,
     treeRow,
-    headerRowClass,
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledBy,
     'aria-description': ariaDescription,
@@ -225,7 +192,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   } = props;
 
   const baseRowHeight = rawRowHeight ?? 35;
-  const headerRowHeight = hideHeader ? 0 : (rawHeaderRowHeight ?? (typeof baseRowHeight === 'number' ? baseRowHeight : 35));
+  const headerRowHeight = hideHeader ? 0 : typeof baseRowHeight === 'number' ? baseRowHeight : 35;
   const userRenderRow = renderers?.renderRow ?? defaultRenderRow;
   const userRenderCell = renderers?.renderCell ?? defaultRenderCell;
   // Latest refs keep the row-drag config stable when consumers pass non-memoized callbacks.
@@ -258,7 +225,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     : userRenderRow;
   const noRowsFallback = renderers?.noRowsFallback;
   const enableVirtualization = rawEnableVirtualization ?? true;
-  const enableRowVirtualization = rawEnableRowVirtualization ?? enableVirtualization;
   const enableDragAutoScroll = rawEnableDragAutoScroll ?? false;
 
   const currentBreakpoint = useCurrentBreakpoint();
@@ -275,34 +241,26 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const enableStickyHeader = (rawEnableStickyHeader ?? true) && !isMobileBreakpoint && !hideHeader;
 
   const [columnWidthsInternal, setColumnWidthsInternal] = useState((): ColumnWidths => columnWidthsRaw ?? new Map());
-  const [isColumnResizing, setColumnResizing] = useState(false);
   const shouldFocusCellRef = useRef(false);
   // Skip scrolling when an editor closes onto the same cell: its sticky-header margin jumps the page near viewport edges.
   const skipScrollOnFocusRef = useRef(false);
   // The row a Shift-click extends from, by key: its index changes when the rows sort or filter.
   const [selectionAnchorKey, setSelectionAnchorKey] = useState<K | null>(null);
 
-  const isColumnWidthsControlled = columnWidthsRaw != null && onColumnWidthsChangeRaw != null && !isColumnResizing;
+  const isColumnWidthsControlled = columnWidthsRaw != null && onColumnWidthsChangeRaw != null;
   const columnWidths = isColumnWidthsControlled ? columnWidthsRaw : columnWidthsInternal;
-  const onColumnWidthsChange = isColumnWidthsControlled
-    ? (columnWidths: ColumnWidths) => {
-        // we keep the internal state in sync with the prop but this prevents an extra render
-        setColumnWidthsInternal(columnWidths);
-        onColumnWidthsChangeRaw(columnWidths);
-      }
-    : setColumnWidthsInternal;
+  const onColumnWidthsChange = isColumnWidthsControlled ? onColumnWidthsChangeRaw : setColumnWidthsInternal;
 
-  const getColumnWidth = (column: CalculatedColumn<R, SR>) => columnWidths.get(column.key)?.width ?? column.width;
+  const getColumnWidth = (column: CalculatedColumn<R, SR>) => columnWidths.get(column.key) ?? column.width;
 
-  const { gridRef, viewportHeight, scrollTop, measured } = useGridDimensions(undefined, enableRowVirtualization);
+  const { gridRef, viewportHeight, scrollTop, measured } = useGridDimensions(undefined, enableVirtualization);
 
-  const { columns, colSpanColumns, lastFrozenColumnIndex, headerRowsCount, templateColumns, layoutCssVars, totalFrozenColumnWidth } =
-    useCalculatedColumns({ rawColumns, defaultColumnOptions, getColumnWidth, currentBreakpoint, activeModes });
+  const { columns, templateColumns } = useCalculatedColumns({ rawColumns, defaultColumnOptions, getColumnWidth, currentBreakpoint, activeModes });
 
-  // Motion-animated reorder needs all four conditions: virtualized rows unmount mid-scroll and break FLIP, index keys defeat DOM persistence, transforms unstick frozen cells.
-  const animateReorder = rowDragEnabled && !enableRowVirtualization && typeof rowKeyGetter === 'function' && lastFrozenColumnIndex === -1;
+  // Motion-animated reorder needs every row mounted: virtualized rows unmount mid-scroll and break FLIP.
+  const animateReorder = rowDragEnabled && !enableVirtualization;
 
-  useStickyHeader(gridRef, headerRowsCount, headerRowHeight, enableStickyHeader);
+  useStickyHeader(gridRef, headerRowHeight, enableStickyHeader);
 
   useDragAutoScroll(gridRef, enableDragAutoScroll);
 
@@ -342,23 +300,19 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     return (row: R) => computeWrapTextRowHeight(scaledBase, wrapColumns, row, getRenderedWidth) + slotExtra;
   }, [baseRowHeight, columns, isMobileBreakpoint, renderedColumnWidths]);
 
-  const getMeasuredRowKey = useLatestCallback((row: R, rowIdx: number): unknown => (typeof rowKeyGetter === 'function' ? rowKeyGetter(row) : rowIdx));
   const { getMeasuredHeight, renderWindowRef } = useMeasuredRowHeights({
     gridRef,
     rows,
     rowHeight,
     // Only estimated heights can be wrong; a fixed height is exact, and without virtualization every row is rendered
-    enabled: enableRowVirtualization && typeof rowHeight === 'function',
-    headerRowsCount,
-    getRowKey: getMeasuredRowKey,
+    enabled: enableVirtualization && typeof rowHeight === 'function',
+    getRowKey: rowKeyGetter,
     // Not rowHeight or columns themselves: a consumer passing them inline would reset the cache on every render
     resetKeys: [renderedColumnWidths, isMobileBreakpoint, typeof baseRowHeight === 'number' ? baseRowHeight : null],
   });
 
-  const groupedColumnHeaderRowsCount = headerRowsCount - 1;
   // Without a header row there is no header to navigate to.
-  const minRowIdx = hideHeader ? 0 : -headerRowsCount;
-  const mainHeaderRowIdx = groupedColumnHeaderRowsCount - headerRowsCount;
+  const minRowIdx = hideHeader ? 0 : headerRowIdx;
   const maxRowIdx = rows.length - 1;
 
   const [selectedPosition, setSelectedPosition] = useState((): SelectCellState | EditCellState<R> => ({
@@ -370,34 +324,32 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   // A selected row that moves, as a reorder grip steps it, takes the selection along, so Tab and the arrows continue from it
   const selectedRowRef = useRef<{ key: K; rows: readonly R[]; position: typeof selectedPosition } | null>(null);
   useLayoutEffect(() => {
-    const getKey = typeof rowKeyGetter === 'function' ? rowKeyGetter : null;
     const row = rows[selectedPosition.rowIdx];
     const previous = selectedRowRef.current;
     const rowsChangedAlone = previous !== null && previous.rows !== rows && previous.position === selectedPosition;
-    if (getKey && previous && rowsChangedAlone && selectedPosition.mode === 'SELECT' && (row === undefined || getKey(row) !== previous.key)) {
-      const movedTo = rows.findIndex((candidate) => getKey(candidate) === previous.key);
+    if (previous && rowsChangedAlone && selectedPosition.mode === 'SELECT' && (row === undefined || rowKeyGetter(row) !== previous.key)) {
+      const movedTo = rows.findIndex((candidate) => rowKeyGetter(candidate) === previous.key);
       if (movedTo !== -1) {
         setSelectedPosition({ ...selectedPosition, rowIdx: movedTo });
         return;
       }
     }
-    selectedRowRef.current = getKey && row !== undefined ? { key: getKey(row), rows, position: selectedPosition } : null;
+    selectedRowRef.current = row !== undefined ? { key: rowKeyGetter(row), rows, position: selectedPosition } : null;
   }, [rows, selectedPosition, rowKeyGetter]);
 
   // Blocks a double commit when both commitEditorChanges and the EditCell outside-click handler fire for one edit session.
   const editCommittedRef = useRef(false);
 
-  const headerRowsHeight = headerRowsCount * headerRowHeight;
-  const clientHeight = viewportHeight - headerRowsHeight;
+  const clientHeight = viewportHeight - headerRowHeight;
   const isSelectable = effectiveSelectedRows != null && effectiveOnSelectedRowsChange != null;
-  const ariaRowCount = rawAriaRowCount ?? headerRowsCount + rows.length;
+  const ariaRowCount = rawAriaRowCount ?? rows.length + 1;
 
   const headerSelectionValue = useMemo((): HeaderRowSelectionContextValue => {
     if (!isSelectable) return { isRowSelected: false, isIndeterminate: false };
 
     let hasSelectedRow = false;
     let hasUnselectedRow = false;
-    if (rowKeyGetter != null && effectiveSelectedRows != null && effectiveSelectedRows.size > 0) {
+    if (effectiveSelectedRows.size > 0) {
       for (const row of rows) {
         if (effectiveSelectedRows.has(rowKeyGetter(row))) hasSelectedRow = true;
         else hasUnselectedRow = true;
@@ -413,7 +365,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       rowHeight,
       clientHeight,
       scrollTop,
-      enableVirtualization: enableRowVirtualization,
+      enableVirtualization,
       measured,
       getMeasuredHeight,
     });
@@ -422,11 +374,13 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     renderWindowRef.current = [rowOverscanStartIdx, rowOverscanEndIdx];
   });
 
-  const {
-    gridTemplateColumns,
-    handleColumnResize,
-    handleColumnResizeEnd: handleColumnResizeEndWidths,
-  } = useColumnWidths(columns, templateColumns, gridRef, columnWidths, onColumnWidthsChange, onColumnResize, setColumnResizing);
+  const { gridTemplateColumns, handleColumnResize, handleColumnResizeEnd } = useColumnWidths(
+    columns,
+    templateColumns,
+    gridRef,
+    columnWidths,
+    onColumnWidthsChange,
+  );
 
   const maxColIdx = columns.length - 1;
 
@@ -443,8 +397,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   function selectHeaderRow(args: SelectHeaderRowEvent) {
     if (!effectiveOnSelectedRowsChange) return;
 
-    assertIsValidKeyGetter<R, K>(rowKeyGetter);
-
     const newSelectedRows = new Set(effectiveSelectedRows);
     for (const row of rows) {
       if (isRowSelectionDisabled?.(row) === true) continue;
@@ -458,7 +410,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   function selectRow(args: SelectRowEvent<R>) {
     if (!effectiveOnSelectedRowsChange) return;
 
-    assertIsValidKeyGetter<R, K>(rowKeyGetter);
     const { row, checked, isShiftClick } = args;
     if (isRowSelectionDisabled?.(row) === true) return;
 
@@ -515,29 +466,17 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       shouldFocusCellRef.current = options?.shouldFocusCell === true;
       setSelectedPosition({ ...position, mode: 'SELECT' });
     }
-
-    if (onSelectedCellChange && !samePosition) {
-      onSelectedCellChange({
-        rowIdx: position.rowIdx,
-        row: isRowIdxWithinViewportBounds(position.rowIdx) ? rows[position.rowIdx] : undefined,
-        column: columns[position.idx],
-      });
-    }
   }
 
-  function selectHeaderCell({ idx, rowIdx }: Position): void {
-    selectCell({ rowIdx: minRowIdx + rowIdx - 1, idx });
+  function selectHeaderCell(idx: number): void {
+    selectCell({ rowIdx: headerRowIdx, idx });
   }
 
   // Stable wrapper identity, so memoized children are not invalidated.
   const handleColumnResizeLatest = useLatestCallback(handleColumnResize);
   const handleColumnResizeEndLatest = useLatestCallback(handleColumnResizeEnd);
-  const onColumnsReorderLastest = useLatestCallback(onColumnsReorder);
   const onSortColumnsChangeLatest = useLatestCallback(onSortColumnsChange);
-  const onCellMouseDownLatest = useLatestCallback(onCellMouseDown);
   const onCellClickLatest = useLatestCallback(onCellClick);
-  const onCellDoubleClickLatest = useLatestCallback(onCellDoubleClick);
-  const onCellContextMenuLatest = useLatestCallback(onCellContextMenu);
   const selectHeaderRowLatest = useLatestCallback(selectHeaderRow);
   const selectRowLatest = useLatestCallback(selectRow);
   const handleFormatterRowChangeLatest = useLatestCallback(updateRow);
@@ -567,31 +506,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
   useNearEnd({ totalRows: rows.length, rowOverscanEndIdx, measured, onNearEndChange, threshold: rawNearEndThreshold });
 
-  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    const { idx, rowIdx, mode } = selectedPosition;
-    if (mode === 'EDIT') return;
-
-    if (onCellKeyDown && isRowIdxWithinViewportBounds(rowIdx)) {
-      const row = rows[rowIdx];
-      const cellEvent = createCellEvent(event);
-      onCellKeyDown({ mode: 'SELECT', row, column: columns[idx], rowIdx, selectCell }, cellEvent);
-      if (cellEvent.isGridDefaultPrevented()) return;
-    }
-
-    if (!(event.target instanceof Element)) return;
-    if (event.target.closest('.rdg-cell') === null) return;
-    if (navigationKeys.has(event.key)) navigate(event);
-    else handleCellInput(event);
-  }
-
-  function handleScroll(event: React.UIEvent<HTMLDivElement>) {
-    const el = event.currentTarget;
-    // Toggle data attribute so CSS can scope frozen-column shadow to scrolled state
-    el.toggleAttribute('data-scrolled-left', el.scrollLeft > 0);
-    onScroll?.(event);
-  }
-
-  function handleCellCopy(event: CellClipboardEvent) {
+  function handleCellCopy(event: React.ClipboardEvent<HTMLDivElement>) {
     if (!selectedCellIsWithinViewportBounds) return;
     // Text the user selected is what they mean to copy.
     if (window.getSelection()?.isCollapsed === false) return;
@@ -600,24 +515,11 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     const column = columns[idx];
     const row = rows[rowIdx];
     const value = row[column.key as keyof R];
-    onCellCopy?.({ row, column, rowIdx, value }, event);
-
-    if (event.defaultPrevented) return;
     // A column whose key names no row field copies what it renders.
     const text = cellValueToText(value) || (event.target instanceof Element ? event.target.closest('.rdg-cell')?.textContent : '');
     if (!text) return;
     event.clipboardData.setData('text/plain', text);
     event.preventDefault();
-  }
-
-  function handleCellPaste(event: CellClipboardEvent) {
-    if (!onCellPaste || !onRowsChange || !isCellEditable(selectedPosition)) return;
-
-    const { idx, rowIdx } = selectedPosition;
-    const column = columns[idx];
-    const pastedValue = event.clipboardData?.getData('text/plain') ?? '';
-    const updatedRow = onCellPaste({ row: rows[rowIdx], column, rowIdx, pastedValue }, event);
-    updateRow(column, rowIdx, updatedRow);
   }
 
   function handleCellInput(event: KeyboardEvent<HTMLDivElement>) {
@@ -626,26 +528,14 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     const { key, shiftKey } = event;
 
     if (isSelectable && shiftKey && key === ' ') {
-      assertIsValidKeyGetter<R, K>(rowKeyGetter);
       const rowKey = rowKeyGetter(row);
       selectRow({ row, checked: !effectiveSelectedRows.has(rowKey), isShiftClick: false });
       event.preventDefault();
       return;
     }
 
-    if (isCellEditable(selectedPosition) && isDefaultCellInput(event, onCellPaste != null)) {
+    if (isCellEditable(selectedPosition) && isDefaultCellInput(event)) {
       setSelectedPosition(({ idx, rowIdx }) => ({ idx, rowIdx, mode: 'EDIT', row, originalRow: row }));
-    }
-  }
-
-  function handleColumnResizeEnd() {
-    // Clear measured widths after resizing to restore flex sizing.
-    handleColumnResizeEndWidths();
-    // This check is needed as double click on the resize handle triggers onPointerMove
-    if (isColumnResizing) {
-      // Re-read columnWidths after cleanup; the hook already updated the map
-      onColumnWidthsChangeRaw?.(columnWidthsInternal);
-      setColumnResizing(false);
     }
   }
 
@@ -674,7 +564,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         return { idx, rowIdx: nextRowY > 0 ? findRowIdx(nextRowY) : 0 };
       }
       case 'PageDown': {
-        if (selectedPosition.rowIdx >= rows.length) return selectedPosition;
         const nextRowY = getRowTop(rowIdx) + clientHeight;
         return { idx, rowIdx: nextRowY < totalRowHeight ? findRowIdx(nextRowY) : rows.length - 1 };
       }
@@ -705,22 +594,24 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     if (isSamePosition(selectedPosition, nextPosition)) return;
 
     const nextSelectedCellPosition = getNextSelectedCellPosition({
-      moveUp: key === 'ArrowUp',
       moveNext: key === 'ArrowRight' || (key === 'Tab' && !shiftKey),
       columns,
-      colSpanColumns,
-      rows,
       minRowIdx,
-      mainHeaderRowIdx,
       maxRowIdx,
-      lastFrozenColumnIndex,
       cellNavigationMode,
       currentPosition: selectedPosition,
       nextPosition,
-      isCellWithinBounds: isCellWithinSelectionBounds,
     });
 
     selectCell(nextSelectedCellPosition, { shouldFocusCell: true });
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (selectedPosition.mode === 'EDIT') return;
+    if (!(event.target instanceof Element)) return;
+    if (event.target.closest('.rdg-cell') === null) return;
+    if (navigationKeys.has(event.key)) navigate(event);
+    else handleCellInput(event);
   }
 
   function getCellEditor(rowIdx: number) {
@@ -729,8 +620,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
     const { idx, row } = selectedPosition;
     const column = columns[idx];
-    const colSpan = getColSpan(column, lastFrozenColumnIndex, { type: 'ROW', row });
-    const closeOnExternalRowChange = column.editorOptions?.closeOnExternalRowChange ?? true;
 
     const closeEditor = (shouldFocusCell: boolean) => {
       shouldFocusCellRef.current = shouldFocusCell;
@@ -754,23 +643,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       }
     };
 
-    // Discard changes if rows are updated from outside. This runs during render, so it skips the focus refs closeEditor writes.
-    if (closeOnExternalRowChange && rows[selectedPosition.rowIdx] !== selectedPosition.originalRow) {
-      setSelectedPosition(({ idx, rowIdx }) => ({ idx, rowIdx, mode: 'SELECT' }));
-    }
-
     return (
-      <EditCell
-        key={column.key}
-        column={column}
-        colSpan={colSpan}
-        row={row}
-        rowIdx={rowIdx}
-        onRowChange={onRowChange}
-        closeEditor={closeEditor}
-        onKeyDown={onCellKeyDown}
-        navigate={navigate}
-      />
+      <EditCell key={column.key} column={column} row={row} rowIdx={rowIdx} onRowChange={onRowChange} closeEditor={closeEditor} navigate={navigate} />
     );
   }
 
@@ -790,18 +664,14 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       const rowColumns = isRowOutsideViewport && selectedColumn !== undefined ? [selectedColumn] : columns;
 
       const row = rows[rowIdx];
-      const gridRowStart = headerRowsCount + rowIdx + 1;
-      let key: K | number = rowIdx;
-      let isRowSelected = false;
-      if (typeof rowKeyGetter === 'function') {
-        key = rowKeyGetter(row);
-        isRowSelected = effectiveSelectedRows?.has(key) ?? false;
-      }
+      const key = rowKeyGetter(row);
+      const isRowSelected = effectiveSelectedRows?.has(key) ?? false;
+      // 1 based, after the header row
+      const gridRowStart = rowIdx + 2;
 
       rowElements.push(
         renderRow(key, {
-          // aria-rowindex is 1 based
-          'aria-rowindex': headerRowsCount + rowIdx + 1,
+          'aria-rowindex': gridRowStart,
           ...treeRow?.(rowIdx),
           'aria-selected': isSelectable ? isRowSelected : undefined,
           rowIdx,
@@ -809,17 +679,13 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
           viewportColumns: rowColumns,
           isRowSelectionDisabled: isRowSelectionDisabled?.(row) ?? false,
           isRowSelected,
-          onCellMouseDown: onCellMouseDownLatest,
           onCellClick: onCellClickLatest,
-          onCellDoubleClick: onCellDoubleClickLatest,
-          onCellContextMenu: onCellContextMenuLatest,
           rowClass,
           animateReorder,
           gridRowStart,
           // The estimate, not the measured height: a cell sized from --rdg-row-height would otherwise hold the row at its tallest
           height: getRowEstimate(rowIdx),
           selectedCellIdx: selectedRowIdx === rowIdx ? selectedIdx : undefined,
-          lastFrozenColumnIndex,
           onRowChange: handleFormatterRowChangeLatest,
           selectCell: selectCellLatest,
           selectedCellEditor: getCellEditor(rowIdx),
@@ -831,8 +697,14 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     return rowElements;
   }
 
-  // Reset the positions if the current values are invalid after a column or row is removed.
-  if (selectedPosition.idx > maxColIdx || selectedPosition.rowIdx > maxRowIdx) {
+  if (selectedPosition.mode === 'EDIT' && rows[selectedPosition.rowIdx] !== selectedPosition.originalRow) {
+    // The editor follows its row's key when rows arrive or leave above it; any other outside change to the row discards the edit.
+    const originalKey = rowKeyGetter(selectedPosition.originalRow);
+    const movedTo = rows.findIndex((candidate) => rowKeyGetter(candidate) === originalKey);
+    if (movedTo !== -1 && movedTo !== selectedPosition.rowIdx) setSelectedPosition({ ...selectedPosition, rowIdx: movedTo });
+    else setSelectedPosition(({ idx, rowIdx }) => ({ idx, rowIdx, mode: 'SELECT' }));
+  } else if (selectedPosition.idx > maxColIdx || selectedPosition.rowIdx > maxRowIdx) {
+    // Reset the positions if the current values are invalid after a column or row is removed.
     setSelectedPosition({ idx: -1, rowIdx: minRowIdx - 1, mode: 'SELECT' });
   }
 
@@ -840,9 +712,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const firstFocusableIdx = hideHeader && rows.length > 0 && selectedPosition.rowIdx < 0 ? columns.findIndex((column) => column.focusable) : -1;
   if (firstFocusableIdx !== -1) setSelectedPosition({ idx: firstFocusableIdx, rowIdx: 0, mode: 'SELECT' });
 
-  if (isColumnWidthsControlled && columnWidthsInternal !== columnWidthsRaw) setColumnWidthsInternal(columnWidthsRaw);
-
-  const templateRows = `repeat(${headerRowsCount}, ${headerRowHeight}px)${rows.length > 0 ? gridTemplateRows : ''}`;
+  const templateRows = `${headerRowHeight}px${rows.length > 0 ? gridTemplateRows : ''}`;
 
   return (
     <div
@@ -859,19 +729,16 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       className={cn('rdg text-foreground accent-primary grid h-full overflow-x-auto text-sm tabular-nums [contain:style]', className)}
       style={{
         // set scrollPadding to correctly position non-sticky cells after scrolling
-        scrollPaddingInlineStart: selectedPosition.idx > lastFrozenColumnIndex ? `${totalFrozenColumnWidth}px` : undefined,
-        scrollPaddingBlock: isRowIdxWithinViewportBounds(selectedPosition.rowIdx) ? `${headerRowsHeight}px` : undefined,
+        scrollPaddingBlock: isRowIdxWithinViewportBounds(selectedPosition.rowIdx) ? `${headerRowHeight}px` : undefined,
         gridTemplateColumns,
         gridTemplateRows: templateRows,
         '--rdg-header-row-height': `${headerRowHeight}px`,
-        ...layoutCssVars,
       }}
       dir="ltr"
       ref={gridRef}
-      onScroll={handleScroll}
+      onScroll={onScroll ?? undefined}
       onKeyDown={handleKeyDown}
       onCopy={handleCellCopy}
-      onPaste={handleCellPaste}
       data-testid={testId}
       data-cy={dataCy}
       data-is-compact={isCompact || undefined}
@@ -880,28 +747,13 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       {!hideHeader && (
         <HeaderRowSelectionChangeContext value={selectHeaderRowLatest}>
           <HeaderRowSelectionContext value={headerSelectionValue}>
-            {Array.from({ length: groupedColumnHeaderRowsCount }, (_, index) => (
-              <GroupedColumnHeaderRow
-                // biome-ignore lint/suspicious/noArrayIndexKey: header rows are fixed-length and never reordered.
-                key={index}
-                rowIdx={index + 1}
-                level={-groupedColumnHeaderRowsCount + index}
-                columns={columns}
-                selectedCellIdx={selectedPosition.rowIdx === minRowIdx + index ? selectedPosition.idx : undefined}
-                selectCell={selectHeaderCellLatest}
-              />
-            ))}
             <HeaderRow
-              headerRowClass={headerRowClass}
-              rowIdx={headerRowsCount}
               columns={columns}
               onColumnResize={handleColumnResizeLatest}
               onColumnResizeEnd={handleColumnResizeEndLatest}
-              onColumnsReorder={onColumnsReorderLastest}
               sortColumns={sortColumns}
               onSortColumnsChange={onSortColumnsChangeLatest}
-              lastFrozenColumnIndex={lastFrozenColumnIndex}
-              selectedCellIdx={selectedPosition.rowIdx === mainHeaderRowIdx ? selectedPosition.idx : undefined}
+              selectedCellIdx={selectedPosition.rowIdx === headerRowIdx ? selectedPosition.idx : undefined}
               selectCell={selectHeaderCellLatest}
               shouldFocusGrid={!selectedCellIsWithinSelectionBounds}
             />
@@ -914,7 +766,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         <RowSelectionChangeContext value={selectRowLatest}>{getViewportRows()}</RowSelectionChangeContext>
       )}
 
-      {/* single-column cells so column widths stay measurable regardless of colSpan */}
+      {/* One empty cell per column track, measured by resizing and wrapped-row estimates */}
       {renderMeasuringCells(columns)}
     </div>
   );

@@ -198,13 +198,18 @@ describe('send budgets under a parallel burst', () => {
 });
 
 /**
- * A limiter with a tenant budget counts in process while a key is under 80% of it and in the database past that. The
+ * The points limiter counts in process while a key is under 80% of its tenant budget and in the database past that. The
  * static ceiling must hold across both: for every request sent after the bucket is spent, and in every window.
  */
 describe('a points budget at the static ceiling', () => {
   it('must not accept requests past the static ceiling via the in-process counter', async () => {
     // The points limiter's shape, scaled down: a tenant budget far above the ceiling, and no block past the window.
-    const route = guardedRoute('limit', 200, { points: 10, duration: 60 * 60, blockDuration: 0 }, { getPointsBudget: () => 5000 });
+    const route = guardedRoute(
+      'limit',
+      200,
+      { points: 10, duration: 60 * 60, blockDuration: 0 },
+      { getPointsBudget: () => 5000, countsInProcess: true },
+    );
     const ip = randomIp();
 
     const statuses: number[] = [];
@@ -216,7 +221,12 @@ describe('a points budget at the static ceiling', () => {
 
   it('must not reopen a tenant budget via a bulk request refused after requests counted in process', async () => {
     // A tenant budget of 10 below the ceiling: 7 requests pass in process, then a 4-row bulk create is refused.
-    const route = guardedRoute('limit', 200, { points: 5000, duration: 60 * 60, blockDuration: 0 }, { getPointsBudget: () => 10 });
+    const route = guardedRoute(
+      'limit',
+      200,
+      { points: 5000, duration: 60 * 60, blockDuration: 0 },
+      { getPointsBudget: () => 10, countsInProcess: true },
+    );
     const ip = randomIp();
     for (let attempt = 0; attempt < 7; attempt++) expect((await route.attempt(ip)).status).toBe(200);
 
@@ -249,7 +259,8 @@ describe('a points budget at the static ceiling', () => {
       return accepted;
     };
 
-    const pointsRoute = () => guardedRoute('limit', 200, { points: 10, duration: 60 * 60, blockDuration: 0 }, { getPointsBudget: () => 5000 });
+    const pointsRoute = () =>
+      guardedRoute('limit', 200, { points: 10, duration: 60 * 60, blockDuration: 0 }, { getPointsBudget: () => 5000, countsInProcess: true });
 
     it('must not accept more than the ceiling in an hour via a row that restarts while the in-process count goes on', async () => {
       const route = pointsRoute();

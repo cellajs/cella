@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import type { YjsConnection } from '~/modules/common/blocknote/yjs-connections';
+import type { UnsaveableReason, UnsaveableYDocRecord } from '~/query/local-user-db';
 
 /** The browser socket the provider's WebSocket polyfill extends; it records what it sends. */
 class FakeSocket {
@@ -154,10 +155,20 @@ const { useYjsConnection } = await import('~/modules/common/blocknote/yjs-connec
 
 /** The store's writer, as the connection calls it: the proofs it hands on and the documents it parks. */
 const writer = {
-  start: vi.fn(),
   append: vi.fn(),
   prove: vi.fn(async () => {}),
-  park: vi.fn(async () => {}),
+  park: vi.fn(
+    async (reason: UnsaveableReason): Promise<UnsaveableYDocRecord> => ({
+      entityType: 'attachment',
+      entityId: 'doc',
+      tenantId: 'tenant-1',
+      organizationId: 'org-1',
+      generation: 'gen-1',
+      reason,
+      state: new Uint8Array([0, 0]),
+      at: 0,
+    }),
+  ),
   drop: vi.fn(async () => {}),
   failed: false,
   pending: false,
@@ -320,10 +331,10 @@ describe('yjs over HTTP: final answers', () => {
     for (const [error, reason] of answers) {
       pushYjsUpdate.mockClear();
       writer.park.mockClear();
-      const { doc } = await refusedEdit(error);
+      await refusedEdit(error);
       await advance(120_000);
 
-      expect(writer.park, reason).toHaveBeenCalledExactlyOnceWith(reason, doc);
+      expect(writer.park, reason).toHaveBeenCalledExactlyOnceWith(reason);
       expect(pushYjsUpdate, reason).toHaveBeenCalledOnce();
       await act(async () => root?.unmount());
       root = undefined;

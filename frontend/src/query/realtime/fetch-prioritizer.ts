@@ -169,7 +169,7 @@ export async function excludingRangeReads<T>(productType: ProductEntityType, org
   }
 }
 
-/** Clear all pending work. Called when catchup starts: it recomputes channel-view gaps itself. */
+/** Clear all pending work. Called when a catchup reset the cursors: the pending ranges name positions of another history. */
 export function resetFetchPrioritizer(): void {
   dirty.clear();
   if (timer) {

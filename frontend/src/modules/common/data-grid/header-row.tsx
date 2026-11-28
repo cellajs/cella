@@ -1,73 +1,44 @@
 import { memo } from 'react';
 import { HeaderCell } from './header-cell';
-import type { CalculatedColumn, Maybe, Position, ResizedWidth, SortColumn } from './types';
-import { cn, getColSpan } from './utils/grid-utils';
+import type { CalculatedColumn, Maybe, ResizedWidth, SortColumn } from './types';
 
 interface HeaderRowProps<R, SR> {
   sortColumns?: Maybe<readonly SortColumn[]>;
   onSortColumnsChange?: Maybe<(sortColumns: SortColumn[]) => void>;
-  onColumnsReorder?: Maybe<(sourceColumnKey: string, targetColumnKey: string) => void>;
-  rowIdx: number;
   columns: readonly CalculatedColumn<R, SR>[];
   onColumnResize: (column: CalculatedColumn<R, SR>, width: ResizedWidth) => void;
   onColumnResizeEnd: () => void;
-  selectCell: (position: Position) => void;
-  lastFrozenColumnIndex: number;
+  /** Selects the header cell of the column at this index. */
+  selectCell: (idx: number) => void;
   selectedCellIdx: number | undefined;
   shouldFocusGrid: boolean;
-  headerRowClass: Maybe<string>;
 }
 
-export const headerRowClassname = 'rdg-header-row contents group-label';
-
 function HeaderRow<R, SR>({
-  headerRowClass,
-  rowIdx,
   columns,
   onColumnResize,
   onColumnResizeEnd,
-  onColumnsReorder,
   sortColumns,
   onSortColumnsChange,
-  lastFrozenColumnIndex,
   selectedCellIdx,
   selectCell,
   shouldFocusGrid,
 }: HeaderRowProps<R, SR>) {
-  // The drag that reorders columns has no key of its own, so Ctrl+Shift+Arrow steps one column past its neighbour.
-  const moveColumn = onColumnsReorder
-    ? (column: CalculatedColumn<R, SR>, step: -1 | 1) => {
-        const target = columns[column.idx + step];
-        if (!target?.draggable) return false;
-        onColumnsReorder(column.key, target.key);
-        return true;
-      }
-    : undefined;
-
-  const cells: React.ReactNode[] = [];
-  for (let index = 0; index < columns.length; index++) {
-    const column = columns[index];
-    const colSpan = getColSpan(column, lastFrozenColumnIndex, { type: 'HEADER' });
-    if (colSpan !== undefined) index += colSpan - 1;
-
-    cells.push(
-      <HeaderCell<R, SR>
-        key={column.key}
-        column={column}
-        {...{ colSpan, rowIdx, onColumnResize, onColumnResizeEnd, onColumnsReorder, moveColumn, onSortColumnsChange, sortColumns, selectCell }}
-        isCellSelected={selectedCellIdx === column.idx}
-        shouldFocusGrid={shouldFocusGrid && index === 0}
-      />,
-    );
-  }
-
   return (
     <div
       role="row"
-      aria-rowindex={rowIdx} // aria-rowindex is 1 based
-      className={cn(headerRowClassname, headerRowClass)}
+      aria-rowindex={1} // aria-rowindex is 1 based
+      className="rdg-header-row group-label contents"
     >
-      {cells}
+      {columns.map((column, index) => (
+        <HeaderCell<R, SR>
+          key={column.key}
+          column={column}
+          {...{ onColumnResize, onColumnResizeEnd, onSortColumnsChange, sortColumns, selectCell }}
+          isCellSelected={selectedCellIdx === column.idx}
+          shouldFocusGrid={shouldFocusGrid && index === 0}
+        />
+      ))}
     </div>
   );
 }

@@ -18,10 +18,11 @@ export interface CollabSession {
    */
   handshakes: Map<WebSocket, Uint8Array[]>;
   /**
-   * Awareness client id → the socket holding it, its user and the last clock relayed for it; no other user's socket
-   * relays that id. Up to yjsAwarenessMaxClients per socket.
+   * Awareness client id → the socket holding it, its user and the entry last relayed for it (its clock and validated
+   * JSON state), which a joining socket receives; no other user's socket relays that id. Up to yjsAwarenessMaxClients
+   * per socket.
    */
-  awarenessOwners: Map<number, { ws: WebSocket; userId: string; clock: number }>;
+  awarenessOwners: Map<number, { ws: WebSocket; userId: string; clock: number; state: string }>;
   /**
    * Document lock: every load (a handshake's, an update's first, a catch-up's), compaction and finishing (an idle session's or the
    * sweep) run one at a time through this chain.
@@ -282,32 +283,34 @@ function heldClientCount(collab: CollabSession, ws: WebSocket): number {
 }
 
 /**
- * Decides one awareness entry from a socket of `userId`: `relay` it, `drop` it (another user's socket holds its client),
- * or `refuse` the socket, which announced more clients than it may hold. An announcement takes a client no socket holds,
- * or one another socket of the same user holds (a reconnect takes its client over), while the socket holds fewer than
- * yjsAwarenessMaxClients, and the client keeps the highest clock relayed for it. A removal takes nothing and frees a
- * client the socket holds: y-websocket re-sends every change it applies, including the removal of each peer it timed out.
+ * Decides one awareness entry from a socket of `userId`, its state validated: `relay` it, `drop` it (another user's
+ * socket holds its client), or `refuse` the socket, which announced more clients than it may hold. An announcement takes
+ * a client no socket holds, or one another socket of the same user holds at a lower clock: a reconnect takes its client
+ * over at its next renewal. At the same or a lower clock it is dropped, the echo that user's other tab sends of what its
+ * peers hold. A socket takes clients while it holds fewer than yjsAwarenessMaxClients, and each client keeps the entry
+ * of the highest clock relayed for it. A removal takes nothing and frees a client the socket holds: y-websocket re-sends
+ * every change it applies, including the removal of each peer it timed out.
  */
 export function claimAwarenessClient(
   collab: CollabSession,
   ws: WebSocket,
   userId: string,
-  entry: { clientId: number; clock: number; removes: boolean },
+  entry: { clientId: number; clock: number; state: string },
 ): 'relay' | 'drop' | 'refuse' {
   const owner = collab.awarenessOwners.get(entry.clientId);
   if (owner && owner.userId !== userId) return 'drop';
-  if (entry.removes) {
+  if (entry.state === 'null') {
     if (owner?.ws === ws) collab.awarenessOwners.delete(entry.clientId);
     return 'relay';
   }
-  const clock = Math.max(owner?.clock ?? 0, entry.clock);
+  if (owner && owner.ws !== ws && entry.clock <= owner.clock) return 'drop';
   if (owner?.ws !== ws && heldClientCount(collab, ws) < yjsAwarenessMaxClients) {
-    collab.awarenessOwners.set(entry.clientId, { ws, userId, clock });
+    collab.awarenessOwners.set(entry.clientId, { ws, userId, clock: entry.clock, state: entry.state });
     return 'relay';
   }
   // A free client would grow the session past the cap; one this socket or another socket of its user holds stays there.
   if (!owner) return 'refuse';
-  owner.clock = clock;
+  if (entry.clock >= owner.clock) Object.assign(owner, { clock: entry.clock, state: entry.state });
   return 'relay';
 }
 
